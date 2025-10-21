@@ -5,7 +5,8 @@ Dieser Leitfaden beschreibt den Prozess, wie du beitragen kannst.
 ## Arbeitsaufträge und Feature-Planung
 
 -   **Issues:** Alle Arbeitsaufträge, Bugs und Feature-Vorschläge werden in den GitHub Issues getrackt.
--   **User Stories:** Neue Features werden als User Stories formuliert. Diese werden in zukünftigen Sprints eingeplant und umgesetzt.
+-   **Backlog:** Der Backlog wird bei Bedarf um neue Anforderungen erweitert. Bedarf nach neuen Anforderungen wird im Team geklärt.
+-   **Sprint Backlog:** Im Sprint Planning werden neue Arbeitspakete für den aktuellen Sprint gewählt.
 
 ## Entwicklungsprozess
 
@@ -22,10 +23,6 @@ Dieser Leitfaden beschreibt den Prozess, wie du beitragen kannst.
 2.  **Reviewer:** Der Product Owner (PO) und mindestens ein "relevanter Verantwortlicher" (z.B. ein Frontend-Verantwortlicher, wenn das Issue den Tag "Frontend" hat) müssen den Pull Request prüfen und genehmigen.
 3.  **Testumgebung:** Für das Review wird die Stage-Umgebung verwendet, die über die `docker-compose.yml` gestartet werden kann.
 4.  **Automatisierte Tests:** Alle relevanten automatisierten Tests müssen erfolgreich durchlaufen, bevor der PR gemerged werden kann.
-    - Um Unit Tests, die die Datenbank benutzen, lokal auszuführen, müssen die benötigten Umgebungsvariablen geladen werden. Siehe dazu auch [diesen](https://github.com/bjoern621/PeerDrop/issues/74#issuecomment-2952354831) Kommentar.
-    ```
-    dotnet test --settings backend.tests/test.runsettings
-    ```
 
 ## Release und Deployment
 
