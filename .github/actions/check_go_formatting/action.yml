@@ -1,0 +1,17 @@
+name: check_go_formatting
+author: bennet
+description: check_go_formatting
+runs:
+  using: "composite"
+  steps:
+    - name: Check formatting
+      shell: bash
+      id: "check_formatting"
+      run: |
+        echo "Checking formatting"
+        fmt_files=$(gofmt -l .) # files that are not correctly formatted
+        if [ -n "$fmt_files" ]; then
+          echo "files not formatted correctly. run 'gofmt -w .':"
+          echo "$fmt_files"
+          exit 1
+        fi
