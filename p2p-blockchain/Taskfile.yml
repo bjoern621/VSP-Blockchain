@@ -1,0 +1,28 @@
+version: "3"
+
+vars:
+    DOCKER_TAG: latest
+
+tasks:
+    tidy:
+        internal: true
+        desc: Run go mod tidy
+        cmds:
+            - go mod tidy
+
+    prepare:
+        internal: true
+        desc: Prepare the module by tidying dependencies
+        cmds:
+            - task: tidy
+
+    build:
+        desc: Build the docker image for p2p-miner
+        cmds:
+            - task: prepare
+            - docker build -t vsp-blockchain/miner:{{.DOCKER_TAG}} .
+
+    proto:
+        desc: Generate gRPC code from .proto files
+        cmds:
+            - protoc --go_out=./proto/ --go-grpc_out=./proto/ ./proto/*.proto

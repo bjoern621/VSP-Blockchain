@@ -1,0 +1,30 @@
+version: "3"
+
+vars:
+    DOCKER_TAG: latest
+
+tasks:
+    tidy:
+        internal: true
+        desc: Run go mod tidy
+        cmds:
+            - go mod tidy
+
+    vendor:
+        internal: true
+        desc: Run go mod vendor
+        cmds:
+            - go mod vendor
+
+    prepare:
+        internal: true
+        desc: Prepare the module by tidying and vendoring dependencies
+        cmds:
+            - task: tidy
+            - task: vendor
+
+    build:
+        desc: Build the docker image for rest-api
+        cmds:
+            - task: prepare
+            - docker build -t vsp-blockchain/rest-api:{{.DOCKER_TAG}} .
