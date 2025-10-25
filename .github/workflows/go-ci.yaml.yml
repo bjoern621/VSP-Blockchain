@@ -58,4 +58,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/bennetkrz/vsp-blockchain:latest
+          tags: ghcr.io/${{ github.repository_owner }}/vsp-blockchain:latest
