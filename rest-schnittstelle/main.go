@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"s3b/vsp-blockchain/rest-schnittstelle/internal/api/handlers"
-	"s3b/vsp-blockchain/rest-schnittstelle/internal/api/middleware"
+	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
+	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
