@@ -1,3 +1,2 @@
 *.exe
-vendor/
 internal/pb/

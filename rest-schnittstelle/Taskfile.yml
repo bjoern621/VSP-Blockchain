@@ -10,12 +10,6 @@ tasks:
         cmds:
             - go mod tidy
 
-    vendor:
-        internal: true
-        desc: Run go mod vendor
-        cmds:
-            - go mod vendor
-
     proto:
         desc: Generate gRPC code from shared .proto files
         cmds:
@@ -26,7 +20,6 @@ tasks:
         desc: Prepare the module for build
         cmds:
             - task: tidy
-            - task: vendor
             - task: proto
 
     build:

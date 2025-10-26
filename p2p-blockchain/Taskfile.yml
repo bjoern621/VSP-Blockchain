@@ -21,6 +21,7 @@ tasks:
         cmds:
             - task: tidy
             - task: proto
+
     build:
         desc: Build the docker image for p2p-miner
         cmds:
