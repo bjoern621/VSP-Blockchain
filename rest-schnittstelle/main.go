@@ -6,12 +6,11 @@ import (
 
 	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
 	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
+	"s3b/vsp-blockchain/rest-api/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	testpb "s3b/vsp-blockchain/p2p-blockchain/proto/pb"
 )
 
 func main() {
@@ -25,8 +24,8 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := testpb.NewTestClient(conn)
-	resp, err := client.TestRPC(context.Background(), &testpb.TestRequest{Message: "Hello from REST Schnittstelle"})
+	client := pb.NewTestClient(conn)
+	resp, err := client.TestRPC(context.Background(), &pb.TestRequest{Message: "Hello from REST Schnittstelle"})
 	if err != nil {
 		logger.Warnf("gRPC call failed: %v", err)
 	} else {

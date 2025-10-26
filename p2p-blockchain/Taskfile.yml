@@ -10,19 +10,19 @@ tasks:
         cmds:
             - go mod tidy
 
+    proto:
+        desc: Generate gRPC code from shared .proto files
+        cmds:
+            - protoc --proto_path=../proto --go_out=. --go-grpc_out=. ../proto/*.proto
+
     prepare:
         internal: true
-        desc: Prepare the module by tidying dependencies
+        desc: Prepare the module for build
         cmds:
             - task: tidy
-
+            - task: proto
     build:
         desc: Build the docker image for p2p-miner
         cmds:
             - task: prepare
             - docker build -t vsp-blockchain/miner:{{.DOCKER_TAG}} .
-
-    proto:
-        desc: Generate gRPC code from .proto files
-        cmds:
-            - protoc --go_out=./proto/ --go-grpc_out=./proto/ ./proto/*.proto

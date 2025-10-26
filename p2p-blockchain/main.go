@@ -4,21 +4,20 @@ import (
 	"context"
 	"fmt"
 	"net"
-
-	testpb "s3b/vsp-blockchain/p2p-blockchain/proto/pb"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 )
 
 type server struct {
-	testpb.UnimplementedTestServer
+	pb.UnimplementedTestServer
 }
 
-func (s *server) TestRPC(ctx context.Context, req *testpb.TestRequest) (*testpb.TestResponse, error) {
+func (s *server) TestRPC(ctx context.Context, req *pb.TestRequest) (*pb.TestResponse, error) {
 	logger.Infof("Received: %s", req.Message)
 
-	return &testpb.TestResponse{
+	return &pb.TestResponse{
 		Message: fmt.Sprintf("Echo: %s", req.Message),
 	}, nil
 }
@@ -32,7 +31,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	testpb.RegisterTestServer(grpcServer, &server{})
+	pb.RegisterTestServer(grpcServer, &server{})
 
 	logger.Infof("gRPC server listening on :50051")
 
