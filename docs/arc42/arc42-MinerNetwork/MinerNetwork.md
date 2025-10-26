@@ -30,11 +30,11 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 
 ## Qualitätsziele
 
-| Prioriät | Qualitätsziel                    | Motivation                                                          |
-| -------- | -------------------------------- | ------------------------------------------------------------------- |
-| 1        | Ease-of-use                      | developer                                                           |
-| 2        | Zuverlässigkeit - Fehlertoleranz | Es wird mit Geld gehandelt, ein Fehler kann nicht verkraftet werden |
-| 3        | Effizienz - Kapazität            | Ein Ziel von verteilten Systemen ist Skalierbarkeit                 |
+| Prioriät | Qualitätsziel        | Motivation                                                          |
+| -------- | -------------------- | ------------------------------------------------------------------- |
+| 1        | Understandability    | developer                                                           |
+| 2        | Fehlertoleranz       | Es wird mit Geld gehandelt, ein Fehler kann nicht verkraftet werden |
+| 3        | Resource Utilization | Ein Ziel von verteilten Systemen ist Skalierbarkeit                 |
 
 Resource Sharing
 Openness
