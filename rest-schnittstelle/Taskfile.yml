@@ -19,8 +19,8 @@ tasks:
         internal: true
         desc: Prepare the module for build
         cmds:
-            - task: tidy
             - task: proto
+            - task: tidy
 
     build:
         desc: Build the docker image for rest-api
