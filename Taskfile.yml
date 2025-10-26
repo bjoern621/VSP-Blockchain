@@ -1,0 +1,32 @@
+version: "3"
+
+includes:
+    rest:
+        taskfile: ./rest-schnittstelle/Taskfile.yml
+        dir: ./rest-schnittstelle
+    miner:
+        taskfile: ./p2p-blockchain/Taskfile.yml
+        dir: ./p2p-blockchain
+
+vars:
+    NAMESPACE: vsp-blockchain
+    DOCKER_TAG: latest
+
+tasks:
+    deploy:
+        desc: Deploy to current Kubernetes context
+        cmds:
+            - task: rest:build
+            - task: miner:build
+            - task: clean
+            - task: k8s-deploy
+
+    clean:
+        desc: Delete Kubernetes deployment
+        cmds:
+            - kubectl delete namespace {{.NAMESPACE}} --ignore-not-found=true
+
+    k8s-deploy:
+        internal: true
+        cmds:
+            - kubectl apply -f kubernetes-deployment.yaml
