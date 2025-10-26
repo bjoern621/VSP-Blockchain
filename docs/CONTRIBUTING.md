@@ -16,7 +16,7 @@ Dieser Leitfaden beschreibt den Prozess, wie du beitragen kannst.
     <img height="400" alt="image" src="https://github.com/user-attachments/assets/83886fd8-5fb0-4da5-93bb-6189e80b68f5" />
 </div>
 
-2.  **Entwicklungsumgebung aufsetzen:** Informationen zum Aufsetzen der lokalen Entwicklungsumgebung findest du [hier](development.md).
+2.  **Entwicklungsumgebung aufsetzen:** Informationen zum Aufsetzen der lokalen Entwicklungsumgebung findest du [hier](/docs/development.md).
 3.  **Entwickeln auf dem Branch:**
     -   **"Development"-Branches:** Diese Branches sind persönliche Spielwiesen für den Entwickler.
     -   **Freiheiten:** Auf diesen Branches sind Aktionen wie Merges, Force Pushes, Rebasing etc. erlaubt.
