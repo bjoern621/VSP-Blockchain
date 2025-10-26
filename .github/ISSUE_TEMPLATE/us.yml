@@ -15,7 +15,7 @@ body:
       label: Akzeptanzkriterien
       description: Eine Liste von Bedingungen, die erfüllt werden sollen.
       placeholder: |
-        - [ ] Kriterium 1  
+        - [ ] Kriterium 1  (<-- das ist: >>Bindestrich Leerzeichen '[' Leerzeichen ']' Leerzeichen Freitext<< (sollte eine Checkbox erzeugen!))
         - [ ] Kriterium 2
     validations:
       required: true
