@@ -1,6 +1,7 @@
 name: User Story
 description: Erstelle eine Anforderung
 title: "[US]: "
+labels: "US"
 body:
   - type: textarea
     attributes:
