@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0" version="28.2.8">
+  <diagram name="Seite-1" id="5Yrx12I46dSw8LCCXNga">
+    <mxGraphModel dx="1752" dy="1118" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-1" value="V$Goin handeln" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="260" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-2" value="Händler" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="170" y="355" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-3" value="Daten verifizieren" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="350" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-4" value="Kontostände lesen" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="440" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-5" value="Verbinden/&lt;div&gt;Trennen aus Internet&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="530" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-10" value="Erweitern der&amp;nbsp;&lt;div&gt;Blockchain&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="620" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-13" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-16" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-11" value="Miner" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="535" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-14" value="Entlohnung für&lt;div&gt;Aufwand&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="710" width="140" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

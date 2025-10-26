@@ -1,4 +1,4 @@
-# 
+#
 
 **Über arc42**
 
@@ -12,16 +12,42 @@ contributors. Siehe <https://arc42.org>.
 
 # Einführung und Ziele
 
+Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewissener Rechnenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden.
+
+Es gibt zwei Hauptakteure im Netzwerk: Miner und Händler. Händler sind nur an der Nutzung des Netzes orientiert. Sie geben hauptsächlich Transaktionen in Auftrag. Miner sind all die Systeme, die zur Erweiterung der Blockchain beitragen. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Sowohl Händler als auch Miner können dem Netzwerk jederzeit beitreten und verlassen.
+
+In einem größeren Kontext wird dieses Netzwerk als verteilte Datenbank für den V$Goin genutzt und parallel mit dem System REST-API entwickelt. Die REST-API baut auf dieses Netzwerk auf und soll unseren Kunden einen benutzerfreundlichen Zugang bieten.
+
 ## Aufgabenstellung
+
+Das P2P-Netzwerk dient in erster Linie der Ermöglichung von Handel der Kryptowährung V$Goin in einem sicheren und dezentralen Ansatz. Die Grundanforderungen beziehen sich hauptsächlich auf die Erfüllung der Eigenschaften einer Blockchain. Besonders Erzeugung, Verteilung, Validierung und dauerhafte, unveränderliche Speicherung von Transaktionen.
+
+Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Informatik Studium. Ein wichtiger Teil der Arbeit ist es daher ebenso neue Technologien (Blockchain), Architekturen (der verteilten Systeme) und Programmiersprachen (Go) kennenzulernen.
+
+<div align="center">
+    <img src="images/use-cases-network.drawio.svg" alt="Use Case Diagramm mit zentralen Anforderungen"  height="400">
+</div>
 
 ## Qualitätsziele
 
+| Prioriät | Qualitätsziel                    | Motivation                                                          |
+| -------- | -------------------------------- | ------------------------------------------------------------------- |
+| 1        | Ease-of-use                      | developer                                                           |
+| 2        | Zuverlässigkeit - Fehlertoleranz | Es wird mit Geld gehandelt, ein Fehler kann nicht verkraftet werden |
+| 3        | Effizienz - Kapazität            | Ein Ziel von verteilten Systemen ist Skalierbarkeit                 |
+
+Resource Sharing
+Openness
+Scalability
+Distribution Transparency
+
 ## Stakeholder
 
-| Rolle         | Kontakt         | Erwartungshaltung |
-|---------------|-----------------|-------------------|
-| *\<Rolle-1\>* | *\<Kontakt-1\>* | *\<Erwartung-1\>* |
-| *\<Rolle-2\>* | *\<Kontakt-2\>* | *\<Erwartung-2\>* |
+| Rolle      | Erwartungshaltung                                   |
+| ---------- | --------------------------------------------------- |
+| Entwickler | Lernen der Technologien bei akzeptablem Zeitaufwand |
+| Kunde 1    | _\<Erwartung-2\>_                                   |
+| Kunde 2    | _\<Erwartung-2\>_                                   |
 
 # Randbedingungen
 
@@ -47,38 +73,38 @@ contributors. Siehe <https://arc42.org>.
 
 ## Whitebox Gesamtsystem
 
-***\<Übersichtsdiagramm\>***
+**_\<Übersichtsdiagramm\>_**
 
 Begründung  
-*\<Erläuternder Text\>*
+_\<Erläuternder Text\>_
 
 Enthaltene Bausteine  
-*\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>*
+_\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>_
 
 Wichtige Schnittstellen  
-*\<Beschreibung wichtiger Schnittstellen\>*
+_\<Beschreibung wichtiger Schnittstellen\>_
 
 ### \<Name Blackbox 1\>
 
-*\<Zweck/Verantwortung\>*
+_\<Zweck/Verantwortung\>_
 
-*\<Schnittstelle(n)\>*
+_\<Schnittstelle(n)\>_
 
-*\<(Optional) Qualitäts-/Leistungsmerkmale\>*
+_\<(Optional) Qualitäts-/Leistungsmerkmale\>_
 
-*\<(Optional) Ablageort/Datei(en)\>*
+_\<(Optional) Ablageort/Datei(en)\>_
 
-*\<(Optional) Erfüllte Anforderungen\>*
+_\<(Optional) Erfüllte Anforderungen\>_
 
-*\<(optional) Offene Punkte/Probleme/Risiken\>*
+_\<(optional) Offene Punkte/Probleme/Risiken\>_
 
 ### \<Name Blackbox 2\>
 
-*\<Blackbox-Template\>*
+_\<Blackbox-Template\>_
 
 ### \<Name Blackbox n\>
 
-*\<Blackbox-Template\>*
+_\<Blackbox-Template\>_
 
 ### \<Name Schnittstelle 1\>
 
@@ -88,48 +114,48 @@ Wichtige Schnittstellen
 
 ## Ebene 2
 
-### Whitebox *\<Baustein 1\>*
+### Whitebox _\<Baustein 1\>_
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
-### Whitebox *\<Baustein 2\>*
+### Whitebox _\<Baustein 2\>_
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
 …​
 
-### Whitebox *\<Baustein m\>*
+### Whitebox _\<Baustein m\>_
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
 ## Ebene 3
 
 ### Whitebox \<\_Baustein x.1\_\>
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
 ### Whitebox \<\_Baustein x.2\_\>
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
 ### Whitebox \<\_Baustein y.1\_\>
 
-*\<Whitebox-Template\>*
+_\<Whitebox-Template\>_
 
 # Laufzeitsicht
 
-## *\<Bezeichnung Laufzeitszenario 1\>*
+## _\<Bezeichnung Laufzeitszenario 1\>_
 
-- \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
+-   \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
 
-- \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
-  Szenario erläutern\>
+-   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
+    Szenario erläutern\>
 
-## *\<Bezeichnung Laufzeitszenario 2\>*
+## _\<Bezeichnung Laufzeitszenario 2\>_
 
 …​
 
-## *\<Bezeichnung Laufzeitszenario n\>*
+## _\<Bezeichnung Laufzeitszenario n\>_
 
 …​
 
@@ -137,48 +163,48 @@ Wichtige Schnittstellen
 
 ## Infrastruktur Ebene 1
 
-***\<Übersichtsdiagramm\>***
+**_\<Übersichtsdiagramm\>_**
 
 Begründung  
-*\<Erläuternder Text\>*
+_\<Erläuternder Text\>_
 
 Qualitäts- und/oder Leistungsmerkmale  
-*\<Erläuternder Text\>*
+_\<Erläuternder Text\>_
 
 Zuordnung von Bausteinen zu Infrastruktur  
-*\<Beschreibung der Zuordnung\>*
+_\<Beschreibung der Zuordnung\>_
 
 ## Infrastruktur Ebene 2
 
-### *\<Infrastrukturelement 1\>*
+### _\<Infrastrukturelement 1\>_
 
-*\<Diagramm + Erläuterungen\>*
+_\<Diagramm + Erläuterungen\>_
 
-### *\<Infrastrukturelement 2\>*
+### _\<Infrastrukturelement 2\>_
 
-*\<Diagramm + Erläuterungen\>*
+_\<Diagramm + Erläuterungen\>_
 
 …​
 
-### *\<Infrastrukturelement n\>*
+### _\<Infrastrukturelement n\>_
 
-*\<Diagramm + Erläuterungen\>*
+_\<Diagramm + Erläuterungen\>_
 
 # Querschnittliche Konzepte
 
-## *\<Konzept 1\>*
+## _\<Konzept 1\>_
 
-*\<Erklärung\>*
+_\<Erklärung\>_
 
-## *\<Konzept 2\>*
+## _\<Konzept 2\>_
 
-*\<Erklärung\>*
+_\<Erklärung\>_
 
 …​
 
-## *\<Konzept n\>*
+## _\<Konzept n\>_
 
-*\<Erklärung\>*
+_\<Erklärung\>_
 
 # Architekturentscheidungen
 
@@ -193,6 +219,6 @@ Zuordnung von Bausteinen zu Infrastruktur
 # Glossar
 
 | Begriff         | Definition         |
-|-----------------|--------------------|
-| *\<Begriff-1\>* | *\<Definition-1\>* |
-| *\<Begriff-2*   | *\<Definition-2\>* |
+| --------------- | ------------------ |
+| _\<Begriff-1\>_ | _\<Definition-1\>_ |
+| _\<Begriff-2_   | _\<Definition-2\>_ |
