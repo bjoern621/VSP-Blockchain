@@ -1,4 +1,4 @@
-name: install_generate_grpc
+name: generate_grpc
 author: bennet
 description: "Installs protoc and the go packages to generate stubs and generates stubs"
 inputs:
@@ -13,6 +13,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install taskfiles
+      shell: bash
+      run: |
+        curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | sudo -E bash
+        sudo apt install task
+
     - name: Install protoc
       shell: bash
       run: |
@@ -31,11 +37,5 @@ runs:
     - name: Generate Go protobuf stubs
       shell: bash
       run: |
-        mkdir -p ${{ inputs.generation_folder }}
-        for file in $(find . -name "*.proto"); do
-          protoc \
-            --proto_path=. \
-            --go_out=${{ inputs.generation_folder }} --go_opt=paths=source_relative \
-            --go-grpc_out=${{ inputs.generation_folder }} --go-grpc_opt=paths=source_relative \
-            $file
-        done
+        task miner:proto
+        task rest:proto
