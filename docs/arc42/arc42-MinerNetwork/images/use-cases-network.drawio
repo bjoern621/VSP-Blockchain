@@ -4,53 +4,71 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-1" value="V$Goin handeln" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="260" width="140" height="70" as="geometry" />
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-1" value="Währung handeln" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="360" width="140" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-1">
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-1" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-3">
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-3" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-4">
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-4" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-5">
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-2" value="Händler" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
-          <mxGeometry x="170" y="355" width="30" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-3" value="Daten verifizieren" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="350" width="140" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-4" value="Kontostände lesen" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="440" width="140" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-5" value="Verbinden/&lt;div&gt;Trennen aus Internet&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="530" width="140" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-10" value="Erweitern der&amp;nbsp;&lt;div&gt;Blockchain&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="620" width="140" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-5">
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-5" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="5ail2wS8Us3ytaIy0yRy-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-13" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-10">
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-14">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-14">
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-2" value="Händler" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="575" y="220" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-3" value="Daten verifizieren" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="360" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-5" value="Verbinden/&lt;div&gt;Trennen aus Internet&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="360" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-10" value="Block minen" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1000" y="360" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-5" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-16" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-3">
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-13" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-10" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-11" value="Miner" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
-          <mxGeometry x="560" y="535" width="30" height="60" as="geometry" />
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-14" edge="1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="AdJ3X4EFP70mwGL6Qefu-14" value="Entlohnung für&lt;div&gt;Aufwand&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="710" width="140" height="70" as="geometry" />
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-16" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="AdJ3X4EFP70mwGL6Qefu-3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-11" target="5ail2wS8Us3ytaIy0yRy-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-11" value="Miner" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+          <mxGeometry x="735" y="520" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-14" value="Blockchain synchronisieren" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="680" y="360" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-1" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AdJ3X4EFP70mwGL6Qefu-2" target="AdJ3X4EFP70mwGL6Qefu-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="397" y="200" as="sourcePoint" />
+            <mxPoint x="382" y="530" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="AdJ3X4EFP70mwGL6Qefu-4" value="Kontostände lesen" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="200" y="360" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="5ail2wS8Us3ytaIy0yRy-3" value="Peers finden" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="360" width="140" height="70" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

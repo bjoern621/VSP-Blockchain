@@ -28,6 +28,16 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
     <img src="images/use-cases-network.drawio.svg" alt="Use Case Diagramm mit zentralen Anforderungen"  height="400">
 </div>
 
+| Use Case                             | Beschreibung                                                                                                                                             |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Währung handeln                      | Die Kryptowährung kann gehandelt werden, in dem Währungsbeträge von einem Konto auf ein anderes Konto transferiert werden.                               |
+| Daten verifizieren                   | Miner validieren Transaktionen und Blöcke durch kryptographische Verfahren. Händler wollen Kontostände und Transaktionen überprüfen.                     |
+| Kontostände lesen                    | Die Kontostände seines eigenes Kontos als auch das aller anderen Konten kann gelesen werden.                                                             |
+| Verbinden / Trennen aus dem Internet | Die öffentliche Blockchain soll für jeden aus dem Internet erreichbar sein. Teilnehmer treten dem P2P Netzwerk zu beliebiger Zeit bei oder verlassen es. |
+| Block minen                          | Die Blockchain kann um kryptographisch valide Blöcke erweitert werden. Der Miner wird für den Rechenaufwand belohnt.                                     |
+| Blockchain synchronisieren           | Akteure gleichen ihre lokale Kopie der Blockchain mit anderen Akteuren ab, um auf dem aktuellen Stand zu bleiben.                                        |
+| Peers finden                         | Akteure können vorhandene Peers des Netzwerk entdecken und sich mit ihnen verbinden.                                                                     |
+
 ## Qualitätsziele
 
 | Prioriät | Qualitätsziel        | Motivation                                                          |
