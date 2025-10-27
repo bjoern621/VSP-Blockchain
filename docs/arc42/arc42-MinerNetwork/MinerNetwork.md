@@ -40,11 +40,11 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 
 ## Qualitätsziele
 
-| Prioriät | Qualitätsziel     | Motivation                                                                                                                                                                                                                                                                                                                                                   |
-| -------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1        | Understandability | Wir wollen wir die Konzepte von Blockchain und verteilten Systemen verstehen. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neusten Stand gehalten werden. |
-| 2        | Fehlertoleranz    | V$Goin ist eine Währung. Keine Beträge dürfen unbegründet entstehen oder verschwinden. Bei widersprüchlichen Daten, z.B. wenn zwei Miner gleichzeitig einen Block finden, muss stets ein gemeinsamer Konsens gefunden.                                                                                                                                       |
-| 3        | Skalierbarkeit    | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                           |
+| Prioriät | Qualitätsziel     | Motivation                                                                                                                                                                                                                                                                                                                                               |
+| -------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | Understandability | Wir wollen die Konzepte von Blockchain und verteilten Systemen verstehen. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neusten Stand gehalten werden. |
+| 2        | Fehlertoleranz    | V$Goin ist eine Währung. Keine Beträge dürfen unbegründet entstehen oder verschwinden. Bei widersprüchlichen Daten, z.B. wenn zwei Miner gleichzeitig einen Block finden, muss stets ein gemeinsamer Konsens gefunden.                                                                                                                                   |
+| 3        | Skalierbarkeit    | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                       |
 
 ## Stakeholder
 
@@ -58,7 +58,7 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 | 6      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                    |
 
 <div align="center">
-    <img src="images/stakeholder_quadrant.drawio.svg" alt="Use Case Diagramm mit zentralen Anforderungen"  height="400">
+    <img src="images/stakeholder_quadrant.drawio.svg" alt="Stakeholder Quadrant"  height="400">
 </div>
 
 # Randbedingungen
@@ -77,21 +77,27 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 
 # Kontextabgrenzung
 
-## Fachlicher Kontext
+## Fachlicher & Technischer Kontext
 
-**\<Diagramm und/oder Tabelle\>**
+Der Kontext des Systems ist sehr begrenzt, weswegen fachlicher und technischer Kontext zusammengefasst wurden.
 
-**\<optional: Erläuterung der externen fachlichen Schnittstellen\>**
+<div align="center">
+    <img src="images/business_context.drawio.svg" alt="Fachlicher Kontext"  height="250">
+</div>
 
-## Technischer Kontext
+| Nachbar        | Beschreibung                                                                                                                                                                                                                       | Input                                | Output                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------- |
+| Externer Miner | Ein P2P Netzwerknoten, der nicht im Kernnetzwerk des ICC läuft sondern über das Internet verbunden ist und am Mining interessiert ist. Er kann sowohl unsere als auch eine 3rd-party Implementierung verwenden.                    | Blockchain-Blöcke via gRPC/Internet  | Blockchain via gRPC/Internet |
+| Extern Händler | Ein P2P Netzwerknoten, der nicht im Kernnetzwerk des ICC läuft sondern über das Internet verbunden ist und am Handeln der Kryptowährung interessiert ist. Er kann sowohl unsere als auch eine 3rd-party Implementierung verwenden. | Neue Transaktionen via gRPC/Internet | Blockchain via gRPC/Internet |
+| REST-API       | Technisch gesehen ein Externer Händler. Fachlich hat unser externes System jedoch eine besondere Stellung unter den Externen Händlern.                                                                                             | Neue Transaktionen via gRPC          | Blockchain via gRPC          |
 
-**\<Diagramm oder Tabelle\>**
-
-**\<optional: Erläuterung der externen technischen Schnittstellen\>**
-
-**\<Mapping fachliche auf technische Schnittstellen\>**
+Ein Nachbar kann natürlich auch Externer Miner und Externer Händler zugleich sein.
 
 # Lösungsstrategie
+
+Entwurfsentscheidungen und Lösungsstrategien Gesamtarchitektur
+Technologieentscheidungen, Top-Level-Zerlegungsstrategie, Ansätze Erreichung Qualitätsziele
+Organisationsentscheidungen
 
 # Bausteinsicht
 
