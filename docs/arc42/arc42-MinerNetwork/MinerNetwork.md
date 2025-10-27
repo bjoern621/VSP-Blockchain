@@ -74,6 +74,7 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 | ICC Ressourcen                  | Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/). Dies begrenzt uns z. B. bei der Skalierfähigkeit.                                                  |
 | Zeit                            | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden.       |
 | Budget                          | Die Überwindungskosten Geld auszugeben sind sehr hoch. Es ist wahrscheinlicher, dass Features entfallen als dass zusätzliches Geld ausgegeben wird.                                                                            |
+| Dokumentationspflicht           | Eine ausführliche, vollständige und zum System passende Dokumentation ist explizit gewünscht. Dies könnte sich negativ auf das Zeitkontingent auswirken.                                                                       |
 
 # Kontextabgrenzung
 
@@ -95,9 +96,18 @@ Ein Nachbar kann natürlich auch Externer Miner und Externer Händler zugleich s
 
 # Lösungsstrategie
 
+Beispiele:
 Entwurfsentscheidungen und Lösungsstrategien Gesamtarchitektur
-Technologieentscheidungen, Top-Level-Zerlegungsstrategie, Ansätze Erreichung Qualitätsziele
+Technologieentscheidungen, Top-Level-Zerlegungsstrategie, Ansätze Erreichung Qualitätsziele,
 Organisationsentscheidungen
+TODO entfernern
+
+-   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
+-   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
+-   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht gerecht zu werden
+-   das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
+
+    TODO weiter schreiben (lebendes Dokument)
 
 # Bausteinsicht
 
