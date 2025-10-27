@@ -16,7 +16,7 @@ Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für 
 
 Es gibt zwei Hauptakteure im Netzwerk: Miner und Händler. Händler sind nur an der Nutzung des Netzes orientiert. Sie geben hauptsächlich Transaktionen in Auftrag. Miner sind all die Systeme, die zur Erweiterung der Blockchain beitragen. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Sowohl Händler als auch Miner können dem Netzwerk jederzeit beitreten und verlassen.
 
-In einem größeren Kontext wird dieses Netzwerk als verteilte Datenbank für den V$Goin genutzt und parallel mit dem System REST-API entwickelt. Die REST-API baut auf dieses Netzwerk auf und soll unseren Kunden einen benutzerfreundlichen Zugang bieten.
+In einem größeren Kontext wird dieses Netzwerk als verteilte Datenbank für den V$Goin genutzt und parallel mit dem System REST-API entwickelt. Die REST-API baut auf dieses Netzwerk auf und soll unseren Kunden einen benutzerfreundlicheren Zugang bieten.
 
 ## Aufgabenstellung
 
@@ -31,35 +31,49 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 | Use Case                             | Beschreibung                                                                                                                                             |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Währung handeln                      | Die Kryptowährung kann gehandelt werden, in dem Währungsbeträge von einem Konto auf ein anderes Konto transferiert werden.                               |
-| Daten verifizieren                   | Miner validieren Transaktionen und Blöcke durch kryptographische Verfahren. Händler wollen Kontostände und Transaktionen überprüfen.                     |
 | Kontostände lesen                    | Die Kontostände seines eigenes Kontos als auch das aller anderen Konten kann gelesen werden.                                                             |
+| Daten verifizieren                   | Miner validieren Transaktionen und Blöcke durch kryptographische Verfahren. Händler wollen Kontostände und Transaktionen überprüfen.                     |
 | Verbinden / Trennen aus dem Internet | Die öffentliche Blockchain soll für jeden aus dem Internet erreichbar sein. Teilnehmer treten dem P2P Netzwerk zu beliebiger Zeit bei oder verlassen es. |
-| Block minen                          | Die Blockchain kann um kryptographisch valide Blöcke erweitert werden. Der Miner wird für den Rechenaufwand belohnt.                                     |
 | Blockchain synchronisieren           | Akteure gleichen ihre lokale Kopie der Blockchain mit anderen Akteuren ab, um auf dem aktuellen Stand zu bleiben.                                        |
 | Peers finden                         | Akteure können einen Teil der vorhandenen Peers des Netzwerk entdecken und sich mit ihnen verbinden.                                                     |
+| Block minen                          | Die Blockchain kann um kryptographisch valide Blöcke erweitert werden. Der Miner wird für den Rechenaufwand belohnt.                                     |
 
 ## Qualitätsziele
 
-| Prioriät | Qualitätsziel        | Motivation                                                          |
-| -------- | -------------------- | ------------------------------------------------------------------- |
-| 1        | Understandability    | developer                                                           |
-| 2        | Fehlertoleranz       | Es wird mit Geld gehandelt, ein Fehler kann nicht verkraftet werden |
-| 3        | Resource Utilization | Ein Ziel von verteilten Systemen ist Skalierbarkeit                 |
-
-Resource Sharing
-Openness
-Scalability
-Distribution Transparency
+| Prioriät | Qualitätsziel     | Motivation                                                                                                                                                                                                                                                                                                                                                   |
+| -------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1        | Understandability | Wir wollen wir die Konzepte von Blockchain und verteilten Systemen verstehen. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neusten Stand gehalten werden. |
+| 2        | Fehlertoleranz    | V$Goin ist eine Währung. Keine Beträge dürfen unbegründet entstehen oder verschwinden. Bei widersprüchlichen Daten, z.B. wenn zwei Miner gleichzeitig einen Block finden, muss stets ein gemeinsamer Konsens gefunden.                                                                                                                                       |
+| 3        | Skalierbarkeit    | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                           |
 
 ## Stakeholder
 
-| Rolle      | Erwartungshaltung                                   |
-| ---------- | --------------------------------------------------- |
-| Entwickler | Lernen der Technologien bei akzeptablem Zeitaufwand |
-| Kunde 1    | _\<Erwartung-2\>_                                   |
-| Kunde 2    | _\<Erwartung-2\>_                                   |
+| Nummer | Rolle                            | Erwartungshaltung                                                                                                           |
+| ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                        |
+| 2      | Kunde 1 (Becke)                  | _\<Erwartung-2\>_ TODO                                                                                                      |
+| 3      | Kunde 2 (Frank Matthiesen)       | _\<Erwartung-2\>_ TODO                                                                                                      |
+| 4      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Netzwerk funktioniert jederzeit und ist sicher/vertraunswürdig. |
+| 5      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                   |
+| 6      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                    |
+
+<div align="center">
+    <img src="images/stakeholder_quadrant.drawio.svg" alt="Use Case Diagramm mit zentralen Anforderungen"  height="400">
+</div>
 
 # Randbedingungen
+
+| Einschränkung                   | Erklärung                                                                                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Implementierung in Go           | Im Team wurde sich auf die Go Programming Language geeinigt. Go bietet gute Möglichkeiten um die Ziele verteilter System zu erreichen und hat eine sehr gute Dokumentation / Tutorials.                                        |
+| Interne Kommunikation via RPC   | Die Kommunikation zwischen den Netzwerkknoten muss über Remote Procedure Calls (RPC) erfolgen. RPC ermöglicht schnellere Kommunikation als bspw. REST und ist somit eine gute Wahl für interne Kommunikation.                  |
+| Loadsharing Unterstützung       | Das System muss in der Lage sein, Last zwischen mehreren Knoten zu verteilen. Das Konzept öffentliche Blockchain zielt bereits auf diese Eigenschaft ab, so dass diese Einschränkung keine weiteren Auswirkungen haben sollte. |
+| Service Orchestrierung über RPC | ??? TODO                                                                                                                                                                                                                       |
+| Lauffähig in ICC                | Das System muss in der ICC gehostet werden. Das System muss dort deployed und getestet werden.                                                                                                                                 |
+| Lauffähig in Raum 7.65          | Die Computer im Raum 7.65 sind die Referenzsysteme für die Abnahme. Das System muss dort getestet werden.                                                                                                                      |
+| ICC Ressourcen                  | Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/). Dies begrenzt uns z. B. bei der Skalierfähigkeit.                                                  |
+| Zeit                            | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden.       |
+| Budget                          | Die Überwindungskosten Geld auszugeben sind sehr hoch. Es ist wahrscheinlicher, dass Features entfallen als dass zusätzliches Geld ausgegeben wird.                                                                            |
 
 # Kontextabgrenzung
 
