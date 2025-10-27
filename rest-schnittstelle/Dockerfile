@@ -2,11 +2,11 @@ FROM golang:1.25.3 AS go-build
 WORKDIR /app
 
 COPY go.mod go.sum ./
-COPY vendor ./vendor
+RUN go mod download
 
 COPY . ./
 
-RUN go build -mod=vendor -o start-app
+RUN go build -o start-app
 
 # Go build complete
 

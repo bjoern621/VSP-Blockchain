@@ -10,18 +10,17 @@ tasks:
         cmds:
             - go mod tidy
 
-    vendor:
-        internal: true
-        desc: Run go mod vendor
+    proto:
+        desc: Generate gRPC code from shared .proto files
         cmds:
-            - go mod vendor
+            - protoc --proto_path=../proto --go_out=. --go-grpc_out=. ../proto/*.proto
 
     prepare:
         internal: true
-        desc: Prepare the module by tidying and vendoring dependencies
+        desc: Prepare the module for build
         cmds:
+            - task: proto
             - task: tidy
-            - task: vendor
 
     build:
         desc: Build the docker image for rest-api
