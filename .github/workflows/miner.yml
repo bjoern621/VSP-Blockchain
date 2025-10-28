@@ -26,6 +26,8 @@ jobs:
 
       - name: Check formatting
         uses: ./.github/actions/check_go_formatting
+        with:
+          project: "p2p-blockchain"
 
       - name: Check linting
         uses: golangci/golangci-lint-action@v8

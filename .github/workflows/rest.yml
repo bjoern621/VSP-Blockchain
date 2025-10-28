@@ -26,10 +26,13 @@ jobs:
 
       - name: Check formatting
         uses: ./.github/actions/check_go_formatting
+        with:
+          project: "rest-schnittstelle"
 
       - name: Check linting
         uses: golangci/golangci-lint-action@v8
         with:
+          working-directory: "rest-schnittstelle"
           version: latest
           args: --timeout=3m
 

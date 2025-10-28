@@ -1,6 +1,10 @@
 name: check_go_formatting
 author: bennet
 description: check_go_formatting
+inputs:
+  project:
+    description: "The Project to check. Either p2p-blockchain or rest-schnittstelle"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -8,6 +12,7 @@ runs:
       shell: bash
       id: "check_formatting"
       run: |
+        cd ${{ inputs.project }}
         echo "Checking formatting"
         fmt_files=$(gofmt -l .) # files that are not correctly formatted
         if [ -n "$fmt_files" ]; then
