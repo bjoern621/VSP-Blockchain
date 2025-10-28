@@ -48,13 +48,13 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 
 ## Stakeholder
 
-| Nummer | Rolle                            | Erwartungshaltung                                                                                                            |
-| ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                         |
-| 2      | Kunde                            | _\<Erwartung-2\>_ TODO                                                                                                       |
-| 4      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Netzwerk funktioniert jederzeit und ist sicher/vertrauenswürdig. |
-| 5      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                    |
-| 6      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                     |
+| Nummer | Rolle                            | Erwartungshaltung                                                                                                                                   |
+| ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                                                |
+| 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden. |
+| 4      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Netzwerk funktioniert jederzeit und ist sicher/vertrauenswürdig.                        |
+| 5      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                           |
+| 6      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                                            |
 
 <div align="center">
     <img src="images/stakeholder_quadrant.drawio.svg" alt="Stakeholder Quadrant"  height="400">
@@ -85,11 +85,11 @@ Der Kontext des Systems ist sehr begrenzt, weswegen fachlicher und technischer K
     <img src="images/business_context.drawio.svg" alt="Fachlicher Kontext"  height="250">
 </div>
 
-| Nachbar        | Beschreibung                                                                                                                                                                                                                       | Input                                | Output                       |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------- |
-| Externer Miner | Ein P2P Netzwerknoten, der nicht im Kernnetzwerk des ICC läuft sondern über das Internet verbunden ist und am Mining interessiert ist. Er kann sowohl unsere als auch eine 3rd-party Implementierung verwenden.                    | Blockchain-Blöcke via gRPC/Internet  | Blockchain via gRPC/Internet |
-| Extern Händler | Ein P2P Netzwerknoten, der nicht im Kernnetzwerk des ICC läuft sondern über das Internet verbunden ist und am Handeln der Kryptowährung interessiert ist. Er kann sowohl unsere als auch eine 3rd-party Implementierung verwenden. | Neue Transaktionen via gRPC/Internet | Blockchain via gRPC/Internet |
-| REST-API       | Technisch gesehen ein Externer Händler. Fachlich hat unser externes System jedoch eine besondere Stellung unter den Externen Händlern.                                                                                             | Neue Transaktionen via gRPC          | Blockchain via gRPC          |
+| Nachbar          | Beschreibung                                                                                                                                                                                                                  | Input                                | Output                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------- |
+| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer externen Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke via gRPC/Internet  | Blockchain via gRPC/Internet |
+| Externer Händler | Ein P2P-Netzwerkknoten, der von einer externen Person betrieben wird, ggf. über das Internet verbunden ist und am Handel der Kryptowährung beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden. | Neue Transaktionen via gRPC/Internet | Blockchain via gRPC/Internet |
+| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser externes System jedoch eine besondere Stellung unter den Externen Händlern.                                                                                        | Neue Transaktionen via gRPC          | Blockchain via gRPC          |
 
 Ein Nachbar kann natürlich auch Externer Miner und Externer Händler zugleich sein.
 
