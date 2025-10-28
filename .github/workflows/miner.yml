@@ -32,14 +32,24 @@ jobs:
 
       - name: Run tests
         run: |
+          cd p2p-blockchain
           go test -v ./...
 
       - name: Build app
-        run: go build -v ./...
+        run: |
+          cd p2p-blockchain
+          go build -v ./...
 
-      - name: "Login"
+      - name: Docker login
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/vsp-blockchain:latest
