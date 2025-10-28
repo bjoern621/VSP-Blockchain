@@ -1,84 +1,105 @@
-# Getting Started Development TODO ANPASSEN AN NEUE UMGEBUNG
+# Getting Started Development
 
-Dieses Dokument beschreibt, wie eine lokale Entwicklungsumgebung für PeerDrop eingerichtet wird.
+Dieses Dokument beschreibt, wie eine lokale Entwicklungsumgebung für VSP-Blockchain eingerichtet wird.
 
 ## Voraussetzungen
 
 Stelle sicher, dass die folgenden Programme auf deinem System installiert sind:
 
--   **Node.js:** Für das Frontend. ([Download Node.js](https://nodejs.org/) oder `winget install OpenJS.NodeJS`)
--   **.NET SDK Version 9.0:** Für das Backend. ([Download .NET SDK](https://dotnet.microsoft.com/download) oder `winget install Microsoft.DotNet.SDK.9`)
--   **Docker und Docker Compose:** Für die Containerisierung und die einfache Einrichtung der gesamten Umgebung. ([Download Docker](https://www.docker.com/products/docker-desktop/))
--   **Git:** Zur Versionskontrolle. ([Download Git](https://git-scm.com/downloads))
--   **(Empfehlung) VSCode** Für die Frontendentwicklung. (`winget install Microsoft.VisualStudioCode`)
--   **(Empfehlung) JetBrains Rider** Für die Backendentwicklung. (`winget install JetBrains.Rider`)
+-   **Go 1.25.3** (`winget install GoLang.Go`)
+-   **Protoc** Protocol Buffer Compiler (`winget install Google.Protobuf`)
+-   **Go protoc plugins**
+
+    ```
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    ```
+
+-   **Docker, Docker Desktop und Kubernetes lokal** Für die Containerisierung und lokales Testen der gesamten Umgebung ([Download Docker](https://www.docker.com/products/docker-desktop/))
+-   **Git** Versionskontrolle ([Download Git](https://git-scm.com/downloads) oder `winget install Git.Git`)
+-   **Task** Zum Ausführen der Build und Deployment Tasks ([Download](https://taskfile.dev/docs/installation) oder `winget install Task.Task`)
+-   **Kubernetes CLI** (`winget install Kubernetes.kubectl`)
 
 ## Setup
 
 Klone das Repository, falls noch nicht geschehen:
 
 ```bash
-git clone https://github.com/bjoern621/PeerDrop.git
+git clone https://github.com/bjoern621/VSP-Blockchain.git
 ```
 
-### 1. Review-Umgebung
+Stelle sicher, dass Kubernetes in Docker Desktop aktiviert ist:
 
-Die Review- (Stage-) Umgebung basiert auf einer einzigen Docker Compose Datei. Um den Branch schnell zu testen kann Docker Compose Up direkt in VSCode genutzt werden:
+-   Docker Desktop öffnen → Settings → Kubernetes → "Enable Kubernetes" aktivieren
 
-#### Docker Compose in VSCode:
+## 1. Review/Test-Umgebung (Kubernetes Deployment)
 
-![alt text](image-2.png)
+Das komplette System kann in einem lokalen Kubernetes-Cluster deployed werden. Diese Umgebung sollte zum testen / reviewen eines Branches genutzt werden.
 
-In der Review-Umgebung sind folgende Schnittstellen verfügbar:
+### Deployment
 
--   Frontend: [`http://localhost:80`](http://localhost:80)
--   Backend: [`http://localhost:8080`](http://localhost:8080)
--   Postgres Datenbank: `localhost:5432`
+1. Docker Desktop & lokales Cluster starten
+2. `kubectl config use-context docker-desktop` - Zum lokalen Cluster wechseln
+3. `task deploy` im Root-Directory
 
-### 2. Entwicklung-Umgebung
+`task deploy`...
 
-Während der aktiven Entwicklung sollte nicht mit der Docker Compose Datei gearbeitet werden, da diese z.B. kein [Hot Reload](https://www.it-intouch.de/glossar/hot-reload/) unterstützt. Die Umgebung für die Entwicklung kann wie folgt eingerichtet werden.
+1. Baut die Docker Images für REST-API und Miner
+2. Löscht alte Deployments (falls vorhanden)
+3. Deployed das System in den `vsp-blockchain` Kubernetes Namespace
 
-_Frontend_
+### Zugriff auf die Services
 
-1. Führe `npm install` in `<base_dir>/frontend/` aus.
-2. Starte das Frontend z.B. **F5**-Taste in VSCode.
-3. Frontend ist unter [`http://localhost:5173`](http://localhost:5173) verfügbar.
+Nach erfolgreichem Deployment sind folgende Services verfügbar:
 
----
+-   **REST API**: [`http://localhost:8080`](http://localhost:8080)
+-   **Miner Pods**: 3 StatefulSet Pods mit gRPC auf Port 50051
 
-_Backend_
+## 2. Lokale Entwicklung
 
-1. Öffne das Backend in JetBrains Rider. (**Öffne die .sln-Datei unter `<base_dir>/backend/backend.sln` nicht das gesamte Projekt!**)
-2. Starte das Backend über die Konfiguration oben rechts:
+### 2.1 Debuggen
 
-![alt text](image-3.png)
+Zum Debuggen in VS Code wird **Delve** benötigt. Falls noch nicht installiert:
 
-3. Das Backend ist verfügbar unter [`http://localhost:5023`](http://localhost:5023).
+```bash
+go install github.com/go-delve/delve/cmd/dlv@latest
+```
 
----
+Das Projekt enthält bereits vorkonfigurierte Debug-Konfigurationen in `.vscode/launch.json`:
 
-_Datenbank_
+-   **Launch P2P-Blockchain** - Startet den Miner im Debug-Modus
+-   **Launch REST-Schnittstelle** - Startet die REST-API im Debug-Modus
 
-1. Nutze "Compose Up - Select Services" ([siehe dieses Bild](#docker-compose-in-vscode:)) in VSCode und wähle nur die Datenbank aus.
-2. Die lokale Entwicklungsdatenbank ist unter `localhost:5432` verfügbar.
+Die Services werden standardmäßig mit `LOG_LEVEL=DEBUG` gestartet, dies kann in der `launch.json` geändert werden.
 
-Beim Erstellen der Datenbank wird das aktuelle Schema aus `<base_dir>/database/database_ddl/` geladen. Das Schema kann manuell geändert werden, besser ist aber ein Mapping in Rider zu erstellen. So kann das Datenbank Schema leichter aktualisiert werden:
+### 2.2 Nur Starten
 
-1. In Rider öffne **View** > **Tool Windows** > **Database**.
-2. Klicke **Connect to database...**.
-3. Wähle **Add data source manually** und **Next**.
-4. Suche **PostgreSQL** als **Data source** aus und wähle **Next**.
-5. User: **postgres** und Password: **passwort**, dann **Connect to Database**.
-6. Im Database Menü auf **New** (+) und **DDL Data Source**.
-7. **Add directories or DDL files**, wähle den Ordner `<base_dir>/database/database_ddl/`, dann **OK**.
-8. Wähle **Properties** (DB Symbol, rechts neben +) > **DDL Mappings**.
-9. Füge ein neues Mapping zwischen **postgres@localhost** und **DDL data source** hinzu.
-10. Wähle unter **Scope** **peerdrop** > **public** aus. (Drücke **Refresh** (Kreis Symbol), wenn **public** nicht angezeigt wird.)
-11. Drücke **OK**. Wähle **Later**.
-12. Rechtsklick auf **postgres@localhost** > **DDL Mapping** > **Apply from ...** > **Execute**. <= **Dieser Schritt aktualisiert das lokale Datenbankschema mit dem aktuellen Schema des Projekts**.
-13. Wähle **Properties** > **postgres@localhost** > **Schemas**.
-14. Entferne alle Haken und setze den Haken bei **peerdrop** > **public**. Wähle **OK** und **Yes**.
+Alternativ können die Services auch nur gestartet werden. Dann sind aber keine Breakpoints, etc. möglich.
 
-Jetzt ist die Entwicklungsumgebung komplett eingerichtet.
+#### REST-API lokal starten
 
+```bash
+cd rest-schnittstelle
+go run main.go
+```
+
+REST-API läuft auf [`http://localhost:8080`](http://localhost:8080)
+
+#### Miner lokal starten
+
+```bash
+cd p2p-blockchain
+go run main.go
+```
+
+Miner läuft auf Port `50051` (gRPC)
+
+### 2.3. Protocol Buffers neu generieren
+
+Falls `.proto` Dateien geändert wurden oder die Ordner \[p2p-blockchain|rest-schnittstelle\]/internal/pb/ fehlen bzw. nicht aktuell sind:
+
+```bash
+cd <root>
+task miner:proto
+task rest:proto
+```

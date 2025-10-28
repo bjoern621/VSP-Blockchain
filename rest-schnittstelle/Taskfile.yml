@@ -1,0 +1,29 @@
+version: "3"
+
+vars:
+    DOCKER_TAG: latest
+
+tasks:
+    tidy:
+        internal: true
+        desc: Run go mod tidy
+        cmds:
+            - go mod tidy
+
+    proto:
+        desc: Generate gRPC code from shared .proto files
+        cmds:
+            - protoc --proto_path=../proto --go_out=. --go-grpc_out=. ../proto/*.proto
+
+    prepare:
+        internal: true
+        desc: Prepare the module for build
+        cmds:
+            - task: proto
+            - task: tidy
+
+    build:
+        desc: Build the docker image for rest-api
+        cmds:
+            - task: prepare
+            - docker build -t vsp-blockchain/rest-api:{{.DOCKER_TAG}} .

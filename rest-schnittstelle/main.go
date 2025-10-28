@@ -1,0 +1,44 @@
+package main
+
+import (
+	"context"
+	"net/http"
+
+	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
+	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
+	"s3b/vsp-blockchain/rest-api/internal/pb"
+
+	"bjoernblessin.de/go-utils/util/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+func main() {
+	logger.Infof("Running...")
+
+	// gRPC Client Setup
+
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Errorf("failed to create connection to gRPC server: %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewTestClient(conn)
+	resp, err := client.TestRPC(context.Background(), &pb.TestRequest{Message: "Hello from REST Schnittstelle"})
+	if err != nil {
+		logger.Warnf("gRPC call failed: %v", err)
+	} else {
+		logger.Infof("gRPC response: %s", resp.Message)
+	}
+
+	// REST API Server
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /test", handlers.TestHandler)
+
+	handler := middleware.Logging(mux)
+
+	err = http.ListenAndServe(":8080", handler)
+	logger.Errorf("%v", err)
+}
