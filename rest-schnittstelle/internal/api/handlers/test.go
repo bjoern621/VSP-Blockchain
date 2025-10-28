@@ -3,5 +3,8 @@ package handlers
 import "net/http"
 
 func TestHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Test successful"))
+	_, err := w.Write([]byte("Test successful"))
+	if err != nil {
+		return
+	}
 }
