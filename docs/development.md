@@ -8,6 +8,13 @@ Stelle sicher, dass die folgenden Programme auf deinem System installiert sind:
 
 -   **Go 1.25.3** (`winget install GoLang.Go`)
 -   **Protoc** Protocol Buffer Compiler (`winget install Google.Protobuf`)
+-   **Go protoc plugins**
+
+    ```
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    ```
+
 -   **Docker, Docker Desktop und Kubernetes lokal** Für die Containerisierung und lokales Testen der gesamten Umgebung ([Download Docker](https://www.docker.com/products/docker-desktop/))
 -   **Git** Versionskontrolle ([Download Git](https://git-scm.com/downloads) oder `winget install Git.Git`)
 -   **Task** Zum Ausführen der Build und Deployment Tasks ([Download](https://taskfile.dev/docs/installation) oder `winget install Task.Task`)
@@ -89,9 +96,10 @@ Miner läuft auf Port `50051` (gRPC)
 
 ### 2.3. Protocol Buffers neu generieren
 
-Falls `.proto` Dateien geändert wurden:
+Falls `.proto` Dateien geändert wurden oder die Ordner \[p2p-blockchain|rest-schnittstelle\]/internal/pb/ fehlen bzw. nicht aktuell sind:
 
 ```bash
-cd /
+cd <root>
 task miner:proto
+task rest:proto
 ```
