@@ -17,5 +17,5 @@ message TestResponse {
 }
 
 message TestTest {
-  string wow2 = 1;
+  string wow3 = 1;
 }
