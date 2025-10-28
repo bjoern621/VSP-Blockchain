@@ -42,7 +42,7 @@ jobs:
       - name: Build and Test
         uses: ./.github/actions/test-and-build
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./p2p-blockchain/
