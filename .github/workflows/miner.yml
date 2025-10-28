@@ -13,6 +13,9 @@ on:
       - "p2p-blockchain/**"
       - "proto/**"
 
+env:
+  PROJECT_FOLDER_NAME: p2p-blockchain
+
 jobs:
   build-and-test:
     name: "Build, Lint and test"
@@ -27,24 +30,17 @@ jobs:
       - name: Check formatting
         uses: ./.github/actions/check_go_formatting
         with:
-          project: "p2p-blockchain"
+          project: ${{ env.PROJECT_FOLDER_NAME }}
 
       - name: Check linting
         uses: golangci/golangci-lint-action@v8
         with:
-          working-directory: "p2p-blockchain"
+          working-directory: ${{ env.PROJECT_FOLDER_NAME }}
           version: latest
           args: --timeout=3m
 
-      - name: Run tests
-        run: |
-          cd p2p-blockchain
-          go test -v ./...
-
-      - name: Build app
-        run: |
-          cd p2p-blockchain
-          go build -v ./...
+      - name: Build and Test
+        uses: ./.github/actions/test-and-build
 
       - name: Docker login
         uses: docker/login-action@v3

@@ -13,6 +13,9 @@ on:
       - "rest-schnittstelle/**"
       - "proto/**"
 
+env:
+  PROJECT_FOLDER_NAME: rest-schnittstelle
+
 jobs:
   build-and-test:
     name: "Build, Lint and test"
@@ -27,21 +30,17 @@ jobs:
       - name: Check formatting
         uses: ./.github/actions/check_go_formatting
         with:
-          project: "rest-schnittstelle"
+          project: ${{ env.PROJECT_FOLDER_NAME }}
 
       - name: Check linting
         uses: golangci/golangci-lint-action@v8
         with:
-          working-directory: "rest-schnittstelle"
+          working-directory: ${{ env.PROJECT_FOLDER_NAME }}
           version: latest
           args: --timeout=3m
 
-      - name: Run tests
-        run: |
-          go test -v ./...
-
-      - name: Build app
-        run: go build -v ./...
+      - name: Build and Test
+        uses: ./.github/actions/test-and-build
 
       - name: Docker login
         uses: docker/login-action@v3
