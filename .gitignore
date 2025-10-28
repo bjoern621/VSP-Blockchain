@@ -1,1 +1,5 @@
-.idea
+main #remove linux build output
+.idea/.gitignore
+.idea/workspace.xml
+.idea/git_toolbox_prj.xml
+.idea/vcs.xml
