@@ -51,8 +51,7 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 | Nummer | Rolle                            | Erwartungshaltung                                                                                                            |
 | ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                         |
-| 2      | Kunde 1 (Becke)                  | _\<Erwartung-2\>_ TODO                                                                                                       |
-| 3      | Kunde 2 (Frank Matthiesen)       | _\<Erwartung-2\>_ TODO                                                                                                       |
+| 2      | Kunde                            | _\<Erwartung-2\>_ TODO                                                                                                       |
 | 4      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Netzwerk funktioniert jederzeit und ist sicher/vertrauenswürdig. |
 | 5      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                    |
 | 6      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                     |
