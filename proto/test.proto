@@ -15,7 +15,3 @@ message TestRequest {
 message TestResponse {
     string message = 1;
 }
-
-message TestTest {
-  string wow7 = 1;
-}
