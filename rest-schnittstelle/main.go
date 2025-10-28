@@ -22,7 +22,12 @@ func main() {
 	if err != nil {
 		logger.Errorf("failed to create connection to gRPC server: %v", err)
 	}
-	defer conn.Close()
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			logger.Errorf("failed to close gRPC connection: %v", err)
+		}
+	}(conn)
 
 	client := pb.NewTestClient(conn)
 	resp, err := client.TestRPC(context.Background(), &pb.TestRequest{Message: "Hello from REST Schnittstelle"})
