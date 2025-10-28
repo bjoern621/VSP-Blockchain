@@ -54,4 +54,4 @@ jobs:
         with:
           context: ./p2p-blockchain/
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/vsp-blockchain:latest
+          tags: ghcr.io/${{ github.repository_owner }}/miner-vsp-blockchain:latest
