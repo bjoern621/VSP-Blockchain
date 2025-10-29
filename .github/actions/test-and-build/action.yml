@@ -1,0 +1,17 @@
+name: test-and-build
+author: bennet
+description: test-and-build
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      shell: bash
+      run: |
+        cd $PROJECT_FOLDER_NAME
+        go test -v ./...
+
+    - name: Build app
+      shell: bash
+      run: |
+        cd $PROJECT_FOLDER_NAME
+        go build -v ./...
