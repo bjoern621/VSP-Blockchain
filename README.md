@@ -1,118 +1,17 @@
 # VSP-Blockchain
 
-## Übersicht
+VSP-Blockchain ist ein verteiltes Blockchain-System zur Abwicklung imaginärer Transaktionen. Das System ermöglicht die Überweisung von Beträgen zwischen Konten in einem dezentralen Netzwerk. Dieses Projekt besteht aus zwei weitgehend getrennten Teilsystem.
 
-VSP-Blockchain ist ein verteiltes Blockchain-System zur Abwicklung imaginärer Transaktionen. Das System ermöglicht die Überweisung von Beträgen zwischen Konten in einem dezentralen Netzwerk mit garantierter Konsistenz und Nachvollziehbarkeit.
+## P2P-Netzwerk
 
-## Systemarchitektur
+Ein Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder Teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewisser Rechenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden. (vgl. [P2P-Netzwerk Dokumentation](/docs/arc42/arc42-MinerNetwork/MinerNetwork.md))
 
-### Komponenten
+## REST API
 
-Das System besteht aus folgenden Hauptkomponenten:
+System, das der Verwaltung und Abwicklung von digitalen Währungstransaktionen zwischen registrierten Konto-Inhabern dient und den Nutzern die Interaktion mit der in der Blockchain repräsentierte Währung erleichtert.  
+Kernfunktionalität ist die Erstellung von Nutzerkonten, die Anzeige von Kontoständen und Transaktionsverläufen sowie die Durchführung und Nachverfolgung von Überweisungen zwischen Konten. (vgl. [REST API Dokumentation](/docs/arc42/arc42-Api/API.md))
 
-#### 1. Blockchain-Node
-- Verwaltet die lokale Kopie der Blockchain
-- Validiert eingehende Transaktionen
-- Führt Konsensus-Mechanismus aus
-- Synchronisiert mit anderen Nodes
+# Wichtige Links
 
-#### 2. REST API Gateway
-- Externes Interface für Client-Anwendungen
-- Authentifizierung und Autorisierung
-- Request-Validierung
-- Rate-Limiting
-
-#### 3. RPC Communication Layer
-- Interne Kommunikation zwischen Nodes
-- Synchronisation der Blockchain
-- Propagierung neuer Blöcke und Transaktionen
-- Konsensus-Nachrichten
-
-#### 4. Transaction Pool
-- Speichert noch nicht verarbeitete Transaktionen
-- Priorisierung nach Zeitstempel
-- Duplikatserkennung
-
-#### 5. Persistenz-Schicht
-- Speicherung der Blockchain-Daten
-- Kontostände (Account Ledger)
-- Transaktionshistorie
-
-## Transaktionsmodell
-
-### Transaktionsablauf
-
-1. **Transaktionserstellung**: Client erstellt eine Transaktion über REST API
-2. **Validierung**: Node prüft Gültigkeit (Signatur, Kontostand, Format)
-3. **Broadcasting**: Transaktion wird via RPC an alle Nodes verteilt
-4. **Pool-Aufnahme**: Transaktion wird in den Transaction Pool aufgenommen
-5. **Mining/Blockbildung**: Transaktionen werden zu einem Block zusammengefasst
-6. **Konsensus**: Nodes einigen sich auf den neuen Block
-7. **Blockchain-Update**: Block wird zur Blockchain hinzugefügt
-8. **Kontoupdate**: Kontostände werden aktualisiert
-
-## RPC Kommunikationsprotokoll
-
-### Node-zu-Node Kommunikation
-
-Das interne RPC-Protokoll verwendet ein binäres Format für effiziente Kommunikation.
-
-### Konsensus-Mechanismus
-
-Das System verwendet einen **Proof-of-Authority (PoA)** Konsensus:
-
-1. Autorisierte Nodes können neue Blöcke vorschlagen
-2. Mindestens 2/3 der Nodes müssen zustimmen
-3. Bei Zustimmung wird Block zur Blockchain hinzugefügt
-4. Konflikte werden durch Timestamp und Node-Priorität aufgelöst
-
-## Monitoring und Logging
-
-### Logs
-
-Logs werden in folgende Kategorien unterteilt:
-
-- **transaction.log**: Alle Transaktionsereignisse
-- **consensus.log**: Konsensus-Aktivitäten
-- **rpc.log**: RPC-Kommunikation
-- **rest.log**: REST API Zugriffe
-- **error.log**: Fehler und Exceptions
-
-## Performance
-
-### Benchmarks
-
-Typische Performance auf Standard-Hardware:
-
-- **Transaktions-Durchsatz**: 100-500 TPS
-- **Block-Zeit**: 10 Sekunden (konfigurierbar)
-- **REST API Latenz**: < 50ms (lokale Anfragen)
-- **RPC Latenz**: < 10ms (internes Netzwerk)
-- **Maximale Nodes**: 100+ (Proof-of-Authority)
-
-### Optimierungen
-
-- Verwende SSD-Speicher für Datenbank
-- Aktiviere Connection-Pooling
-- Nutze Redis für Transaction Pool
-- Implementiere Caching für häufige Abfragen
-
-## Roadmap
-
-### Version 1.0 (Aktuell)
-- [x] Grundlegende Blockchain-Funktionalität
-- [x] REST API
-- [x] RPC-Kommunikation
-- [x] Proof-of-Authority Konsensus
-
-### Version 2.0 (Geplant)
-- [ ] Smart Contracts
-- [ ] Web-Dashboard
-- [ ] Mobile Apps
-- [ ] Verbesserte Performance (1000+ TPS)
-- [ ] Shard-basierte Skalierung
-
-### Version 3.0 (Zukunft)
-- [ ] Cross-Chain Interoperabilität
-- [ ] Zero-Knowledge Proofs
-- [ ] Quantenresistente Kryptographie
+- [Kanban Board](https://github.com/users/bjoern621/projects/5/views/1)
+- [Projektplan](https://github.com/users/bjoern621/projects/5/views/5)
