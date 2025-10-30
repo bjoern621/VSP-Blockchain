@@ -29,4 +29,4 @@ tasks:
     k8s-deploy:
         internal: true
         cmds:
-            - kubectl apply -f kubernetes-deployment.yaml
+            - kubectl apply -f kubernetes-deployment-local.yaml
