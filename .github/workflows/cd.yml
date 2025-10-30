@@ -36,6 +36,9 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Setup project
+              uses: ./.github/actions/setup
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
