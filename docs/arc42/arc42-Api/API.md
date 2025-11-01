@@ -15,10 +15,10 @@ contributors. Siehe <https://arc42.org>.
 ## Aufgabenstellung
 ### Inhalt
 
-Das System dient der Verwaltung und Abwicklung von digitalen Währungstransaktionen zwischen registrierten Konto-Inhabern und erleichtert den Nutzern die Interaktion mit der in der Blockchain repräsentierte Währung.  
-Kernfunktionalität ist die Erstellung von Nutzerkonten, die Anzeige von Kontoständen und Transaktionsverläufen sowie die Durchführung und Nachverfolgung von Überweisungen zwischen Konten.
+Das System dient der Verwaltung und Abwicklung von digitalen Währungstransaktionen zwischen Nutzern und erleichtert den Nutzern die Interaktion mit der in der Blockchain repräsentierte Währung.  
+Kernfunktionalität ist das Anzeigen von Kontoständen und Transaktionsverläufen sowie die Durchführung und Nachverfolgung von Überweisungen zwischen Nutzern.
 
-Treibende Kräfte sind die Notwendigkeit einer einfachen, transparenten und zuverlässigen Plattform für Transaktionen sowie die Nachvollziehbarkeit aller Bewegungen im System.
+Treibende Kräfte sind die Notwendigkeit einer einfachen, transparenten und zuverlässigen Plattform für Transaktionen sowie die Nachvollziehbarkeit aller Bewegungen im System unserers V$Goins.
 
 **Verweise auf Anforderungsdokumente:**
 - *User Stories, abgelegt in den [GitHub Issues](https://github.com/users/bjoern621/projects/5)
@@ -36,12 +36,11 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 
 ### Form
 
-| **Use Case / Aufgabe** | **Beschreibung** |
-|-------------------------|------------------|
-| Konto erstellen | Ein Nutzer kann ein persönliches Konto anlegen, das im System registriert wird und Transaktionen empfangen kann. |
-| Währung senden | Ein Konto-Inhaber kann einem anderen Konto-Inhaber einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. |
-| Kontostand anzeigen | Ein Konto-Inhaber kann seinen aktuellen Kontostand einsehen. |
-| Transaktionsverlauf anzeigen | Ein Konto-Inhaber kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge. |
+| **Use Case / Aufgabe** | **Beschreibung**                                                                                                                                                         |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. |
+| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen.                                                                                                                    |
+| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.                                                     |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
 
@@ -59,18 +58,18 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 | **Priorität** | **Qualitätsziel**           | **Beschreibung**                                                                                                                                                                    |
 |---------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1             | **Sicherheit** | Alle Transaktionen müssen vor unbefugtem Zugriff geschützt sein. Authentifizierung und Autorisierung sind zentrale Punkte des Systems.                                              |
-| 2             | **Zuverlässigkeit** | Das System muss Transaktionen konsistent und fehlerfrei verarbeiten. Datenintegrität hat höchste Priorität, insbesondere bei Konto- und Transaktionsänderungen.                     |
+| 2             | **Zuverlässigkeit** | Das System muss Transaktionen konsistent und fehlerfrei verarbeiten. Datenintegrität hat höchste Priorität, insbesondere bei Transaktionen.                                         |
 | 3             | **Wartbarkeit** | Der Quellcode und die Systemarchitektur sollen modular aufgebaut sein, um zukünftige Änderungen (z. B. neue Währungsarten oder Sicherheitsfunktionen) leicht integrieren zu können. |
 | 4             | **Performance** | Transaktionen und Kontostandsabfragen sollen ohne merkliche Verzögerung ausgeführt werden, um ein reaktionsschnelles Nutzererlebnis zu gewährleisten.                               |
 
 ---
 ## Stakeholder
 
-| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                   |
-|---------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Kontoverwaltung, Überweisungen und Transaktionshistorie zuverlässig bereitstellt. |
-| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen.      |
-| **Entwicklungsteam** | TBD                   | Erwartet eine klare technische Architektur, testbare Anforderungen und stabile Entwicklungs- und Deployment-Workflows.              |
+| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                  |
+|---------------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt. |
+| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen.     |
+| **Entwicklungsteam** | TBD                   | Erwartet eine klare technische Architektur, testbare Anforderungen und stabile Entwicklungs- und Deployment-Workflows.             |
 
 # Randbedingungen
 
@@ -113,11 +112,11 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ## Fachlicher Kontext
 
 
-| **Kommunikationspartner**                       | **Eingabe an das System**                             | **Ausgabe vom System** |
-|-------------------------------------------------|-------------------------------------------------------|--------------------------|
-| **Konto-Inhaber (Endnutzer)**                   | Signaturen, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand |
-| **V$Goin Blockchain-System**                    | Transaktionsdaten, Signaturen  | Transaktionsbestätigungen, Block-Hashes, Event-Logs |
-| **Monitoring- oder Logging-Systeme**    | Statusabfragen, Metriken                              | Logs, Health-Check-Responses |
+| **Kommunikationspartner**                      | **Eingabe an das System**                             | **Ausgabe vom System** |
+|------------------------------------------------|-------------------------------------------------------|--------------------------|
+| **Endnutzer**                   | Signaturen, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand |
+| **V$Goin Blockchain-System**                   | Transaktionsdaten, Signaturen  | Transaktionsbestätigungen, Block-Hashes, Event-Logs |
+| **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                              | Logs, Health-Check-Responses |
 
 ## Technischer Kontext
 ````plantuml
