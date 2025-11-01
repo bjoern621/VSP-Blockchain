@@ -138,7 +138,7 @@ browser --( apiInterface : HTTPS
 ' REST API hängt von Blockchain ab
 interface " " as blockchainApi
 blockchainApi -- blockChain
-api --( blockchainApi : RPC
+api --( blockchainApi : gRPC
 @enduml
 ````
 | **Kommunikationspartner** | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung** |
@@ -182,7 +182,30 @@ api --( blockchainApi : RPC
 ## Whitebox Gesamtsystem
 
 ***\<Übersichtsdiagramm\>***
+````plantuml
+@startuml
+node "Browser Frontend" as browser
+component "REST API Service" as api {
+component "Transaktion" as transaction
+component "Transaktionsverlauf" as verlauf
+component "Kontostand" as konto
+component "Blockchain" as blocks
+verlauf --> blocks: liest Transaktionsverlauf aus
+konto --> blocks: liest Kontostand aus
+}
+node "V$Goin-Blockchain" as blockChain
 
+
+'Browser zu Server
+browser -down-> transaction: führt Transaktion aus
+browser --> verlauf : fragt Verlauf ab
+browser --> konto : fragt Kontostand ab
+
+'Server zu Blockchain
+transaction -down--> blockChain: gibt Transaktion weiter
+blocks -> blockChain: holt sich Blocks
+@enduml
+````
 Begründung  
 *\<Erläuternder Text\>*
 
