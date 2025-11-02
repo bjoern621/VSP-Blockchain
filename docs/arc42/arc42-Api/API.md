@@ -203,7 +203,8 @@ browser --> konto : fragt Kontostand ab
 
 'Server zu Blockchain
 transaction -down--> blockChain: gibt Transaktion weiter
-blocks -> blockChain: holt sich Blocks
+blocks -> blockChain: Blöcke werden weitergegeben
+blockChain -> blocks
 @enduml
 ````
 Begründung  
