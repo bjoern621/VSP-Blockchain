@@ -1,0 +1,22 @@
+name: connect_to_open_vpn
+author: bennet
+description: connect_to_open_vpn
+runs:
+  using: composite
+  steps:
+    - name: "Install openvpn"
+      shell: bash
+      run: |
+        sudo apt-get update && sudo apt-get install -y openvpn
+
+    - name: "Set config"
+      shell: bash
+      run: |
+        echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
+      env:
+        OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+
+    - name: "Connect"
+      shell: bash
+      run: |
+        sudo openvpn --config vpn.ovpn
