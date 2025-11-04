@@ -147,7 +147,7 @@ api --( blockchainApi : gRPC
 | **V$Goin Blockchain-System** | RPC | JSON | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen |
 
 # Lösungsstrategie
-## 2.1 Technologieentscheidungen
+## Technologieentscheidungen
 - **Programmiersprache:** Go  
   Go wurde gewählt, da es eine hoch performante Sprache ist und eingebaute Nebenläufigkeit (Goroutines) besitzt.
 
@@ -161,21 +161,21 @@ api --( blockchainApi : gRPC
 
 ---
 
-## 2.2 Top-Level-Architekturentscheidungen
+## Top-Level-Architekturentscheidungen
 - **Architekturmuster:**  
   Mehrschichtige Client-Server Architektur mit einem Frontend für die Nutzer, einem Backend, welches die Anfragen der Nutzer bearbeitet und mit einem weiteren Blockchain-Backend, welches die Währung repräsentiert, interagiert.
 
 
 ---
 
-## 2.3 Entscheidungen zur Erreichung der wichtigsten Qualitätsziele
+## Entscheidungen zur Erreichung der wichtigsten Qualitätsziele
 
-| **Priorität** | **Qualitätsziel** | **Maßnahmen / Architekturentscheidungen** |
-|---------------|------------------|--------------------------------------------|
-| **1** | **Sicherheit** | Verwendung von Signaturen für Transaktionsauthentizität. Alle gRPC-Verbindungen laufen über TLS. REST-Endpunkte sind authentifiziert und autorisiert. |
+| **Priorität** | **Qualitätsziel** | **Maßnahmen / Architekturentscheidungen**                                                                                                                                                |
+|---------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **1** | **Sicherheit** | Verwendung von Signaturen für Transaktionsauthentizität. Alle gRPC-Verbindungen laufen über TLS. REST-Endpunkte sind authentifiziert und autorisiert.                                    |
 | **2** | **Zuverlässigkeit** | Validierung jeder Transaktion durch Mehrheitskonsens der Nodes. Unveränderliche Hash-Ketten sichern Datenintegrität. Fehlerbehandlung und Wiederholungsmechanismen für Netzwerkausfälle. |
-| **3** | **Wartbarkeit** | Strikte Modultrennung. |
-| **4** | **Performance** | gRPC für effiziente Node-Kommunikation. Nebenläufige Verarbeitung (Goroutines) für Transaktionsvalidierung. |
+| **3** | **Wartbarkeit** | Strikte Modultrennung. Pipeline Stages für Code Qualität                                                                                                                                 |
+| **4** | **Performance** | gRPC für effiziente Node-Kommunikation. Nebenläufige Verarbeitung (Goroutines) für Transaktionsvalidierung.                                                                              |
 
 # Bausteinsicht
 
