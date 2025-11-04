@@ -96,8 +96,10 @@ jobs:
                   mkdir -p ~/.kube
                   printf "%s" "$KUBE_CONFIG" > ~/.kube/config
 
-            - name: Connect to HAW-VPN
+            - name: Connect to VPN
               uses: ./.github/actions/connect_to_open_vpn
+              with:
+                openvpn_config: ${{ secrets.OPENVPN_CONFIG }}
 
             - name: Deploy to Kubernetes
               run: |

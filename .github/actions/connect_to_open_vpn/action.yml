@@ -1,6 +1,10 @@
 name: connect_to_open_vpn
 author: bennet
 description: connect_to_open_vpn
+inputs:
+  openvpn_config:
+    description: 'Base64 encoded OpenVPN configuration'
+    required: true
 runs:
   using: composite
   steps:
@@ -14,7 +18,7 @@ runs:
       run: |
         echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
       env:
-        OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+        OPENVPN_CONFIG: ${{ inputs.openvpn_config }}
 
     - name: "Connect"
       shell: bash
