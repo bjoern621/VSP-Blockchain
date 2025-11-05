@@ -100,7 +100,7 @@ jobs:
               run: |
                 echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
               env:
-                $OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+                OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
             - name: Install OpenVPN
               run: |
