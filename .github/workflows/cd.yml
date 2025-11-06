@@ -116,6 +116,7 @@ jobs:
               env:
                 KUBECONFIG: "~/.kube/config"
               run: |
+                  export KUBECONFIG="${HOME}/.kube/config"
                   cat ~/.kube/config
                   kubectl config view
                   kubectl config get-contexts
