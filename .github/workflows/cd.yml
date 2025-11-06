@@ -96,6 +96,7 @@ jobs:
                   mkdir -p ~/.kube
                   printf "%s" "$KUBE_CONFIG" > ~/.kube/config
                   export KUBECONFIG="~/.kube/config"
+                  echo $KUBECONFIG
 
             - name: Get OpenVPN Config from Secrets
               run: |
