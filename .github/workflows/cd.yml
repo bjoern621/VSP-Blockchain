@@ -94,12 +94,11 @@ jobs:
                   KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
               run: |
                   mkdir -p ~/.kube
-                  printf "%s" "$KUBE_CONFIG" > ~/.kube/config
+                  echo "$KUBE_CONFIG" | base64 --decode > ~/.kube/config
 
             - name: Get OpenVPN Config from Secrets
               run: |
                 echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
-                echo $KUBECONFIG
               env:
                 OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
@@ -117,7 +116,7 @@ jobs:
               env:
                 KUBECONFIG: "~/.kube/config"
               run: |
-                  cat ~/.kube/config | base64
+                  cat ~/.kube/config
                   kubectl config get-contexts
                   kubectl get nodes
                   kubectl apply -f kubernetes-deployment-prod.yaml
