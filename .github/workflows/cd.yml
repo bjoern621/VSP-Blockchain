@@ -117,7 +117,7 @@ jobs:
               env:
                 KUBECONFIG: "~/.kube/config"
               run: |
-                  cat ~/.kube/config
+                  cat ~/.kube/config | base64
                   kubectl config get-contexts
                   kubectl get nodes
                   kubectl apply -f kubernetes-deployment-prod.yaml
