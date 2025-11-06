@@ -117,10 +117,6 @@ jobs:
                 KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
-                  cat ~/.kube/config
-                  kubectl config view
-                  kubectl config get-contexts
-                  kubectl get nodes
                   kubectl apply -f kubernetes-deployment-prod.yaml
 
             - name: Update images to newly published tag
