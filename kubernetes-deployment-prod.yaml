@@ -1,7 +1,9 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-    name: vsp-blockchain
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#    name: vsp-blockchain
+
+# I think we dont need this, as the namespace is already created
 
 ---
 apiVersion: apps/v1
