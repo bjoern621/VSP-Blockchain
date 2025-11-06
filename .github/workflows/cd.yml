@@ -117,6 +117,7 @@ jobs:
                 KUBECONFIG: "~/.kube/config"
               run: |
                   cat ~/.kube/config
+                  kubectl config view
                   kubectl config get-contexts
                   kubectl get nodes
                   kubectl apply -f kubernetes-deployment-prod.yaml
