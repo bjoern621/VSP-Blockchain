@@ -95,10 +95,12 @@ jobs:
               run: |
                   mkdir -p ~/.kube
                   printf "%s" "$KUBE_CONFIG" > ~/.kube/config
+                  export KUBECONFIG="~/.kube/config"
 
             - name: Get OpenVPN Config from Secrets
               run: |
                 echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
+                echo $KUBECONFIG
               env:
                 OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
@@ -109,6 +111,7 @@ jobs:
             - name: Connect to VPN
               uses: "kota65535/github-openvpn-connect-action@v3.1.0"
               with:
+                echo_config: 'false'
                 config_file: vpn.ovpn
 
             - name: Deploy to Kubernetes
