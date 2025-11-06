@@ -95,8 +95,6 @@ jobs:
               run: |
                   mkdir -p ~/.kube
                   printf "%s" "$KUBE_CONFIG" > ~/.kube/config
-                  export KUBECONFIG="~/.kube/config"
-                  echo $KUBECONFIG
 
             - name: Get OpenVPN Config from Secrets
               run: |
@@ -116,6 +114,9 @@ jobs:
                 config_file: vpn.ovpn
 
             - name: Deploy to Kubernetes
+              env:
+                KUBECONFIG: "~/.kube/config"
+
               run: |
                   kubectl apply -f kubernetes-deployment-prod.yaml
 
