@@ -116,8 +116,9 @@ jobs:
             - name: Deploy to Kubernetes
               env:
                 KUBECONFIG: "~/.kube/config"
-
               run: |
+                  kubectl config get-contexts
+                  kubectl get nodes
                   kubectl apply -f kubernetes-deployment-prod.yaml
 
             - name: Update images to newly published tag
