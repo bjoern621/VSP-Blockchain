@@ -125,8 +125,8 @@ jobs:
                   MINER_TAG: ${{ needs.build-and-push.outputs.miner_tag }}
                   REST_TAG: ${{ needs.build-and-push.outputs.rest_tag }}
               run: |
-                  kubectl -n "$NAMESPACE" set image statefulset/miner miner="$MINER_TAG"
-                  kubectl -n "$NAMESPACE" set image deployment/rest-api rest-api="$REST_TAG"
+                  kubectl -n "$NAMESPACE" set image statefulset/miner miner="${{env.MINER_IMAGE}}:${{MINER_TAG}}"
+                  kubectl -n "$NAMESPACE" set image deployment/rest-api rest-api="${{env.REST_IMAGE}}:${{REST_TAG}}"
 
             - name: Wait for rollout
               env:
