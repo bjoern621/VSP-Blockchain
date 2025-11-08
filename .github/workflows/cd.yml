@@ -2,7 +2,7 @@ name: CD
 
 on:
     push:
-        branches: ["main", "57-task-fix-cd-pipeline-fully"]
+        branches: ["main"]
     workflow_dispatch:
 
 # Needed to push to GHCR
