@@ -94,25 +94,29 @@ jobs:
                   KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
               run: |
                   mkdir -p ~/.kube
-                  printf "%s" "$KUBE_CONFIG" > ~/.kube/config
+                  echo "$KUBE_CONFIG" | base64 --decode > ~/.kube/config
 
             - name: Get OpenVPN Config from Secrets
               run: |
                 echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
               env:
-                $OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+                OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
             - name: Install OpenVPN
               run: |
                 sudo apt update
                 sudo apt install -y openvpn openvpn-systemd-resolved
             - name: Connect to VPN
-              uses: "kota65535/github-openvpn-connect-action@v2"
+              uses: "kota65535/github-openvpn-connect-action@v3.1.0"
               with:
+                echo_config: 'false'
                 config_file: vpn.ovpn
 
             - name: Deploy to Kubernetes
+              env:
+                KUBECONFIG: "~/.kube/config"
               run: |
+                  export KUBECONFIG="${HOME}/.kube/config"
                   kubectl apply -f kubernetes-deployment-prod.yaml
 
             - name: Update images to newly published tag
