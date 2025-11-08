@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: V$-GOIN API
+  version: 1.0.0
+
+paths:
+  /transaction:
+    post:
+      summary: Executes a transaction
+      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the signature is correct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - senderKey
+                - recipientKey
+                - amount
+                - signature
+              properties:
+                senderKey:
+                  type: string
+                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                  description: Base64-encoded public key of sender.
+                recipientKey:
+                  type: string
+                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                  description: Base64-encoded public key recipient.
+                amount:
+                  type: integer
+                  minimum: 1
+                  example: 100
+                  description: The amount of V$-Goin the sender wants to transfer
+                signature:
+                  type: string
+                  example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
+                  description: The signature that verifies the given transaction
+      responses:
+        '200':
+          description: Transaction successfully executed
+        '400':
+          description: Insufficient funds for the given transaction
+        '401':
+          description: Invalid signature
+  /balance:
+    get:
+      summary: Returns the balance tied to the given Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: string
+                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                  description: Base64-encoded public key whose balance is requested.
+      responses:
+        '200':
+          description: Successful response with current balance.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+                    example: 1250
+                    description: The balance tied to the given key.
+        '400':
+          description: No balance tied to the given key
+  /history:
+    get:
+      summary: Returns the history of transactions involving the given Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: string
+                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                  description: Base64-encoded public key whose history is requested.
+      responses:
+        '200':
+          description: Successful response with keys history.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      type: string
+                    example: [ "A sent B 100", "B sent A 50", "A sent C 10"]
+        '400':
+          description: Key was not involved in any transactions
