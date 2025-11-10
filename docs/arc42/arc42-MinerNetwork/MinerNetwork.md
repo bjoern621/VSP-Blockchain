@@ -112,7 +112,10 @@ TODO entfernern
 
 ## Whitebox Gesamtsystem
 
-**_\<Übersichtsdiagramm\>_**
+<div align="center">
+    <img src="images/Layer 1.drawio.svg" alt="Layer 1"  height="400">
+    <p><em>Abbildung: Layer 1 - Whitebox Gesamtsystem</em></p>
+</div>
 
 Begründung  
 _\<Erläuternder Text\>_
