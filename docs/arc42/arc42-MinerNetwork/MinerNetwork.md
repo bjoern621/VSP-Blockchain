@@ -122,8 +122,12 @@ TODO entfernern
 Begründung  
 _\<Erläuternder Text\>_
 
-Enthaltene Bausteine  
-_\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>_
+Enthaltene Bausteine
+
+| Blackbox     | Beschreibung                                                                            |
+| ------------ | --------------------------------------------------------------------------------------- |
+| Registry     | Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekannt ist    |
+| P2P Netzwerk | Gesamtheit aller (nicht externen) Peers, die über das V$Goin P2P Protocol kommunizieren |
 
 Wichtige Schnittstellen  
 _\<Beschreibung wichtiger Schnittstellen\>_
@@ -158,9 +162,42 @@ _\<Blackbox-Template\>_
 
 ## Ebene 2
 
-### Whitebox _\<Baustein 1\>_
+### Whitebox P2P Netzwerk
 
-_\<Whitebox-Template\>_
+<div align="center">
+    <img src="images/Layer 2.drawio.svg" alt="Layer 1"  height="400">
+    <p><em>Abbildung: Layer 2 - Whitebox P2P Netzwerk</em></p>
+</div>
+
+Begründung
+
+Hinweis: Die externen Schnittstellen zu Externer Miner / Händler und REST API werden ab hier weggelassen. Die externen Nodes verhalten sich gleich zu den internen Nodes in jedem relevanten Aspekt.
+
+Enthaltene Bausteine
+
+| Blackbox                      | Beschreibung                                                             |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| Registry Crawler              | Besondere Node im Netzwerk, die ständig die Registry aktualisiert        |
+| SPV Node (_Externer Händler_) | Eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist |
+| Miner Node (_Externer Miner_) | Ein Node, die auf das Mining von Blöcken konzentriert ist                |
+| Full Node (nicht dargestellt) | Kombination aus SPV und Miner Node                                       |
+
+Wichtige Schnittstellen  
+_\<Beschreibung wichtiger Schnittstellen\>_
+
+### \<Name Blackbox 1\>
+
+_\<Zweck/Verantwortung\>_
+
+_\<Schnittstelle(n)\>_
+
+_\<(Optional) Qualitäts-/Leistungsmerkmale\>_
+
+_\<(Optional) Ablageort/Datei(en)\>_
+
+_\<(Optional) Erfüllte Anforderungen\>_
+
+_\<(optional) Offene Punkte/Probleme/Risiken\>_
 
 ### Whitebox _\<Baustein 2\>_
 
@@ -262,7 +299,9 @@ _\<Erklärung\>_
 
 # Glossar
 
-| Begriff         | Definition         |
-| --------------- | ------------------ |
-| _\<Begriff-1\>_ | _\<Definition-1\>_ |
-| _\<Begriff-2_   | _\<Definition-2\>_ |
+| Begriff      | Definition                                                                     |
+| ------------ | ------------------------------------------------------------------------------ |
+| SPV          | Simplified Payment Verification                                                |
+| SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                      |
+| Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing, auch _Solo-Miner_        |
+| ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW |
