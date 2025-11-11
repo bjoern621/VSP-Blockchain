@@ -38,6 +38,8 @@ Außerdem entsteht dieses System im Rahmen des Moduls "Verteilte Systeme" im Inf
 | UC-6 | Peers finden                         | Akteure können einen Teil der vorhandenen Peers des Netzwerk entdecken und sich mit ihnen verbinden.                                                     |
 | UC-7 | Block minen                          | Die Blockchain kann um kryptographisch valide Blöcke erweitert werden. Der Miner wird für den Rechenaufwand belohnt.                                     |
 
+Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS).
+
 ## Qualitätsziele
 
 | Priorität | Qualitätsziel     | Motivation                                                                                                                                                                                                                                                                                                                                                |
