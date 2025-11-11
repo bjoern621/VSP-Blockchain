@@ -7,7 +7,7 @@ paths:
   /transaction:
     post:
       summary: Executes a transaction
-      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the signature is correct
+      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
       requestBody:
         required: true
         content:
@@ -15,38 +15,38 @@ paths:
             schema:
               type: object
               required:
-                - senderKey
-                - recipientKey
+                - senderPublicKey
+                - recipientPublicKeyHASH
                 - amount
-                - signature
+                - senderPrivateKey
               properties:
-                senderKey:
+                senderPublicKey:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
                   description: Base64-encoded public key of sender.
-                recipientKey:
+                recipientPublicKeyHASH:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base64-encoded public key recipient.
+                  description: Base64-encoded public key hash of the recipient.
                 amount:
                   type: integer
                   minimum: 1
                   example: 100
                   description: The amount of V$-Goin the sender wants to transfer
-                signature:
+                senderPrivateKey:
                   type: string
                   example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
-                  description: The signature that verifies the given transaction
+                  description: The private key belonging to the public key of the sender
       responses:
         '200':
           description: Transaction successfully executed
         '400':
           description: Insufficient funds for the given transaction
         '401':
-          description: Invalid signature
+          description: Invalid private key
   /balance:
     get:
-      summary: Returns the balance tied to the given Key
+      summary: Returns the balance tied to the given public key hash
       requestBody:
         required: true
         content:
@@ -54,12 +54,12 @@ paths:
             schema:
               type: object
               required:
-                - key
+                - keyHash
               properties:
-                key:
+                keyHash:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base64-encoded public key whose balance is requested.
+                  description: Base64-encoded public key hash whose balance is requested.
       responses:
         '200':
           description: Successful response with current balance.
@@ -71,12 +71,12 @@ paths:
                   balance:
                     type: integer
                     example: 1250
-                    description: The balance tied to the given key.
+                    description: The balance tied to the given key hash.
         '400':
           description: No balance tied to the given key
   /history:
     get:
-      summary: Returns the history of transactions involving the given Key
+      summary: Returns the history of transactions involving the given Key hash
       requestBody:
         required: true
         content:
@@ -84,12 +84,12 @@ paths:
             schema:
               type: object
               required:
-                - key
+                - keyHash
               properties:
-                key:
+                keyHash:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base64-encoded public key whose history is requested.
+                  description: Base64-encoded public key hash whose history is requested.
       responses:
         '200':
           description: Successful response with keys history.
@@ -104,4 +104,4 @@ paths:
                       type: string
                     example: [ "A sent B 100", "B sent A 50", "A sent C 10"]
         '400':
-          description: Key was not involved in any transactions
+          description: Key hash was not involved in any transactions
