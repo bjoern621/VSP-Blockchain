@@ -15,15 +15,10 @@ paths:
             schema:
               type: object
               required:
-                - senderPublicKey
                 - recipientPublicKeyHASH
                 - amount
                 - senderPrivateKey
               properties:
-                senderPublicKey:
-                  type: string
-                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base64-encoded public key of sender.
                 recipientPublicKeyHASH:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
