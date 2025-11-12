@@ -1,0 +1,47 @@
+name: REST CI
+on:
+    push:
+        branches:
+            - "**"
+        paths:
+            - "rest-schnittstelle/**"
+            - "proto/**"
+    pull_request:
+        branches:
+            - "main"
+
+env:
+    PROJECT_FOLDER_NAME: rest-schnittstelle
+
+jobs:
+    ci-rest:
+        name: "CI - REST API"
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v5
+
+            - name: Setup
+              uses: ./.github/actions/setup
+
+            - name: Check formatting
+              uses: ./.github/actions/check_go_formatting
+              with:
+                  project: ${{ env.PROJECT_FOLDER_NAME }}
+
+            - name: Check linting
+              uses: golangci/golangci-lint-action@v8
+              with:
+                  working-directory: ${{ env.PROJECT_FOLDER_NAME }}
+                  version: latest
+                  args: --timeout=3m
+
+            - name: Build and Test
+              uses: ./.github/actions/test-and-build
+
+            - name: Build Docker image
+              uses: docker/build-push-action@v6
+              with:
+                  context: ./rest-schnittstelle/
+                  push: false
+                  tags: rest-vsp-blockchain:latest
