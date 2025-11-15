@@ -114,7 +114,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 | **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                                | Logs, Health-Check-Responses                                                                   |
 
 ## Technischer Kontext
-![Diagram](https://www.plantuml.com/plantuml/png/
+![Diagram](https://www.plantuml.com/plantuml/png/PL1BJeH04DtNALw8YRFX0gxc4p-Jk203STyqvT2ngIPDCIQUnvjuCM56Hj3bUrNrFhNkr4Jj6qyIAaQoZU6zuuY764HPgWIcGtaXYMnesY0iYkHmdnVOP7la74_EyddHj8w8WDdUoyrZS99kVR1ljZPEBeeZt8sGw1RFmNlNXZRDRIrEjLFsdc4Q_7KX9yhnrLX6WiboFt4q1qZJSJZgJwMarmz5vHWB8_hfDroi5dgumrDHPFceSKrIVttAKN4AWjzICEN_QELrl1boBD1WDV-1EJEhvSNWVZnaErgpL7tZlm40)
 ````plantuml
 @startuml
 node "Browser Frontend" as browser
@@ -137,7 +137,6 @@ blockchainApi -- blockChain
 api --( blockchainApi : gRPC
 @enduml
 ````
-)
 
 | **Kommunikationspartner** | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung** |
 |----------------------------|-------------------------------------|------------------------------|-------------------------------|
