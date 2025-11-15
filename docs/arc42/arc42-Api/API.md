@@ -21,7 +21,7 @@ Kernfunktionalität ist das Anzeigen von Kontoständen und Transaktionsverläufe
 Treibende Kräfte sind die Notwendigkeit einer einfachen, transparenten und zuverlässigen Plattform für Transaktionen sowie die Nachvollziehbarkeit aller Bewegungen im System unserers V$Goins.
 
 **Verweise auf Anforderungsdokumente:**
-- *User Stories, abgelegt in den [GitHub Issues](https://github.com/users/bjoern621/projects/5)
+- *User Stories, abgelegt in den [GitHub Issues](https://github.com/users/bjoern621/projects/5/views/1?filterQuery=-status%3ABacklog+label%3A%22rest-api%22)
 
 ---
 
@@ -36,11 +36,11 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 
 ### Form
 
-| **Use Case / Aufgabe** | **Beschreibung**                                                                                                                                                         |
-|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. |
-| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen.                                                                                                                    |
-| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.                                                     |
+| **Use Case / Aufgabe** | **Beschreibung**   | User Stories                     |
+|-------------------------|-------------------|----------------------------------|
+| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt.| US-1 Transaktion                 |
+| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen. | US-2 Kontostand einsehen         |
+| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.  | US-3 Transaktionsverlauf ansehen |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
 
@@ -65,11 +65,11 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ---
 ## Stakeholder
 
-| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                  |
-|---------------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt. |
-| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen.     |
-| **Entwicklungsteam** | TBD                   | Erwartet eine klare technische Architektur, testbare Anforderungen und stabile Entwicklungs- und Deployment-Workflows.             |
+| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                      |
+|---------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt.                     |
+| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und einfach bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen. |
+| **Entwicklungsteam** | TBD                   | Erwartet eine stabile und verfügbare Versionsverwaltung (GitHub) und einen stabilen Main branch (durch Code Reviews gesichert)         |
 
 # Randbedingungen
 
@@ -79,21 +79,16 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Blockchain-Anbindung** | Das System spiegelt reale Währungswerte über eine bestehende **Blockchain-Infrastruktur** wider. Transaktionen im System müssen mit der entsprechenden Blockchain synchronisiert werden. |
 | **Blockchain-Protokoll** | Es wird die **V$Goin-Blockchain** verwendet.                                                                                                                                             |
-| **Technologiestack** | Das System wird als Webanwendung auf Basis von **GO** entwickelt.                                                                                                                        |
-| **API-Kommunikation** | Alle externen Schnittstellen kommunizieren über **RESTful APIs** mit **JSON** als Austauschformat.                                                                                       |
-| **Deployment-Umgebung** | Das System wird in einer **Docker-basierten Cloud-Umgebung** betrieben.                                                                                                                  |
-| **Versionierung** | Der Quellcode wird in **GitHub** verwaltet, mit **Git Flow** als Branching-Strategie.                                                                                                    |
+| **Deployment-Umgebung** | Das System wird in der **Cloud-Umgebung** der HAW (ICC) betrieben.                                                                                                                       |
 
 ---
 
 ## Organisatorische Randbedingungen
 
-| **Randbedingung** | **Erläuterung**                                                                                                            |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern mit nur lose definierten Rollen (Dev, QA, DevOps) umgesetzt. |
-| **Release-Zyklen** | Neue Releases erfolgen im **3-Wochen-Zyklus**.                                                                             |
-| **Dokumentationsstandard** | Architektur und Anforderungen werden nach dem **arc42-Template** gepflegt und versioniert.                                 |
-| **Code Review Pflicht** | Jeder Merge in den Hauptbranch erfordert mindestens **eine Freigabe (Code Review)**.                                       |
+| **Randbedingung** | **Erläuterung**                                                                            |
+|--------------------|--------------------------------------------------------------------------------------------|
+| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                   |
+| **Dokumentationsstandard** | Architektur und Anforderungen werden nach dem **arc42-Template** gepflegt und versioniert. |
 
 ---
 
@@ -112,11 +107,11 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ## Fachlicher Kontext
 
 
-| **Kommunikationspartner**                      | **Eingabe an das System**                             | **Ausgabe vom System** |
-|------------------------------------------------|-------------------------------------------------------|--------------------------|
-| **Endnutzer**                   | Signaturen, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand |
-| **V$Goin Blockchain-System**                   | Transaktionsdaten, Signaturen  | Transaktionsbestätigungen, Block-Hashes, Event-Logs |
-| **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                              | Logs, Health-Check-Responses |
+| **Kommunikationspartner**                      | **Eingabe an das System**                               | **Ausgabe vom System**                                                                         |
+|------------------------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| **Endnutzer**                   | Private Keys, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand                              |
+| **V$Goin Blockchain-System**                   | Transaktionsdaten, Public Key Hash                      | Transaktionsbestätigungen, UTXOs (verfügbare Zahlungsmittel), Transaktionsverläufe, Event-Logs |
+| **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                                | Logs, Health-Check-Responses                                                                   |
 
 ## Technischer Kontext
 ````plantuml
@@ -339,6 +334,39 @@ Zuordnung von Bausteinen zu Infrastruktur
 *\<Erklärung\>*
 
 # Architekturentscheidungen
+## ADR 1: Verwendung von Go als Backend-Programmiersprache
+**Status:** Akzeptiert  
+**Datum:** 2025-10
+
+### Entscheidung
+Das Backend-System wird in der Programmiersprache **Go** implementiert.
+### Kontext
+Das System interagiert häufig mit externen APIs der V$-Blockchain und internen Services, benötigt hohe Nebenläufigkeitsleistung und effiziente Ressourcennutzung.
+### Begründung
+Go bietet exzellente Unterstützung für Nebenläufigkeit (Goroutinen), schnelle Ausführung, geringen Speicherverbrauch und erzeugt statische Binaries, die den containerisierten Betrieb vereinfachen.
+### Konsequenzen
+\+ Hohe Performance bei gleichzeitigen Operationen <br>
+\+ Vereinfachte Bereitstellung in Docker <br>
+– Ein Teil des Teams weniger Erfahrung mit dieser Sprache  <br>
+
+## ADR 2: Externe APIs als REST/JSON bereitstellen
+
+**Status:** Akzeptiert  
+**Datum:** 2025-10
+
+### Entscheidung
+Alle externen APIs werden im **REST-Architekturstil** mit **JSON** als Datenaustauschformat umgesetzt.
+
+### Kontext
+Endnutzer brauchen verständliche Schnittstelle und externer Client benötigen einfache Schnittstellen.
+
+### Begründung
+REST/JSON ist leicht verständlich und dokumentierbar und funktioniert ohne spezielle Tools.
+
+### Konsequenzen
+\+ Einfache Integration für Partner <br>
+\+ Gute Debugging- und Tool-Unterstützung  <br>
+– Geringere Typensicherheit als gRPC  <br>
 
 # Qualitätsanforderungen
 
