@@ -120,39 +120,37 @@ TODO entfernern
 </div>
 
 Begründung  
-_\<Erläuternder Text\>_
+Das Diagramm zeigt die oberste Sicht auf das System. Es dient als Überblick über die zwei Hauptkomponenten des Systems. Die Registry ist dabei nur ein kleineres System, das immer über die gleiche Methode erreichbar ist und von neuen Peers benötigt wird, um die eigentliche Verbindung zu dem dynamischen P2P Netzwerk herzustellen. Der Großteil der Logik und der Komplexität findet im P2P Netzwerk statt. Die Größe dieser beiden Komponenten ist also sehr ungleich verteilt, dies sollte beachtet werden.
 
-Enthaltene Bausteine
+### Registry (Blackbox)
 
-| Blackbox     | Beschreibung                                                                            |
-| ------------ | --------------------------------------------------------------------------------------- |
-| Registry     | Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekannt ist    |
-| P2P Netzwerk | Gesamtheit aller (nicht externen) Peers, die über das V$Goin P2P Protocol kommunizieren |
+Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekannt ist. Konzeptionell hat die Registry nur genau zwei wichtige Eigenschaften: 1. Hält eine modifizierbare Liste von IP Adress Einträgen und 2. ist über eine statische Methode erreichbar. Beide Eigenschaften können über ein DNS System realisiert werden in dem mehrere A/AAAA Einträge erstellt bzw. modifiziert werden.
 
-Wichtige Schnittstellen  
-_\<Beschreibung wichtiger Schnittstellen\>_
+Schnittstellen
 
-### \<Name Blackbox 1\>
+-   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet.
+-   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#ebene-2)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
-_\<Zweck/Verantwortung\>_
+Siehe auch [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) für eine genauere Beschreibung der Schnittstellen.
 
-_\<Schnittstelle(n)\>_
+Qualitäts-/Leistungsmerkmale
 
-_\<(Optional) Qualitäts-/Leistungsmerkmale\>_
+-   Distribution Transparency  
+    Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z. B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
 
-_\<(Optional) Ablageort/Datei(en)\>_
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
 
-_\<(Optional) Erfüllte Anforderungen\>_
+-   [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
+-   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+-   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
 
-_\<(optional) Offene Punkte/Probleme/Risiken\>_
+Offene Punkte/Probleme/Risiken  
+Wir haben bereits die Domain `vsgoin.informatik.haw-hamburg.de` aber es ist noch unklar, ob wir dort die DNS Einträge frei ändern können, da sie von der ICC verwaltet wird. Dieses Problem kann mit einer eigenen Domain umgangen werden. Außerdem hat die ICC möglicherweise nur eine externe IP und die einzelnen Nodes innerhalb des ICC Clusters (für Nodes siehe auch [Ebene 2](#ebene-2)) können möglicherweise nicht direkt angesteuert werden. Diese Probleme sollten noch getestet werden und Lösungen gefunden (getrackt in [Task-91](https://github.com/bjoern621/VSP-Blockchain/issues/91)).
 
-### \<Name Blackbox 2\>
+### P2P Netzwerk (Blackbox)
 
-_\<Blackbox-Template\>_
-
-### \<Name Blackbox n\>
-
-_\<Blackbox-Template\>_
+Gesamtheit aller (nicht externen) Peers, die über das V$Goin P2P Protocol kommunizieren.
 
 ### \<Name Schnittstelle 1\>
 
@@ -305,3 +303,51 @@ _\<Erklärung\>_
 | SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                      |
 | Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing, auch _Solo-Miner_        |
 | ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW |
+
+## Whitebox Gesamtsystem
+
+<div align="center">
+    <img src="images/Layer 1.drawio.svg" alt="Layer 1"  height="400">
+    <p><em>Abbildung: Layer 1 - Whitebox Gesamtsystem</em></p>
+</div>
+
+Begründung  
+_\<Erläuternder Text\>_
+
+Enthaltene Bausteine
+
+| Blackbox     | Beschreibung                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Registry     | Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekannt ist.    |
+| P2P Netzwerk | Gesamtheit aller (nicht externen) Peers, die über das V$Goin P2P Protocol kommunizieren. |
+
+Wichtige Schnittstellen  
+_\<Beschreibung wichtiger Schnittstellen\>_
+
+### \<Name Blackbox 1\>
+
+_\<Zweck/Verantwortung\>_
+
+_\<Schnittstelle(n)\>_
+
+_\<(Optional) Qualitäts-/Leistungsmerkmale\>_
+
+_\<(Optional) Ablageort/Datei(en)\>_
+
+_\<(Optional) Erfüllte Anforderungen\>_
+
+_\<(optional) Offene Punkte/Probleme/Risiken\>_
+
+### \<Name Blackbox 2\>
+
+_\<Blackbox-Template\>_
+
+### \<Name Blackbox n\>
+
+_\<Blackbox-Template\>_
+
+### \<Name Schnittstelle 1\>
+
+…​
+
+### \<Name Schnittstelle m\>
