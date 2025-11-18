@@ -2,12 +2,19 @@ openapi: 3.0.3
 info:
   title: V$-GOIN API
   version: 1.0.0
+tags:
+  - name: Payment
+    description: Everything about the Payment
+  - name: KeyTools
+    description: Tools for creating and managing Keys.
 
 paths:
   /transaction:
     post:
       summary: Executes a transaction
       description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
+      tags:
+        - Payment
       requestBody:
         required: true
         content:
@@ -42,6 +49,8 @@ paths:
   /balance:
     get:
       summary: Returns the balance tied to the given public key hash
+      tags:
+        - Payment
       requestBody:
         required: true
         content:
@@ -72,6 +81,8 @@ paths:
   /history:
     get:
       summary: Returns the history of transactions involving the given Key hash
+      tags:
+        - Payment
       requestBody:
         required: true
         content:
@@ -100,3 +111,63 @@ paths:
                     example: [ "A sent B 100", "B sent A 50", "A sent C 10"]
         '400':
           description: Key hash was not involved in any transactions
+
+  /address:
+    get:
+      summary: Returns the V$Address to a corresponding private key.
+      tags:
+        - KeyTools
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              description: The private key
+              example: "The private key"
+      responses:
+        '200':
+          description: Successful response with V$Address and the private key.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: The V$Address
+                example: "The V$Address"
+        '400':
+          description: private Key is not Valid
+
+  /address/new:
+    get:
+      summary: Returns a new V$Address with the corresponding private key.
+      tags:
+        - KeyTools
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: string
+              description: "Seed for private Key generation"
+              example: "Seed for private Key generation"
+      responses:
+        '200':
+          description: Successful response with V$Address and the private key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                    description: The new V$Address.
+                  privateKey:
+                    type: string
+                    description: The new private key.
+                required:
+                  - address
+                  - privateKey
+
+
+
+
