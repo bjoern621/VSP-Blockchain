@@ -53,10 +53,10 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Stakeholder
 
 | Nummer | Rolle                            | Erwartungshaltung                                                                                                                                   |
-| ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------ | -------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                                                |
 | 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden. |
-| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Netzwerk funktioniert jederzeit und ist sicher/vertrauenswürdig.                        |
+| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Das Miner-Netzwerk ist zuverlässig eirreichbar.                                         |
 | 4      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                           |
 | 5      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                                            |
 
