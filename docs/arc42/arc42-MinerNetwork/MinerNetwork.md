@@ -175,7 +175,7 @@ P2P Nachrichten meint alle Nachrichten des V$Goin P2P Protokolls. Eine Übersich
 ### Whitebox P2P Netzwerk
 
 <div align="center">
-    <img src="images/Layer 2.drawio.svg" alt="Layer 1"  height="400">
+    <img src="images/Layer 2.drawio.svg" alt="Layer 2"  height="400">
     <p><em>Abbildung: Layer 2 - Whitebox P2P Netzwerk</em></p>
 </div>
 
@@ -263,17 +263,64 @@ Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie
 
 ## Ebene 3
 
-### Whitebox \<\_Baustein x.1\_\>
+### Whitebox Full Node
 
-_\<Whitebox-Template\>_
+<div align="center">
+    <img src="images/Layer 3.drawio.svg" alt="Layer 3"  height="400">
+    <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
+</div>
 
-### Whitebox \<\_Baustein x.2\_\>
+Begründung  
+Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-_\<Whitebox-Template\>_
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine SPV Node würde zum Beispiel keine Miner Komponente haben. Ein Miner kann auch ohne Wallet agieren.
 
-### Whitebox \<\_Baustein y.1\_\>
+### Blockchain (Blackbox)
 
-_\<Whitebox-Template\>_
+Zweck/Verantwortung  
+Das Teilsystem Blockchain stellt die lokale Sicht auf die globale Kette bereit. Es gibt zwei mögliche Implementierungen für das Blockchain Teilsystem. 1. Vereinfachte Blockchain und 2. Vollständige Blockchain.
+
+Die vereinfachte Blockchain speichert hauptsächlich Block‑Header und ausgewählte Transaktionen und verlässt sich stärker auf andere Full Nodes, um Gültigkeit von Transaktionen und Blöcken zu prüfen. Sie kommuniziert bei Bedarf mit benachbarten Nodes, um an Informationen zu gelanden. Dadurch werden Speicher‑ und Rechenressourcen gespart, allerdings auf Kosten von Sicherheit. Die vollständige Blockchain speichert alle Blöcke (und Transaktionen und UTXO‑Set und Mempool) und validiert jede Transaktion und jeden Block lokal. Sie benötigt deutlich mehr Ressourcen, bietet dafür aber mehr Sicherheit.
+
+Ob eine Node die vereinfachte oder vollständige Variante wählt ist zunächst egal. Jedoch verwenden SPV Nodes tendenziell die vereinfachte Blockchain, um Ressourcen zu sparen und Miner Nodes nutzen die vollständige Blockchain Implementierung, um möglichst schnell und unabhängig von anderen Nodes Blöcke validieren zu können.
+
+Schnittstellen
+
+-   `Nachrichten senden / empfangen` muss die Blockchain Komponente über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über neue Nachrichten benachrichtigt zu werden, kann das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
+-   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+-   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
+
+Offene Punkte/Probleme/Risiken  
+Die detaillierte Unterschiedung zwischen vereinfacht und vollständig ist noch recht schwer. Vorallem welche Bestandteile der Blockchain Wallet oder Miner brauchen / nicht brauchen ist schwer zu überblicken. Hier sollte ggf. später spezifiziert werden.
+
+### Wallet (Blackbox)
+
+### Miner (Blackbox)
+
+### Netzwerkrouting (Blackbox)
+
+## Ebene 4
+
+### Whitebox Teilsystem
+
+Begründung  
+Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems. Jedes Teilsystem ist in die vier Layer Presentation, Business, Persistence und Infrastructure geteilt.
+
+Offene Punkte/Probleme/Risiken  
+Architektur ist Subjekt To Change, aber Vorgabe ist mMn, dass mindestens MVC genutzt wird.
+
+### Whitebox Blockchain
+
+Begründung  
+Der Fokus dieser Teilung ist die Unterscheidung zwischen vereinfachter Blockchain und vollständiger Blockchain zu veranschaulichen.
+
+Offene Punkte/Probleme/Risiken  
+Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten enthalten sind?)
 
 # Laufzeitsicht
 
@@ -325,7 +372,7 @@ _\<Diagramm + Erläuterungen\>_
 
 # Querschnittliche Konzepte
 
-## Teilsysteme der Nodes
+## _\<Konzept 1\>_
 
 _\<Erklärung\>_
 
