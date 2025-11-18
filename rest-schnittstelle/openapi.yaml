@@ -46,6 +46,8 @@ paths:
           description: Insufficient funds for the given transaction
         '401':
           description: Invalid private key
+        '422':
+          description: The V$Address is invalid
   /balance:
     get:
       summary: Returns the balance tied to the given public key hash
