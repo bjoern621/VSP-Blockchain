@@ -33,7 +33,7 @@ paths:
                   example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
                   description: The private key belonging to the public key of the sender
       responses:
-        '200':
+        '201':
           description: Transaction successfully executed
         '400':
           description: Insufficient funds for the given transaction

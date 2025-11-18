@@ -373,6 +373,12 @@ REST/JSON ist leicht verständlich und dokumentierbar und funktioniert ohne spez
 # Qualitätsanforderungen
 
 ## Übersicht der Qualitätsanforderungen
+|**Qualitätsziel**           | **Beschreibung**                                                                                                                                                                    | Messkriterium                                                                                                                            |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+|**Sicherheit** | Alle Transaktionen müssen vor unbefugtem Zugriff geschützt sein. Authentifizierung und Autorisierung sind zentrale Punkte des Systems.                                              | 100% der Transaktionen werden vom V$-Blockchain System verfiziert                                                                        |
+|**Zuverlässigkeit** | Das System muss Transaktionen konsistent und fehlerfrei verarbeiten. Datenintegrität hat höchste Priorität, insbesondere bei Transaktionen.                                         | 100% der falschen Transaktion werden vom V$-Blockchain System abgelehnt                                                                  |
+|**Wartbarkeit** | Der Quellcode und die Systemarchitektur sollen modular aufgebaut sein, um zukünftige Änderungen (z. B. neue Währungsarten oder Sicherheitsfunktionen) leicht integrieren zu können. | Jeder Merge in den Main absolviert alle Codequalitätsstages der Pipeline (Test, Sonar, Architecture-Checking) und wurde manuell reviewed |
+|**Performance** | Transaktionen und Kontostandsabfragen sollen ohne merkliche Verzögerung ausgeführt werden, um ein reaktionsschnelles Nutzererlebnis zu gewährleisten.                               | Nutzer erhalten in 99% der Fällen eine Antwort innerhalb 2s                                                                              |
 
 ## Qualitätsszenarien
 
