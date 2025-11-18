@@ -22,7 +22,7 @@ paths:
                 recipientPublicKeyHASH:
                   type: string
                   example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base64-encoded public key hash of the recipient.
+                  description: Base58-encoded public key hash of the recipient.
                 amount:
                   type: integer
                   minimum: 1
@@ -31,7 +31,7 @@ paths:
                 senderPrivateKey:
                   type: string
                   example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
-                  description: The private key belonging to the public key of the sender
+                  description: The Base58-encoded private key belonging to the public key of the sender
       responses:
         '200':
           description: Transaction successfully executed
@@ -49,7 +49,7 @@ paths:
           schema:
             type: string
           example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-          description: Base64-encoded public key hash whose balance is requested.
+          description: Base58-encoded public key hash whose balance is requested.
       responses:
         '200':
           description: Successful response with current balance.
@@ -73,7 +73,7 @@ paths:
           schema:
             type: string
           example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-          description: Base64-encoded public key hash whose history is requested.
+          description: Base58-encoded public key hash whose history is requested.
       responses:
         '200':
           description: Successful response with keys history.
