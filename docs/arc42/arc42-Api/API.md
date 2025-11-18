@@ -186,22 +186,24 @@ component "REST API Service" as api {
 component "Transaktion" as transaction
 component "Transaktionsverlauf" as verlauf
 component "Kontostand" as konto
-component "Blockchain" as blocks
-verlauf --> blocks: liest Transaktionsverlauf aus
-konto --> blocks: liest Kontostand aus
+component "Netzwerk" as network
+component "Schlüssel" as Keys
+verlauf --> network: erfrage Historie
+konto --> network:  hole alle Zahlungsmittel für Adresse
+transaction --> Keys: erstelle Signatur
 }
 node "V$Goin-Blockchain" as blockChain
 
 
 'Browser zu Server
-browser -down-> transaction: führt Transaktion aus
+browser -down-> transaction: erstelle Transaktion
 browser --> verlauf : fragt Verlauf ab
 browser --> konto : fragt Kontostand ab
+browser --> Keys : generiere Adresse 
 
 'Server zu Blockchain
-transaction -down--> blockChain: gibt Transaktion weiter
-blocks -> blockChain: Blöcke werden weitergegeben
-blockChain -> blocks
+transaction -down--> blockChain: verbreite Transaktion
+network -> blockChain: Anfragen werden weitergegeben
 @enduml
 ````
 Begründung  
