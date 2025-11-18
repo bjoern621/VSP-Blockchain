@@ -108,14 +108,12 @@ paths:
       summary: Returns the V$Address to a corresponding private key.
       tags:
         - KeyTools
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: string
-              description: The private key
-              example: "The private key"
+      parameters:
+        - name: privateKey
+          required: true
+          in: header
+          schema:
+            type: string
       responses:
         '200':
           description: Successful response with V$Address and the private key.
@@ -133,14 +131,13 @@ paths:
       summary: Returns a new V$Address with the corresponding private key.
       tags:
         - KeyTools
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: string
-              description: "Seed for private Key generation"
-              example: "Seed for private Key generation"
+      parameters:
+        - name: seed
+          description: "Seed for private Key generation"
+          required: false
+          in: header
+          schema:
+            type: string
       responses:
         '200':
           description: Successful response with V$Address and the private key.
