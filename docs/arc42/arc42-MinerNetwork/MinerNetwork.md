@@ -52,13 +52,13 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 ## Stakeholder
 
-| Nummer | Rolle                            | Erwartungshaltung                                                                                                                                   |
-| ------ | -------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS).                                                                |
-| 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden. |
-| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Das Miner-Netzwerk ist zuverlässig eirreichbar.                                         |
-| 4      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                           |
-| 5      | ICC                              | Keine übermäßige Nutzung der Ressourcen.                                                                                                            |
+| Nummer | Rolle                            | Erwartungshaltung                                                                                                                                                                                                                                                                |
+| ------ | -------------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS). Der Featureumfang sollte entsprechend klein gewählt werden. Zudem sind die Überwindungskosten Geld auszegeben sehr hoch, wodurch eher Features entfallen, anstatt dass Geld ausgegeben wird. |
+| 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden.                                                                                                                              |
+| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Das Miner-Netzwerk ist zuverlässig eirreichbar.                                                                                                                                                                      |
+| 4      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                                                                                                                                                        |
+| 5      | ICC                              | Das System muss in der ICC gehostet, deployed und getestet werden. Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/).                                       |
 
 <div align="center">
     <img src="images/stakeholder_quadrant.drawio.svg" alt="Stakeholder Quadrant"  height="400">
@@ -66,18 +66,34 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 # Randbedingungen
 
-| Einschränkung                   | Erklärung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Implementierung in Go           | Im Team wurde sich auf die Programmiersprache Go geeinigt. Go wurde zum einen aus Lernzwecken gewählt, aber auch, weil die Sprache Vorteile für verteilte Systeme bietet. Die Go Binary ist beispielsweise deutlich kleiner als die eines ähnlichen Java‑Programms, weil keine JVM benötigt wird, dadurch stehen mehr Ressourcen für die Skalierung zur Verfügung. Darüber hinaus verfügt Go über eine sehr gute Dokumentation. Weitere Qualitäten sind Einfachheit, Effizienz und Skalierbarkeit, eine Reihe von [Case Studies](https://go.dev/solutions/case-studies) unterstreichen diese Eigenschaften. |
-| Interne Kommunikation via RPC   | Die Kommunikation zwischen den Netzwerkknoten muss über Remote Procedure Calls (RPC) erfolgen. RPC ermöglicht schnellere Kommunikation als bspw. REST und ist somit eine gute Wahl für interne Kommunikation.                                                                                                                                                                                                                                                                                                                                                                                               |
+## Technische Randbedingungen
+
+| **Randbedingung**              | **Erläuterung**                                                                        |
+|--------------------------------|----------------------------------------------------------------------------------------|
+| **Blockchain-Technologie**     | Das System muss auf einer **Blockchain-basierten Infrastruktur** implementiert werden. |
+| **Deployment-Umgebung**        | Das System wird in der **Cloud-Umgebung** der HAW (ICC) betrieben.                     |
 | Loadsharing Unterstützung       | Das System muss in der Lage sein, Last zwischen mehreren Knoten zu verteilen. Das Konzept öffentliche Blockchain zielt bereits auf diese Eigenschaft ab, so dass diese Einschränkung keine weiteren Auswirkungen haben sollte.                                                                                                                                                                                                                                                                                                                                                                              |
 | Service Orchestrierung über RPC | Die einzelnen Services (Miner, Händler) müssen über RPC-Aufrufe untereinander koordiniert werden. Dies könnte z. B. Timeouts, Retries, ausführliches Logging und konsistente Fehlerbehandlung über Service-Grenzen hinweg erfordern.                                                                                                                                                                                                                                                                                                                                                                        |
-| Lauffähig in ICC                | Das System muss in der ICC gehostet werden. Das System muss dort deployed und getestet werden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Lauffähig in Raum 7.65          | Die Computer im Raum 7.65 sind die Referenzsysteme für die Abnahme. Das System muss dort getestet werden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ICC Ressourcen                  | Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/). Dies begrenzt uns z. B. bei der Skalierbarkeit.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Zeit                            | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden.                                                                                                                                                                                                                                                                                                                                                                                    |
-| Budget                          | Die Überwindungskosten Geld auszugeben sind sehr hoch. Es ist wahrscheinlicher, dass Features entfallen als dass zusätzliches Geld ausgegeben wird.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Dokumentationspflicht           | Eine ausführliche, vollständige und zum System passende Dokumentation ist explizit gewünscht. Dies könnte sich negativ auf das Zeitkontingent auswirken.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+---
+
+## Organisatorische Randbedingungen
+
+| **Randbedingung** | **Erläuterung**                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------|
+| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                             |
+| **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert. |
+
+---
+
+## Rechtliche und sicherheitsrelevante Randbedingungen
+
+| **Randbedingung** | **Erläuterung** |
+|--------------------|-----------------|
+| **Verschlüsselung** | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**. |
+| **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
+
+
 
 # Kontextabgrenzung
 
