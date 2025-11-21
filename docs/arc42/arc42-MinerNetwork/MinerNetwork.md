@@ -204,8 +204,6 @@ sequenceDiagram
 
 ```
 
-<img src="images/business_context.drawio.svg" alt="Fachlicher Kontext"  height="250">
-
 </div>
 
 -   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
