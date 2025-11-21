@@ -306,7 +306,7 @@ Die detaillierte Unterschiedung zwischen vereinfacht und vollständig ist noch r
 ### Whitebox Teilsystem
 
 Begründung  
-Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems. Jedes Teilsystem ist in die vier Layer Presentation, Business, Persistence und Infrastructure geteilt.
+Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems. Jedes Teilsystem ist in die drei Layer Interface, Business, Data geteilt. Der Interface Layer bildet die Schnittstelle des Teilsystems und interagiert mit anderen Teilsystemen / Komponenten des Systems. Der Business Layer enthält die Kern-Logik des Systems und der Data Layer ist für die Speicherung und das Laden von Daten verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
 
 Offene Punkte/Probleme/Risiken  
 Architektur ist Subjekt To Change, aber Vorgabe ist mMn, dass mindestens MVC genutzt wird.
