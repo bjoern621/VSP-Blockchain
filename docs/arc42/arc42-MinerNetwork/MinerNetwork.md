@@ -193,21 +193,23 @@ _\<Whitebox-Template\>_
 sequenceDiagram
     participant p1 as Peer 1
     participant Registry
-    participant p2 as Peer 2
+    participant p2 as Peer X
 
     p1->>Registry: getpeers()
     destroy Registry
     Registry-->>p1: Liste IP-Adressen
-    p1->>p2: version(version, verfügbare Teilsysteme)
-    p2->>p1: verack(version, verfügbare Teilsysteme)
-    p1->>p2: ack()
-
+    loop Für jede IP X in der Liste
+        p1->>p2: version(version, verfügbare Teilsysteme)
+        p2->>p1: verack(version, verfügbare Teilsysteme)
+        p1->>p2: ack()
+    end
 ```
 
 </div>
 
--   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
-    Szenario erläutern\>
+Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `version`, `verack` und `ack` besteht.
+
+Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren.
 
 ## _\<Bezeichnung Laufzeitszenario 2\>_
 
