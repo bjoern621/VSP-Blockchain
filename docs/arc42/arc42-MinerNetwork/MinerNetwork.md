@@ -185,9 +185,28 @@ _\<Whitebox-Template\>_
 
 # Laufzeitsicht
 
-## _\<Bezeichnung Laufzeitszenario 1\>_
+## Verbindungsaufbau
 
--   \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant p1 as Peer 1
+    participant Registry
+    participant p2 as Peer 2
+
+    p1->>Registry: getpeers()
+    destroy Registry
+    Registry-->>p1: Liste IP-Adressen
+    p1->>p2: version(version, verfügbare Teilsysteme)
+    p2->>p1: verack(version, verfügbare Teilsysteme)
+    p1->>p2: ack()
+
+```
+
+<img src="images/business_context.drawio.svg" alt="Fachlicher Kontext"  height="250">
+
+</div>
 
 -   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
     Szenario erläutern\>
@@ -206,13 +225,13 @@ _\<Whitebox-Template\>_
 
 **_\<Übersichtsdiagramm\>_**
 
-Begründung  
+Begründung
 _\<Erläuternder Text\>_
 
-Qualitäts- und/oder Leistungsmerkmale  
+Qualitäts- und/oder Leistungsmerkmale
 _\<Erläuternder Text\>_
 
-Zuordnung von Bausteinen zu Infrastruktur  
+Zuordnung von Bausteinen zu Infrastruktur
 _\<Beschreibung der Zuordnung\>_
 
 ## Infrastruktur Ebene 2
@@ -263,3 +282,7 @@ _\<Erklärung\>_
 | --------------- | ------------------ |
 | _\<Begriff-1\>_ | _\<Definition-1\>_ |
 | _\<Begriff-2_   | _\<Definition-2\>_ |
+
+```
+
+```
