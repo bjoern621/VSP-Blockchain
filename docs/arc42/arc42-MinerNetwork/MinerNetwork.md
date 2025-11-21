@@ -323,19 +323,7 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 ## _\<Bezeichnung Laufzeitszenario 1\>_
 
-```mermaid
-sequenceDiagram
-    actor p1 as Peer 1
-    participant Registry
-    actor p2 as Peer 2
-
-    p1->>Registry: getpeers()
-    destroy Registry
-    Registry-->>p1: Liste IP-Adressen
-    p1->>p2: version(version, verfügbare Teilsysteme)
-    p2->>p1: verack(version, verfügbare Teilsysteme)
-    p1->>p2: ack()
-```
+-   \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
 
 -   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
     Szenario erläutern\>
