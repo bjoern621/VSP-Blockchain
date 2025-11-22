@@ -1,3 +1,5 @@
+// Great reference: https://en.bitcoin.it/wiki/Protocol_documentation
+
 syntax="proto3";
 
 package netzwerkrouting;

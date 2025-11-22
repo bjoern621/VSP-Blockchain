@@ -1,3 +1,5 @@
+// Great reference: https://en.bitcoin.it/wiki/Protocol_documentation
+
 syntax = "proto3";
 
 package blockchain;
@@ -12,6 +14,7 @@ service Miner {
     rpc GetBlocks(BlockLocator) returns (google.protobuf.Empty);
 
     // Inv announces knowledge of new blocks or transactions.
+    // It can be received unsolicited, or in reply to getblocks.
     rpc Inv(InvMsg) returns (google.protobuf.Empty);
 
     // GetData requests the full data for inventory items (Blocks or Txs).
@@ -88,15 +91,15 @@ message Transaction {
 }
 
 message TxInput {
-    bytes prev_tx_hash = 1; // Hash of the previous transaction
+    bytes prev_tx_hash = 1;
     uint32 output_index = 2; // Index of the output in the previous transaction
-    bytes signature_script = 3; // ScriptSig
+    bytes signature_script = 3;
     uint32 sequence = 4;
 }
 
 message TxOutput {
     int64 value = 1; // Amount in smallest unit
-    bytes public_key_script = 2; // ScriptPubKey (contains recipient address/hash)
+    bytes public_key_script = 2;
 }
 
 message BlockHeader {
