@@ -193,6 +193,9 @@ Besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur 
 Schnittstellen
 
 -   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+
+    Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Node, die den Standardport nutzen.
+
 -   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox).
 
 Qualitäts-/Leistungsmerkmale
