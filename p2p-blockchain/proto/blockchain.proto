@@ -9,12 +9,8 @@ import "google/protobuf/empty.proto";
 option go_package = "./internal/pb";
 
 service BlockchainService {
-    // GetBlocks requests block hashes starting from a locator.
-    // The server should respond with an Inv message.
-    rpc GetBlocks(BlockLocator) returns (google.protobuf.Empty);
-
     // Inv announces knowledge of new blocks or transactions.
-    // It can be received unsolicited, or in reply to getblocks.
+    // It can be received unsolicited, or in reply to Mempool.
     //
     // Pre-conditions:
     //  - For SPV nodes, Inv messages containing transactions are not sent until a SetFilter is received.
@@ -34,7 +30,7 @@ service BlockchainService {
 
     // GetHeaders requests block headers.
     // Server should answer with Headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
-    // Is used by SPV Nodes instead of GetBlocks.
+    // Used by both SPV and Full Nodes for initial sync (Headers-First Sync).
     rpc GetHeaders(BlockLocator) returns (google.protobuf.Empty);
 
     // Headers sends one or more block headers.
