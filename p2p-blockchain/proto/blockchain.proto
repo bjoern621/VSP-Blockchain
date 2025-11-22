@@ -33,10 +33,6 @@ service BlockchainService {
     // Tx sends a full transaction in response to a GetData message.
     rpc Tx(TxMsg) returns (google.protobuf.Empty);
 
-    // GetUTXOs requests unspent transaction outputs for a specific address/pubkey hash.
-    // Simplified version of BIP 64 / SPV.
-    rpc GetUTXOs(GetUTXOsRequest) returns (UTXOsResponse);
-
     // GetHeaders requests block headers.
     // Server should answer with Headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
     // Is used by SPV Nodes instead of GetBlocks.
@@ -58,6 +54,14 @@ service BlockchainService {
     //  - Only transactions involving the registered public key hashes will be announced.
     //  - Block Inv messages are NOT filtered and will still be sent to keep the SPV node synced.
     rpc SetFilter(SetFilterRequest) returns (google.protobuf.Empty);
+
+    // Mempool requests the list of unconfirmed transaction hashes in the server's memory pool.
+    // The server responds with an Inv message containing the tx hashes.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - (Optional) SetFilter sent if filtering is desired.
+    rpc Mempool(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message BlockHeaders {
@@ -96,16 +100,8 @@ message TxMsg {
     Transaction transaction = 1;
 }
 
-message GetUTXOsRequest {
-    bytes public_key_hash = 1; // Address identifier
-}
-
 message SetFilterRequest {
     repeated bytes public_key_hashes = 1;
-}
-
-message UTXOsResponse {
-    repeated UTXO utxos = 1;
 }
 
 message Transaction {
@@ -137,11 +133,4 @@ message BlockHeader {
 message Block {
     BlockHeader header = 1;
     repeated Transaction transactions = 2;
-}
-
-message UTXO {
-    bytes tx_hash = 1;
-    uint32 output_index = 2;
-    int64 value = 3;
-    bytes public_key_script = 4;
 }
