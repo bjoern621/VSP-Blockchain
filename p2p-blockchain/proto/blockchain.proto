@@ -28,7 +28,7 @@ service Miner {
     rpc GetUTXOs(GetUTXOsRequest) returns (UTXOsResponse);
 
     // GetHeaders requests block headers.
-    // Server should answer with headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop or 2000 blocks, whichever comes first.
+    // Server should answer with headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
     // Is used by SPV Nodes instead of GetBlocks.
     rpc GetHeaders(BlockLocator) returns (google.protobuf.Empty);
 
