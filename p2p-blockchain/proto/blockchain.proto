@@ -24,6 +24,7 @@ service BlockchainService {
     //
     // Pre-conditions:
     //  - Connection established.
+    //  - GetData(MSG_FILTERED_BLOCK) is only allowed if SetFilter has been called before.
     //
     // Post-conditions:
     //  - Server responds with Block or Tx messages for the requested items.
@@ -38,6 +39,14 @@ service BlockchainService {
     // Post-conditions:
     //  - Block validated (PoW, transactions) and local chain updated.
     rpc Block(BlockMsg) returns (google.protobuf.Empty);
+
+    // MerkleBlock sends a block header and merkle proofs for specific transactions.
+    // Used by SPV nodes to verify inclusion of transactions matching their filter.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to a GetData(MSG_FILTERED_BLOCK) request.
+    rpc MerkleBlock(MerkleBlockMsg) returns (google.protobuf.Empty);
 
     // Tx sends a full transaction in response to a GetData message.
     //
@@ -102,9 +111,9 @@ message BlockHeaders {
 }
 
 enum InvType {
-    ERROR = 0;
-    MSG_TX = 1;
-    MSG_BLOCK = 2;
+    MSG_TX = 0;
+    MSG_BLOCK = 1;
+    MSG_FILTERED_BLOCK = 2;
 }
 
 message InvVector {
@@ -127,6 +136,10 @@ message GetDataMsg {
 
 message BlockMsg {
     Block block = 1;
+}
+
+message MerkleBlockMsg {
+    MerkleBlock merkle_block = 1;
 }
 
 message TxMsg {
@@ -166,4 +179,15 @@ message BlockHeader {
 message Block {
     BlockHeader header = 1;
     repeated Transaction transactions = 2;
+}
+
+message MerkleBlock {
+    BlockHeader header = 1;
+    repeated MerkleProof proofs = 2;
+}
+
+message MerkleProof {
+    Transaction transaction = 1;
+    repeated bytes siblings = 2; // The merkle path (hashes of sibling nodes), ordered by depth, deepest first
+    uint32 index = 3;            // Index of the transaction in the block
 }
