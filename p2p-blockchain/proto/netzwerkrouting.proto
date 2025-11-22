@@ -1,0 +1,61 @@
+syntax="proto3";
+
+package netzwerkrouting;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./internal/pb";
+
+service ConnectionEstablishment {
+    // Version startet den Verbindungsaufbau.
+    rpc Version(VersionInfo) returns (google.protobuf.Empty);
+
+    // Verack bestätigt eine version Nachricht.
+    rpc Verack(VersionInfo) returns (google.protobuf.Empty);
+
+    // Ack bestätigt eine verack Nachricht und schließt den Verbindungsaufbau ab.
+    rpc Ack(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+service PeerDiscovery {
+    // GetAddr is sent by another peer in order to discover new peers.
+    // The server should respond with an addr message..
+    rpc GetAddr(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    // Addr teilt Adressen von bekannten Peers mit.
+    rpc Addr(AddrList) returns (google.protobuf.Empty);
+
+    // Heartbeat is a periodically keep-alive message.
+    rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+service ErrorHandling {
+    // Reject signals a fault in a received message to another peer.
+    rpc Reject(Error) returns (google.protobuf.Empty);
+}
+
+enum ErrorType {
+    REJECT_MALFORMED = 0;
+    REJECT_INVALID = 1;
+}
+
+message Error {
+    ErrorType error_type = 1;
+    string rejected_message_type = 2;
+    bytes data = 3;
+}
+
+message VersionInfo {
+    string version = 1;
+    map<string, bool> supported_teilsysteme = 2;
+}
+
+message PeerAddress {
+    bytes ip = 1;
+    uint32 port = 2;
+    int64 last_active_timestamp = 3;
+}
+
+message AddrList {
+    repeated PeerAddress peers = 1;
+}

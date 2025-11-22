@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package blockchain;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./internal/pb";
+
+service Miner {
+    // GetBlocks requests block hashes starting from a locator.
+    // The server should respond with an inv message.
+    rpc GetBlocks(GetBlocksMessage) returns (google.protobuf.Empty);
+
+    // Inv announces knowledge of new blocks or transactions.
+    rpc Inv(InvMsg) returns (google.protobuf.Empty);
+
+    // GetData requests the full data for inventory items (Blocks or Txs).
+    rpc GetData(GetDataMsg) returns (google.protobuf.Empty);
+
+    // Block sends a full block in response to a getdata message.
+    rpc Block(BlockMsg) returns (google.protobuf.Empty);
+
+    // Tx sends a full transaction in response to a getdata message.
+    rpc Tx(TxMsg) returns (google.protobuf.Empty);
+
+    // GetUTXOs requests unspent transaction outputs for a specific address/pubkey hash.
+    // Simplified version of BIP 64 / SPV.
+    rpc GetUTXOs(GetUTXOsRequest) returns (UTXOsResponse);
+
+    // GetHeaders requests block headers.
+    // Server should answer with headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop or 2000 blocks, whichever comes first.
+    // Is used by SPV Nodes instead of GetBlocks.
+    rpc GetHeaders() returns (google.protobuf.Empty);
+
+    // Headers sends one or more block headers.
+    // Is the response for getheaders message.
+    rpc Headers(BlockHeaders) return (google.protobuf.Empty);
+}
+
+message BlockHeader {
+    repeated BlockHeader block_headers = 1;
+}
+
+enum InvType {
+    ERROR = 0;
+    MSG_TX = 1;
+    MSG_BLOCK = 2;
+}
+
+message InvVector {
+    InvType type = 1;
+    bytes hash = 2;
+}
+
+message GetBlocksMessage {
+    int32 version = 1;
+    repeated bytes block_locator_hashes = 2; // Newest to oldest
+    bytes hash_stop = 3;
+}
+
+message InvMsg {
+    repeated InvVector inventory = 1;
+}
+
+message GetDataMsg {
+    repeated InvVector inventory = 1;
+}
+
+message BlockMsg {
+    Block block = 1;
+}
+
+message TxMsg {
+    Transaction transaction = 1;
+}
+
+message GetUTXOsRequest {
+    bytes public_key_hash = 1; // Address identifier
+}
+
+message UTXOsResponse {
+    repeated UTXO utxos = 1;
+}
+
+message Transaction {
+    int32 version = 1;
+    repeated TxInput inputs = 2;
+    repeated TxOutput outputs = 3;
+    int64 lock_time = 4;
+}
+
+message TxInput {
+    bytes prev_tx_hash = 1; // Hash of the previous transaction
+    uint32 output_index = 2; // Index of the output in the previous transaction
+    bytes signature_script = 3; // ScriptSig
+    uint32 sequence = 4;
+}
+
+message TxOutput {
+    int64 value = 1; // Amount in smallest unit
+    bytes public_key_script = 2; // ScriptPubKey (contains recipient address/hash)
+}
+
+message BlockHeader {
+    int32 version = 1;
+    bytes prev_block_hash = 2;
+    bytes merkle_root = 3;
+    int64 timestamp = 4;
+    uint32 difficulty_target = 5; // Bits
+    uint32 nonce = 6;
+}
+
+message Block {
+    BlockHeader header = 1;
+    repeated Transaction transactions = 2;
+}
+
+message UTXO {
+    bytes tx_hash = 1;
+    uint32 output_index = 2;
+    int64 value = 3;
+    bytes public_key_script = 4;
+}
