@@ -306,6 +306,7 @@ Weitere Informationen / Quellen:
 -   [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
 -   [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
 -   [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
+-   [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
 
 Schnittstellen
 
