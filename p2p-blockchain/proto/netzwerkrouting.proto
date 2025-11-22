@@ -48,7 +48,7 @@ message Error {
 }
 
 message VersionInfo {
-    string version = 1;
+    string version = 1; // Beliebiger Implementations-Identifier, z. B. "core-0.9.0"
     map<string, bool> supported_teilsysteme = 2; // Teilsysteme: "wallet", "miner", "blockchain_full", "blockchain_simple", "netzwerkrouting"
 }
 
