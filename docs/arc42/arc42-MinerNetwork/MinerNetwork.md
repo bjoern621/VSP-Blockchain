@@ -317,9 +317,6 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 
 -   [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
 
-Offene Punkte/Probleme/Risiken  
-Ob eine vereinfacht Blockchain keinen Mempool oder nur einen verkleinerten Mempool hält ist noch unklar. Hier sollte ggf. später spezifiziert werden.
-
 ### Wallet (Blackbox)
 
 ### Miner (Blackbox)
