@@ -12,16 +12,16 @@ service ConnectionEstablishment {
     // Version starts the connection establishment.
     rpc Version(VersionInfo) returns (google.protobuf.Empty);
 
-    // Verack acknowledges a version message.
+    // Verack acknowledges a Version message.
     rpc Verack(VersionInfo) returns (google.protobuf.Empty);
 
-    // Ack acknowledges a verack message and completes the connection establishment.
+    // Ack acknowledges a Verack message and completes the connection establishment.
     rpc Ack(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 service PeerDiscovery {
     // GetAddr is sent by another peer in order to discover new peers.
-    // The server should respond with an addr message.
+    // The server should respond with an Addr message.
     rpc GetAddr(google.protobuf.Empty) returns (google.protobuf.Empty);
 
     // Addr shares addresses of known peers.

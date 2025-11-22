@@ -10,7 +10,7 @@ option go_package = "./internal/pb";
 
 service BlockchainService {
     // GetBlocks requests block hashes starting from a locator.
-    // The server should respond with an inv message.
+    // The server should respond with an Inv message.
     rpc GetBlocks(BlockLocator) returns (google.protobuf.Empty);
 
     // Inv announces knowledge of new blocks or transactions.
@@ -27,10 +27,10 @@ service BlockchainService {
     // GetData requests the full data for inventory items (Blocks or Txs).
     rpc GetData(GetDataMsg) returns (google.protobuf.Empty);
 
-    // Block sends a full block in response to a getdata message.
+    // Block sends a full block in response to a GetData message.
     rpc Block(BlockMsg) returns (google.protobuf.Empty);
 
-    // Tx sends a full transaction in response to a getdata message.
+    // Tx sends a full transaction in response to a GetData message.
     rpc Tx(TxMsg) returns (google.protobuf.Empty);
 
     // GetUTXOs requests unspent transaction outputs for a specific address/pubkey hash.
@@ -38,12 +38,12 @@ service BlockchainService {
     rpc GetUTXOs(GetUTXOsRequest) returns (UTXOsResponse);
 
     // GetHeaders requests block headers.
-    // Server should answer with headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
+    // Server should answer with Headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
     // Is used by SPV Nodes instead of GetBlocks.
     rpc GetHeaders(BlockLocator) returns (google.protobuf.Empty);
 
     // Headers sends one or more block headers.
-    // Is the response for getheaders message.
+    // Is the response for GetHeaders message.
     rpc Headers(BlockHeaders) returns (google.protobuf.Empty);
 
     // SetFilter sets a filter for the connection based on public key hashes.
