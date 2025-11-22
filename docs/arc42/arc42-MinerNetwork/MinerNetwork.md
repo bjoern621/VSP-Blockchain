@@ -395,10 +395,10 @@ _\<Erklärung\>_
 
 # Glossar
 
-| Begriff      | Definition                                                                     |
-| ------------ | ------------------------------------------------------------------------------ |
-| SPV          | Simplified Payment Verification                                                |
-| SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                      |
-| Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing, auch _Solo-Miner_        |
-| ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW |
-| Node         | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.   |
+| Begriff      | Definition                                                                                                                                                                                                            |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SPV          | Simplified Payment Verification                                                                                                                                                                                       |
+| SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
+| Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
+| ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
+| Node         | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
