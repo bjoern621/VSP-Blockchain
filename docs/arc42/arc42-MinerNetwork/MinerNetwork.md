@@ -211,9 +211,9 @@ Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn
 
 Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren.
 
-## _\<Bezeichnung Laufzeitszenario 2\>_
+## Verifikation einer Transaktion SPV Node
 
-…​
+TODO
 
 ## _\<Bezeichnung Laufzeitszenario n\>_
 
