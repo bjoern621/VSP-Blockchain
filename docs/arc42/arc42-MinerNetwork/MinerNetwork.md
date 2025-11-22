@@ -300,6 +300,13 @@ Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
 | **Block-Validierung**                                                             | Prüft gesamten Block (alle Tx gültig + Proof-of-Work + Konsens)                                                                                | Prüft nur Proof-of-Work und Verkettung                                                                                                                                                                       |
 | **Empfang von Transaktionen**                                                     | Empfängt alle und speichert alle (validen) Tx                                                                                                  | Empfängt alle Tx, speichert aber nur Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                                                                   |
 
+Weitere Informationen / Quellen:
+
+-   [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
+-   [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
+-   [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
+-   [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
+
 Schnittstellen
 
 -   `Nachrichten senden / empfangen` muss die Blockchain Komponente über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über neue Nachrichten benachrichtigt zu werden, kann das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
