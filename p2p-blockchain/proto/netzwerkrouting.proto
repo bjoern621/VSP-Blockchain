@@ -105,7 +105,7 @@ message Endpoint {
 }
 
 message PeerAddress {
-    Endpoint listening_endpoint = 1
+    Endpoint listening_endpoint = 1;
     int64 last_active_timestamp = 2;
 }
 
