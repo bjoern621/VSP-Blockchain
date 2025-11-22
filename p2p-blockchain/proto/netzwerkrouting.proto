@@ -13,26 +13,64 @@ service ConnectionEstablishment {
     rpc Version(VersionInfo) returns (google.protobuf.Empty);
 
     // Verack acknowledges a Version message.
+    //
+    // Pre-conditions:
+    //  - Received a valid Version message.
+    //
+    // Post-conditions:
+    //  - Connection is considered handshaked (but not fully established until Ack).
     rpc Verack(VersionInfo) returns (google.protobuf.Empty);
 
     // Ack acknowledges a Verack message and completes the connection establishment.
+    //
+    // Pre-conditions:
+    //  - Received a valid Verack message.
+    //
+    // Post-conditions:
+    //  - Connection is fully established and ready for data exchange.
     rpc Ack(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 service PeerDiscovery {
     // GetAddr is sent by another peer in order to discover new peers.
     // The server should respond with an Addr message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - Server responds with an Addr message containing known peer addresses.
     rpc GetAddr(google.protobuf.Empty) returns (google.protobuf.Empty);
 
     // Addr shares addresses of known peers.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to GetAddr or unsolicited announcement.
+    //
+    // Post-conditions:
+    //  - Receiver added new addresses to its known addresses list.
     rpc Addr(AddrList) returns (google.protobuf.Empty);
 
     // Heartbeat is a periodically keep-alive message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - Receiver updates the last_seen timestamp for the peer.
     rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 service ErrorHandling {
     // Reject signals a fault in a received message to another peer.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - A malformed or invalid message was received.
+    //
+    // Post-conditions:
+    //  - Server handled the error (e.g. logging).
     rpc Reject(Error) returns (google.protobuf.Empty);
 }
 
