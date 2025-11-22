@@ -51,7 +51,7 @@ service BlockchainService {
     //
     // Pre-conditions:
     //  - Can only be sent by an SPV node to a Full Node.
-    //  - Connection must be established (Version/Verack exchanged).
+    //  - Connection must be established.
     //
     // Post-conditions:
     //  - The Full Node will filter future Inv messages for this connection.
