@@ -49,7 +49,7 @@ service PeerDiscovery {
     //  - Response to GetAddr or unsolicited announcement.
     //
     // Post-conditions:
-    //  - Receiver added new addresses to its known addresses list.
+    //  - New addresses added to known addresses list.
     rpc Addr(AddrList) returns (google.protobuf.Empty);
 
     // Heartbeat is a periodically keep-alive message.
@@ -58,7 +58,7 @@ service PeerDiscovery {
     //  - Connection established.
     //
     // Post-conditions:
-    //  - Receiver updates the last_seen timestamp for the peer.
+    //  - last_seen timestamp for the peer updated.
     rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
@@ -70,7 +70,7 @@ service ErrorHandling {
     //  - A malformed or invalid message was received.
     //
     // Post-conditions:
-    //  - Server handled the error (e.g. logging).
+    //  - Error handled (e.g. logging).
     rpc Reject(Error) returns (google.protobuf.Empty);
 }
 

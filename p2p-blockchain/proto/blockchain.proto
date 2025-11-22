@@ -36,7 +36,7 @@ service BlockchainService {
     //  - Response to a GetData(MSG_BLOCK) request.
     //
     // Post-conditions:
-    //  - Server validates the block (PoW, transactions) and updates its local chain.
+    //  - Block validated (PoW, transactions) and local chain updated.
     rpc Block(BlockMsg) returns (google.protobuf.Empty);
 
     // Tx sends a full transaction in response to a GetData message.
@@ -46,7 +46,7 @@ service BlockchainService {
     //  - Response to a GetData(MSG_TX) request.
     //
     // Post-conditions:
-    //  - Server validates the transaction and adds it to the mempool or wallet.
+    //  - Transaction validated and added to the mempool.
     rpc Tx(TxMsg) returns (google.protobuf.Empty);
 
     // GetHeaders requests block headers.
@@ -69,7 +69,7 @@ service BlockchainService {
     //  - Contains a maximum of 100 headers per message.
     //
     // Post-conditions:
-    //  - Server validates PoW and extends its local header chain.
+    //  - PoW validated and local header chain extended.
     rpc Headers(BlockHeaders) returns (google.protobuf.Empty);
 
     // SetFilter sets a filter for the connection based on public key hashes.
@@ -87,10 +87,10 @@ service BlockchainService {
 
     // Mempool requests the list of unconfirmed transaction hashes in the server's memory pool.
     // The server responds with an Inv message containing the tx hashes.
+    // SetFilter can be used before sending Mempool messages to retrieve filtered results.
     //
     // Pre-conditions:
     //  - Connection established.
-    //  - (Optional) SetFilter sent if filtering is desired.
     //
     // Post-conditions:
     //  - Server sends Inv messages for all (or filtered) transactions in its mempool.
