@@ -94,7 +94,7 @@ enum ServiceType {
 }
 
 message VersionInfo {
-    string version = 1; // Beliebiger Implementations-Identifier, z. B. "core-0.9.0"
+    string version = 1; // Arbitrary implementation identifier, e.g. "core-0.9.0"
     repeated ServiceType supported_services = 2;
 }
 
