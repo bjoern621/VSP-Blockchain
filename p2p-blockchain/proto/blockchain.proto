@@ -8,7 +8,7 @@ import "google/protobuf/empty.proto";
 
 option go_package = "./internal/pb";
 
-service Miner {
+service BlockchainService {
     // GetBlocks requests block hashes starting from a locator.
     // The server should respond with an inv message.
     rpc GetBlocks(BlockLocator) returns (google.protobuf.Empty);

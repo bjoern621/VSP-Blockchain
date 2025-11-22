@@ -47,9 +47,17 @@ message Error {
     bytes data = 3;
 }
 
+enum ServiceType {
+    SERVICE_WALLET = 0;
+    SERVICE_MINER = 1;
+    SERVICE_BLOCKCHAIN_FULL = 2;
+    SERVICE_BLOCKCHAIN_SIMPLE = 3;
+    SERVICE_NETZWERKROUTING = 4;
+}
+
 message VersionInfo {
     string version = 1; // Beliebiger Implementations-Identifier, z. B. "core-0.9.0"
-    map<string, bool> supported_teilsysteme = 2; // Teilsysteme: "wallet", "miner", "blockchain_full", "blockchain_simple", "netzwerkrouting"
+    repeated ServiceType supported_services = 2;
 }
 
 message PeerAddress {
