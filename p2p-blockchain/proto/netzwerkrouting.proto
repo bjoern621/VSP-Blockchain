@@ -43,7 +43,7 @@ enum ErrorType {
 
 message Error {
     ErrorType error_type = 1;
-    string rejected_message_type = 2;
+    string rejected_message_type = 2; // I.e. "getdata", "headers", "addr", ...
     bytes data = 3;
 }
 
