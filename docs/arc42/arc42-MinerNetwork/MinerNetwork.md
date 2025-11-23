@@ -389,7 +389,7 @@ Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen Ver
 
 Zunächst werden die Block-Header synchronisiert (`GetHeaders`). Siehe hierzu auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Es werden `GetHeaders` und `Headers` Nachrichten ausgetauscht bis Block-Header identisch sind. Dabei müssen stets die maximale Länge der Nachrichten beachtet werden und ggf. mehrere `GetHeaders` gesendet werden.
 
-`GetHeaders` benötigt einen `BlockLocator` als Parameter. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann.
+`GetHeaders` benötigt einen `BlockLocator` als Parameter. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann.
 
 Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
 
