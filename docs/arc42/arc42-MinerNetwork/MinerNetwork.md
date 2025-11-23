@@ -296,7 +296,7 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 -   [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
 
 Offene Punkte/Probleme/Risiken  
-Die detaillierte Unterschiedung zwischen vereinfacht und vollständig ist noch recht schwer. Vorallem welche Bestandteile der Blockchain Wallet oder Miner brauchen / nicht brauchen ist schwer zu überblicken. Hier sollte ggf. später spezifiziert werden.
+Die detaillierte Unterscheidung zwischen vereinfacht und vollständig ist noch recht schwer. Vorallem welche Bestandteile der Blockchain Wallet oder Miner brauchen / nicht brauchen ist schwer zu überblicken. Hier sollte ggf. später spezifiziert werden.
 
 ### Wallet (Blackbox)
 
