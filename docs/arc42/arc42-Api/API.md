@@ -177,7 +177,7 @@ api --( blockchainApi : gRPC
 # Bausteinsicht
 
 ## Whitebox Gesamtsystem
-
+![Diagramm](https://www.plantuml.com/plantuml/png/dLJDZjCm4BxdAKOL4gTgxwkbshHQVWIggcPLBbpSPBQrwewhiRFBikBA0_0yt7WJdeI9NTCG82BroMD_C_w-oJUvTbwnh_Sc8riXZAPi7nmol6HB7gaQWNAmZeTPzXnU_6t9EK3nw3pkOMfhgXG__XDRslt14fA7qVAck8LyyGOAv7jTOdXC7JGyPHd8Qa5lMP5JEwyj1PGFSTd4FL1tZsnKVHTIZlik_Aq8jG6mQtRTwzMpLrRJ-9rUZ_DA7JnoP1dtsUV-fjny510f0vBFVLs9tR-wmf0mcNoW-30KYnNCvJ9L2AyRlOQdBjFtoXZqwJv6NSmS_QS7v1tRsclQ9B0S_xUIgR7bhjmgJVrYKkTE-EYb9fo5zER1yP0b-EJF7r--7XqtkCZHpP8rQTi8BW5P2Xg3qB9G6vui9D0xLXiFgsEircrOD9A0WhKKDLYaSzH6XQ2fwVtW_BOuePKyAyIStf16_bre4YUh0zzQW_1QEszPOnRL_OaIZSYXQb5kpVTlpg61YvYSI-3TEIq8GnS_U1g1mLKIH-5x6WrXd5UCGkoYa7OeNpFawLjrCkO2Xylmgvf9iXDPopX1PqXACeAarZGDBHHv1OgdeHAMoyLi_4l8DL9LxyrF)
 ````plantuml
 @startuml
 node "Browser Frontend" as browser
@@ -355,7 +355,7 @@ libNet --> blockChain : RPC-Anfragen
 ## Ebene 2
 
 ### Whitebox *\<Konto\>*
-
+![Diagramm](https://www.plantuml.com/plantuml/png/NSyzJiGm40NWVaxnv8fc6qgqMYrqA5HGK8-S0Ldhs8azGOeG4dVWXfo41ES7uiepVlFPFcVbf7tZIPrwmOEyYSSrlZ-_KCMcZK622amLWqP3b2ykj9ouWHlxwOMjFEdW1HD1BTiBlwvnl1DXN7Q1O6xh93cB0MVC-tsc36VbKF_6jf8-YDPhOUxls7Em1LkAH-becy3XSFNt23Su7fDqlKkIJwT_sZDxBrgmIeO9cbzObDBR2sS9zVZt7m00)
 ````plantuml
 @startuml
 title Level 2 – Komponente "Konto"
@@ -377,6 +377,7 @@ Adresse --( IKeyReq : <<requires>>
 ````
 
 ### Whitebox *\<V$Goin-Lib-Adapter\>*
+![Diagramm](https://www.plantuml.com/plantuml/png/VO_1IWCn48RlUOgXUEWb5uzIIlKYfKL4GS_ZxbZ2PfDqThPB5S5ty0rz4jEjgPjLp2dC_F_t_xDe15dQsYenOWdMj2CBv_3v_W4hNmVlo0d1vE7isXkdr-P9NvOOX7YYL5CP5v2n1XD5_8m5tSi-KWuy5R2eSFEt5rwLWlYA506JHxIMv4U13Hn7tvDVXXkIbuwuoYnns7ckakTDdPgbX5wsl4ABhg0xsgei1NJfEwUdGmLSm6p6j6qDKpEV3v6f0_jMZDiSsIlQ7xXv5T0zUPhM_q2Nmw9HVSj-DsxP1dtQzQWGFwOSez8LsT4zRzmk0ZF16BeWLxQr_G80)
 ````plantuml
 @startuml
 title Level 2 – Komponente "V$Goin-Lib-Adapter"
