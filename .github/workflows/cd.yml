@@ -2,7 +2,7 @@ name: CD
 
 on:
     push:
-        branches: ["main", "108-task-cron-action-für-aktuelle-kubeconfig"]
+        branches: ["main"]
     workflow_dispatch:
 
 # Needed to push to GHCR
@@ -115,7 +115,6 @@ jobs:
                 KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
-                  cat ~/.kube/config
                   kubectl apply -f kubernetes-deployment-prod.yaml
 
             - name: Update images to newly published tag
