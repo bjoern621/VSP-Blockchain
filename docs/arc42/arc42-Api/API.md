@@ -36,11 +36,11 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 
 ### Form
 
-| **Use Case / Aufgabe** | **Beschreibung**   | User Stories                     |
-|-------------------------|-------------------|----------------------------------|
-| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt.| US-1 Transaktion                 |
-| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen. | US-2 Kontostand einsehen         |
-| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.  | US-3 Transaktionsverlauf ansehen |
+| **Use Case / Aufgabe** | **Beschreibung**   | User Stories                                                                                |
+|-------------------------|-------------------|---------------------------------------------------------------------------------------------|
+| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt.| [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)                  |
+| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen. | [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)          |
+| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.  | [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27) |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
 
@@ -115,28 +115,34 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ## Technischer Kontext
 ![Diagram](https://www.plantuml.com/plantuml/png/PL1BJeH04DtNALw8YRFX0gxc4p-Jk203STyqvT2ngIPDCIQUnvjuCM56Hj3bUrNrFhNkr4Jj6qyIAaQoZU6zuuY764HPgWIcGtaXYMnesY0iYkHmdnVOP7la74_EyddHj8w8WDdUoyrZS99kVR1ljZPEBeeZt8sGw1RFmNlNXZRDRIrEjLFsdc4Q_7KX9yhnrLX6WiboFt4q1qZJSJZgJwMarmz5vHWB8_hfDroi5dgumrDHPFceSKrIVttAKN4AWjzICEN_QELrl1boBD1WDV-1EJEhvSNWVZnaErgpL7tZlm40)
-````plantuml
-@startuml
-node "Browser Frontend" as browser
 
-component "REST API Service" as api
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    node "Browser Frontend" as browser
+    
+    component "REST API Service" as api
+    
+    
+      component "V$Goin-Blockchain" as blockChain
+    
+    ' Lollipop-Schnittstelle am REST API Service
+    interface " " as apiInterface
+    apiInterface -- api
+    
+    ' Browser nutzt die Schnittstelle
+    browser --( apiInterface : HTTPS
+    
+    ' REST API hängt von Blockchain ab
+    interface " " as blockchainApi
+    blockchainApi -- blockChain
+    api --( blockchainApi : gRPC
+    @enduml
+    ````
+</details>
 
-
-  component "V$Goin-Blockchain" as blockChain
-
-' Lollipop-Schnittstelle am REST API Service
-interface " " as apiInterface
-apiInterface -- api
-
-' Browser nutzt die Schnittstelle
-browser --( apiInterface : HTTPS
-
-' REST API hängt von Blockchain ab
-interface " " as blockchainApi
-blockchainApi -- blockChain
-api --( blockchainApi : gRPC
-@enduml
-````
 
 | **Kommunikationspartner** | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung** |
 |----------------------------|-------------------------------------|------------------------------|-------------------------------|
@@ -178,62 +184,68 @@ api --( blockchainApi : gRPC
 
 ## Whitebox Gesamtsystem
 ![Diagramm](https://www.plantuml.com/plantuml/png/dLJDZjCm4BxdAKOL4gTgxwkbshHQVWIggcPLBbpSPBQrwewhiRFBikBA0_0yt7WJdeI9NTCG82BroMD_C_w-oJUvTbwnh_Sc8riXZAPi7nmol6HB7gaQWNAmZeTPzXnU_6t9EK3nw3pkOMfhgXG__XDRslt14fA7qVAck8LyyGOAv7jTOdXC7JGyPHd8Qa5lMP5JEwyj1PGFSTd4FL1tZsnKVHTIZlik_Aq8jG6mQtRTwzMpLrRJ-9rUZ_DA7JnoP1dtsUV-fjny510f0vBFVLs9tR-wmf0mcNoW-30KYnNCvJ9L2AyRlOQdBjFtoXZqwJv6NSmS_QS7v1tRsclQ9B0S_xUIgR7bhjmgJVrYKkTE-EYb9fo5zER1yP0b-EJF7r--7XqtkCZHpP8rQTi8BW5P2Xg3qB9G6vui9D0xLXiFgsEircrOD9A0WhKKDLYaSzH6XQ2fwVtW_BOuePKyAyIStf16_bre4YUh0zzQW_1QEszPOnRL_OaIZSYXQb5kpVTlpg61YvYSI-3TEIq8GnS_U1g1mLKIH-5x6WrXd5UCGkoYa7OeNpFawLjrCkO2Xylmgvf9iXDPopX1PqXACeAarZGDBHHv1OgdeHAMoyLi_4l8DL9LxyrF)
-````plantuml
-@startuml
-node "Browser Frontend" as browser
+<details>
+    <summary> Code </summary>
 
-' =====================
-'   System Boundary
-' =====================
-component "REST API Service" as api {
+    ````plantuml
+    @startuml
+    node "Browser Frontend" as browser
+    
+    ' =====================
+    '   System Boundary
+    ' =====================
+    component "REST API Service" as api {
+    
+        component "Transaktion" as transaction
+        component "Transaktionsverlauf" as verlauf
+        component "Konto" as konto
+        component "V$Goin-Lib-Adapter" as adapter
+    }
+    
+    ' =====================
+    '   External Library
+    ' =====================
+    node "<<extern>>\nV$Goin SPV Node Library" as lib {
+        component "Wallet" as libWallet
+        component "Netzwerkrouting" as libNet
+    }
+    
+    ' =====================
+    '   External Blockchain
+    ' =====================
+    node "V$Goin-Blockchain" as blockChain
+    
+    
+    ' ---------------------------------------------
+    ' Browser → System
+    ' ---------------------------------------------
+    browser --> transaction : erstelle Transaktion
+    browser --> verlauf : fragt Verlauf ab
+    browser --> konto : Kontoanfragen
+    
+    ' ---------------------------------------------
+    ' System intern
+    ' ---------------------------------------------
+    transaction --> adapter : signiere Transaktion
+    verlauf     --> adapter : hole Historie
+    konto     --> adapter : generiere Schlüssel / hole Assets
+    
+    ' ---------------------------------------------
+    ' Adapter → Library
+    ' ---------------------------------------------
+    adapter --> libWallet : Adresse/Signatur Anfragen
+    adapter --> libNet  : API Calls / Routing
+    
+    ' ---------------------------------------------
+    ' Library → Blockchain
+    ' ---------------------------------------------
+    libNet --> blockChain : RPC-Anfragen
+    
+    @enduml
+    ````
+</details>
 
-    component "Transaktion" as transaction
-    component "Transaktionsverlauf" as verlauf
-    component "Konto" as konto
-    component "V$Goin-Lib-Adapter" as adapter
-}
 
-' =====================
-'   External Library
-' =====================
-node "<<extern>>\nV$Goin SPV Node Library" as lib {
-    component "Wallet" as libWallet
-    component "Netzwerkrouting" as libNet
-}
-
-' =====================
-'   External Blockchain
-' =====================
-node "V$Goin-Blockchain" as blockChain
-
-
-' ---------------------------------------------
-' Browser → System
-' ---------------------------------------------
-browser --> transaction : erstelle Transaktion
-browser --> verlauf : fragt Verlauf ab
-browser --> konto : Kontoanfragen
-
-' ---------------------------------------------
-' System intern
-' ---------------------------------------------
-transaction --> adapter : signiere Transaktion
-verlauf     --> adapter : hole Historie
-konto     --> adapter : generiere Schlüssel / hole Assets
-
-' ---------------------------------------------
-' Adapter → Library
-' ---------------------------------------------
-adapter --> libWallet : Adresse/Signatur Anfragen
-adapter --> libNet  : API Calls / Routing
-
-' ---------------------------------------------
-' Library → Blockchain
-' ---------------------------------------------
-libNet --> blockChain : RPC-Anfragen
-
-@enduml
-````
 ## Blackboxes Ebene 1
 ### Inhaltsverzeichnis
 1. [Transaktion](#transaktion-blackbox)
@@ -263,7 +275,7 @@ libNet --> blockChain : RPC-Anfragen
 - V$Goin-Lib-Adapter (Signatur, Weiterleitung)
 
 #### Erfüllte Anforderungen
-- [US-Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)
+- [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)
 
 #### Qualitätsanforderungen
 - Zuverlässigkeit: Ungültige Transaktionen werden abgelehnt
@@ -287,7 +299,7 @@ libNet --> blockChain : RPC-Anfragen
 - V$Goin-Lib-Adapter (History-Abfrage)
 
 #### Erfüllte Anforderungen
-- [US-Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)
+- [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)
 
 #### Qualitätsanforderungen
 - Performance: 99% der Antworten in unter 2s
@@ -313,9 +325,9 @@ libNet --> blockChain : RPC-Anfragen
 - V$Goin-Lib-Adapter (Key-Funktionen, Balance, Key-Ableitung)
 
 #### Erfüllte Anforderungen
-- [US-Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)
-- [EPIC-Konto erstellen](https://github.com/bjoern621/VSP-Blockchain/issues/24)
-- [EPIC-V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/94)
+- [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)
+- [EPIC-24 Konto erstellen](https://github.com/bjoern621/VSP-Blockchain/issues/24)
+- [EPIC-94 V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/94)
 
 #### Qualitätsanforderungen
 - Performance: 99% der Antworten in unter 2s
@@ -356,50 +368,59 @@ libNet --> blockChain : RPC-Anfragen
 
 ### Whitebox *\<Konto\>*
 ![Diagramm](https://www.plantuml.com/plantuml/png/NSyzJiGm40NWVaxnv8fc6qgqMYrqA5HGK8-S0Ldhs8azGOeG4dVWXfo41ES7uiepVlFPFcVbf7tZIPrwmOEyYSSrlZ-_KCMcZK622amLWqP3b2ykj9ouWHlxwOMjFEdW1HD1BTiBlwvnl1DXN7Q1O6xh93cB0MVC-tsc36VbKF_6jf8-YDPhOUxls7Em1LkAH-becy3XSFNt23Su7fDqlKkIJwT_sZDxBrgmIeO9cbzObDBR2sS9zVZt7m00)
-````plantuml
-@startuml
-title Level 2 – Komponente "Konto"
-
-skinparam interfaceStyle uml
-
-package "Konto" {
-
-    component "Adresse" as Adresse
-
-    component "Kontostand" as Kontostand
-}
-
-interface "IBalance" as IBalanceReq
-Kontostand --( IBalanceReq : <<requires>>
-interface "IWallet" as IKeyReq
-Adresse --( IKeyReq : <<requires>>
-@enduml
-````
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    title Level 2 – Komponente "Konto"
+    
+    skinparam interfaceStyle uml
+    
+    package "Konto" {
+    
+        component "Adresse" as Adresse
+    
+        component "Kontostand" as Kontostand
+    }
+    
+    interface "IBalance" as IBalanceReq
+    Kontostand --( IBalanceReq : <<requires>>
+    interface "IWallet" as IKeyReq
+    Adresse --( IKeyReq : <<requires>>
+    @enduml
+    ````
+</details>
 
 ### Whitebox *\<V$Goin-Lib-Adapter\>*
 ![Diagramm](https://www.plantuml.com/plantuml/png/VO_1IWCn48RlUOgXUEWb5uzIIlKYfKL4GS_ZxbZ2PfDqThPB5S5ty0rz4jEjgPjLp2dC_F_t_xDe15dQsYenOWdMj2CBv_3v_W4hNmVlo0d1vE7isXkdr-P9NvOOX7YYL5CP5v2n1XD5_8m5tSi-KWuy5R2eSFEt5rwLWlYA506JHxIMv4U13Hn7tvDVXXkIbuwuoYnns7ckakTDdPgbX5wsl4ABhg0xsgei1NJfEwUdGmLSm6p6j6qDKpEV3v6f0_jMZDiSsIlQ7xXv5T0zUPhM_q2Nmw9HVSj-DsxP1dtQzQWGFwOSez8LsT4zRzmk0ZF16BeWLxQr_G80)
-````plantuml
-@startuml
-title Level 2 – Komponente "V$Goin-Lib-Adapter"
 
-skinparam interfaceStyle uml
-
-package "V$Goin-Lib-Adapter" {
-
-    component "Wallet-Adapter" as WalletAdapter
-
-    component "Netzwerk-Adapter" as NetworkAdapter
-}
-interface "Wallet" as IBalanceReq
-WalletAdapter -down-( IBalanceReq : <<requires>>
-interface "Netzwerkrouting" as IKeyReq
-NetworkAdapter --down( IKeyReq : <<requires>>
-interface "IWallet" as IKeyProv
-WalletAdapter -up- IKeyProv : <<provides>>
-interface "IBalance" as IBalanceProv
-NetworkAdapter -up- IBalanceProv : <<provides>>
-@enduml
-````
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    title Level 2 – Komponente "V$Goin-Lib-Adapter"
+    
+    skinparam interfaceStyle uml
+    
+    package "V$Goin-Lib-Adapter" {
+    
+        component "Wallet-Adapter" as WalletAdapter
+    
+        component "Netzwerk-Adapter" as NetworkAdapter
+    }
+    interface "Wallet" as IBalanceReq
+    WalletAdapter -down-( IBalanceReq : <<requires>>
+    interface "Netzwerkrouting" as IKeyReq
+    NetworkAdapter --down( IKeyReq : <<requires>>
+    interface "IWallet" as IKeyProv
+    WalletAdapter -up- IKeyProv : <<provides>>
+    interface "IBalance" as IBalanceProv
+    NetworkAdapter -up- IBalanceProv : <<provides>>
+    @enduml
+    ````
+</details>
 
 # Laufzeitsicht
 
@@ -470,7 +491,7 @@ Zentrale fachliche Objekte sind:
 - Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Library bzw. Miner Network validiert werden.
 
 ## 2. Sicherheitskonzept
-- Alle technischen Schnittstellen kommunizieren ausschließlich über TLS.
+- Die REST Schnittstellen kommunizieren ausschließlich über TLS.
 
 ## 3. Persistenz- und Datenhaltungskonzept
 
