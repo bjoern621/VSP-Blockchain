@@ -92,7 +92,6 @@ jobs:
             - name: Configure kubeconfig
               uses: ./.github/actions/fetch_current_cube_config
               with:
-                ICC_USERNAME: ${{ env.ICC_USERNAME }}
                 ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
 
             - name: Get OpenVPN Config from Secrets
