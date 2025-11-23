@@ -2,7 +2,7 @@ name: CD
 
 on:
     push:
-        branches: ["main"]
+        branches: ["main", "108-task-cron-action-für-aktuelle-kubeconfig"]
     workflow_dispatch:
 
 # Needed to push to GHCR
@@ -90,11 +90,9 @@ jobs:
               uses: azure/setup-kubectl@v4
 
             - name: Configure kubeconfig
-              env:
-                  KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-              run: |
-                  mkdir -p ~/.kube
-                  echo "$KUBE_CONFIG" | base64 --decode > ~/.kube/config
+              uses: ./.github/actions/fetch_current_cube_config
+              with:
+                ICC_USERNAME: 'infwnu618'
 
             - name: Get OpenVPN Config from Secrets
               run: |
