@@ -195,27 +195,72 @@ sequenceDiagram
     participant Registry
     participant p2 as Peer X
 
-    p1->>Registry: getpeers()
+    p1->>Registry: GetPeers()
     destroy Registry
     Registry-->>p1: Liste IP-Adressen
     loop Für jede IP X in der Liste
-        p1->>p2: version(version, verfügbare Teilsysteme)
-        p2->>p1: verack(version, verfügbare Teilsysteme)
-        p1->>p2: ack()
+        p1->>p2: Version()
+        p2->>p1: Verack()
+        p1->>p2: Ack()
     end
 ```
 
 </div>
 
-Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `version`, `verack` und `ack` besteht.
+Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
 
 Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren.
 
-## Verifikation einer Transaktion SPV Node
+## Initialer Block Download
 
-TODO
+<div align="center">
 
-## _\<Bezeichnung Laufzeitszenario n\>_
+```mermaid
+sequenceDiagram
+    participant SPV as SPV Node
+    participant Full as Full Node
+
+    Note over SPV, Full: Block-Header synchronisieren
+
+    SPV->>Full: GetHeaders(BlockLocator)
+    Full->>SPV: Headers()
+    Full->>SPV: Headers()
+
+    SPV->>Full: SetFilter()
+
+    Note over SPV, Full: Blöcke (UTXOs) anfordern
+
+    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
+    Full->>SPV: MerkleBlock()
+    Full->>SPV: MerkleBlock()
+
+    Note over SPV, Full: Unbestätigte Transaktionen abrufen
+
+    SPV->>Full: Mempool()
+    Full->>SPV: Inv()
+
+    SPV->>Full: GetData(MSG_TX)
+    Full->>SPV: Tx()
+    Full->>SPV: Tx()
+```
+
+</div>
+
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen Verbindungsaufbau. Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node.
+
+Zunächst werden die Block-Header synchronisiert (`GetHeaders`). Siehe hierzu auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Es werden `GetHeaders` und `Headers` Nachrichten ausgetauscht bis Block-Header identisch sind. Dabei müssen stets die maximale Länge der Nachrichten beachtet werden und ggf. mehrere `GetHeaders` gesendet werden.
+
+`GetHeaders` benötigt einen `BlockLocator` als Parameter. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann.
+
+Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
+
+Abschließend wird der Mempool synchronisiert, um auch über noch unbestätigte Transaktionen informiert zu sein. Da zuvor ein Filter gesetzt wurde, werden nur gefilterte Transaktionen in der Inv Nachricht übermittelt.
+
+Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
+
+Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
+
+## _<Bezeichnung Laufzeitszenario n>_
 
 …​
 
