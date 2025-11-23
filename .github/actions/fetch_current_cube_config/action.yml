@@ -44,7 +44,7 @@ runs:
               sed -i "s|#SERVER_URL|$CLUSTER_SERVER_ADDRESS|g" ICC_KUBE_CONFIG_TEMPLATE
               sed -i "s|#NAMESPACE|${{ inputs.namespace }}|g" ICC_KUBE_CONFIG_TEMPLATE
               sed -i "s|#USER|$USERNAME|g" ICC_KUBE_CONFIG_TEMPLATE
-              sed -i "s|#TOKEN|$CLUSTER_SERVER_ADDRESS|g" ICC_KUBE_CONFIG_TEMPLATE
+              sed -i "s|#TOKEN|$TOKEN|g" ICC_KUBE_CONFIG_TEMPLATE
             
               mkdir -p ~/.kube
               cp ICC_KUBE_CONFIG_TEMPLATE ~/.kube/config
