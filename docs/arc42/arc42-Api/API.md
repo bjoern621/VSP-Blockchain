@@ -178,100 +178,227 @@ api --( blockchainApi : gRPC
 
 ## Whitebox Gesamtsystem
 
-***\<Übersichtsdiagramm\>***
 ````plantuml
 @startuml
 node "Browser Frontend" as browser
+
+' =====================
+'   System Boundary
+' =====================
 component "REST API Service" as api {
-component "Transaktion" as transaction
-component "Transaktionsverlauf" as verlauf
-component "Kontostand" as konto
-component "Netzwerk" as network
-component "Schlüssel" as Keys
-verlauf --> network: erfrage Historie
-konto --> network:  hole alle Zahlungsmittel für Adresse
-transaction --> Keys: erstelle Signatur
+
+    component "Transaktion" as transaction
+    component "Transaktionsverlauf" as verlauf
+    component "Konto" as konto
+    component "V$Goin-Lib-Adapter" as adapter
 }
+
+' =====================
+'   External Library
+' =====================
+node "<<extern>>\nV$Goin SPV Node Library" as lib {
+    component "Wallet" as libWallet
+    component "Netzwerkrouting" as libNet
+}
+
+' =====================
+'   External Blockchain
+' =====================
 node "V$Goin-Blockchain" as blockChain
 
 
-'Browser zu Server
-browser -down-> transaction: erstelle Transaktion
+' ---------------------------------------------
+' Browser → System
+' ---------------------------------------------
+browser --> transaction : erstelle Transaktion
 browser --> verlauf : fragt Verlauf ab
-browser --> konto : fragt Kontostand ab
-browser --> Keys : generiere Adresse 
+browser --> konto : Kontoanfragen
 
-'Server zu Blockchain
-transaction -down--> blockChain: verbreite Transaktion
-network -> blockChain: Anfragen werden weitergegeben
+' ---------------------------------------------
+' System intern
+' ---------------------------------------------
+transaction --> adapter : signiere Transaktion
+verlauf     --> adapter : hole Historie
+konto     --> adapter : generiere Schlüssel / hole Assets
+
+' ---------------------------------------------
+' Adapter → Library
+' ---------------------------------------------
+adapter --> libWallet : Adresse/Signatur Anfragen
+adapter --> libNet  : API Calls / Routing
+
+' ---------------------------------------------
+' Library → Blockchain
+' ---------------------------------------------
+libNet --> blockChain : RPC-Anfragen
+
 @enduml
 ````
-Begründung  
-*\<Erläuternder Text\>*
+## Blackboxes Ebene 1
+### Inhaltsverzeichnis
+1. [Transaktion](#transaktion-blackbox)
+2. [Transaktionsverlauf](#transaktionsverlauf-blackbox)
+3. [Konto](#konto-blackbox)
+4. [V$Goin-Lib-Adapter](#vgoin-lib-adapter-blackbox)
+5. [V$Goin SPV Node Library](#vgoin-spv-node-library-blackbox)
+6. [V$Goin-Blockchain](#vgoin-blockchain-blackbox)
 
-Enthaltene Bausteine  
-*\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>*
+---
 
-Wichtige Schnittstellen  
-*\<Beschreibung wichtiger Schnittstellen\>*
+### Transaktion (Blackbox)
 
-### \<Name Blackbox 1\>
+#### Zweck / Verantwortung
+- Entgegennahme und Umwandlung von Transaktionsanfragen
+- Weitergabe der Signaturerstellung und verbreiten im Netzwerk durch den Adapter
 
-*\<Zweck/Verantwortung\>*
+#### Schnittstelle
+- REST-Endpunkt post /transaction
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
-*\<Schnittstelle(n)\>*
+#### Eingaben / Ausgaben
+- Eingaben: Transaktionsdaten vom Client
+- Ausgaben: Erfolgs- oder Fehlermeldungen
 
-*\<(Optional) Qualitäts-/Leistungsmerkmale\>*
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (Signatur, Weiterleitung)
 
-*\<(Optional) Ablageort/Datei(en)\>*
+#### Erfüllte Anforderungen
+- [US-Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)
 
-*\<(Optional) Erfüllte Anforderungen\>*
+#### Qualitätsanforderungen
+- Zuverlässigkeit: Ungültige Transaktionen werden abgelehnt
 
-*\<(optional) Offene Punkte/Probleme/Risiken\>*
+---
 
-### \<Name Blackbox 2\>
+### Transaktionsverlauf (Blackbox)
 
-*\<Blackbox-Template\>*
+#### Zweck / Verantwortung
+- Bereitstellung der Transaktionshistorie für einen bestimmte Wallet Adresse (Public Key Hash)
 
-### \<Name Blackbox n\>
+#### Schnittstelle
+- REST-Endpunkt get /history
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
-*\<Blackbox-Template\>*
+#### Eingaben / Ausgaben
+- Eingaben: Wallet Adresse (Public Key Hash) base58 encoded
+- Ausgaben: Liste von Transaktionen
 
-### \<Name Schnittstelle 1\>
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (History-Abfrage)
 
-…​
+#### Erfüllte Anforderungen
+- [US-Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)
 
-### \<Name Schnittstelle m\>
+#### Qualitätsanforderungen
+- Performance: 99% der Antworten in unter 2s
+
+---
+
+### Konto (Blackbox)
+
+#### Zweck / Verantwortung
+- Bereitstellung des Kontostands für eine Wallet Adresse (Public Key Hash)
+- Generierung privater Schlüssel
+- Ableitung der Public Key Adresse aus einem Private Key
+
+#### Schnittstelle
+- REST-Endpunkte /balance und /adress
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
+
+#### Eingaben / Ausgaben
+- Eingaben: Walled Adresse base58 encoded, Private Key base58 encoded oder Seed für key generierung 
+- Ausgaben: Balance, Private Key, Wallet Adresse
+
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (Key-Funktionen, Balance, Key-Ableitung)
+
+#### Erfüllte Anforderungen
+- [US-Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)
+- [EPIC-Konto erstellen](https://github.com/bjoern621/VSP-Blockchain/issues/24)
+- [EPIC-V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/94)
+
+#### Qualitätsanforderungen
+- Performance: 99% der Antworten in unter 2s
+
+---
+
+### V$Goin-Lib-Adapter (Blackbox)
+
+#### Zweck / Verantwortung
+- Einzige Schnittstelle zum SPV-Node-Library
+- Übersetzung der internen Systemaufrufe in Library-Funktionen
+- Entkopplung des Systems von Library-Änderungen
+
+#### Schnittstelle
+- Funktionen: Signatur, Key-Generierung, Key-Ableitung, Historie, Balance, Broadcast
+- [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)
+
+#### Eingaben / Ausgaben
+- Eingaben: Transaktionen, Wallet Adressen, Private Keys
+- Ausgaben: normalisierte Ergebnisse aus der Library
+
+#### Abhängigkeiten
+- V$Goin SPV Node Library
+
+---
+
+### V$Goin SPV Node Library (Blackbox)
+
+- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
+
+---
+
+### V$Goin-Blockchain (Blackbox)
+
+- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
 
 ## Ebene 2
 
-### Whitebox *\<Baustein 1\>*
+### Whitebox *\<Konto\>*
 
-*\<Whitebox-Template\>*
+````plantuml
+@startuml
+title Level 2 – Komponente "Konto"
 
-### Whitebox *\<Baustein 2\>*
+skinparam interfaceStyle uml
 
-*\<Whitebox-Template\>*
+package "Konto" {
 
-…​
+    component "Adresse" as Adresse
 
-### Whitebox *\<Baustein m\>*
+    component "Kontostand" as Kontostand
+}
 
-*\<Whitebox-Template\>*
+interface "IBalance" as IBalanceReq
+Kontostand --( IBalanceReq : <<requires>>
+interface "IWallet" as IKeyReq
+Adresse --( IKeyReq : <<requires>>
+@enduml
+````
 
-## Ebene 3
+### Whitebox *\<V$Goin-Lib-Adapter\>*
+````plantuml
+@startuml
+title Level 2 – Komponente "V$Goin-Lib-Adapter"
 
-### Whitebox \<\_Baustein x.1\_\>
+skinparam interfaceStyle uml
 
-*\<Whitebox-Template\>*
+package "V$Goin-Lib-Adapter" {
 
-### Whitebox \<\_Baustein x.2\_\>
+    component "Wallet-Adapter" as WalletAdapter
 
-*\<Whitebox-Template\>*
-
-### Whitebox \<\_Baustein y.1\_\>
-
-*\<Whitebox-Template\>*
+    component "Netzwerk-Adapter" as NetworkAdapter
+}
+interface "Wallet" as IBalanceReq
+WalletAdapter -down-( IBalanceReq : <<requires>>
+interface "Netzwerkrouting" as IKeyReq
+NetworkAdapter --down( IKeyReq : <<requires>>
+interface "IWallet" as IKeyProv
+WalletAdapter -up- IKeyProv : <<provides>>
+interface "IBalance" as IBalanceProv
+NetworkAdapter -up- IBalanceProv : <<provides>>
+@enduml
+````
 
 # Laufzeitsicht
 
@@ -323,19 +450,71 @@ Zuordnung von Bausteinen zu Infrastruktur
 
 # Querschnittliche Konzepte
 
-## *\<Konzept 1\>*
+## 1. Fachliche Konzepte
 
-*\<Erklärung\>*
+### 1.1 Domänenmodell V$Goin
+Das System bildet ein vereinfachtes Blockchain-basiertes Zahlungssystem ab.  
+Zentrale fachliche Objekte sind:
 
-## *\<Konzept 2\>*
+- Adresse (doppelter SHA-256 Hash eines öffentlicher Schlüssel)
+- Privater Schlüssel (zur Signatur)
+- UTXO / Assets (nicht ausgegebene Transaktionseinheiten)
+- Transaktion (signiertes Transferobjekt, welches den Besitzwechsel von Währung representiert)
+- Historie (Liste verifizierter Transaktionen)
 
-*\<Erklärung\>*
+### 1.2 Validierungsregeln
+- Jede Transaktion muss gültig signiert sein.
+- Ausreichende UTXOs müssen für Transaktionen verfügbar sein.
+- Adressen und Schlüssel dürfen nur Base58 encoded.
+- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Library bzw. Miner Network validiert werden.
 
-…​
+## 2. Sicherheitskonzept
+- Alle technischen Schnittstellen kommunizieren ausschließlich über TLS.
 
-## *\<Konzept n\>*
+## 3. Persistenz- und Datenhaltungskonzept
 
-*\<Erklärung\>*
+### 3.1 Persistenzstrategien
+Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die Library ab.  
+Temporäre Daten:
+
+- Kurzzeit-Caches im Adapter und Backend
+- JSON als API-Format, binäre Formate innerhalb der Library
+
+### 3.2 Formatkonzept
+- Adressen → Base58
+- Schlüssel → Base58 
+- Transaktionen → binäre Library-Formate, API JSON
+
+## 4. Kommunikations- und Integrationskonzept
+
+### 4.1 Architekturprinzip
+- Der Adapter kapselt sämtliche Interaktionen mit der SPV-Library.
+- Das Backend ist vollständig entkoppelt von Blockchain-gRPC-Details.
+
+### 4.2 Kommunikationsmechanismen
+- Browser ↔ API: REST/HTTPS
+- API ↔ Adapter: interne Funktionsaufrufe
+- Adapter ↔ Library: Funktionsaufrufe
+- Library ↔ Blockchain: gRPC-Kommunikation
+
+### 4.3 Schnittstellen
+- Schnittstellen sind in der [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml) dokumentiert.
+
+## 5. Code-Qualität
+- Automatisierte Tests
+- Statische Analyse (Sonar)
+- Architekturrichtlinienchecks
+- Manuelle Code Reviews vor jedem Merge
+
+## 6. Adapter-Pattern
+Das System verwendet ein komponentenweites Adapter-Muster, um die SPV-Library von der fachlichen Logik der API zu entkoppeln.  
+Der Adapter kapselt sämtliche Low-Level-Funktionen der Library und stellt eine stabile interne Schnittstelle bereit.  
+Dadurch können Änderungen an der Library oder der Blockchain-Technologie vorgenommen werden, ohne das Backend anzupassen.
+
+**Motivation:**
+- Keine Abhängigkeiten alle Komponenten direkt zur Library
+- Austauschbarkeit der Blockchain-Implementierung
+- Einheitliche Formate intern
 
 # Architekturentscheidungen
 ## ADR 1: Verwendung von Go als Backend-Programmiersprache
