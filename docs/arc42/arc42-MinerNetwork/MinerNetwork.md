@@ -362,25 +362,25 @@ sequenceDiagram
     Note over SPV, Full: Block-Header synchronisieren
 
     SPV->>Full: GetHeaders(BlockLocator)
-    Full->>SPV: Headers()
-    Full->>SPV: Headers()
+    Full->>SPV: Headers(...)
+    Full->>SPV: Headers(...)
 
-    SPV->>Full: SetFilter()
+    SPV->>Full: SetFilter(...)
 
     Note over SPV, Full: Blöcke (UTXOs) anfordern
 
     SPV->>Full: GetData(MSG_FILTERED_BLOCK)
-    Full->>SPV: MerkleBlock()
-    Full->>SPV: MerkleBlock()
+    Full->>SPV: MerkleBlock(...)
+    Full->>SPV: MerkleBlock(...)
 
     Note over SPV, Full: Unbestätigte Transaktionen abrufen
 
     SPV->>Full: Mempool()
-    Full->>SPV: Inv()
+    Full->>SPV: Inv(...)
 
     SPV->>Full: GetData(MSG_TX)
-    Full->>SPV: Tx()
-    Full->>SPV: Tx()
+    Full->>SPV: Tx(...)
+    Full->>SPV: Tx(...)
 ```
 
 </div>
