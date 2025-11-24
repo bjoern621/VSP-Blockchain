@@ -1,0 +1,114 @@
+// Great reference: https://en.bitcoin.it/wiki/Protocol_documentation
+
+syntax="proto3";
+
+package netzwerkrouting;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./internal/pb";
+
+service ConnectionEstablishment {
+    // Version starts the connection establishment.
+    rpc Version(VersionInfo) returns (google.protobuf.Empty);
+
+    // Verack acknowledges a Version message.
+    //
+    // Pre-conditions:
+    //  - Received a valid Version message.
+    //
+    // Post-conditions:
+    //  - Connection is considered handshaked (but not fully established until Ack).
+    rpc Verack(VersionInfo) returns (google.protobuf.Empty);
+
+    // Ack acknowledges a Verack message and completes the connection establishment.
+    //
+    // Pre-conditions:
+    //  - Received a valid Verack message.
+    //
+    // Post-conditions:
+    //  - Connection is fully established and ready for data exchange.
+    rpc Ack(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+service PeerDiscovery {
+    // GetAddr is sent by another peer in order to discover new peers.
+    // The server should respond with an Addr message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - Server responds with an Addr message containing known peer addresses.
+    rpc GetAddr(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    // Addr shares addresses of known peers.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to GetAddr or unsolicited announcement.
+    //
+    // Post-conditions:
+    //  - New addresses added to known addresses list.
+    rpc Addr(AddrList) returns (google.protobuf.Empty);
+
+    // Heartbeat is a periodically keep-alive message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - last_seen timestamp for the peer updated.
+    rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+service ErrorHandling {
+    // Reject signals a fault in a received message to another peer.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - A malformed or invalid message was received.
+    //
+    // Post-conditions:
+    //  - Error handled (e.g. logging).
+    rpc Reject(Error) returns (google.protobuf.Empty);
+}
+
+enum ErrorType {
+    REJECT_MALFORMED = 0;
+    REJECT_INVALID = 1;
+}
+
+message Error {
+    ErrorType error_type = 1;
+    string rejected_message_type = 2; // I.e. "getdata", "headers", "addr", ...
+    bytes data = 3;
+}
+
+enum ServiceType {
+    SERVICE_WALLET = 0;
+    SERVICE_MINER = 1;
+    SERVICE_BLOCKCHAIN_FULL = 2;
+    SERVICE_BLOCKCHAIN_SIMPLE = 3;
+    SERVICE_NETZWERKROUTING = 4;
+}
+
+message VersionInfo {
+    string version = 1; // Arbitrary implementation identifier, e.g. "core-0.9.0"
+    repeated ServiceType supported_services = 2;
+    Endpoint listening_endpoint = 3;
+}
+
+message Endpoint {
+    bytes ip_address = 1;
+    uint32 listening_port = 2;
+}
+
+message PeerAddress {
+    Endpoint listening_endpoint = 1;
+    int64 last_active_timestamp = 2;
+}
+
+message AddrList {
+    repeated PeerAddress peers = 1;
+}

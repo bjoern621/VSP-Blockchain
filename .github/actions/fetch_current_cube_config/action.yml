@@ -1,0 +1,50 @@
+name: fetch_current_cube_config
+author: bennet
+description: "Fetches the ICC Kube Config"
+inputs:
+    server_url:
+        description: "The server url"
+        required: false
+        default: "https://icc-api.informatik.haw-hamburg.de:443"
+    namespace:
+        description: "The namespace to use"
+        required: false
+        default: vsp-blockchain
+    ICC_USERNAME:
+        description: "The username to use in kubeconfig and in login"
+        required: false
+        default: "infwnu618"
+    ICC_PASSWORD:
+        description: "The password to use in login"
+        required: true
+runs:
+    using: composite
+    steps:
+        - name: Get Data
+          shell: bash
+          run: |
+              RESPONSE=$(curl -s -X POST "https://icc-login.informatik.haw-hamburg.de/login" \
+              -H "Content-Type: application/json" \
+              -d '{"username":"${{ inputs.ICC_USERNAME }}", "password":"${{ inputs.ICC_PASSWORD }}"}')
+              
+              TOKEN=$(echo $RESPONSE | jq -r '.bearerToken')
+              CERT_DATA=$(echo $RESPONSE | jq -r '.clusterCA')
+              USERNAME=$(echo $RESPONSE | jq -r '.username')
+              CLUSTER_SERVER_ADDRESS=$(echo $RESPONSE | jq -r '.clusterServerAddress')
+              
+              echo "TOKEN=$TOKEN" >> "$GITHUB_ENV"
+              echo "CERT_DATA=$CERT_DATA" >> "$GITHUB_ENV"
+              echo "USERNAME=$USERNAME" >> "$GITHUB_ENV"
+              echo "CLUSTER_SERVER_ADDRESS=$CLUSTER_SERVER_ADDRESS" >> "$GITHUB_ENV"
+
+        - name: Replace values in KubeConfig
+          shell: bash
+          run: |
+              sed -i "s|#CERT_DATA|$CERT_DATA|g" ICC_KUBE_CONFIG_TEMPLATE
+              sed -i "s|#SERVER_URL|$CLUSTER_SERVER_ADDRESS|g" ICC_KUBE_CONFIG_TEMPLATE
+              sed -i "s|#NAMESPACE|${{ inputs.namespace }}|g" ICC_KUBE_CONFIG_TEMPLATE
+              sed -i "s|#USER|$USERNAME|g" ICC_KUBE_CONFIG_TEMPLATE
+              sed -i "s|#TOKEN|$TOKEN|g" ICC_KUBE_CONFIG_TEMPLATE
+            
+              mkdir -p ~/.kube
+              cp ICC_KUBE_CONFIG_TEMPLATE ~/.kube/config
