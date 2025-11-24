@@ -399,9 +399,33 @@ Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeit
 
 Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
 
-## _<Bezeichnung Laufzeitszenario n>_
+## Chain Reorganization (Reorg)
 
-…​
+Warum wichtig/komplex? Der technisch anspruchsvollste Datenbank-Vorgang. Ein Node stellt fest, dass seine aktuelle Spitze der Blockchain falsch ist (weil eine längere Kette existiert).
+
+Fragilität: Der Node muss Transaktionen aus den "verworfenen" Blöcken zurück in den Mempool rollen und den State (Kontostände) rückgängig machen, um dann die neuen Blöcke anzuwenden. Hier passieren oft Dateninkonsistenzen.
+
+(TODO)
+
+## Simple Payment Verification
+
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant SPV as SPV Node
+    participant Full as Full Node
+
+    Full->>SPV: Inv(Neuer Block A)
+    Note over SPV: SPV kennt Block A noch nicht
+
+    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
+    Full->>SPV: MerkleBlock(Block A-Header, Merklepfade für Tx X, Y, Z)
+
+
+```
+
+</div>
 
 # Verteilungssicht
 
