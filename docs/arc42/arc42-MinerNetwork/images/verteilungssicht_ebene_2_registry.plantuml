@@ -1,0 +1,6 @@
+@startuml
+rectangle "Registry" as registry {
+    component "DNS" as dns
+}
+
+@enduml
