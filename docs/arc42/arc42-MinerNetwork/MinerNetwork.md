@@ -344,6 +344,8 @@ sequenceDiagram
     end
 ```
 
+<p><em>Abbildung: Sequenzdiagramm - Verbindungsaufbau zwischen Peers</em></p>
+
 </div>
 
 Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
@@ -372,6 +374,8 @@ sequenceDiagram
 
     A->>A: Prüfen, ob Chain Reorganization nötig ist
 ```
+
+<p><em>Abbildung: Sequenzdiagramm - Einfache Synchronisation Block-Header</em></p>
 
 </div>
 
@@ -416,6 +420,8 @@ flowchart TB
     CheckList -- Ja --> Stop([Ende: Neue Main-Chain])
 ```
 
+<p><em>Abbildung: Flussdiagramm - Chain Reorganization</em></p>
+
 </div>
 
 Allgemein  
@@ -458,6 +464,8 @@ sequenceDiagram
     Full->>SPV: Tx(...)
     Full->>SPV: Tx(...)
 ```
+
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
 
 </div>
 
