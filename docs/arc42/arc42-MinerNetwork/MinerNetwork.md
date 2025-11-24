@@ -292,8 +292,8 @@ Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **UTXO Set**                                                                      | Hält komplettes UTXO Set                                                                                                                       | Hält nur UTXOs die von der Wallet gebraucht werden                                                                                                             |
 | **Mempool**                                                                       | Vollständiger Mempool für unbestätigte Tx                                                                                                      | Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                                                          |
-| **Ausgehende (angebotene) Verbindungen**                                          | Ja (Bedient Anfragen von anderen)                                                                                                              | Nein (Kann keine Daten bereitstellen)                                                                                                                          |
-| **Eingehende (verbrauchte) Verbindungen**                                         | Ja                                                                                                                                             | Ja                                                                                                                                                             |
+| [**Ausgehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja (Bedient Anfragen von anderen)                                                                                                              | Nein (Kann keine Daten bereitstellen)                                                                                                                          |
+| [**Eingehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja                                                                                                                                             | Ja                                                                                                                                                             |
 | **Blöcke**                                                                        | Speichert alle Blöcke komplett (Header + Tx)                                                                                                   | Speichert nur Block Header aller Blöcke                                                                                                                        |
 | **Teil der Registry** (siehe auch [Registry Crawler](#registry-crawler-blackbox)) | Ja                                                                                                                                             | Nein                                                                                                                                                           |
 | **Transaktions-Validierung**                                                      | Verifiziert anhand Höhe in der Blockchain. Validiert Signaturen und Semantik aller eingehenden Transaktionen. Prüft gegen das lokale UTXO Set. | Verifiziert anhand Tiefe in der Blockchain. Verknüpft Transaktion mit Block über Merkle-Pfad und wartet, bis Block tief genug in der Blockchain versunken ist. |
@@ -391,9 +391,13 @@ _\<Diagramm + Erläuterungen\>_
 
 # Querschnittliche Konzepte
 
-## _\<Konzept 1\>_
+## Ausgehende vs. Eingehende Verbindungen
 
-_\<Erklärung\>_
+Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten. Hat eine Node eine ausgehende Verbindung, bietet diese Node dem Netzwerk (Blockchain-) Daten an (sendet also Daten an andere Nodes).
+
+Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
+
+Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 ## _\<Konzept 2\>_
 
