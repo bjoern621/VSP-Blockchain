@@ -21,7 +21,7 @@ Kernfunktionalität ist das Anzeigen von Kontoständen und Transaktionsverläufe
 Treibende Kräfte sind die Notwendigkeit einer einfachen, transparenten und zuverlässigen Plattform für Transaktionen sowie die Nachvollziehbarkeit aller Bewegungen im System unserers V$Goins.
 
 **Verweise auf Anforderungsdokumente:**
-- *User Stories, abgelegt in den [GitHub Issues](https://github.com/users/bjoern621/projects/5)
+- *User Stories, abgelegt in den [GitHub Issues](https://github.com/users/bjoern621/projects/5/views/1?filterQuery=-status%3ABacklog+label%3A%22rest-api%22)
 
 ---
 
@@ -36,11 +36,11 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 
 ### Form
 
-| **Use Case / Aufgabe** | **Beschreibung**                                                                                                                                                         |
-|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. |
-| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen.                                                                                                                    |
-| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.                                                     |
+| **Use Case / Aufgabe** | **Beschreibung**   | User Stories                                                                                |
+|-------------------------|-------------------|---------------------------------------------------------------------------------------------|
+| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt.| [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)                  |
+| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen. | [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)          |
+| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.  | [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27) |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
 
@@ -65,11 +65,11 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ---
 ## Stakeholder
 
-| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                  |
-|---------------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt. |
-| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen.     |
-| **Entwicklungsteam** | TBD                   | Erwartet eine klare technische Architektur, testbare Anforderungen und stabile Entwicklungs- und Deployment-Workflows.             |
+| Rolle         | Kontakt               | Erwartungshaltung                                                                                                                      |
+|---------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt.                     |
+| **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und einfach bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen. |
+| **Entwicklungsteam** | TBD                   | Erwartet eine stabile und verfügbare Versionsverwaltung (GitHub) und einen stabilen Main branch (durch Code Reviews gesichert)         |
 
 # Randbedingungen
 
@@ -79,21 +79,16 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Blockchain-Anbindung** | Das System spiegelt reale Währungswerte über eine bestehende **Blockchain-Infrastruktur** wider. Transaktionen im System müssen mit der entsprechenden Blockchain synchronisiert werden. |
 | **Blockchain-Protokoll** | Es wird die **V$Goin-Blockchain** verwendet.                                                                                                                                             |
-| **Technologiestack** | Das System wird als Webanwendung auf Basis von **GO** entwickelt.                                                                                                                        |
-| **API-Kommunikation** | Alle externen Schnittstellen kommunizieren über **RESTful APIs** mit **JSON** als Austauschformat.                                                                                       |
-| **Deployment-Umgebung** | Das System wird in einer **Docker-basierten Cloud-Umgebung** betrieben.                                                                                                                  |
-| **Versionierung** | Der Quellcode wird in **GitHub** verwaltet, mit **Git Flow** als Branching-Strategie.                                                                                                    |
+| **Deployment-Umgebung** | Das System wird in der **Cloud-Umgebung** der HAW (ICC) betrieben.                                                                                                                       |
 
 ---
 
 ## Organisatorische Randbedingungen
 
-| **Randbedingung** | **Erläuterung**                                                                                                            |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern mit nur lose definierten Rollen (Dev, QA, DevOps) umgesetzt. |
-| **Release-Zyklen** | Neue Releases erfolgen im **3-Wochen-Zyklus**.                                                                             |
-| **Dokumentationsstandard** | Architektur und Anforderungen werden nach dem **arc42-Template** gepflegt und versioniert.                                 |
-| **Code Review Pflicht** | Jeder Merge in den Hauptbranch erfordert mindestens **eine Freigabe (Code Review)**.                                       |
+| **Randbedingung** | **Erläuterung**                                                                            |
+|--------------------|--------------------------------------------------------------------------------------------|
+| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                   |
+| **Dokumentationsstandard** | Architektur und Anforderungen werden nach dem **arc42-Template** gepflegt und versioniert. |
 
 ---
 
@@ -112,35 +107,43 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ## Fachlicher Kontext
 
 
-| **Kommunikationspartner**                      | **Eingabe an das System**                             | **Ausgabe vom System** |
-|------------------------------------------------|-------------------------------------------------------|--------------------------|
-| **Endnutzer**                   | Signaturen, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand |
-| **V$Goin Blockchain-System**                   | Transaktionsdaten, Signaturen  | Transaktionsbestätigungen, Block-Hashes, Event-Logs |
-| **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                              | Logs, Health-Check-Responses |
+| **Kommunikationspartner**                      | **Eingabe an das System**                               | **Ausgabe vom System**                                                                         |
+|------------------------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| **Endnutzer**                   | Private Keys, Transaktionsaufträge, Kontostand-Anfragen | Bestätigungsmeldungen, Transaktionshistorie, aktueller Kontostand                              |
+| **V$Goin Blockchain-System**                   | Transaktionsdaten, Public Key Hash                      | Transaktionsbestätigungen, UTXOs (verfügbare Zahlungsmittel), Transaktionsverläufe, Event-Logs |
+| **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                                | Logs, Health-Check-Responses                                                                   |
 
 ## Technischer Kontext
-````plantuml
-@startuml
-node "Browser Frontend" as browser
+![Diagram](https://www.plantuml.com/plantuml/png/PL1BJeH04DtNALw8YRFX0gxc4p-Jk203STyqvT2ngIPDCIQUnvjuCM56Hj3bUrNrFhNkr4Jj6qyIAaQoZU6zuuY764HPgWIcGtaXYMnesY0iYkHmdnVOP7la74_EyddHj8w8WDdUoyrZS99kVR1ljZPEBeeZt8sGw1RFmNlNXZRDRIrEjLFsdc4Q_7KX9yhnrLX6WiboFt4q1qZJSJZgJwMarmz5vHWB8_hfDroi5dgumrDHPFceSKrIVttAKN4AWjzICEN_QELrl1boBD1WDV-1EJEhvSNWVZnaErgpL7tZlm40)
 
-component "REST API Service" as api
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    node "Browser Frontend" as browser
+    
+    component "REST API Service" as api
+    
+    
+      component "V$Goin-Blockchain" as blockChain
+    
+    ' Lollipop-Schnittstelle am REST API Service
+    interface " " as apiInterface
+    apiInterface -- api
+    
+    ' Browser nutzt die Schnittstelle
+    browser --( apiInterface : HTTPS
+    
+    ' REST API hängt von Blockchain ab
+    interface " " as blockchainApi
+    blockchainApi -- blockChain
+    api --( blockchainApi : gRPC
+    @enduml
+    ````
+</details>
 
 
-  component "V$Goin-Blockchain" as blockChain
-
-' Lollipop-Schnittstelle am REST API Service
-interface " " as apiInterface
-apiInterface -- api
-
-' Browser nutzt die Schnittstelle
-browser --( apiInterface : HTTPS
-
-' REST API hängt von Blockchain ab
-interface " " as blockchainApi
-blockchainApi -- blockChain
-api --( blockchainApi : gRPC
-@enduml
-````
 | **Kommunikationspartner** | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung** |
 |----------------------------|-------------------------------------|------------------------------|-------------------------------|
 | **Frontend (Web-Client)** | HTTPS REST-API | JSON | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen |
@@ -180,99 +183,244 @@ api --( blockchainApi : gRPC
 # Bausteinsicht
 
 ## Whitebox Gesamtsystem
+![Diagramm](https://www.plantuml.com/plantuml/png/dLJDZjCm4BxdAKOL4gTgxwkbshHQVWIggcPLBbpSPBQrwewhiRFBikBA0_0yt7WJdeI9NTCG82BroMD_C_w-oJUvTbwnh_Sc8riXZAPi7nmol6HB7gaQWNAmZeTPzXnU_6t9EK3nw3pkOMfhgXG__XDRslt14fA7qVAck8LyyGOAv7jTOdXC7JGyPHd8Qa5lMP5JEwyj1PGFSTd4FL1tZsnKVHTIZlik_Aq8jG6mQtRTwzMpLrRJ-9rUZ_DA7JnoP1dtsUV-fjny510f0vBFVLs9tR-wmf0mcNoW-30KYnNCvJ9L2AyRlOQdBjFtoXZqwJv6NSmS_QS7v1tRsclQ9B0S_xUIgR7bhjmgJVrYKkTE-EYb9fo5zER1yP0b-EJF7r--7XqtkCZHpP8rQTi8BW5P2Xg3qB9G6vui9D0xLXiFgsEircrOD9A0WhKKDLYaSzH6XQ2fwVtW_BOuePKyAyIStf16_bre4YUh0zzQW_1QEszPOnRL_OaIZSYXQb5kpVTlpg61YvYSI-3TEIq8GnS_U1g1mLKIH-5x6WrXd5UCGkoYa7OeNpFawLjrCkO2Xylmgvf9iXDPopX1PqXACeAarZGDBHHv1OgdeHAMoyLi_4l8DL9LxyrF)
+<details>
+    <summary> Code </summary>
 
-***\<Übersichtsdiagramm\>***
-````plantuml
-@startuml
-node "Browser Frontend" as browser
-component "REST API Service" as api {
-component "Transaktion" as transaction
-component "Transaktionsverlauf" as verlauf
-component "Kontostand" as konto
-component "Blockchain" as blocks
-verlauf --> blocks: liest Transaktionsverlauf aus
-konto --> blocks: liest Kontostand aus
-}
-node "V$Goin-Blockchain" as blockChain
+    ````plantuml
+    @startuml
+    node "Browser Frontend" as browser
+    
+    ' =====================
+    '   System Boundary
+    ' =====================
+    component "REST API Service" as api {
+    
+        component "Transaktion" as transaction
+        component "Transaktionsverlauf" as verlauf
+        component "Konto" as konto
+        component "V$Goin-Lib-Adapter" as adapter
+    }
+    
+    ' =====================
+    '   External Library
+    ' =====================
+    node "<<extern>>\nV$Goin SPV Node Library" as lib {
+        component "Wallet" as libWallet
+        component "Netzwerkrouting" as libNet
+    }
+    
+    ' =====================
+    '   External Blockchain
+    ' =====================
+    node "V$Goin-Blockchain" as blockChain
+    
+    
+    ' ---------------------------------------------
+    ' Browser → System
+    ' ---------------------------------------------
+    browser --> transaction : erstelle Transaktion
+    browser --> verlauf : fragt Verlauf ab
+    browser --> konto : Kontoanfragen
+    
+    ' ---------------------------------------------
+    ' System intern
+    ' ---------------------------------------------
+    transaction --> adapter : signiere Transaktion
+    verlauf     --> adapter : hole Historie
+    konto     --> adapter : generiere Schlüssel / hole Assets
+    
+    ' ---------------------------------------------
+    ' Adapter → Library
+    ' ---------------------------------------------
+    adapter --> libWallet : Adresse/Signatur Anfragen
+    adapter --> libNet  : API Calls / Routing
+    
+    ' ---------------------------------------------
+    ' Library → Blockchain
+    ' ---------------------------------------------
+    libNet --> blockChain : RPC-Anfragen
+    
+    @enduml
+    ````
+</details>
 
 
-'Browser zu Server
-browser -down-> transaction: führt Transaktion aus
-browser --> verlauf : fragt Verlauf ab
-browser --> konto : fragt Kontostand ab
+## Blackboxes Ebene 1
+### Inhaltsverzeichnis
+1. [Transaktion](#transaktion-blackbox)
+2. [Transaktionsverlauf](#transaktionsverlauf-blackbox)
+3. [Konto](#konto-blackbox)
+4. [V$Goin-Lib-Adapter](#vgoin-lib-adapter-blackbox)
+5. [V$Goin SPV Node Library](#vgoin-spv-node-library-blackbox)
+6. [V$Goin-Blockchain](#vgoin-blockchain-blackbox)
 
-'Server zu Blockchain
-transaction -down--> blockChain: gibt Transaktion weiter
-blocks -> blockChain: Blöcke werden weitergegeben
-blockChain -> blocks
-@enduml
-````
-Begründung  
-*\<Erläuternder Text\>*
+---
 
-Enthaltene Bausteine  
-*\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>*
+### Transaktion (Blackbox)
 
-Wichtige Schnittstellen  
-*\<Beschreibung wichtiger Schnittstellen\>*
+#### Zweck / Verantwortung
+- Entgegennahme und Umwandlung von Transaktionsanfragen
+- Weitergabe der Signaturerstellung und verbreiten im Netzwerk durch den Adapter
 
-### \<Name Blackbox 1\>
+#### Schnittstelle
+- REST-Endpunkt post /transaction
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
-*\<Zweck/Verantwortung\>*
+#### Eingaben / Ausgaben
+- Eingaben: Transaktionsdaten vom Client
+- Ausgaben: Erfolgs- oder Fehlermeldungen
 
-*\<Schnittstelle(n)\>*
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (Signatur, Weiterleitung)
 
-*\<(Optional) Qualitäts-/Leistungsmerkmale\>*
+#### Erfüllte Anforderungen
+- [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)
 
-*\<(Optional) Ablageort/Datei(en)\>*
+#### Qualitätsanforderungen
+- Zuverlässigkeit: Ungültige Transaktionen werden abgelehnt
 
-*\<(Optional) Erfüllte Anforderungen\>*
+---
 
-*\<(optional) Offene Punkte/Probleme/Risiken\>*
+### Transaktionsverlauf (Blackbox)
 
-### \<Name Blackbox 2\>
+#### Zweck / Verantwortung
+- Bereitstellung der Transaktionshistorie für einen bestimmte Wallet Adresse (Public Key Hash)
 
-*\<Blackbox-Template\>*
+#### Schnittstelle
+- REST-Endpunkt get /history
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
-### \<Name Blackbox n\>
+#### Eingaben / Ausgaben
+- Eingaben: Wallet Adresse (Public Key Hash) base58 encoded
+- Ausgaben: Liste von Transaktionen
 
-*\<Blackbox-Template\>*
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (History-Abfrage)
 
-### \<Name Schnittstelle 1\>
+#### Erfüllte Anforderungen
+- [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)
 
-…​
+#### Qualitätsanforderungen
+- Performance: 99% der Antworten in unter 2s
 
-### \<Name Schnittstelle m\>
+---
+
+### Konto (Blackbox)
+
+#### Zweck / Verantwortung
+- Bereitstellung des Kontostands für eine Wallet Adresse (Public Key Hash)
+- Generierung privater Schlüssel
+- Ableitung der Public Key Adresse aus einem Private Key
+
+#### Schnittstelle
+- REST-Endpunkte /balance und /adress
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
+
+#### Eingaben / Ausgaben
+- Eingaben: Walled Adresse base58 encoded, Private Key base58 encoded oder Seed für key generierung 
+- Ausgaben: Balance, Private Key, Wallet Adresse
+
+#### Abhängigkeiten
+- V$Goin-Lib-Adapter (Key-Funktionen, Balance, Key-Ableitung)
+
+#### Erfüllte Anforderungen
+- [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)
+- [EPIC-24 Konto erstellen](https://github.com/bjoern621/VSP-Blockchain/issues/24)
+- [EPIC-94 V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/94)
+
+#### Qualitätsanforderungen
+- Performance: 99% der Antworten in unter 2s
+
+---
+
+### V$Goin-Lib-Adapter (Blackbox)
+
+#### Zweck / Verantwortung
+- Einzige Schnittstelle zum SPV-Node-Library
+- Übersetzung der internen Systemaufrufe in Library-Funktionen
+- Entkopplung des Systems von Library-Änderungen
+
+#### Schnittstelle
+- Funktionen: Signatur, Key-Generierung, Key-Ableitung, Historie, Balance, Broadcast
+- [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)
+
+#### Eingaben / Ausgaben
+- Eingaben: Transaktionen, Wallet Adressen, Private Keys
+- Ausgaben: normalisierte Ergebnisse aus der Library
+
+#### Abhängigkeiten
+- V$Goin SPV Node Library
+
+---
+
+### V$Goin SPV Node Library (Blackbox)
+
+- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
+
+---
+
+### V$Goin-Blockchain (Blackbox)
+
+- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
 
 ## Ebene 2
 
-### Whitebox *\<Baustein 1\>*
+### Whitebox *\<Konto\>*
+![Diagramm](https://www.plantuml.com/plantuml/png/NSyzJiGm40NWVaxnv8fc6qgqMYrqA5HGK8-S0Ldhs8azGOeG4dVWXfo41ES7uiepVlFPFcVbf7tZIPrwmOEyYSSrlZ-_KCMcZK622amLWqP3b2ykj9ouWHlxwOMjFEdW1HD1BTiBlwvnl1DXN7Q1O6xh93cB0MVC-tsc36VbKF_6jf8-YDPhOUxls7Em1LkAH-becy3XSFNt23Su7fDqlKkIJwT_sZDxBrgmIeO9cbzObDBR2sS9zVZt7m00)
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    title Level 2 – Komponente "Konto"
+    
+    skinparam interfaceStyle uml
+    
+    package "Konto" {
+    
+        component "Adresse" as Adresse
+    
+        component "Kontostand" as Kontostand
+    }
+    
+    interface "IBalance" as IBalanceReq
+    Kontostand --( IBalanceReq : <<requires>>
+    interface "IWallet" as IKeyReq
+    Adresse --( IKeyReq : <<requires>>
+    @enduml
+    ````
+</details>
 
-*\<Whitebox-Template\>*
+### Whitebox *\<V$Goin-Lib-Adapter\>*
+![Diagramm](https://www.plantuml.com/plantuml/png/VO_1IWCn48RlUOgXUEWb5uzIIlKYfKL4GS_ZxbZ2PfDqThPB5S5ty0rz4jEjgPjLp2dC_F_t_xDe15dQsYenOWdMj2CBv_3v_W4hNmVlo0d1vE7isXkdr-P9NvOOX7YYL5CP5v2n1XD5_8m5tSi-KWuy5R2eSFEt5rwLWlYA506JHxIMv4U13Hn7tvDVXXkIbuwuoYnns7ckakTDdPgbX5wsl4ABhg0xsgei1NJfEwUdGmLSm6p6j6qDKpEV3v6f0_jMZDiSsIlQ7xXv5T0zUPhM_q2Nmw9HVSj-DsxP1dtQzQWGFwOSez8LsT4zRzmk0ZF16BeWLxQr_G80)
 
-### Whitebox *\<Baustein 2\>*
-
-*\<Whitebox-Template\>*
-
-…​
-
-### Whitebox *\<Baustein m\>*
-
-*\<Whitebox-Template\>*
-
-## Ebene 3
-
-### Whitebox \<\_Baustein x.1\_\>
-
-*\<Whitebox-Template\>*
-
-### Whitebox \<\_Baustein x.2\_\>
-
-*\<Whitebox-Template\>*
-
-### Whitebox \<\_Baustein y.1\_\>
-
-*\<Whitebox-Template\>*
+<details>
+    <summary>Code</summary>
+    
+    ````plantuml
+    @startuml
+    title Level 2 – Komponente "V$Goin-Lib-Adapter"
+    
+    skinparam interfaceStyle uml
+    
+    package "V$Goin-Lib-Adapter" {
+    
+        component "Wallet-Adapter" as WalletAdapter
+    
+        component "Netzwerk-Adapter" as NetworkAdapter
+    }
+    interface "Wallet" as IBalanceReq
+    WalletAdapter -down-( IBalanceReq : <<requires>>
+    interface "Netzwerkrouting" as IKeyReq
+    NetworkAdapter --down( IKeyReq : <<requires>>
+    interface "IWallet" as IKeyProv
+    WalletAdapter -up- IKeyProv : <<provides>>
+    interface "IBalance" as IBalanceProv
+    NetworkAdapter -up- IBalanceProv : <<provides>>
+    @enduml
+    ````
+</details>
 
 # Laufzeitsicht
 
@@ -324,25 +472,116 @@ Zuordnung von Bausteinen zu Infrastruktur
 
 # Querschnittliche Konzepte
 
-## *\<Konzept 1\>*
+## 1. Fachliche Konzepte
 
-*\<Erklärung\>*
+### 1.1 Domänenmodell V$Goin
+Das System bildet ein vereinfachtes Blockchain-basiertes Zahlungssystem ab.  
+Zentrale fachliche Objekte sind:
 
-## *\<Konzept 2\>*
+- Adresse (doppelter SHA-256 Hash eines öffentlicher Schlüssel)
+- Privater Schlüssel (zur Signatur)
+- UTXO / Assets (nicht ausgegebene Transaktionseinheiten)
+- Transaktion (signiertes Transferobjekt, welches den Besitzwechsel von Währung representiert)
+- Historie (Liste verifizierter Transaktionen)
 
-*\<Erklärung\>*
+### 1.2 Validierungsregeln
+- Jede Transaktion muss gültig signiert sein.
+- Ausreichende UTXOs müssen für Transaktionen verfügbar sein.
+- Adressen und Schlüssel dürfen nur Base58 encoded.
+- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Library bzw. Miner Network validiert werden.
 
-…​
+## 2. Sicherheitskonzept
+- Die REST Schnittstellen kommunizieren ausschließlich über TLS.
 
-## *\<Konzept n\>*
+## 3. Persistenz- und Datenhaltungskonzept
 
-*\<Erklärung\>*
+### 3.1 Persistenzstrategien
+Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die Library ab.  
+Temporäre Daten:
+
+- Kurzzeit-Caches im Adapter und Backend
+- JSON als API-Format, binäre Formate innerhalb der Library
+
+### 3.2 Formatkonzept
+- Adressen → Base58
+- Schlüssel → Base58 
+- Transaktionen → binäre Library-Formate, API JSON
+
+## 4. Kommunikations- und Integrationskonzept
+
+### 4.1 Architekturprinzip
+- Der Adapter kapselt sämtliche Interaktionen mit der SPV-Library.
+- Das Backend ist vollständig entkoppelt von Blockchain-gRPC-Details.
+
+### 4.2 Kommunikationsmechanismen
+- Browser ↔ API: REST/HTTPS
+- API ↔ Adapter: interne Funktionsaufrufe
+- Adapter ↔ Library: Funktionsaufrufe
+- Library ↔ Blockchain: gRPC-Kommunikation
+
+### 4.3 Schnittstellen
+- Schnittstellen sind in der [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml) dokumentiert.
+
+## 5. Code-Qualität
+- Automatisierte Tests
+- Statische Analyse (Sonar)
+- Architekturrichtlinienchecks
+- Manuelle Code Reviews vor jedem Merge
+
+## 6. Adapter-Pattern
+Das System verwendet ein komponentenweites Adapter-Muster, um die SPV-Library von der fachlichen Logik der API zu entkoppeln.  
+Der Adapter kapselt sämtliche Low-Level-Funktionen der Library und stellt eine stabile interne Schnittstelle bereit.  
+Dadurch können Änderungen an der Library oder der Blockchain-Technologie vorgenommen werden, ohne das Backend anzupassen.
+
+**Motivation:**
+- Keine Abhängigkeiten alle Komponenten direkt zur Library
+- Austauschbarkeit der Blockchain-Implementierung
+- Einheitliche Formate intern
 
 # Architekturentscheidungen
+## ADR 1: Verwendung von Go als Backend-Programmiersprache
+**Status:** Akzeptiert  
+**Datum:** 2025-10
+
+### Entscheidung
+Das Backend-System wird in der Programmiersprache **Go** implementiert.
+### Kontext
+Das System interagiert häufig mit externen APIs der V$-Blockchain und internen Services, benötigt hohe Nebenläufigkeitsleistung und effiziente Ressourcennutzung.
+### Begründung
+Go bietet exzellente Unterstützung für Nebenläufigkeit (Goroutinen), schnelle Ausführung, geringen Speicherverbrauch und erzeugt statische Binaries, die den containerisierten Betrieb vereinfachen.
+### Konsequenzen
+\+ Hohe Performance bei gleichzeitigen Operationen <br>
+\+ Vereinfachte Bereitstellung in Docker <br>
+– Ein Teil des Teams weniger Erfahrung mit dieser Sprache  <br>
+
+## ADR 2: Externe APIs als REST/JSON bereitstellen
+
+**Status:** Akzeptiert  
+**Datum:** 2025-10
+
+### Entscheidung
+Alle externen APIs werden im **REST-Architekturstil** mit **JSON** als Datenaustauschformat umgesetzt.
+
+### Kontext
+Endnutzer brauchen verständliche Schnittstelle und externer Client benötigen einfache Schnittstellen.
+
+### Begründung
+REST/JSON ist leicht verständlich und dokumentierbar und funktioniert ohne spezielle Tools.
+
+### Konsequenzen
+\+ Einfache Integration für Partner <br>
+\+ Gute Debugging- und Tool-Unterstützung  <br>
+– Geringere Typensicherheit als gRPC  <br>
 
 # Qualitätsanforderungen
 
 ## Übersicht der Qualitätsanforderungen
+|**Qualitätsziel**           | **Beschreibung**                                                                                                                                                                    | Messkriterium                                                                                                                            |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+|**Sicherheit** | Alle Transaktionen müssen vor unbefugtem Zugriff geschützt sein. Authentifizierung und Autorisierung sind zentrale Punkte des Systems.                                              | 100% der Transaktionen werden vom V$-Blockchain System verfiziert                                                                        |
+|**Zuverlässigkeit** | Das System muss Transaktionen konsistent und fehlerfrei verarbeiten. Datenintegrität hat höchste Priorität, insbesondere bei Transaktionen.                                         | 100% der falschen Transaktion werden vom V$-Blockchain System abgelehnt                                                                  |
+|**Wartbarkeit** | Der Quellcode und die Systemarchitektur sollen modular aufgebaut sein, um zukünftige Änderungen (z. B. neue Währungsarten oder Sicherheitsfunktionen) leicht integrieren zu können. | Jeder Merge in den Main absolviert alle Codequalitätsstages der Pipeline (Test, Sonar, Architecture-Checking) und wurde manuell reviewed |
+|**Performance** | Transaktionen und Kontostandsabfragen sollen ohne merkliche Verzögerung ausgeführt werden, um ein reaktionsschnelles Nutzererlebnis zu gewährleisten.                               | Nutzer erhalten in 99% der Fällen eine Antwort innerhalb 2s                                                                              |
 
 ## Qualitätsszenarien
 
