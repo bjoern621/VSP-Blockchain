@@ -523,6 +523,19 @@ sequenceDiagram
 
 </div>
 
+## Block-Mining & Verbreitung (Block Propagation)
+
+TODO bennet
+
+Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
+
+## Orphan Block Handling
+
+TODO bennet
+
+Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 10
+5), aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, wie der Node den fehlenden Vorgänger via GetHeaders oder GetData anfordert, bevor er den neuen Block validieren kann.
+
 # Verteilungssicht
 
 ## Infrastruktur Ebene 1
