@@ -415,7 +415,7 @@ flowchart TB
 ```
 
 Allgemein  
-Chain Reorganization ist ein Vorgang, bei dem die aktuellen Blöcken der Blockchain rückgängig gemacht werden um daraufhin einer längerer Kette (mit mehr Proof-of-Work) zu folgen.
+Chain Reorganization ist ein Vorgang, bei dem die aktuellen Blöcken der Blockchain rückgängig gemacht werden um daraufhin einer längeren Kette (mit mehr Proof-of-Work) zu folgen.
 
 Auslöser  
 Nach jeder empfangenen `Headers(...)` Nachricht wird geprüft, ob eine Chain Reorganization nötig ist. Dabei wird die kumulative Difficulty des aktuellen Block-Header-Tip und der des letzten Block-Headers der `Headers(...)` verglichen. Die Kette mit der größten kumulativen Difficulty wird ausgewählt. Ist diese Kette eine andere als die aktuelle wird eine Chain Reorganization durchgeführt.
