@@ -354,9 +354,10 @@ Miner stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
 Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
 [Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
 Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployed wird.
-Diese nutzen ein Debian Image als Grundlage.
+Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden. 
 
-Qualitäts- und/oder Leistungsmerkmale  
+Qualitäts- und/oder Leistungsmerkmale
+
 Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
 
 | CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
@@ -375,7 +376,7 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 <div align="center">
     <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
+    <p><em>Abbildung: Verteilungssicht Layer 2</em></p>
 </div>
 
 #### Registry Crawler
@@ -388,12 +389,6 @@ Zu Beginn werden drei Instanzen eines Nodes hochgefahren. Diese Zahl sollte spä
 Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
 Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "StatefulSet". Somit erhält jeder Node über Neustartes hinweg 
 den gleichen Namen und DNS Eintrag.
-
-### _\<Infrastrukturelement 2\>_
-
-_\<Diagramm + Erläuterungen\>_
-
-…​
 
 ### _\<Infrastrukturelement n\>_
 
