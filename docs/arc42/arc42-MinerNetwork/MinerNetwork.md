@@ -237,7 +237,7 @@ Jeder Peer im P2P Netzwerk ist eine Netzwerknode. Die einzige Voraussetzung ist,
 
 Schnittstellen
 
--   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden:
+-   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden:
 
     | Kategorie         | Nachrichten          | Beschreibung                                                                                                                                                                                                   |
     | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -348,7 +348,83 @@ sequenceDiagram
 
 Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
 
-Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren.
+Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation).
+
+## Block-Header Synchronisation
+
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant A as Full Node A<br/>(BestBlockHeight: 110)
+    participant B as Full Node B<br/>(BestBlockHeight: 120)
+
+    par Requests kreuzen sich im Netzwerk
+        A->>B: GetHeaders(BlockLocator[Hash110])
+        B->>A: GetHeaders(BlockLocator[Hash120])
+    end
+
+    Note over A: A hat nichts Nützliches für B
+
+    B->>A: Headers(List: 111...120)
+
+    A->>A: Validierung & Update Header auf 120
+
+    A->>A: Prüfen, ob Chain Reorganization nötig ist
+```
+
+</div>
+
+Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
+
+Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header. Peer B dagegen schickt die übrigen Block-Header ab Block 111.
+
+Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
+
+## Chain Reorganization
+
+```mermaid
+flowchart TB
+    Start([Start: Neue, bessere Kette erkannt]) --> FindSplit
+
+    FindSplit["Finde Fork Point <br/>(Common Ancestor)"] --> StartRollback
+
+    subgraph "Phase 1: Disconnect (Rollback)"
+        direction TB
+        StartRollback[Setze Zeiger auf aktuellen Tip] --> CheckSplit{Ist Zeiger ==<br/>Fork Point?}
+
+        CheckSplit -- Nein --> UndoState["Mache Block-Zustand rückgängig (UTXO Rollback)"]
+        UndoState --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
+        TxToMempool --> StepPrev[Setze Zeiger auf vorherigen Block]
+        StepPrev --> CheckSplit
+    end
+
+    CheckSplit -- "Ja (beim Split angekommen)" --> GetNewPath
+
+    subgraph "Phase&nbsp;2:&nbsp;Connect&nbsp;(Roll&nbsp;Forward)"
+        direction TB
+        GetNewPath[Lade Liste der neuen Blöcke von Fork Point bis zum neuen Tip] --> CheckList{Liste leer?}
+
+        CheckList -- Nein --> ApplyBlock["Wende Block an Transaktionen ausführen (UTXO Update)"]
+        ApplyBlock --> CleanMempool[Lösche bestätigte TXs aus Mempool]
+        CleanMempool --> StepNext[Nimm nächsten Block]
+        StepNext --> CheckList
+    end
+
+    CheckList -- Ja --> Stop([Ende: Neue Main-Chain])
+```
+
+Allgemein  
+Chain Reorganization ist ein Vorgang, bei dem die aktuellen Blöcken der Blockchain rückgängig gemacht werden um daraufhin einer längerer Kette (mit mehr Proof-of-Work) zu folgen.
+
+Auslöser  
+Nach jeder empfangenen `Headers(...)` Nachricht wird geprüft, ob eine Chain Reorganization nötig ist. Dabei wird die kumulative Difficulty des aktuellen Block-Header-Tip und der des letzten Block-Headers der `Headers(...)` verglichen. Die Kette mit der größten kumulativen Difficulty wird ausgewählt. Ist diese Kette eine andere als die aktuelle wird eine Chain Reorganization durchgeführt.
+
+Folgen  
+Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Chain via `GetData(...)` angefordert werden.
+
+Hinweise  
+Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämlicher der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
 
 ## Initialer Block Download
 
@@ -385,7 +461,7 @@ sequenceDiagram
 
 </div>
 
-Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen Verbindungsaufbau. Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node.
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node.
 
 Zunächst werden die Block-Header synchronisiert (`GetHeaders`). Siehe hierzu auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Es werden `GetHeaders` und `Headers` Nachrichten ausgetauscht bis Block-Header identisch sind. Dabei müssen stets die maximale Länge der Nachrichten beachtet werden und ggf. mehrere `GetHeaders` gesendet werden.
 
