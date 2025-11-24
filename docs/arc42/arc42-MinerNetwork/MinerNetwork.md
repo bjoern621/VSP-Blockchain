@@ -377,7 +377,7 @@ sequenceDiagram
 
 Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
 
-Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header. Peer B dagegen schickt die übrigen Block-Header ab Block 111.
+Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header. Peer B dagegen schickt die übrigen Block-Header ab Block 111. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
 
 Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
 
@@ -435,21 +435,17 @@ sequenceDiagram
     participant SPV as SPV Node
     participant Full as Full Node
 
-    Note over SPV, Full: Block-Header synchronisieren
-
-    SPV->>Full: GetHeaders(BlockLocator)
-    Full->>SPV: Headers(...)
-    Full->>SPV: Headers(...)
+    Note over SPV, Full: Block-Header synchronisieren<br/>(siehe oben)
 
     SPV->>Full: SetFilter(...)
 
-    Note over SPV, Full: Blöcke (UTXOs) anfordern
+    Note over SPV, Full: Blöcke (UTXOs) anfordern:
 
     SPV->>Full: GetData(MSG_FILTERED_BLOCK)
     Full->>SPV: MerkleBlock(...)
     Full->>SPV: MerkleBlock(...)
 
-    Note over SPV, Full: Unbestätigte Transaktionen abrufen
+    Note over SPV, Full: Unbestätigte Transaktionen abrufen:
 
     SPV->>Full: Mempool()
     Full->>SPV: Inv(...)
@@ -463,7 +459,7 @@ sequenceDiagram
 
 Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node.
 
-Zunächst werden die Block-Header synchronisiert (`GetHeaders`). Siehe hierzu auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Es werden `GetHeaders` und `Headers` Nachrichten ausgetauscht bis Block-Header identisch sind. Dabei müssen stets die maximale Länge der Nachrichten beachtet werden und ggf. mehrere `GetHeaders` gesendet werden.
+Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation). Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
 
 `GetHeaders` benötigt einen `BlockLocator` als Parameter. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann.
 
