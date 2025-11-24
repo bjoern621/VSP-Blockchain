@@ -383,6 +383,8 @@ Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesi
 
 ## Chain Reorganization
 
+<div align="center">
+
 ```mermaid
 flowchart TB
     Start([Start: Neue, bessere Kette erkannt]) --> FindSplit
@@ -413,6 +415,8 @@ flowchart TB
 
     CheckList -- Ja --> Stop([Ende: Neue Main-Chain])
 ```
+
+</div>
 
 Allgemein  
 Chain Reorganization ist ein Vorgang, bei dem die aktuellen Blöcken der Blockchain rückgängig gemacht werden um daraufhin einer längeren Kette (mit mehr Proof-of-Work) zu folgen.
