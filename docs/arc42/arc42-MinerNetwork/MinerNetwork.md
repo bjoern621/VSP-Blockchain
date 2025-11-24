@@ -343,22 +343,51 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 ## Infrastruktur Ebene 1
 
-**_\<Übersichtsdiagramm\>_**
+<div align="center">
+    <img src="images/verteilungssicht_ebene_1.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
+</div>
 
-Begründung  
-_\<Erläuternder Text\>_
+Einleitung  
+In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
+Miner stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
+Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
+[Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
+Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployed wird.
+Diese nutzen ein Debian Image als Grundlage.
 
 Qualitäts- und/oder Leistungsmerkmale  
-_\<Erläuternder Text\>_
+Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
+
+| CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
+|---------|------|----------|-------|-----------|-------|
+| 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
+
+Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen, 
+da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu Reagieren.
 
 Zuordnung von Bausteinen zu Infrastruktur  
-_\<Beschreibung der Zuordnung\>_
+Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 ## Infrastruktur Ebene 2
 
-### _\<Infrastrukturelement 1\>_
+### P2P Netzwerk
 
-_\<Diagramm + Erläuterungen\>_
+<div align="center">
+    <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
+</div>
+
+#### Registry Crawler
+In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
+Von diesem wird es eine Instanz geben. 
+
+#### Nodes (SPV-Node und Full-Node)
+SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
+Zu Beginn werden drei Instanzen eines Nodes hochgefahren. Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
+Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
+Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "StatefulSet". Somit erhält jeder Node über Neustartes hinweg 
+den gleichen Namen und DNS Eintrag.
 
 ### _\<Infrastrukturelement 2\>_
 
