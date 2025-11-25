@@ -427,15 +427,6 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
-## Serialisierung
-Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
-- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
-- Typsicherheit (Reduziert Fehler zur Laufzeit)
-- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
-
-Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
-automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren. 
-
 ## Merkle-Trees und Merkle-Pfade
 ### Merkle-Tree
 Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
@@ -459,7 +450,22 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
-## Asynchrone Kommunikation
+## _\<Konzept n\>_
+
+_\<Erklärung\>_
+
+# Architekturentscheidungen
+
+## Serialisierung
+Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
+- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
+- Typsicherheit (Reduziert Fehler zur Laufzeit)
+- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
+
+Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
+automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
+
+## Kommunikationsart
 Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
 ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
 
@@ -467,11 +473,13 @@ Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall ei
 
 Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
 
-## _\<Konzept n\>_
+Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
+nur zur Laufzeit im Speicher gehalten. 
+Nachrichten werden vollständig und reihenfolge gesichert übertragen. Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
+Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
+Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Wir können also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten. 
 
-_\<Erklärung\>_
-
-# Architekturentscheidungen
+Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
 
 # Qualitätsanforderungen
 
