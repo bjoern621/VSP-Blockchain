@@ -503,26 +503,6 @@ Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeit
 Unterschied Full Nodes vs. SPV  
 Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
 
-## Simple Payment Verification
-
-<div align="center">
-
-```mermaid
-sequenceDiagram
-    participant SPV as SPV Node
-    participant Full as Full Node
-
-    Full->>SPV: Inv(Neuer Block A)
-    Note over SPV: SPV kennt Block A noch nicht
-
-    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
-    Full->>SPV: MerkleBlock(Block A-Header, Merklepfade für Tx X, Y, Z)
-
-
-```
-
-</div>
-
 ## Block-Mining & Verbreitung (Block Propagation)
 
 TODO bennet
