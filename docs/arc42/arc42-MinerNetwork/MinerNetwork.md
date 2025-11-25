@@ -461,11 +461,13 @@ Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. F�
 - Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
 - Typsicherheit (Reduziert Fehler zur Laufzeit)
 - Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
+- Protobuf ist ein weitverbreiteter Standard unter untersützt somit das Ziel der Offenheit
 
 Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
 automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
 
-## Kommunikationsart
+## Kommunikation
+### Kommunikationsart
 Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
 ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
 
@@ -475,11 +477,17 @@ Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine ste
 
 Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
 nur zur Laufzeit im Speicher gehalten. 
-Nachrichten werden vollständig und reihenfolge gesichert übertragen. Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
-Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
-Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Wir können also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten. 
 
 Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
+
+### RPC Framework
+Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC ist kompatibel mit Protobuf und es können Client und Server Stubs automatisch generiert werden.
+Ebenfalls nutzt gRPC HTTP/2 Verbindungen, wodurch die Latenz gering gehalten werden kann. gRPC garantiert eine vollständige und reihenfolge gesicherte Übertragung der Nachrichten.
+Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
+Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
+Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Durch die Nutzung von gRPC können wir also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten.
+
+Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was das Ziel der Offenheit erhöht.
 
 # Qualitätsanforderungen
 
