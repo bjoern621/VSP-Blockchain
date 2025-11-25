@@ -461,11 +461,11 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 
 ## Asynchrone Kommunikation
 Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
-ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss.
-Somit sind wir unabhängiger von Auslastung/Ausfall einzelner Nodes (Verteilungstransparenz? @Reviewer: Passt das so?).
-Weiter erhöht sich durch die inhärente Dezentralität der Nodes die Antwortzeit zwischen verschiedenen Knoten (zB. aufgrund von geografischer Position oder Hardware Unterschieden).
-Somit kann weiter gearbeitet werden, während auf die Antwort eines anderen Nodes gewartet wird.
-Auch erleichtert asynchrone Kommunikation die Skalierbarkeit, da bei steigender Anzahl der Nodes nicht auf andere Nodes gewartet werden muss.
+ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
+
+Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall einzelner Nodes und trägt zur Fehlertoleranz bei. In einem dezentralen Netzwerk variieren die Antwortzeiten zwangsläufig, bedingt durch geografische Distanzen oder unterschiedliche Hardware-Ressourcen. Dank der asynchronen Verarbeitung kann ein Node seine Arbeit fortsetzen, während Antworten anderer Nodes noch ausstehen.
+
+Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
 
 ## _\<Konzept n\>_
 
