@@ -563,20 +563,20 @@ aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, w
 Dieser Prozess beschreibt, wie Knoten im laufenden Betrieb IP-Adressen austauschen, um das Netzwerk robuster gegen Ausfälle einzelner Knoten zu machen.
 
 1.  Initiierung der Anfrage  
-    Ein Node A stellt fest, dass er seine Datenbank bekannter Peers aktualisieren muss. Dies geschieht entweder periodisch oder weil die Anzahl seiner aktiven Verbindungen unter einen Schwellenwert gefallen ist. Node A wählt einen seiner bereits bestehenden, vertrauenswürdigen Verbindungspartner (Node B) aus.
+    Eine Node A stellt fest, dass er seine Datenbank bekannter Peers aktualisieren muss. Dies geschieht entweder periodisch oder weil die Anzahl seiner aktiven Verbindungen unter einen Schwellenwert gefallen ist. Node A wählt einen seiner bereits bestehenden, vertrauenswürdigen Verbindungspartner (Node B) aus.
 
 2.  Senden der `GetAddr`-Nachricht an B
 
 3.  Selektion der Adressen  
-    Node B empfängt die Anfrage und greift auf seine bekannten Peers zu. Node B wählt eine zufällige Teilmenge von Adressen aus, wobei Adressen bevorzugt werden, die innerhalb des aktuellen Zeitfensters (z. B. 3 Stunden) aktiv waren.
+    Node B empfängt die Anfrage und greift auf seine bekannten Peers zu. Node B wählt eine zufällige Teilmenge von Adressen aus. Die Zufallsauswahl kann auch nach bestimmten Kriterien, wie letzte Aktivität priorisiert werden.
 
 4.  Übermittlung der Adressen via `Addr`-Nachricht an A
 
 5.  Validierung und Speicherung  
-    Node A empfängt die `Addr`-Nachricht. Adressen werden nicht sofort kontaktiert, sondern in der lokalen Peer-Datenbank von Node A ("New Buckets") gespeichert. Diese dienen als Reservepool für zukünftige Verbindungsaufbauten, falls aktuelle Nachbarn ausfallen.
+    Node A empfängt die `Addr`-Nachricht. Adressen werden nicht sofort kontaktiert, sondern in der lokalen Peer-Datenbank von Node A als bekannter Peer gespeichert. Diese Peers dienen als Reserve für zukünftige Verbindungsaufbauten, falls aktuelle Nachbarn ausfallen.
 
 Self-Announcement  
-Parallel zum Anfrage-Mechanismus führt Node A regelmäßig (oder einmalig nach dem eigenen Start) ein "Self-Announcement" durch. Dabei sendet Node A seine eigene IP-Adresse unaufgefordert mittels einer `Addr`-Nachricht an seine Nachbarn. Diese Nachbarn leiten die Adresse per Gossip-Protokoll an ihre eigenen Peers weiter ("Relaying"), wodurch Node A im Netzwerk bekannt wird, ohne sich erneut bei der zentralen Registry melden zu müssen.
+Nach jedem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau) senden die Nodes zusätzlich unaufgefordert `Addr`-Nachricht an ihre Nachbarn, um den neuen Peer bekannter zu machen. Angenommen Node X und Y haben sich gerade verbunden. Dann schickt X eine `Addr`-Nachricht mit seiner eigenen IP-Adresse an Y. Y leitet diese Nachricht an seine direkten Nachbarn weiter. Das Gleiche macht auch Y und schickt an X. So werden die neuen Peers bekannter.
 
 # Verteilungssicht
 
