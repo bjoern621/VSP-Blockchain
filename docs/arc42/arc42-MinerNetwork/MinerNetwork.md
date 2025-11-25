@@ -427,16 +427,6 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
-## _\<Konzept 2\>_
-
-_\<Erklärung\>_
-
-…​
-
-## _\<Konzept n\>_
-
-_\<Erklärung\>_
-
 # Architekturentscheidungen
 
 # Qualitätsanforderungen
