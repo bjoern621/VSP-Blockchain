@@ -82,6 +82,7 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 | **Randbedingung** | **Erläuterung**                                                                                      |
 |--------------------|------------------------------------------------------------------------------------------------------|
 | **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                             |
+| Zeit                            | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden.                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert. |
 
 ---
