@@ -504,8 +504,46 @@ Unterschied Full Nodes vs. SPV
 Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
 
 ## Block-Mining & Verbreitung (Block Propagation)
+<div align="center">
 
-TODO bennet
+````mermaid
+sequenceDiagram
+    participant Miner as Miner
+    participant Node_X as Node X
+    participant Node_Y as Node Y
+    
+    Note over Miner, Node_X: Miner findet neuen Block
+    
+    loop Für jeden Peer X in Nachbarn 
+        Miner->>Node_X: inv(block_hash...)
+        
+        alt block_hash unbekannt
+            Node_X->>Miner: getData(block_hash...)
+            Miner->>Node_X: block(...)
+            Node_X->>Node_Y: inv(block_hash)
+        else
+            %% No message
+        end
+    end
+    
+````
+
+<p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
+
+</div>
+
+#### Allgemein:
+Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es, 
+dass der Block möglichst schnell im Netz verbreitet wird, damit dieser Teil der Blockchain wird.
+Das dargestellte Szenario zeigt, wie ein gefundener Block im Netzwerk propagiert wird.
+
+#### Ablauf
+1. Es wird ein Block gefunden
+2. Für jeden Peer wird eine ``inv`` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes. 
+3. Ein Peer prüft nun, ob er diesen Block-Hash bereits kennt. (Dies ist im Regelfall nicht so, da der Block gerade neu geschürft wurde)
+4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer ``getData`` Nachricht an
+5. Der Miner, welcher den Block gefunden hat, antwortet mit einer ``block`` Nachricht
+6. Das wissen über den neuen Block wird in einer ``inv`` Nachricht an die anderen bekannten Peers gesendet.
 
 Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
 
