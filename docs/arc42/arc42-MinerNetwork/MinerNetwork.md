@@ -237,7 +237,7 @@ Jeder Peer im P2P Netzwerk ist eine Netzwerknode. Die einzige Voraussetzung ist,
 
 Schnittstellen
 
--   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden:
+-   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden:
 
     | Kategorie         | Nachrichten          | Beschreibung                                                                                                                                                                                                   |
     | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -343,20 +343,270 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 # Laufzeitsicht
 
-## _\<Bezeichnung Laufzeitszenario 1\>_
+## Verbindungsaufbau
 
--   \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
+<div align="center">
 
--   \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
-    Szenario erläutern\>
+```mermaid
+sequenceDiagram
+    participant p1 as Peer 1
+    participant Registry
+    participant p2 as Peer X
 
-## _\<Bezeichnung Laufzeitszenario 2\>_
+    p1->>Registry: GetPeers()
+    destroy Registry
+    Registry-->>p1: Liste IP-Adressen
+    loop Für jede IP X in der Liste
+        p1->>p2: Version()
+        p2->>p1: Verack()
+        p1->>p2: Ack()
+    end
+```
 
-…​
+<p><em>Abbildung: Sequenzdiagramm - Verbindungsaufbau zwischen Peers</em></p>
 
-## _\<Bezeichnung Laufzeitszenario n\>_
+</div>
 
-…​
+Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
+
+Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
+
+## Block-Header Synchronisation
+
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant A as Full Node A<br/>(BestBlockHeight: 110)
+    participant B as Full Node B<br/>(BestBlockHeight: 120)
+
+    par Requests kreuzen sich im Netzwerk
+        A->>B: GetHeaders(BlockLocator[Hash110])
+        B->>A: GetHeaders(BlockLocator[Hash120])
+    end
+
+    Note over A: A hat nichts Nützliches für B
+
+    B->>A: Headers(List: 111...120)
+
+    A->>A: Validierung & Update Header auf 120
+
+    A->>A: Prüfen, ob Chain Reorganization nötig ist
+```
+
+<p><em>Abbildung: Sequenzdiagramm - Einfache Synchronisation Block-Header</em></p>
+
+</div>
+
+Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
+
+Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header an B. Peer B dagegen schickt die übrigen Block-Header ab Block 111. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
+
+Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
+
+## Chain Reorganization
+
+<div align="center">
+
+```mermaid
+flowchart TB
+    Start([Start: Neue, bessere Kette erkannt]) --> FindSplit
+
+    FindSplit["Finde Fork Point <br/>(Common Ancestor)"] --> StartRollback
+
+    subgraph "Phase 1: Disconnect (Rollback)"
+        direction TB
+        StartRollback[Setze Zeiger auf aktuellen Tip] --> CheckSplit{Ist Zeiger ==<br/>Fork Point?}
+
+        CheckSplit -- Nein --> UndoState["Mache Block-Zustand rückgängig (UTXO Rollback)"]
+        UndoState --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
+        TxToMempool --> StepPrev[Setze Zeiger auf vorherigen Block]
+        StepPrev --> CheckSplit
+    end
+
+    CheckSplit -- "Ja (beim Split angekommen)" --> GetNewPath
+
+    subgraph "Phase&nbsp;2:&nbsp;Connect&nbsp;(Roll&nbsp;Forward)"
+        direction TB
+        GetNewPath[Lade Liste der neuen Blöcke von Fork Point bis zum neuen Tip] --> CheckList{Liste leer?}
+
+        CheckList -- Nein --> ApplyBlock["Wende Block an Transaktionen ausführen (UTXO Update)"]
+        ApplyBlock --> CleanMempool[Lösche bestätigte TXs aus Mempool]
+        CleanMempool --> StepNext[Nimm nächsten Block]
+        StepNext --> CheckList
+    end
+
+    CheckList -- Ja --> Stop([Ende: Neue Main-Chain])
+```
+
+<p><em>Abbildung: Flussdiagramm - Chain Reorganization</em></p>
+
+</div>
+
+Allgemein  
+Chain Reorganization ist ein Vorgang, bei dem die aktuellen Blöcken der Blockchain rückgängig gemacht werden um daraufhin einer längeren Kette (mit mehr Proof-of-Work) zu folgen.
+
+Auslöser  
+Nach jeder empfangenen `Headers(...)` Nachricht wird geprüft, ob eine Chain Reorganization nötig ist. Dabei wird die kumulative Difficulty des aktuellen Block-Header-Tip und der des letzten Block-Headers der `Headers(...)` verglichen. Die Kette mit der größten kumulativen Difficulty wird ausgewählt. Ist diese Kette eine andere als die aktuelle wird eine Chain Reorganization durchgeführt.
+
+Folgen  
+Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Chain via `GetData(...)` angefordert werden.
+
+Hinweise  
+Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämliche der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
+
+## Initialer Block Download
+
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant SPV as SPV Node
+    participant Full as Full Node
+
+    Note over SPV, Full: Block-Header synchronisieren<br/>(siehe oben)
+
+    SPV->>Full: SetFilter(...)
+
+    Note over SPV, Full: Blöcke (UTXOs) anfordern:
+
+    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
+    Full->>SPV: MerkleBlock(...)
+    Full->>SPV: MerkleBlock(...)
+
+    Note over SPV, Full: Unbestätigte Transaktionen abrufen:
+
+    SPV->>Full: Mempool()
+    Full->>SPV: Inv(...)
+
+    SPV->>Full: GetData(MSG_TX)
+    Full->>SPV: Tx(...)
+    Full->>SPV: Tx(...)
+```
+
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+
+</div>
+
+Allgemein  
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
+
+Ablauf  
+Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
+
+Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
+
+Abschließend wird der Mempool synchronisiert, um auch über noch unbestätigte Transaktionen informiert zu sein. Da zuvor ein Filter gesetzt wurde, werden nur gefilterte Transaktionen in der Inv Nachricht übermittelt.
+
+Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
+
+Unterschied Full Nodes vs. SPV  
+Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
+
+## Block-Mining & Verbreitung (Block Propagation)
+
+<div align="center">
+
+```mermaid
+sequenceDiagram
+    participant Miner as Miner
+    participant Node_X as Node X
+    participant Node_Y as Node Y
+
+    Note over Miner, Node_X: Miner findet neuen Block
+
+    loop Für jeden Peer X in Nachbarn
+        Miner->>Node_X: inv(block_hash...)
+
+        alt block_hash unbekannt
+            Node_X->>Miner: getData(block_hash...)
+            Miner->>Node_X: block(...)
+            Node_X->>Node_X: validiere neuen Block
+            Node_X->>Node_Y: inv(block_hash)
+        else
+            %% No message
+        end
+    end
+
+```
+
+<p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
+
+</div>
+
+#### Allgemein:
+
+Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es,
+dass der Block möglichst schnell im Netz verbreitet wird, damit dieser Teil der Blockchain wird.
+Das dargestellte Szenario zeigt, wie ein gefundener Block im Netzwerk propagiert wird.
+
+#### Ablauf
+
+1. Es wird ein Block gefunden
+2. Für jeden Peer wird eine `inv` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes.
+3. Ein Peer prüft nun, ob er diesen Block-Hash bereits kennt. (Dies ist im Regelfall nicht so, da der Block gerade neu geschürft wurde)
+4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer `getData` Nachricht an
+5. Der Miner, welcher den Block gefunden hat, antwortet mit einer `block` Nachricht
+6. Das wissen über den neuen Block wird in einer `inv` Nachricht an die anderen bekannten Peers gesendet.
+
+Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
+
+## Orphan Block Handling
+
+````mermaid
+
+sequenceDiagram
+    participant node as Node
+    participant peer as Peer
+    
+    Note over node,peer: Block C empfangen,  A unbekannt
+
+    node->>node: C in Waisenpool hinzufügen
+    node->>peer: getHeaders(blockLocator: A, hashStop: C)
+    peer->>node: headers( { H(A), ...,  H(C) } )
+    loop für jeden Header H der empfangenen Header 
+        node->>node: validiere empfangenen Header
+        node->>peer: getData(hash(H))
+        peer->>node: block(H)
+        node->>node: validiere empfangenen Block
+    end
+    node->>node: versuche Waisen-Blöcke anzuschließen
+````
+
+Szenario:
+Node empfängt über ``inv``, ``getData`` und ``block`` einen Block ``C``. Dieser hat als Vorgängerblock einen Block ``A``, welcher dem Node unbekannt ist. 
+
+Ablauf:
+1. Es wird ein Block empfangen.
+2. Header Kette wird validiert → Schlägt fehl
+3. Block wird in den Waisen-Pool aufgenommen
+4. Es werden alle Header zwischen den letzten Blöcken der Kette und dem Empfangenen angefragt. Siehe [hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) für den Aufbau des BlockLocators
+5. Der Peer sendet dem Node alle angeforderten Block-Header via einer ``headers(...)`` Nachricht
+6. Die Header werden validiert
+7. Die Blöcke der Hashes werden durch die ``getData`` Nachricht angefragt
+8. Der Peer liefert die angefragten Blöcke über eine ``block`` Nachricht
+9. Der empfangene Block wird validiert
+10. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen
+
+## Peer Discovery
+
+Dieser Prozess beschreibt, wie Knoten im laufenden Betrieb IP-Adressen austauschen, um das Netzwerk robuster gegen Ausfälle einzelner Knoten zu machen.
+
+1.  Initiierung der Anfrage  
+    Eine Node A stellt fest, dass er seine Datenbank bekannter Peers aktualisieren muss. Dies geschieht entweder periodisch oder weil die Anzahl seiner aktiven Verbindungen unter einen Schwellenwert gefallen ist. Node A wählt einen seiner bereits bestehenden, vertrauenswürdigen Verbindungspartner (Node B) aus.
+
+2.  Senden der `GetAddr`-Nachricht an B
+
+3.  Selektion der Adressen  
+    Node B empfängt die Anfrage und greift auf seine bekannten Peers zu. Node B wählt eine zufällige Teilmenge von Adressen aus. Die Zufallsauswahl kann auch nach bestimmten Kriterien, wie letzte Aktivität priorisiert werden.
+
+4.  Übermittlung der Adressen via `Addr`-Nachricht an A
+
+5.  Validierung und Speicherung  
+    Node A empfängt die `Addr`-Nachricht. Adressen werden nicht sofort kontaktiert, sondern in der lokalen Peer-Datenbank von Node A als bekannter Peer gespeichert. Diese Peers dienen als Reserve für zukünftige Verbindungsaufbauten, falls aktuelle Nachbarn ausfallen.
+
+Self-Announcement  
+Nach jedem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau) senden die Nodes zusätzlich unaufgefordert `Addr`-Nachricht an ihre Nachbarn, um den neuen Peer bekannter zu machen. Angenommen Node X und Y haben sich gerade verbunden. Dann schickt X eine `Addr`-Nachricht mit seiner eigenen IP-Adresse an Y. Y leitet diese Nachricht an seine direkten Nachbarn weiter. Das Gleiche macht auch Y und schickt an X. So werden die neuen Peers bekannter.
 
 # Verteilungssicht
 
@@ -367,13 +617,13 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
     <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
 </div>
 
-Einleitung  
+Begründung  
 In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
 Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
-Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
+Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von
 [Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
 Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
-Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden. 
+Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden.
 Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
 
 Qualitäts- und/oder Leistungsmerkmale
@@ -381,10 +631,10 @@ Qualitäts- und/oder Leistungsmerkmale
 Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
 
 | CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
-|---------|------|----------|-------|-----------|-------|
+| ------- | ---- | -------- | ----- | --------- | ----- |
 | 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
 
-Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen, 
+Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen,
 da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
 
 Zuordnung von Bausteinen zu Infrastruktur  
@@ -400,17 +650,19 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 </div>
 
 #### Registry Crawler
+
 In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
-Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein. 
+Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein.
 
 #### Nodes (SPV-Node und Full-Node)
-SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
-Zu Beginn werden drei Instanzen eines Nodes hochgefahren. 
+
+SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment.
+Zu Beginn werden drei Instanzen eines Nodes hochgefahren.
 Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
 Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
 Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
 Die Nodes laufen alle unter dem P2P-Netzwerkservice.
-Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg 
+Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
 den gleichen Namen und DNS Eintrag.
 
 ### _\<Infrastrukturelement n\>_
@@ -437,7 +689,9 @@ Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen
 
 
 ## Merkle-Trees und Merkle-Pfade
+
 ### Merkle-Tree
+
 Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
 Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmengen zu erstellen.
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
@@ -449,6 +703,7 @@ Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
 ### Merkle-Pfad
+
 Ein Merkle Pfad dient dazu, zu überprüfen, ob eine Transaktion in einem Block enthalten ist.
 Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Transaktion (dem Blatt) bis zur Wurzel benötigt werden.
 
@@ -466,18 +721,22 @@ _\<Erklärung\>_
 # Architekturentscheidungen
 
 ## Serialisierung
+
 Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
-- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
-- Typsicherheit (Reduziert Fehler zur Laufzeit)
-- Kompaktes Datenformat (Kleiner als bei XML/JSON)
-- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
-- Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
+
+-   Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
+-   Typsicherheit (Reduziert Fehler zur Laufzeit)
+-   Kompaktes Datenformat (Kleiner als bei XML/JSON)
+-   Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
+-   Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
 
 Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
 automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
 
 ## Kommunikation
+
 ### Kommunikationsart
+
 Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
 ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
 
@@ -486,11 +745,12 @@ Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall ei
 Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
 
 Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
-nur zur Laufzeit im Speicher gehalten. 
+nur zur Laufzeit im Speicher gehalten.
 
 Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
 
 ### RPC Framework
+
 Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC verwendet Protobuf, wodurch Nachrichten effizient serialisiert werden, was die zu übertragende Nachrichtengröße reduziert.
 Weiter können Client und Server Stubs automatisch generiert werden.
 Durch die Nutzung einer IDL gibt es eine klare Trennung zwischen Schnittstelle und Application.
@@ -512,10 +772,11 @@ Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was da
 
 # Glossar
 
-| Begriff      | Definition                                                                                                                                                                                                            |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SPV          | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
-| Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
-| ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
-| Node         | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
+| Begriff       | Definition                                                                                                                                                                                                            |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SPV           | Simplified Payment Verification                                                                                                                                                                                       |
+| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
+| Miner (Node)  | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
+| ICC           | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
+| Node          | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
+| Genesis Block | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
