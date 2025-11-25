@@ -453,7 +453,7 @@ Folgen
 Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Chain via `GetData(...)` angefordert werden.
 
 Hinweise  
-Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämlicher der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
+Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämliche der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
 
 ## Initialer Block Download
 
