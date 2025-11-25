@@ -406,7 +406,7 @@ Von diesem wird es eine Instanz geben.
 SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
 Zu Beginn werden drei Instanzen eines Nodes hochgefahren. Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
 Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
-Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "StatefulSet". Somit erhält jeder Node über Neustartes hinweg 
+Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg 
 den gleichen Namen und DNS Eintrag.
 
 ### _\<Infrastrukturelement n\>_
