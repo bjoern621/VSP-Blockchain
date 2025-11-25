@@ -427,6 +427,15 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
+## Validiert vs. verifiziert vs. bestätigt
+
+| Begriff     | Bedeutung                                                                                                                                                                                                                                                                                                                |
+|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Validiert   | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen                                                                                                                                                                                                                        |
+| Verifiziert | Kryptografische Überprüfung auf Signaturen/Hashes                                                                                                                                                                                                                                                                        |
+| Bestätigt   | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist. Besondere Bedeutung haben Blöcke/Transaktionen, welche 6 Blöcke tief in der Blockchain sind. Diese gelten als "bestätigt", da es enormen Rechenaufwand benötigen würde, diese Blöcke/Transaktion Rückgängig zu machen |
+
+
 ## Merkle-Trees und Merkle-Pfade
 ### Merkle-Tree
 Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
