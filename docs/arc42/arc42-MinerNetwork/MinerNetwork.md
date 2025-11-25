@@ -369,7 +369,7 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 Einleitung  
 In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
-Miner stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
+Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
 Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
 [Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
 Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployed wird.
