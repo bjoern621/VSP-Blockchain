@@ -443,6 +443,9 @@ Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmeng
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
 Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
 In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
+Dies wird dann speziell von SPV-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
+müssen diese nur den Merklepfad nachfolgen und das Ergebnis mit dem Merkle-Root (enthalten im Block-Header) vergleichen. Somit kann eine
+Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen.
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
 ### Merkle-Pfad
