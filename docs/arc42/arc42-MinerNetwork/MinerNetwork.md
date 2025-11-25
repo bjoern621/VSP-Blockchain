@@ -433,7 +433,7 @@ Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. F�
 - Typsicherheit (Reduziert Fehler zur Laufzeit)
 - Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
 
-Die verwendeten Datentypen werden in einer [IDL beschrieben](../../../p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
+Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
 automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren. 
 
 ## Merkle-Trees und Merkle-Pfade
