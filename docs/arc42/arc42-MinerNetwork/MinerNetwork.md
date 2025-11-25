@@ -551,8 +551,8 @@ Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-
 
 TODO bennet
 
-Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 10
-5), aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, wie der Node den fehlenden Vorgänger via GetHeaders oder GetData anfordert, bevor er den neuen Block validieren kann.
+Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 10 5),
+aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, wie der Node den fehlenden Vorgänger via GetHeaders oder GetData anfordert, bevor er den neuen Block validieren kann.
 
 # Verteilungssicht
 
