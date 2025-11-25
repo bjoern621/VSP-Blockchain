@@ -504,19 +504,20 @@ Unterschied Full Nodes vs. SPV
 Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
 
 ## Block-Mining & Verbreitung (Block Propagation)
+
 <div align="center">
 
-````mermaid
+```mermaid
 sequenceDiagram
     participant Miner as Miner
     participant Node_X as Node X
     participant Node_Y as Node Y
-    
+
     Note over Miner, Node_X: Miner findet neuen Block
-    
-    loop Für jeden Peer X in Nachbarn 
+
+    loop Für jeden Peer X in Nachbarn
         Miner->>Node_X: inv(block_hash...)
-        
+
         alt block_hash unbekannt
             Node_X->>Miner: getData(block_hash...)
             Miner->>Node_X: block(...)
@@ -526,25 +527,27 @@ sequenceDiagram
             %% No message
         end
     end
-    
-````
+
+```
 
 <p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
 
 </div>
 
 #### Allgemein:
-Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es, 
+
+Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es,
 dass der Block möglichst schnell im Netz verbreitet wird, damit dieser Teil der Blockchain wird.
 Das dargestellte Szenario zeigt, wie ein gefundener Block im Netzwerk propagiert wird.
 
 #### Ablauf
+
 1. Es wird ein Block gefunden
-2. Für jeden Peer wird eine ``inv`` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes. 
+2. Für jeden Peer wird eine `inv` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes.
 3. Ein Peer prüft nun, ob er diesen Block-Hash bereits kennt. (Dies ist im Regelfall nicht so, da der Block gerade neu geschürft wurde)
-4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer ``getData`` Nachricht an
-5. Der Miner, welcher den Block gefunden hat, antwortet mit einer ``block`` Nachricht
-6. Das wissen über den neuen Block wird in einer ``inv`` Nachricht an die anderen bekannten Peers gesendet.
+4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer `getData` Nachricht an
+5. Der Miner, welcher den Block gefunden hat, antwortet mit einer `block` Nachricht
+6. Das wissen über den neuen Block wird in einer `inv` Nachricht an die anderen bekannten Peers gesendet.
 
 Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
 
@@ -554,6 +557,26 @@ TODO bennet
 
 Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 105),
 aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, wie der Node den fehlenden Vorgänger via GetHeaders oder GetData anfordert, bevor er den neuen Block validieren kann.
+
+## Peer Discovery
+
+Dieser Prozess beschreibt, wie Knoten im laufenden Betrieb IP-Adressen austauschen, um das Netzwerk robuster gegen Ausfälle einzelner Knoten zu machen.
+
+1.  Initiierung der Anfrage  
+    Ein Node A stellt fest, dass er seine Datenbank bekannter Peers aktualisieren muss. Dies geschieht entweder periodisch oder weil die Anzahl seiner aktiven Verbindungen unter einen Schwellenwert gefallen ist. Node A wählt einen seiner bereits bestehenden, vertrauenswürdigen Verbindungspartner (Node B) aus.
+
+2.  Senden der `GetAddr`-Nachricht an B
+
+3.  Selektion der Adressen  
+    Node B empfängt die Anfrage und greift auf seine bekannten Peers zu. Node B wählt eine zufällige Teilmenge von Adressen aus, wobei Adressen bevorzugt werden, die innerhalb des aktuellen Zeitfensters (z. B. 3 Stunden) aktiv waren.
+
+4.  Übermittlung der Adressen via `Addr`-Nachricht an A
+
+5.  Validierung und Speicherung  
+    Node A empfängt die `Addr`-Nachricht. Adressen werden nicht sofort kontaktiert, sondern in der lokalen Peer-Datenbank von Node A ("New Buckets") gespeichert. Diese dienen als Reservepool für zukünftige Verbindungsaufbauten, falls aktuelle Nachbarn ausfallen.
+
+Self-Announcement  
+Parallel zum Anfrage-Mechanismus führt Node A regelmäßig (oder einmalig nach dem eigenen Start) ein "Self-Announcement" durch. Dabei sendet Node A seine eigene IP-Adresse unaufgefordert mittels einer `Addr`-Nachricht an seine Nachbarn. Diese Nachbarn leiten die Adresse per Gossip-Protokoll an ihre eigenen Peers weiter ("Relaying"), wodurch Node A im Netzwerk bekannt wird, ohne sich erneut bei der zentralen Registry melden zu müssen.
 
 # Verteilungssicht
 
