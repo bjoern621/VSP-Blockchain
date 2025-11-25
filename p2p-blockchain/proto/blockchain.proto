@@ -76,6 +76,8 @@ service BlockchainService {
     //  - Connection established.
     //  - Response to a GetHeaders request.
     //  - Contains a maximum of 100 headers per message.
+    //  - Headers are sorted starting with the lowest block number.
+    //  - Header at index X always has X-1 as prev_block_hash.
     //
     // Post-conditions:
     //  - PoW validated and local header chain extended.
