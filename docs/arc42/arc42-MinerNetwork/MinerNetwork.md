@@ -520,6 +520,7 @@ sequenceDiagram
         alt block_hash unbekannt
             Node_X->>Miner: getData(block_hash...)
             Miner->>Node_X: block(...)
+            Node_X->>Node_X: validiere neuen Block
             Node_X->>Node_Y: inv(block_hash)
         else
             %% No message
@@ -551,7 +552,7 @@ Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-
 
 TODO bennet
 
-Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 10 5),
+Begründung: Was passiert, wenn ein Node einen Block erhält (z.B. Block Nr. 105),
 aber den Vorgänger (Block Nr. 104) noch nicht kennt? Das Szenario beschreibt, wie der Node den fehlenden Vorgänger via GetHeaders oder GetData anfordert, bevor er den neuen Block validieren kann.
 
 # Verteilungssicht
