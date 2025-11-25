@@ -126,81 +126,239 @@ TODO entfernern
 -   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
 -   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
 -   das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
-
-    TODO weiter schreiben (lebendes Dokument)
+-   jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
 
 # Bausteinsicht
 
 ## Whitebox Gesamtsystem
 
-**_\<Übersichtsdiagramm\>_**
+<div align="center">
+    <img src="images/Layer 1.drawio.svg" alt="Layer 1"  height="400">
+    <p><em>Abbildung: Layer 1 - Whitebox Gesamtsystem</em></p>
+</div>
 
 Begründung  
-_\<Erläuternder Text\>_
+Das Diagramm zeigt die oberste Sicht auf das System. Es dient als Überblick über die zwei Hauptkomponenten des Systems. Die Registry ist dabei nur ein kleineres System, das immer über die gleiche Methode erreichbar ist und von neuen Peers benötigt wird, um die eigentliche Verbindung zu dem dynamischen P2P Netzwerk herzustellen. Der Großteil der Logik und der Komplexität findet im P2P Netzwerk statt. Die Größe dieser beiden Komponenten ist also sehr ungleich verteilt, dies sollte beachtet werden.
 
-Enthaltene Bausteine  
-_\<Beschreibung der enthaltenen Bausteine (Blackboxen)\>_
+Wichtig hier ist auch die Unterscheidung zwischen **internen** Peers (hier innerhalb der P2P Netzwerk Komponente) und **externen** Peers (hier als externer Händler / externer Miner bezeichnet). Es soll verdeutlicht werden, dass das verteilte System offen für dritte Netzwerkknoten ist.
 
-Wichtige Schnittstellen  
-_\<Beschreibung wichtiger Schnittstellen\>_
+### Registry (Blackbox)
 
-### \<Name Blackbox 1\>
+Zweck/Verantwortung  
+Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekannt ist. Konzeptionell hat die Registry nur genau zwei wichtige Eigenschaften: 1. Hält eine modifizierbare Liste von IP Adress Einträgen und 2. ist über eine statische Methode erreichbar. Beide Eigenschaften können über ein DNS System realisiert werden in dem mehrere A/AAAA Einträge einer Domain erstellt bzw. modifiziert werden.
 
-_\<Zweck/Verantwortung\>_
+Schnittstellen
 
-_\<Schnittstelle(n)\>_
+-   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet.
+-   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
-_\<(Optional) Qualitäts-/Leistungsmerkmale\>_
+Siehe auch [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) für eine genauere Beschreibung der Schnittstellen.
 
-_\<(Optional) Ablageort/Datei(en)\>_
+Qualitäts-/Leistungsmerkmale
 
-_\<(Optional) Erfüllte Anforderungen\>_
+-   Distribution Transparency  
+    Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z. B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
 
-_\<(optional) Offene Punkte/Probleme/Risiken\>_
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
 
-### \<Name Blackbox 2\>
+-   [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
+-   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+-   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
 
-_\<Blackbox-Template\>_
+Offene Punkte/Probleme/Risiken  
+Wir haben bereits die Domain `vsgoin.informatik.haw-hamburg.de` aber es ist noch unklar, ob wir dort die DNS Einträge frei ändern können, da sie von der ICC verwaltet wird. Dieses Problem kann mit einer eigenen Domain umgangen werden. Außerdem hat die ICC möglicherweise nur eine externe IP und die einzelnen Nodes innerhalb des ICC Clusters (für Nodes siehe auch [Ebene 2](#ebene-2)) können möglicherweise nicht direkt angesteuert werden. Diese Probleme sollten noch getestet werden und Lösungen gefunden (getrackt in [Task-91](https://github.com/bjoern621/VSP-Blockchain/issues/91)).
 
-### \<Name Blackbox n\>
+### P2P Netzwerk (Blackbox)
 
-_\<Blackbox-Template\>_
+Zweck/Verantwortung  
+Gesamtheit aller **internen** Peers, die über das V$Goin P2P Protocol kommunizieren. Intern meint hier innerhalb der ICC laufend. Die Komponente enthält die Peers, die zusammen das P2P Netzwerk bilden. Eine genauere Beschreibung des P2P Netzwerk wird in [Ebene 2](#ebene-2) gegeben (Hinweis: Dort wird **keine** Unterscheidung mehr zwischen intern / extern gemacht).
 
-### \<Name Schnittstelle 1\>
+Schnittstellen
 
-…​
+-   `P2P Nachrichten` steht stellvertretend für alle Nachrichten des P2P Protokolls. Diese Nachrichten werden sowohl zwischen internen und externen Peers ausgetauscht als auch zwischen internen und internen und externen und externen. Daher macht eine Unterscheidung zwischen intern / extern hier wenig Sinn und die Nachrichten werden genauer in [Ebene 2](#ebene-2) beschrieben.
 
-### \<Name Schnittstelle m\>
+Siehe auch [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) für eine genauere Beschreibung der Schnittstellen.
+
+### getpeers (Schnittstelle)
+
+Siehe Schnittstellenbeschreibung für getpeers weiter oben. Die getpeers Schnittstelle ist sowohl für interne Peers des Netzwerks (in der oberen Abbildung dargestellt als P2P Netzwerk) als auch für externe Händler / Miner gedacht.
+
+### P2P Nachrichten (Schnittstelle)
+
+P2P Nachrichten meint alle Nachrichten des V$Goin P2P Protokolls. Eine Übersicht hierfür bietet [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network). Die Nachrichten des Protokolls werden sowohl _an_ als auch _von_ internen Nodes geschickt. Eine deutlich genauere Beschreibung der P2P Nachrichten wird in [Ebene 2](#ebene-2) gemacht. Wichtig ist, dass diese Schnittstelle exakt dieselbe ist, wie die zwischen den internen Peers.
 
 ## Ebene 2
 
-### Whitebox _\<Baustein 1\>_
+### Whitebox P2P Netzwerk
 
-_\<Whitebox-Template\>_
+<div align="center">
+    <img src="images/Layer 2.drawio.svg" alt="Layer 2"  height="400">
+    <p><em>Abbildung: Layer 2 - Whitebox P2P Netzwerk</em></p>
+</div>
 
-### Whitebox _\<Baustein 2\>_
+Begründung  
+Diese Ebene soll einen Überblick über die verschiedenen Akteure des Netzwerks bieten. Das Netzwerk besteht aus mehreren Peers, die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein.
 
-_\<Whitebox-Template\>_
+Die Arten der Nodes (SPV vs. Miner Node) unterscheiden sich in den enthaltenen Teilsystemen. Nodes müssen nicht auf diese beiden Arten begrenzt sein, Teilsysteme können (fast) beliebig kombiniert werden. So könnte z. B. eine _Full Node_ eine Kombination aus SPV und Miner Node sein. Mehr zu Teilsystemen in [Ebene 3](#ebene-3). Der Registry Crawler ist ebenfalls eine Node bestehend aus Teilsystemen.
 
-…​
+Hinweis: Die externen Schnittstellen zu Externer Miner / Händler und REST API wurden hier weggelassen. Die externen Nodes verhalten sich zu den internen Nodes in jedem relevanten Aspekt gleich. Die externen Nodes und internen Nodes sind hier allgemein als Node bezeichnet.
 
-### Whitebox _\<Baustein m\>_
+### Registry Crawler (Blackbox)
 
-_\<Whitebox-Template\>_
+Zweck/Verantwortung  
+Besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
+
+Schnittstellen
+
+-   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+
+    Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
+
+-   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox).
+
+Qualitäts-/Leistungsmerkmale
+
+-   Skalierbarkeit  
+    Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
+-   Resource Sharing  
+    Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
+-   Resilience  
+    Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+
+### SPV Node (Blackbox)
+
+Zweck/Verantwortung  
+Eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist. Enthält die Teilsystene Netzwerkrouting und Wallet.
+
+Schnittstellen
+
+-   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox). Sowie die Nachrichten für das [Wallet Teilsystem](#ebene-3).
+
+### Miner Node (Blackbox)
+
+Zweck/Verantwortung  
+Ein Node, die auf das Mining von Blöcken konzentriert ist. Enthält die Teilsysteme Netzwerkrouting, Blockchain und Miner.
+
+Schnittstellen
+
+-   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox). Sowie die Nachrichten für das [Blockchain](#ebene-3) und [Miner Teilsystem](#ebene-3).
+
+### Node (Blackbox)
+
+Zweck/Verantwortung  
+Jeder Peer im P2P Netzwerk ist eine Netzwerknode. Die einzige Voraussetzung ist, dass der Peer das grundlegende P2P Protokoll sprechen muss und somit das Teilsystem Netzwerkrouting haben muss. Mit anderen Worten: Jede Node hat immer das Netzwerkrouting Teilsystem (Teilsysteme: [Ebene 3](#ebene-3)).
+
+Schnittstellen
+
+-   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden:
+
+    | Kategorie         | Nachrichten          | Beschreibung                                                                                                                                                                                                   |
+    | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | Verbindungsaufbau | version, verack, ack | Ein Drei-Wege-Handshake, der zusätzlich verfügbare Teilsysteme austauscht. Dies sind die ersten Nachrichten des P2P Protokolls. (getpeers wird kurz vorher aufgerufen, ist aber nicht Teil des P2P Protokolls) |
+    | Peer Discovery    | getaddr, addr        | Diese Nachrichten sorgen für stets aktuelle Peers und genügend Alternativrouten, falls ein Peer das Netzwerk verlässt.                                                                                         |
+    | Keepalive         | heartbeat            | Eng verbunden mit den Peer Discovery Nachrichten. Ein Heartbeat wird in regelmäßigen Abständen an direkte Nachbarn gesendet, um inaktive Verbindungen zu erkennen.                                             |
+    | Error Handling    | reject               | Nachrichten, die sich um Error Handling bemühen. Wirkt sich direkt auf die Fehlertransparenz (Distribution Transparency) aus.                                                                                  |
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [US-81 Periodisches Überprüfen der Verbindungen](https://github.com/bjoern621/VSP-Blockchain/issues/81)
+-   [US-76 Heartbeat-Nachrichten](https://github.com/bjoern621/VSP-Blockchain/issues/76)
+-   [US-93 Reject Nachrichten](https://github.com/bjoern621/VSP-Blockchain/issues/93)
+-   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83)
+-   viele weitere
+
+### updatepeers (Schnittstelle)
+
+Wird von dem Registry Crawler regelmäßig aufgerufen, um die Liste der aktuell verfügbaren Peers zu aktualisieren. Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) und [Registry Crawler (Blackbox)](#registry-crawler-blackbox) Beschreibung.
+
+### getpeers (Schnittstelle)
+
+Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über diesen anderen Knoten mögliche Verbindungen bestimmt ([getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)). Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) Beschreibung.
 
 ## Ebene 3
 
-### Whitebox \<\_Baustein x.1\_\>
+### Whitebox Full Node
 
-_\<Whitebox-Template\>_
+<div align="center">
+    <img src="images/Layer 3.drawio.svg" alt="Layer 3"  height="400">
+    <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
+</div>
 
-### Whitebox \<\_Baustein x.2\_\>
+Begründung  
+Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-_\<Whitebox-Template\>_
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine SPV Node würde zum Beispiel keine Miner Komponente haben. Ein Miner kann auch ohne Wallet agieren.
 
-### Whitebox \<\_Baustein y.1\_\>
+### Blockchain (Blackbox)
 
-_\<Whitebox-Template\>_
+Zweck/Verantwortung  
+Das Teilsystem Blockchain stellt die lokale Sicht auf die globale Kette bereit. Es gibt zwei mögliche Implementierungen für das Blockchain Teilsystem. 1. Vereinfachte Blockchain und 2. Vollständige Blockchain.
+
+Die vereinfachte Blockchain speichert hauptsächlich Block‑Header und ausgewählte Transaktionen und verlässt sich stärker auf andere Full Nodes, um Gültigkeit von Transaktionen und Blöcken zu prüfen. Sie kommuniziert bei Bedarf mit benachbarten Nodes, um an Informationen zu gelangen. Dadurch werden Speicher‑ und Rechenressourcen gespart, allerdings auf Kosten von Sicherheit. Die vollständige Blockchain speichert alle Blöcke (und Transaktionen und UTXO‑Set und Mempool) und validiert jede Transaktion und jeden Block lokal. Sie benötigt deutlich mehr Ressourcen, bietet dafür aber mehr Sicherheit.
+
+Ob eine Node die vereinfachte oder vollständige Variante wählt ist zunächst egal. Jedoch verwenden SPV Nodes tendenziell die vereinfachte Blockchain, um Ressourcen zu sparen und Miner Nodes nutzen die vollständige Blockchain Implementierung, um möglichst schnell und unabhängig von anderen Nodes Blöcke validieren zu können.
+
+Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
+
+| Eigenschaft                                                                       | Vollständige Blockchain                                                                                                                        | Vereinfachte Blockchain                                                                                                                                        |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **UTXO Set**                                                                      | Hält komplettes UTXO Set                                                                                                                       | Hält nur UTXOs die von der Wallet gebraucht werden                                                                                                             |
+| **Mempool**                                                                       | Vollständiger Mempool für unbestätigte Tx                                                                                                      | Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                                                          |
+| [**Ausgehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja (Bedient Anfragen von anderen)                                                                                                              | Nein (Kann keine Daten bereitstellen)                                                                                                                          |
+| [**Eingehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja                                                                                                                                             | Ja                                                                                                                                                             |
+| **Blöcke**                                                                        | Speichert alle Blöcke komplett (Block-Header + Tx der Blöcke)                                                                                  | Speichert nur Block Header aller Blöcke                                                                                                                        |
+| **Teil der Registry** (siehe auch [Registry Crawler](#registry-crawler-blackbox)) | Ja                                                                                                                                             | Nein                                                                                                                                                           |
+| **Transaktions-Validierung**                                                      | Verifiziert anhand Höhe in der Blockchain. Validiert Signaturen und Semantik aller eingehenden Transaktionen. Prüft gegen das lokale UTXO Set. | Verifiziert anhand Tiefe in der Blockchain. Verknüpft Transaktion mit Block über Merkle-Pfad und wartet, bis Block tief genug in der Blockchain versunken ist. |
+| **Block-Validierung**                                                             | Prüft gesamten Block (alle Tx gültig + Proof-of-Work + Konsens)                                                                                | Prüft nur Proof-of-Work und Verkettung                                                                                                                         |
+| **Empfang von Transaktionen**                                                     | Empfängt alle und speichert alle (validen) Tx                                                                                                  | Empfängt und speichert nur Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                               |
+
+Weitere Informationen / Quellen:
+
+-   [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
+-   [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
+-   [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
+-   [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
+-   [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
+
+Schnittstellen
+
+-   `Nachrichten senden / empfangen` muss die Blockchain Komponente über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über neue Nachrichten benachrichtigt zu werden, kann das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
+
+### Wallet (Blackbox)
+
+### Miner (Blackbox)
+
+### Netzwerkrouting (Blackbox)
+
+## Ebene 4
+
+### Whitebox Teilsystem
+
+Begründung  
+Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems. Jedes Teilsystem ist in die drei Layer Interface, Business, Data geteilt. Der Interface Layer bildet die Schnittstelle des Teilsystems und interagiert mit anderen Teilsystemen / Komponenten des Systems. Der Business Layer enthält die Kern-Logik des Systems und der Data Layer ist für die Speicherung und das Laden von Daten verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
+
+Offene Punkte/Probleme/Risiken  
+Architektur ist Subjekt To Change, aber Vorgabe ist mMn, dass mindestens MVC genutzt wird.
+
+### Whitebox Blockchain
+
+Begründung  
+Der Fokus dieser Teilung ist die Unterscheidung zwischen vereinfachter Blockchain und vollständiger Blockchain zu veranschaulichen.
+
+Offene Punkte/Probleme/Risiken  
+Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten enthalten sind?)
 
 # Laufzeitsicht
 
@@ -223,28 +381,56 @@ _\<Whitebox-Template\>_
 
 ## Infrastruktur Ebene 1
 
-**_\<Übersichtsdiagramm\>_**
+<div align="center">
+    <img src="images/verteilungssicht_ebene_1.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
+</div>
 
-Begründung  
-_\<Erläuternder Text\>_
+Einleitung  
+In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
+Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
+Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
+[Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
+Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
+Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden. 
+Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
 
-Qualitäts- und/oder Leistungsmerkmale  
-_\<Erläuternder Text\>_
+Qualitäts- und/oder Leistungsmerkmale
+
+Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
+
+| CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
+|---------|------|----------|-------|-----------|-------|
+| 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
+
+Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen, 
+da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
 
 Zuordnung von Bausteinen zu Infrastruktur  
-_\<Beschreibung der Zuordnung\>_
+Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 ## Infrastruktur Ebene 2
 
-### _\<Infrastrukturelement 1\>_
+### P2P Netzwerk
 
-_\<Diagramm + Erläuterungen\>_
+<div align="center">
+    <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 2</em></p>
+</div>
 
-### _\<Infrastrukturelement 2\>_
+#### Registry Crawler
+In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
+Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein. 
 
-_\<Diagramm + Erläuterungen\>_
-
-…​
+#### Nodes (SPV-Node und Full-Node)
+SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
+Zu Beginn werden drei Instanzen eines Nodes hochgefahren. 
+Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
+Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
+Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
+Die Nodes laufen alle unter dem P2P-Netzwerkservice.
+Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg 
+den gleichen Namen und DNS Eintrag.
 
 ### _\<Infrastrukturelement n\>_
 
@@ -252,19 +438,13 @@ _\<Diagramm + Erläuterungen\>_
 
 # Querschnittliche Konzepte
 
-## _\<Konzept 1\>_
+## Ausgehende vs. Eingehende Verbindungen
 
-_\<Erklärung\>_
+Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten. Hat eine Node eine ausgehende Verbindung, bietet diese Node dem Netzwerk (Blockchain-) Daten an (sendet also Daten an andere Nodes).
 
-## _\<Konzept 2\>_
+Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
 
-_\<Erklärung\>_
-
-…​
-
-## _\<Konzept n\>_
-
-_\<Erklärung\>_
+Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 # Architekturentscheidungen
 
@@ -278,7 +458,10 @@ _\<Erklärung\>_
 
 # Glossar
 
-| Begriff         | Definition         |
-| --------------- | ------------------ |
-| _\<Begriff-1\>_ | _\<Definition-1\>_ |
-| _\<Begriff-2_   | _\<Definition-2\>_ |
+| Begriff      | Definition                                                                                                                                                                                                            |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SPV          | Simplified Payment Verification                                                                                                                                                                                       |
+| SPV Node     | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
+| Miner (Node) | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
+| ICC          | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
+| Node         | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
