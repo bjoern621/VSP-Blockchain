@@ -399,11 +399,14 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
-## _\<Konzept 2\>_
+## Serialisierung
+Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
+- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
+- Typsicherheit (Reduziert Fehler zur Laufzeit)
+- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
 
-_\<Erklärung\>_
-
-…​
+Die verwendeten Datentypen werden in einer [IDL beschrieben](../../../p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
+automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren. 
 
 ## _\<Konzept n\>_
 
