@@ -370,10 +370,10 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 Einleitung  
 In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
 Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
-Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
+Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von
 [Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
 Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
-Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden. 
+Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden.
 Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
 
 Qualitäts- und/oder Leistungsmerkmale
@@ -381,10 +381,10 @@ Qualitäts- und/oder Leistungsmerkmale
 Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
 
 | CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
-|---------|------|----------|-------|-----------|-------|
+| ------- | ---- | -------- | ----- | --------- | ----- |
 | 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
 
-Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen, 
+Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen,
 da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
 
 Zuordnung von Bausteinen zu Infrastruktur  
@@ -400,17 +400,19 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 </div>
 
 #### Registry Crawler
+
 In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
-Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein. 
+Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein.
 
 #### Nodes (SPV-Node und Full-Node)
-SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
-Zu Beginn werden drei Instanzen eines Nodes hochgefahren. 
+
+SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment.
+Zu Beginn werden drei Instanzen eines Nodes hochgefahren.
 Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
 Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
 Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
 Die Nodes laufen alle unter dem P2P-Netzwerkservice.
-Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg 
+Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
 den gleichen Namen und DNS Eintrag.
 
 ### _\<Infrastrukturelement n\>_
@@ -428,7 +430,9 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 ## Merkle-Trees und Merkle-Pfade
+
 ### Merkle-Tree
+
 Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
 Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmengen zu erstellen.
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
@@ -440,6 +444,7 @@ Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
 ### Merkle-Pfad
+
 Ein Merkle Pfad dient dazu, zu überprüfen, ob eine Transaktion in einem Block enthalten ist.
 Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Transaktion (dem Blatt) bis zur Wurzel benötigt werden.
 
@@ -457,18 +462,22 @@ _\<Erklärung\>_
 # Architekturentscheidungen
 
 ## Serialisierung
+
 Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
-- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
-- Typsicherheit (Reduziert Fehler zur Laufzeit)
-- Kompaktes Datenformat (Kleiner als bei XML/JSON)
-- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
-- Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
+
+-   Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
+-   Typsicherheit (Reduziert Fehler zur Laufzeit)
+-   Kompaktes Datenformat (Kleiner als bei XML/JSON)
+-   Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
+-   Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
 
 Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
 automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
 
 ## Kommunikation
+
 ### Kommunikationsart
+
 Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
 ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
 
@@ -477,11 +486,12 @@ Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall ei
 Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
 
 Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
-nur zur Laufzeit im Speicher gehalten. 
+nur zur Laufzeit im Speicher gehalten.
 
 Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
 
 ### RPC Framework
+
 Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC verwendet Protobuf, wodurch Nachrichten effizient serialisiert werden, was die zu übertragende Nachrichtengröße reduziert.
 Weiter können Client und Server Stubs automatisch generiert werden.
 Durch die Nutzung einer IDL gibt es eine klare Trennung zwischen Schnittstelle und Application.
@@ -496,6 +506,8 @@ Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was da
 # Qualitätsanforderungen
 
 ## Übersicht der Qualitätsanforderungen
+
+Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokuments in [Qualitätsziele](#qualitätsziele) definiert. Die folgenden Qualitätsziele sind weniger wichtig, als die zuvor beschriebenen und stellen eher ein nice-to-have dar.
 
 ## Qualitätsszenarien
 
