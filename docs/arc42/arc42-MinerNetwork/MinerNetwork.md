@@ -427,7 +427,71 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
+## Merkle-Trees und Merkle-Pfade
+### Merkle-Tree
+Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
+Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmengen zu erstellen.
+Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
+Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
+In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
+Dies wird dann speziell von SPV-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
+müssen diese nur den Merklepfad nachfolgen und das Ergebnis mit dem Merkle-Root (enthalten im Block-Header) vergleichen. Somit kann eine
+Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen.
+[Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
+
+### Merkle-Pfad
+Ein Merkle Pfad dient dazu, zu überprüfen, ob eine Transaktion in einem Block enthalten ist.
+Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Transaktion (dem Blatt) bis zur Wurzel benötigt werden.
+
+<div align="center">
+    <img src="images/MerklePfad.png" alt="Layer 3"  height="300">
+    <p><em>Abbildung: Ein Merkle Pfad</em></p>
+</div>
+
+[Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
+
+## _\<Konzept n\>_
+
+_\<Erklärung\>_
+
 # Architekturentscheidungen
+
+## Serialisierung
+Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
+- Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
+- Typsicherheit (Reduziert Fehler zur Laufzeit)
+- Kompaktes Datenformat (Kleiner als bei XML/JSON)
+- Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
+- Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
+
+Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
+automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
+
+## Kommunikation
+### Kommunikationsart
+Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
+ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
+
+Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall einzelner Nodes und trägt zur Fehlertoleranz bei. In einem dezentralen Netzwerk variieren die Antwortzeiten zwangsläufig, bedingt durch geografische Distanzen oder unterschiedliche Hardware-Ressourcen. Dank der asynchronen Verarbeitung kann ein Node seine Arbeit fortsetzen, während Antworten anderer Nodes noch ausstehen.
+
+Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
+
+Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
+nur zur Laufzeit im Speicher gehalten. 
+
+Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
+
+### RPC Framework
+Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC verwendet Protobuf, wodurch Nachrichten effizient serialisiert werden, was die zu übertragende Nachrichtengröße reduziert.
+Weiter können Client und Server Stubs automatisch generiert werden.
+Durch die Nutzung einer IDL gibt es eine klare Trennung zwischen Schnittstelle und Application.
+Ebenfalls nutzt gRPC HTTP/2 Verbindungen, wodurch die Latenz gering gehalten werden kann. gRPC garantiert eine vollständige und reihenfolge gesicherte Übertragung der Nachrichten.
+Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
+Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
+Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Durch die Nutzung von gRPC können wir also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten.
+gRPC bietet ebenfalls gute Unterstützung zum Verschlüsseln der Übertragungen, wodurch die Sicherheit erhöht werden kann.
+
+Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was das Ziel der Offenheit erhöht.
 
 # Qualitätsanforderungen
 
