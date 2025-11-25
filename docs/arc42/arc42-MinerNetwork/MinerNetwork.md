@@ -408,6 +408,26 @@ Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. F�
 Die verwendeten Datentypen werden in einer [IDL beschrieben](../../../p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
 automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren. 
 
+## Merkle-Trees und Merkle-Pfade
+### Merkle-Tree
+Ein Merkle-Tree ist ein binärer Baum. Dieser speichert allerdings nur Hashes ab.
+Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmengen zu erstellen.
+Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
+Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
+In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
+[Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
+
+### Merkle-Pfad
+Ein Merkle Pfad dient dazu, zu überprüfen, ob eine Transaktion in einem Block enthalten ist.
+Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Transaktion (dem Blatt) bis zur Wurzel benötigt werden.
+
+<div align="center">
+    <img src="images/MerklePfad.png" alt="Layer 3"  height="300">
+    <p><em>Abbildung: Ein Merkle Pfad</em></p>
+</div>
+
+[Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
+
 ## _\<Konzept n\>_
 
 _\<Erklärung\>_
