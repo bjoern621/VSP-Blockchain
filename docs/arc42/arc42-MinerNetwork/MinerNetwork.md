@@ -372,8 +372,9 @@ In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns b
 Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
 Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von 
 [Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
-Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployed wird.
+Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
 Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden. 
+Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
 
 Qualitäts- und/oder Leistungsmerkmale
 
@@ -400,12 +401,15 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 #### Registry Crawler
 In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
-Von diesem wird es eine Instanz geben. 
+Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein. 
 
 #### Nodes (SPV-Node und Full-Node)
 SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment. 
-Zu Beginn werden drei Instanzen eines Nodes hochgefahren. Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
+Zu Beginn werden drei Instanzen eines Nodes hochgefahren. 
+Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
 Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
+Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
+Die Nodes laufen alle unter dem P2P-Netzwerkservice.
 Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg 
 den gleichen Namen und DNS Eintrag.
 

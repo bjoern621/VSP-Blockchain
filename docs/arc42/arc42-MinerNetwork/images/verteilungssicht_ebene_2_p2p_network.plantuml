@@ -1,14 +1,16 @@
 @startuml
-rectangle "P2P Netzwerk" as p2p_network {
-    collections "SPV-Node" as spv
-    component "Registry Crawler" as crawler
+node HAW-ICC <<Environment>> {
+    node "P2P Netzwerk" as p2p_network <<Service>> {
+        component "Registry Crawler" as crawler <<Pod>>
     
-    collections "Full-Node" as full_node
+        collections "SPV-Node" as spv <<Pod>>
+        collections "Full-Node" as full_node <<Pod>>
+    }
+
 }
 
 crawler <-> spv :"P2P Nachrichten"
 crawler <-> full_node :"P2P Nachrichten"
 spv <-> full_node :"P2P Nachrichten"
-
 
 @enduml

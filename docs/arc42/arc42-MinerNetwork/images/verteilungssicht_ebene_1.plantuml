@@ -1,6 +1,8 @@
 @startuml
-rectangle "Mining System" as system {
-    component "Registry" as registry
-    component "P2P Netzwerk" as p2p_network
+node HAW-ICC <<Environment>> {
+    component "Mining System" as system {
+        component "Registry" as registry <<Service>>
+        component "P2P Netzwerk" as p2p_network <<Service>>
+    }
 }
 @enduml
