@@ -8,6 +8,8 @@ paths:
     post:
       summary: Executes a transaction
       description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
+      tags:
+        - Payment
       requestBody:
         required: true
         content:
@@ -30,7 +32,8 @@ paths:
                   description: The amount of V$-Goin the sender wants to transfer
                 senderPrivateKey:
                   type: string
-                  example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
+                  pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+                  example: 5J5jVboTKYrnQvXQ6uzxrzhHCmtLZX2efNE7svUEY4NKgC2KzSv
                   description: The Base58-encoded private key belonging to the public key of the sender
       responses:
         '201':
@@ -42,9 +45,11 @@ paths:
   /balance:
     get:
       summary: Returns the balance tied to the given public key hash
+      tags:
+        - Payment
       parameters:
         - in: query
-          name: keyHash
+          name: VSAddress
           required: true
           schema:
             type: string
@@ -66,9 +71,11 @@ paths:
   /history:
     get:
       summary: Returns the history of transactions involving the given key hash
+      tags:
+        - Payment
       parameters:
         - in: query
-          name: keyHash
+          name: VSAddress
           required: true
           schema:
             type: string
@@ -89,3 +96,61 @@ paths:
                     example: [ "A sent B 100", "B sent A 50", "A sent C 10" ]
         '400':
           description: Key hash was not involved in any transactions
+
+  /address:
+    get:
+      summary: Returns the V$Address to a corresponding private key.
+      tags:
+        - KeyTools
+      parameters:
+        - name: privateKey
+          required: true
+          in: header
+          schema:
+            type: string
+            pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+      responses:
+        '200':
+          description: Successful response with V$Address and the private key.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: The V$Address
+                example: "The V$Address"
+        '400':
+          description: private Key is not Valid
+
+  /address/new:
+    get:
+      summary: Returns a new V$Address with the corresponding private key.
+      tags:
+        - KeyTools
+      parameters:
+        - name: seed
+          description: "Seed for private Key generation"
+          required: false
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response with V$Address and the private key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                    description: The new V$Address.
+                  privateKey:
+                    type: string
+                    description: The new private key.
+                required:
+                  - address
+                  - privateKey
+
+
+
+
