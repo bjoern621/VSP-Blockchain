@@ -646,7 +646,7 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 <div align="center">
     <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2</em></p>
+    <p><em>Abbildung: Verteilungssicht Layer 2 P2P-Netzwerk</em></p>
 </div>
 
 #### Registry Crawler
@@ -665,9 +665,17 @@ Die Nodes laufen alle unter dem P2P-Netzwerkservice.
 Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
 den gleichen Namen und DNS Eintrag.
 
-### _\<Infrastrukturelement n\>_
+### Registry
 
-_\<Diagramm + Erläuterungen\>_
+<div align="center">
+    <img src="images/verteilungssicht_ebene_2_registry.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 2 Registry</em></p>
+</div>
+
+Die Aufgaben der Registry sind [hier](#registry-blackbox) beschrieben. Dazu wird ein Service in der ICC deployt, welcher ein
+DNS-Server beherbergt. Der verwendete Container muss noch ausgewählt werden, doch muss dieser über eine API verfügen, welche
+von dem Registry Crawler angesprochen werden kann.
+
 
 # Querschnittliche Konzepte
 
