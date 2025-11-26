@@ -755,13 +755,36 @@ Negativ:
 Die Entscheidung ermöglicht es, dass die verwendeten Daten typsicher serialisiert, über das Netzwerk übertragen und wieder deserialisiert werden können.
 Dadurch wird eine robuste und effiziente RPC-Kommunikation sichergestellt.
 
-### Kommunikationsart
+## ADR 2: Entscheidung für asynchrone, transiente und zustandslose Kommunikation
+### Kontext
+Die Kommunikation zwischen den Nodes der Anwendung erfolgt in einem dezentralen P2P Netzwerk, in dem mehrere Clients gleichzeitig beteiligt sind.
+Da Antwortzeiten aufgrund geografischer Distanzen, unterschiedlicher Hardware-Ressourcen oder möglicher Ausfälle einzelner Nodes nicht garantiert werden können,
+darf die Verarbeitung nicht von der Antwort eines einzelnen Nodes abhängen.
+Zusätzlich arbeitet das System transient, d. h. Nachrichten werden nicht dauerhaft gespeichert, und der Zustand der Blockchain wird lediglich zur Laufzeit im Speicher gehalten.
 
 ### Entscheidung
 
-Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall einzelner Nodes und trägt zur Fehlertoleranz bei. In einem dezentralen Netzwerk variieren die Antwortzeiten zwangsläufig, bedingt durch geografische Distanzen oder unterschiedliche Hardware-Ressourcen. Dank der asynchronen Verarbeitung kann ein Node seine Arbeit fortsetzen, während Antworten anderer Nodes noch ausstehen.
+Es wurde entschieden, dass die Kommunikation zwischen den Nodes asynchron, transient und zustandslos erfolgt.
 
-Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
+### Status
+Akzeptiert
+
+### Konsequenzen
+Positive Konsequenzen:
+- Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
+- Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
+- Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
+- Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
+- Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
+- Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
+
+Negative Konsequenzen:
+- Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
+- Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
+
+### Auswirkungen
+Durch die asynchrone und zustandslose Kommunikation bleibt das System trotz variierender Antwortzeiten funktionsfähig, skalierbar und fehlertolerant.
+Nodes können unabhängig voneinander operieren, ohne auf Antworten warten zu müssen, und der Fakt, dass das System transient/zustandslose ist vereinfacht die Verarbeitung und Implementierung.
 
 Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
 nur zur Laufzeit im Speicher gehalten.
