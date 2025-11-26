@@ -648,7 +648,7 @@ Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
 
 <div align="center">
     <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2</em></p>
+    <p><em>Abbildung: Verteilungssicht Layer 2 P2P-Netzwerk</em></p>
 </div>
 
 #### Registry Crawler
@@ -667,9 +667,17 @@ Die Nodes laufen alle unter dem P2P-Netzwerkservice.
 Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
 den gleichen Namen und DNS Eintrag.
 
-### _\<Infrastrukturelement n\>_
+### Registry
 
-_\<Diagramm + Erläuterungen\>_
+<div align="center">
+    <img src="images/verteilungssicht_ebene_2_registry.svg"  height="250">
+    <p><em>Abbildung: Verteilungssicht Layer 2 Registry</em></p>
+</div>
+
+Die Aufgaben der Registry sind [hier](#registry-blackbox) beschrieben. Dazu wird ein Service in der ICC deployt, welcher ein
+DNS-Server beherbergt. Der verwendete Container muss noch ausgewählt werden, doch muss dieser über eine API verfügen, welche
+von dem Registry Crawler angesprochen werden kann.
+
 
 # Querschnittliche Konzepte
 
@@ -680,6 +688,14 @@ Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten
 Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
+
+## Validiert/verifiziert vs. bestätigt
+
+| Begriff               | Bedeutung                                                                                                                                                                                                                                                                                                                                                                             |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Validiert/Verifiziert | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen? Liste der Anforderungen zur Validierung aus [diesem Buch](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805). Für Transaktionen aus  Kapitel: "Unabhängige Verifikation von Transaktionen". Für Validierung von Blöcken Kapitel: "Einen neuen Block validieren" |
+| Bestätigt             | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist.                                                                                                                                                                                                                                                                                    |
+
 
 ## Merkle-Trees und Merkle-Pfade
 
