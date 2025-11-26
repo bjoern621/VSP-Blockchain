@@ -1,0 +1,7 @@
+@startuml
+node icc as "HAW-ICC" <<Environment>>{
+    node registry as "Registry" <<Service>> {
+        component dns as "DNS-Server" <<Pod>>
+    }
+}
+@enduml
