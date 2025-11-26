@@ -786,23 +786,39 @@ Negative Konsequenzen:
 Durch die asynchrone und zustandslose Kommunikation bleibt das System trotz variierender Antwortzeiten funktionsfähig, skalierbar und fehlertolerant.
 Nodes können unabhängig voneinander operieren, ohne auf Antworten warten zu müssen, und der Fakt, dass das System transient/zustandslose ist vereinfacht die Verarbeitung und Implementierung.
 
-Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
-nur zur Laufzeit im Speicher gehalten.
+## ADR 3: Entscheidung für Nutzung von gRPC als RPC Framework zur Kommunikation der Middleware
+### Kontext
+Für die Kommunikation zwischen Nodes müssen entfernte Funktionen aufgerufen und Nachrichten zuverlässig, effizient und sicher übertragen werden.
+Die gewählte Technologie soll eine klare Schnittstellentrennung, geringe Latenz, garantierte Reihenfolge der Nachrichten und Unterstützung für Verschlüsselung bieten.
+In einem Blockchainsystem ist die Korrektheit und Vollständigkeit der Datenübertragung besonders kritisch, da Daten über Hashes validiert werden.
+Somit ist eine Übertragungstechnologie erforderlich, die diese Anforderungen zuverlässig erfüllt.
 
-Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
+### Entscheidung
+Es wurde sich entschieden, [gRPC](https://grpc.io/) als RPC Framework einzusetzen.
 
-### RPC Framework
+### Status
+Akzeptiert
 
-Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC verwendet Protobuf, wodurch Nachrichten effizient serialisiert werden, was die zu übertragende Nachrichtengröße reduziert.
-Weiter können Client und Server Stubs automatisch generiert werden.
-Durch die Nutzung einer IDL gibt es eine klare Trennung zwischen Schnittstelle und Application.
-Ebenfalls nutzt gRPC HTTP/2 Verbindungen, wodurch die Latenz gering gehalten werden kann. gRPC garantiert eine vollständige und reihenfolge gesicherte Übertragung der Nachrichten.
-Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
-Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
-Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Durch die Nutzung von gRPC können wir also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten.
-gRPC bietet ebenfalls gute Unterstützung zum Verschlüsseln der Übertragungen, wodurch die Sicherheit erhöht werden kann.
+### Konsequenzen
+Positive Konsequenzen:
+- Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
+- Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
+- Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
+- Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
+- Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
+- Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
+- Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
+- Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert. 
 
-Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was das Ziel der Offenheit erhöht.
+Negative Konsequenzen:
+- Abhängigkeit vom gRPC Tool
+- Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
+
+### Auswirkung
+Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher und zuverlässig umgesetzt. Die garantierte Reihenfolge und Vollständigkeit der
+Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
+Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
 
 # Qualitätsanforderungen
 
