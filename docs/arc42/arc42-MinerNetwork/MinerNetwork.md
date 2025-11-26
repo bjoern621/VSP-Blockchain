@@ -687,13 +687,12 @@ Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A ei
 
 Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
-## Validiert vs. verifiziert vs. bestätigt
+## Validiert/verifiziert vs. bestätigt
 
-| Begriff     | Bedeutung                                                                                                                                                                                                                                                                                                                |
-|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Validiert   | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen                                                                                                                                                                                                                        |
-| Verifiziert | Kryptografische Überprüfung auf Signaturen/Hashes                                                                                                                                                                                                                                                                        |
-| Bestätigt   | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist. Besondere Bedeutung haben Blöcke/Transaktionen, welche 6 Blöcke tief in der Blockchain sind. Diese gelten als "bestätigt", da es enormen Rechenaufwand benötigen würde, diese Blöcke/Transaktion Rückgängig zu machen |
+| Begriff               | Bedeutung                                                                                                                                                                                                                                                                                                                                                                             |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Validiert/Verifiziert | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen? Liste der Anforderungen zur Validierung aus [diesem Buch](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805). Für Transaktionen aus  Kapitel: "Unabhängige Verifikation von Transaktionen". Für Validierung von Blöcken Kapitel: "Einen neuen Block validieren" |
+| Bestätigt             | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist.                                                                                                                                                                                                                                                                                    |
 
 
 ## Merkle-Trees und Merkle-Pfade
