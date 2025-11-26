@@ -727,25 +727,37 @@ _\<Erklärung\>_
 
 # Architekturentscheidungen
 
-## Serialisierung
+## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
+### Kontext
+Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielte eine Reihe technischer und organisatorischer
+Faktoren eine Rolle. Die Entscheidung musste sicherstellen, dass Daten zuverlässig beschrieben, automatisch generiert, typsicher verarbeitet und effizient übertragen werden können.
+Zudem sollte die Lösung gut in bestehende Entwicklungsprozesse passen und möglichst geringe Einarbeitungsaufwände verursachen.
 
-Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
+### Entscheidung
+Es wurde entschieden, Protobuf [(Protocol Buffers)](https://protobuf.dev/) für die Serialisierung der Daten in RPC-Kommunikation einzusetzen.
 
--   Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
--   Typsicherheit (Reduziert Fehler zur Laufzeit)
--   Kompaktes Datenformat (Kleiner als bei XML/JSON)
--   Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
--   Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
+### Status
+Akzeptiert
 
-Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
-automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
+### Konsequenzen
+Positiv:
+- IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
+- Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
+- Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
+- Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
+- Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
 
-## Kommunikation
+Negativ:
+- Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
+
+### Auswirkungen
+Die Entscheidung ermöglicht es, dass die verwendeten Daten typsicher serialisiert, über das Netzwerk übertragen und wieder deserialisiert werden können.
+Dadurch wird eine robuste und effiziente RPC-Kommunikation sichergestellt.
 
 ### Kommunikationsart
 
-Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
-ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
+### Entscheidung
 
 Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall einzelner Nodes und trägt zur Fehlertoleranz bei. In einem dezentralen Netzwerk variieren die Antwortzeiten zwangsläufig, bedingt durch geografische Distanzen oder unterschiedliche Hardware-Ressourcen. Dank der asynchronen Verarbeitung kann ein Node seine Arbeit fortsetzen, während Antworten anderer Nodes noch ausstehen.
 
