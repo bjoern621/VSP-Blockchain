@@ -8,6 +8,8 @@ paths:
     post:
       summary: Executes a transaction
       description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
+      tags:
+        - Payment
       requestBody:
         required: true
         content:
