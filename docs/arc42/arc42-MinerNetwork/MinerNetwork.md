@@ -42,11 +42,12 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 ## Qualitätsziele
 
-| Priorität | Qualitätsziel     | Motivation                                                                                                                                                                                                                                                                                                                                                |
-| --------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1         | Understandability | Wir wollen die Konzepte von Blockchain und verteilten Systemen verstehen. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neuesten Stand gehalten werden. |
-| 2         | Fehlertoleranz    | V$Goin ist eine Währung. Keine Beträge dürfen unbegründet entstehen oder verschwinden. Bei widersprüchlichen Daten, z. B. wenn zwei Miner gleichzeitig einen Block finden, muss stets ein gemeinsamer Konsens gefunden werden.                                                                                                                            |
-| 3         | Skalierbarkeit    | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                        |
+| Priorität | Qualitätsziel          | Motivation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1         | Skalierbarkeit         | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                                                                                                                                                                                                                   |
+| 2         | Verteilungstransparenz | Ein weiteres wichtiges Ziel ist die Einfachheit, mit welcher unser Service genutzt werden soll. Dies wird in dem P2P-Netzwerk durch die Verteilungstransparenz erreicht. Der Nutzer soll das System so nutzen können, als ob dieses nur aus ein Knoten bestehen würde. Auf die Zugangstransparenz, Replikationstransparenz und Skalierungstransparenz wird dafür ein besonderes Augenmerk gelegt.                                                                                                                                                    |
+| 3         | Offenheit              | Die Offenheit der Schnittstellen ist ein fundamentales Prinzip dieser Blockchain. Die wohl-definierten Schnittstellen zum Miner-Network sind leicht für jeden zugänglich und Applikationen lassen sich leicht drauf aufbauen (z.B. der Rest-Api-Service). Mit leicht ist gemeint, dass sich ein Bachelor Student der Informatik in maximal einem Tag in die Schnittstellen einlesen und erfolgreich nutzen kann. Der Unterpunkt der Anpassbarkeit für Benutzer und Entwickler (entnommen aus dem Skript) , wird in diesem Fall jedoch ausgeklammert. |
+| 4         | Verständlichkeit       | Die Konzepte von Blockchain und verteilten Systemen müssen bei dem Projekt leicht verständlich sein. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neuesten Stand gehalten werden.                                                                                                                                                                 |
 
 ## Stakeholder
 
@@ -553,38 +554,39 @@ Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-
 
 ## Orphan Block Handling
 
-````mermaid
+```mermaid
 
 sequenceDiagram
     participant node as Node
     participant peer as Peer
-    
+
     Note over node,peer: Block C empfangen,  A unbekannt
 
     node->>node: C in Waisenpool hinzufügen
     node->>peer: getHeaders(blockLocator: A, hashStop: C)
     peer->>node: headers( { H(A), ...,  H(C) } )
-    loop für jeden Header H der empfangenen Header 
+    loop für jeden Header H der empfangenen Header
         node->>node: validiere empfangenen Header
         node->>peer: getData(hash(H))
         peer->>node: block(H)
         node->>node: validiere empfangenen Block
     end
     node->>node: versuche Waisen-Blöcke anzuschließen
-````
+```
 
 Szenario:
-Node empfängt über ``inv``, ``getData`` und ``block`` einen Block ``C``. Dieser hat als Vorgängerblock einen Block ``A``, welcher dem Node unbekannt ist. 
+Node empfängt über `inv`, `getData` und `block` einen Block `C`. Dieser hat als Vorgängerblock einen Block `A`, welcher dem Node unbekannt ist.
 
 Ablauf:
+
 1. Es wird ein Block empfangen.
 2. Header Kette wird validiert → Schlägt fehl
 3. Block wird in den Waisen-Pool aufgenommen
 4. Es werden alle Header zwischen den letzten Blöcken der Kette und dem Empfangenen angefragt. Siehe [hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) für den Aufbau des BlockLocators
-5. Der Peer sendet dem Node alle angeforderten Block-Header via einer ``headers(...)`` Nachricht
+5. Der Peer sendet dem Node alle angeforderten Block-Header via einer `headers(...)` Nachricht
 6. Die Header werden validiert
-7. Die Blöcke der Hashes werden durch die ``getData`` Nachricht angefragt
-8. Der Peer liefert die angefragten Blöcke über eine ``block`` Nachricht
+7. Die Blöcke der Hashes werden durch die `getData` Nachricht angefragt
+8. Der Peer liefert die angefragten Blöcke über eine `block` Nachricht
 9. Der empfangene Block wird validiert
 10. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen
 
@@ -755,11 +757,72 @@ Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was da
 
 # Qualitätsanforderungen
 
+In diesem Abschnitt werden weitere Details und zusätzliche Qualitätsanforderungen beschrieben, die weniger kritisch und eher _nice-to-have_ sind.
+
 ## Übersicht der Qualitätsanforderungen
 
-Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokuments in [Qualitätsziele](#qualitätsziele) definiert. Die folgenden Qualitätsziele sind weniger wichtig, als die zuvor beschriebenen und stellen eher ein nice-to-have dar.
+Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokuments in [Qualitätsziele](#qualitätsziele) definiert.
+
+Resource Sharing  
+Ein weiteeres grundlegendes Ziel verteilter Systeme ist die gemeinsame Nutzung von Ressourcen. Im P2P-Netzwerk wird die Rechenleistung zum Validieren von Transaktionen und Mining von Blöcken auf alle Miner verteilt. Ebenso wird die Speicherung der Blockchain auf mehrere Nodes aufgeteilt. Durch diese Verteilung wird verhindert, dass einzelne Knoten überlastet werden und das Netzwerk bleibt auch bei hoher Last funktionsfähig. Resource Sharing ist eng mit der Skalierbarkeit verknüpft und wird z.&nbsp;B. durch den [Registry Crawler](#registry-crawler-blackbox) aktiv unterstützt, der Verbindungsanfragen gleichmäßig auf Nodes verteilt.
+
+Die folgende Übersicht kategorisiert die Qualitätsanforderungen nach dem Q42-Qualitätsmodell.
+
+| Kategorie | Beschreibung                                                                                                                                                                                   |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Efficient | Das System muss Anfragen innerhalb akzeptabler Zeitgrenzen bearbeiten. Der Speicher- und CPU-Verbrauch muss innerhalb der ICC-Ressourcenquoten bleiben.                                        |
+| Flexible  | Die Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) müssen weitgehend unabhängig voneinander nutzbar sein.                                                                            |
+| Reliable  | Das Netzwerk muss auch bei Ausfall einzelner Nodes funktionsfähig bleiben.                                                                                                                     |
+| Secure    | Die Blockchain ist durch kryptographische Verfahren (Hashing, digitale Signaturen) gegen Manipulation geschützt. Transaktionen können nur vom Besitzer der privaten Schlüssel erstellt werden. |
+| Usable    | Akteure (Händler / Miner) sollen das System so nutzen können, als ob dieses nur aus einem Knoten bestehen würde (Verteilungstransparenz). Die Blockchain-Synchronisation erfolgt automatisch.  |
 
 ## Qualitätsszenarien
+
+Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und machen sie messbar. Jedes Szenario beschreibt eine Situation und ein messbares Akzeptanzkriterium.
+
+### Skalierbarkeit
+
+| ID  | Szenario                                                                                                            | Akzeptanzkriterium                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| QS- | 50 Nodes treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau). | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden. Normale Bedingungen vorausgesetzt. |
+| QS- | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                           | Der Block erreicht 90% aller Nodes innerhalb von 10 Sekunden. Normale Bedingungen vorausgesetzt.               |
+|     |
+
+### Verteilungstransparenz
+
+| ID  | Szenario                                                             | Akzeptanzkriterium                                                                                                                              |
+| --- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| QS- | Ein Händler sendet eine Transaktion an das Netzwerk.                 | Die Transaktion wird unabhängig davon, mit welcher Node der Händler verbunden ist, an den Mempool propagiert.                                   |
+| QS- | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk. | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Der Nutzer muss keine manuelle Synchronisation anstoßen. |
+
+### Offenheit
+
+| ID  | Szenario                                                                                                                               | Akzeptanzkriterium                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| QS- | Ein externer Entwickler möchte eine eigene Node-Implementierung erstellen.                                                             | Die Protobuf-Definitionen und Dokumentation ermöglichen es dem Entwickler, innerhalb eines Arbeitstages eine lauffähige Verbindung aufzubauen. |
+| QS- | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar.                                                                                   |
+
+### Resource Sharing
+
+| ID  | Szenario                                                                        | Akzeptanzkriterium                                                                                                   |
+| --- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| QS- | 10 Miner sind im Netzwerk aktiv und suchen parallel nach gültigen Blöcken.      | Die Rechenleistung wird auf alle Miner verteilt. Kein Miner hat einen systematischen Vorteil.                        |
+| QS- | Der [Registry Crawler](#registry-crawler-blackbox) aktualisiert die Peer-Liste. | Die Peer-Liste enthält eine rotierte Auswahl von Nodes, sodass neue Verbindungsanfragen gleichmäßig verteilt werden. |
+| QS- | Eine SPV Node benötigt Blockchain-Daten zur Verifizierung einer Transaktion.    | Die Anfragen werden an Full Nodes verteilt. Einzelne Full Nodes werden nicht mit Anfragen überflutet.                |
+
+### Verständlichkeit
+
+| ID  | Szenario                               | Akzeptanzkriterium                                                                                         |
+| --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| QS- | Ein Reviewer prüft eine Code-Änderung. | Die Änderung ist durch Kommentare und Dokumentation nachvollziehbar. Go Best Practices wurden eingehalten. |
+
+### Fehlerszenarien
+
+| ID  | Szenario                                                       | Akzeptanzkriterium                                                                                                             |
+| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| QS- | Eine Node empfängt eine malformed Nachricht.                   | Die Node sendet eine `reject`-Nachricht mit `REJECT_MALFORMED` und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen. |
+| QS- | Eine Node empfängt einen Block mit ungültigem Proof-of-Work.   | Der Block wird abgelehnt (`reject` mit `REJECT_INVALID`) und der Zustand der Blockchain ändert sich nicht.                     |
+| QS- | 5 % der Nodes verlassen das Netzwerk zeitgleich durch Absturz. | Die verbleibenden Nodes können weiterhin alle Anforderungen erfüllen.                                                          |
 
 # Risiken und technische Schulden
 
@@ -768,7 +831,7 @@ Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokume
 | Begriff       | Definition                                                                                                                                                                                                            |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | SPV           | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
+| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
 | Miner (Node)  | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
 | ICC           | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
 | Node          | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
