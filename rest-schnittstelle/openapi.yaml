@@ -32,7 +32,8 @@ paths:
                   description: The amount of V$-Goin the sender wants to transfer
                 senderPrivateKey:
                   type: string
-                  example: dGhpcyBpcyBhIHNpZ25hdHVyZSBleGFtcGxlLg==
+                  pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+                  example: 5J5jVboTKYrnQvXQ6uzxrzhHCmtLZX2efNE7svUEY4NKgC2KzSv
                   description: The Base58-encoded private key belonging to the public key of the sender
       responses:
         '201':
@@ -48,7 +49,7 @@ paths:
         - Payment
       parameters:
         - in: query
-          name: keyHash
+          name: VSAddress
           required: true
           schema:
             type: string
@@ -74,7 +75,7 @@ paths:
         - Payment
       parameters:
         - in: query
-          name: keyHash
+          name: VSAddress
           required: true
           schema:
             type: string
@@ -107,6 +108,7 @@ paths:
           in: header
           schema:
             type: string
+            pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
       responses:
         '200':
           description: Successful response with V$Address and the private key.
