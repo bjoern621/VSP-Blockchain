@@ -1,0 +1,21 @@
+meta {
+  name: ConnectTo
+  type: grpc
+  seq: 3
+}
+
+grpc {
+  url: localhost:50051
+  method: /app.AppService/ConnectTo
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}

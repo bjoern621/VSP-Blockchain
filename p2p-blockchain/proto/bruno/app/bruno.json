@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "name": "app",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.0002193450927734375,
+  "filesCount": 3,
+  "protobuf": {
+    "importPaths": [],
+    "protoFiles": [
+      {
+        "path": "../../app.proto",
+        "type": "file"
+      }
+    ]
+  }
+}
