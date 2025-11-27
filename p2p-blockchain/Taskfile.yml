@@ -17,7 +17,6 @@ tasks:
             - protoc --proto_path=./proto --go_out=. --go-grpc_out=. ./proto/*.proto
 
     prepare:
-        internal: true
         desc: Prepare the module for build
         cmds:
             - task: proto
