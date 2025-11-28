@@ -1,27 +1,20 @@
 package main
 
 import (
+	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/config"
+	netzwerkroutingInterface "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/interface"
 	"strconv"
 
 	"bjoernblessin.de/go-utils/util/env"
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-// type server struct {
-// 	pb.UnimplementedTestServer
-// }
-
-// func (s *server) TestRPC(ctx context.Context, req *pb.TestRequest) (*pb.TestResponse, error) {
-// 	logger.Infof("Received: %s", req.Message)
-
-// 	return &pb.TestResponse{
-// 		Message: fmt.Sprintf("Echo: %s", req.Message),
-// 	}, nil
-// }
-
-const defaultPort = 50051
-const portEnvVar = "PORT"
+const defaultAppPort = 50050
+const defaultP2PPort = 50051
+const portEnvVar = "APP_PORT"
+const p2pPortEnvVar = "P2P_PORT"
 
 func getPortFromEnv() uint16 {
 	portStr := env.ReadNonEmptyRequiredEnv(portEnvVar)
@@ -32,7 +25,22 @@ func getPortFromEnv() uint16 {
 	}
 
 	if port == 0 {
-		port = defaultPort
+		port = defaultAppPort
+	}
+
+	return uint16(port)
+}
+
+func getP2PPortFromEnv() uint16 {
+	portStr := env.ReadNonEmptyRequiredEnv(p2pPortEnvVar)
+
+	port, err := strconv.ParseUint(portStr, 10, 16)
+	if err != nil {
+		logger.Errorf("invalid P2P_PORT value: %s, must be between 0 and 65535", portStr)
+	}
+
+	if port == 0 {
+		port = defaultP2PPort
 	}
 
 	return uint16(port)
@@ -42,33 +50,21 @@ func main() {
 	logger.Infof("Running...")
 
 	port := getPortFromEnv()
-	logger.Infof("Running on port %d...", port)
+	p2pPort := getP2PPortFromEnv()
 
-	core.NewServer().Start(port)
+	config.Init(p2pPort, netip.MustParseAddr("::1"))
+
+	logger.Infof("Starting App server on port %d...", port)
+	err := core.NewServer().Start(port)
+	if err != nil {
+		logger.Warnf("couldn't start App server: %v", err)
+	}
+
+	logger.Infof("Starting P2P server on port %d...", p2pPort)
+	err = netzwerkroutingInterface.NewServer().Start(p2pPort)
+	if err != nil {
+		logger.Warnf("couldn't start P2P server: %v", err)
+	}
 
 	select {}
-
-	// ctx := context.Background()
-	// ip := netip.MustParseAddr("::1")
-
-	// if port == 50051 {
-	// 	err := core.ConnectTo(ctx, ip, 50052)
-	// 	if err != nil {
-	// 		logger.Errorf("connection failed: %v", err)
-	// 	}
-	// }
-
-	// listener, err := net.Listen("tcp", ":50051")
-	// if err != nil {
-	// 	logger.Errorf("failed to listen: %v", err)
-	// }
-
-	// grpcServer := grpc.NewServer()
-	// pb.RegisterTestServer(grpcServer, &server{})
-
-	// logger.Infof("gRPC server listening on :50051")
-
-	// if err := grpcServer.Serve(listener); err != nil {
-	// 	logger.Errorf("failed to serve: %v", err)
-	// }
 }

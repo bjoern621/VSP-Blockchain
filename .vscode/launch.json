@@ -18,7 +18,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG", "PORT": "${input:port}" },
+            "env": { "LOG_LEVEL": "DEBUG", "P2P_PORT": "${input:port}" },
             "preLaunchTask": "p2p-blockchain: prepare"
         },
         {
@@ -27,7 +27,11 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG", "PORT": "50051" },
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "50050",
+                "P2P_PORT": "50051"
+            },
             "presentation": { "hidden": true }
         },
         {
@@ -36,7 +40,11 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG", "PORT": "50052" },
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "0",
+                "P2P_PORT": "50052"
+            },
             "presentation": { "hidden": true }
         },
         {
@@ -45,7 +53,11 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG", "PORT": "50053" },
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "0",
+                "P2P_PORT": "50053"
+            },
             "presentation": { "hidden": true }
         },
         {
