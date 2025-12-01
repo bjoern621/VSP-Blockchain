@@ -21,11 +21,13 @@ type Server struct {
 	grpcServer        *grpc.Server
 	listener          net.Listener
 	connectionHandler core.HandshakeHandler
+	peerRegistry      *PeerRegistry
 }
 
 func NewServer(connectionHandler core.HandshakeHandler) *Server {
 	return &Server{
 		connectionHandler: connectionHandler,
+		peerRegistry:      NewPeerRegistry(),
 	}
 }
 

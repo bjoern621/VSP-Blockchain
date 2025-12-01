@@ -1,24 +1,13 @@
 package core
 
-import (
-	"context"
-	"net/netip"
-)
-
-// VersionInfo represents version information exchanged during handshake.
-// This is a domain model, independent of the transport layer (gRPC/protobuf).
-type VersionInfo struct {
-	Version           string
-	SupportedServices []string
-	ListeningEndpoint netip.AddrPort
-}
+import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 // HandshakeHandler defines the interface for handling incoming connection messages.
 // This interface is implemented in the core/domain layer and used by the infrastructure layer.
 type HandshakeHandler interface {
-	HandleVersion(ctx context.Context, peerAddr string, info VersionInfo) error
-	HandleVerack(ctx context.Context, peerAddr string, info VersionInfo) error
-	HandleAck(ctx context.Context, peerAddr string) error
+	HandleVersion(peerID peer.PeerID, info peer.VersionInfo)
+	HandleVerack(peerID peer.PeerID, info peer.VersionInfo)
+	HandleAck(peerID peer.PeerID)
 }
 
 // HandshakeService implements ConnectionHandler with the actual domain logic.
@@ -30,25 +19,22 @@ func NewHandshakeService() *HandshakeService {
 	return &HandshakeService{}
 }
 
-func (h *HandshakeService) HandleVersion(ctx context.Context, peerAddr string, info VersionInfo) error {
+func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info peer.VersionInfo) {
 	// Domain logic:
 	// 1. Validate version compatibility
 	// 2. Store peer info
 	// 3. Send Verack back to the peer (via MessageSender interface)
-	return nil
 }
 
-func (h *HandshakeService) HandleVerack(ctx context.Context, peerAddr string, info VersionInfo) error {
+func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info peer.VersionInfo) {
 	// Domain logic:
 	// 1. Validate the verack
 	// 2. Send Ack back to complete the handshake
-	return nil
 }
 
-func (h *HandshakeService) HandleAck(ctx context.Context, peerAddr string) error {
+func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
 	// Domain logic:
 	// 1. Mark connection as fully established
-	return nil
 }
 
 func InitiateHandshake() {

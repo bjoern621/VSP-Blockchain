@@ -4,22 +4,28 @@ import (
 	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
-	"google.golang.org/grpc/peer"
+	"bjoernblessin.de/go-utils/util/logger"
+	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // getPeerAddr extracts the remote peer address from the gRPC context.
-func getPeerAddr(ctx context.Context) string {
-	if p, ok := peer.FromContext(ctx); ok {
-		return p.Addr.String()
+func getPeerAddr(ctx context.Context) netip.AddrPort {
+	p, ok := grpcPeer.FromContext(ctx)
+	if !ok {
+		logger.Errorf("could not get peer from context")
 	}
-	return "unknown"
+
+	addrStr := p.Addr.String()
+	addrPort := netip.MustParseAddrPort(addrStr)
+
+	return addrPort
 }
 
 // toVersionInfo converts protobuf VersionInfo to domain VersionInfo.
-func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
+func toVersionInfo(req *pb.VersionInfo) peer.VersionInfo {
 	var endpoint netip.AddrPort
 	if req.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(req.ListeningEndpoint.IpAddress); ok {
@@ -32,7 +38,7 @@ func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
 		services[i] = svc.String()
 	}
 
-	return core.VersionInfo{
+	return peer.VersionInfo{
 		Version:           req.Version,
 		SupportedServices: services,
 		ListeningEndpoint: endpoint,
@@ -40,30 +46,27 @@ func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
 }
 
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	peerAddr := getPeerAddr(ctx)
+	peerAddrPort := getPeerAddr(ctx)
+	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
 	info := toVersionInfo(req)
 
-	if err := s.connectionHandler.HandleVersion(ctx, peerAddr, info); err != nil {
-		return nil, err
-	}
+	s.connectionHandler.HandleVersion(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	peerAddr := getPeerAddr(ctx)
+	peerAddrPort := getPeerAddr(ctx)
+	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
 	info := toVersionInfo(req)
 
-	if err := s.connectionHandler.HandleVerack(ctx, peerAddr, info); err != nil {
-		return nil, err
-	}
+	s.connectionHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	peerAddr := getPeerAddr(ctx)
+	peerAddrPort := getPeerAddr(ctx)
+	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
 
-	if err := s.connectionHandler.HandleAck(ctx, peerAddr); err != nil {
-		return nil, err
-	}
+	s.connectionHandler.HandleAck(peerID)
 	return &emptypb.Empty{}, nil
 }
