@@ -8,31 +8,30 @@ import (
 // PeerRegistry maintains a registry of peers and their network addresses.
 // It should allow representing peers by a generic ID and not relying on IP addresses internally.
 type PeerRegistry struct {
-	peers map[netip.AddrPort]peer.PeerID
+	addrToPeer map[netip.AddrPort]peer.PeerID
+	peerToAddr map[peer.PeerID]netip.AddrPort
 }
 
 func NewPeerRegistry() *PeerRegistry {
 	return &PeerRegistry{
-		peers: make(map[netip.AddrPort]peer.PeerID),
+		addrToPeer: make(map[netip.AddrPort]peer.PeerID),
+		peerToAddr: make(map[peer.PeerID]netip.AddrPort),
 	}
 }
 
 func (r *PeerRegistry) GetOrCreatePeerID(addr netip.AddrPort) peer.PeerID {
-	if id, exists := r.peers[addr]; exists {
+	if id, exists := r.addrToPeer[addr]; exists {
 		return id
 	}
 
 	peerID := peer.NewPeer()
-	r.peers[addr] = peerID
+	r.addrToPeer[addr] = peerID
+	r.peerToAddr[peerID] = addr
 
 	return peerID
 }
 
 func (r *PeerRegistry) GetAddrPort(peerID peer.PeerID) (netip.AddrPort, bool) {
-	for addr, id := range r.peers {
-		if id == peerID {
-			return addr, true
-		}
-	}
-	return netip.AddrPort{}, false
+	addr, exists := r.peerToAddr[peerID]
+	return addr, exists
 }
