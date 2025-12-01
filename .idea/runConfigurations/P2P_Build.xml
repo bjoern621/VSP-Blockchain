@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="P2P Build" type="TaskRunConfiguration" factoryName="TaskRunConfiguration" folderName="P2P">
+    <taskfile taskPath="/usr/bin/task" filename="$PROJECT_DIR$/p2p-blockchain/Taskfile.yml" task="build" workingDirectory="" arguments="" pty="false">
+      <envs />
+      <vars />
+    </taskfile>
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Rest Proto" type="TaskRunConfiguration" factoryName="TaskRunConfiguration" folderName="Rest API">
+    <taskfile taskPath="/usr/bin/task" filename="$PROJECT_DIR$/rest-schnittstelle/Taskfile.yml" task="proto" workingDirectory="" arguments="" pty="false">
+      <envs />
+      <vars />
+    </taskfile>
+    <method v="2" />
+  </configuration>
+</component>
