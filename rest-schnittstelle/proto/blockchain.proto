@@ -1,0 +1,195 @@
+// Great reference: https://en.bitcoin.it/wiki/Protocol_documentation
+
+syntax = "proto3";
+
+package blockchain;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./internal/pb";
+
+service BlockchainService {
+    // Inv announces knowledge of new blocks or transactions.
+    // It can be received unsolicited, or in reply to Mempool.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - For SPV nodes, Inv messages containing transactions are not sent until a SetFilter is received.
+    //
+    // Post-conditions:
+    //  - The receiver is aware of new inventory items and can request them via GetData.
+    rpc Inv(InvMsg) returns (google.protobuf.Empty);
+
+    // GetData requests the full data for inventory items (Blocks or Txs).
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - GetData(MSG_FILTERED_BLOCK) is only allowed if SetFilter has been called before.
+    //
+    // Post-conditions:
+    //  - Server responds with Block or Tx messages for the requested items.
+    rpc GetData(GetDataMsg) returns (google.protobuf.Empty);
+
+    // Block sends a full block in response to a GetData message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to a GetData(MSG_BLOCK) request.
+    //
+    // Post-conditions:
+    //  - Block validated (PoW, transactions) and local chain updated.
+    rpc Block(BlockMsg) returns (google.protobuf.Empty);
+
+    // MerkleBlock sends a block header and merkle proofs for specific transactions.
+    // Used by SPV nodes to verify inclusion of transactions matching their filter.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to a GetData(MSG_FILTERED_BLOCK) request.
+    rpc MerkleBlock(MerkleBlockMsg) returns (google.protobuf.Empty);
+
+    // Tx sends a full transaction in response to a GetData message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to a GetData(MSG_TX) request.
+    //
+    // Post-conditions:
+    //  - Transaction validated and added to the mempool.
+    rpc Tx(TxMsg) returns (google.protobuf.Empty);
+
+    // GetHeaders requests block headers.
+    // Server should answer with Headers packet containing the headers of blocks starting right after the last known hash in the block locator object, up to (including) hash_stop.
+    // Used by both SPV and Full Nodes for initial sync. See also, Headers-First initial block download: https://developer.bitcoin.org/devguide/p2p_network.html#headers-first.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - Server responds with a Headers message.
+    rpc GetHeaders(BlockLocator) returns (google.protobuf.Empty);
+
+    // Headers sends one or more block headers.
+    // Is the response for GetHeaders message.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Response to a GetHeaders request.
+    //  - Contains a maximum of 100 headers per message.
+    //  - Headers are sorted starting with the lowest block number.
+    //  - Header at index X always has X-1 as prev_block_hash.
+    //
+    // Post-conditions:
+    //  - PoW validated and local header chain extended.
+    rpc Headers(BlockHeaders) returns (google.protobuf.Empty);
+
+    // SetFilter sets a filter for the connection based on public key hashes.
+    // Comparable to BIP 37 filterload.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //  - Can only be sent by an SPV node to a Full Node.
+    //
+    // Post-conditions:
+    //  - The Full Node will filter future Inv messages for this connection.
+    //  - Only transactions involving the registered public key hashes will be announced.
+    //  - Block Inv messages are NOT filtered and will still be sent to keep the SPV node synced.
+    rpc SetFilter(SetFilterRequest) returns (google.protobuf.Empty);
+
+    // Mempool requests the list of unconfirmed transaction hashes in the server's memory pool.
+    // The server responds with an Inv message containing the tx hashes.
+    // SetFilter can be used before sending Mempool messages to retrieve filtered results.
+    //
+    // Pre-conditions:
+    //  - Connection established.
+    //
+    // Post-conditions:
+    //  - Server sends Inv messages for all (or filtered) transactions in its mempool.
+    rpc Mempool(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+message BlockHeaders {
+    repeated BlockHeader headers = 1;
+}
+
+enum InvType {
+    MSG_TX = 0;
+    MSG_BLOCK = 1;
+    MSG_FILTERED_BLOCK = 2;
+}
+
+message InvVector {
+    InvType type = 1;
+    bytes hash = 2;
+}
+
+message BlockLocator {
+    repeated bytes block_locator_hashes = 1; // Known block hashes; newest to oldest
+    bytes hash_stop = 2;
+}
+
+message InvMsg {
+    repeated InvVector inventory = 1;
+}
+
+message GetDataMsg {
+    repeated InvVector inventory = 1;
+}
+
+message BlockMsg {
+    Block block = 1;
+}
+
+message MerkleBlockMsg {
+    MerkleBlock merkle_block = 1;
+}
+
+message TxMsg {
+    Transaction transaction = 1;
+}
+
+message SetFilterRequest {
+    repeated bytes public_key_hashes = 1;
+}
+
+message Transaction {
+    repeated TxInput inputs = 1;
+    repeated TxOutput outputs = 2;
+    int64 lock_time = 3;
+}
+
+message TxInput {
+    bytes prev_tx_hash = 1;
+    uint32 output_index = 2; // Index of the output in the previous transaction
+    bytes signature_script = 3;
+    uint32 sequence = 4;
+}
+
+message TxOutput {
+    int64 value = 1; // Amount in smallest unit
+    bytes public_key_script = 2;
+}
+
+message BlockHeader {
+    bytes prev_block_hash = 1;
+    bytes merkle_root = 2;
+    int64 timestamp = 3;
+    uint32 difficulty_target = 4; // Bits
+    uint32 nonce = 5;
+}
+
+message Block {
+    BlockHeader header = 1;
+    repeated Transaction transactions = 2;
+}
+
+message MerkleBlock {
+    BlockHeader header = 1;
+    repeated MerkleProof proofs = 2;
+}
+
+message MerkleProof {
+    Transaction transaction = 1;
+    repeated bytes siblings = 2; // The merkle path (hashes of sibling nodes), ordered by depth, deepest first
+    uint32 index = 3;            // Index of the transaction in the block
+}
