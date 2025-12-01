@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Rest Build" type="TaskRunConfiguration" factoryName="TaskRunConfiguration" folderName="Rest API">
-    <taskfile taskPath="/usr/bin/task" filename="$PROJECT_DIR$/rest-schnittstelle/Taskfile.yml" task="build" workingDirectory="" arguments="" pty="false">
+    <taskfile taskPath="" filename="$PROJECT_DIR$/rest-schnittstelle/Taskfile.yml" task="build" workingDirectory="" arguments="" pty="false">
       <envs />
       <vars />
     </taskfile>

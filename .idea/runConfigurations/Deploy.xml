@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Deploy" type="TaskRunConfiguration" factoryName="TaskRunConfiguration">
-    <taskfile taskPath="/usr/bin/task" filename="$PROJECT_DIR$/Taskfile.yml" task="deploy" workingDirectory="" arguments="" pty="false">
+    <taskfile taskPath="" filename="$PROJECT_DIR$/Taskfile.yml" task="deploy" workingDirectory="" arguments="" pty="false">
       <envs />
       <vars />
     </taskfile>

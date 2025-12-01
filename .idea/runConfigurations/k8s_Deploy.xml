@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="k8s-Deploy" type="TaskRunConfiguration" factoryName="TaskRunConfiguration">
-    <taskfile taskPath="/usr/bin/task" filename="$PROJECT_DIR$/Taskfile.yml" task="k8s-deploy" workingDirectory="" arguments="" pty="false">
+    <taskfile taskPath="" filename="$PROJECT_DIR$/Taskfile.yml" task="k8s-deploy" workingDirectory="" arguments="" pty="false">
       <envs />
       <vars />
     </taskfile>
