@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "app",
+  "name": "VSP Blockchain App API",
   "type": "collection",
   "ignore": [
     "node_modules",
