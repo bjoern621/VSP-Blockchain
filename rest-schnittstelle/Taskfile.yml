@@ -12,6 +12,7 @@ tasks:
 
     proto:
         desc: Generate gRPC code from shared .proto files
+        dir: ..
         cmds:
             - buf generate
 

@@ -3,4 +3,4 @@ name: haw/test/VSP-Blockchain
 
 build:
   roots:
-    - proto/
+    - p2p-blockchain/proto/

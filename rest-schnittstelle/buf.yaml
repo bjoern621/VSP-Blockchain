@@ -1,6 +1,0 @@
-version: v1beta1
-name: haw/test/VSP-Blockchain
-
-build:
-  roots:
-    - proto/
