@@ -1,0 +1,48 @@
+package handshake
+
+import (
+	"fmt"
+	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+// HandshakeInitiator defines the interface for initiating a handshake with a peer.
+// It is implemented by the infrastructure layer.
+type HandshakeInitiator interface {
+	SendVersion(peerID peer.PeerID, info VersionInfo)
+	SendVerack(peerID peer.PeerID, info VersionInfo)
+	SendAck(peerID peer.PeerID)
+}
+
+func InitiateHandshake(addrPort netip.AddrPort) error {
+	addr := addrPort.String()
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", addr, err)
+	}
+	defer conn.Close()
+
+	client := pb.NewConnectionEstablishmentClient(conn)
+
+	versionInfo := &pb.VersionInfo{
+		Version:           "vsgoin-1.0",
+		SupportedServices: []pb.ServiceType{pb.ServiceType_SERVICE_NETZWERKROUTING, pb.ServiceType_SERVICE_BLOCKCHAIN_FULL, pb.ServiceType_SERVICE_WALLET, pb.ServiceType_SERVICE_MINER},
+		ListeningEndpoint: &pb.Endpoint{
+			IpAddress:     common.P2PListeningIpAddr.AsSlice(),
+			ListeningPort: uint32(common.P2PPort),
+		},
+	}
+
+	_, err = client.Version(ctx, versionInfo)
+	if err != nil {
+		return fmt.Errorf("failed to send version: %w", err)
+	}
+
+	return nil
+}

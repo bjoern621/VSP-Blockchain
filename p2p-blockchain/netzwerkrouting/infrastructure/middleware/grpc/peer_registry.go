@@ -27,3 +27,12 @@ func (r *PeerRegistry) GetOrCreatePeerID(addr netip.AddrPort) peer.PeerID {
 
 	return peerID
 }
+
+func (r *PeerRegistry) GetAddrPort(peerID peer.PeerID) (netip.AddrPort, bool) {
+	for addr, id := range r.peers {
+		if id == peerID {
+			return addr, true
+		}
+	}
+	return netip.AddrPort{}, false
+}

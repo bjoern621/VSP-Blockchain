@@ -7,7 +7,7 @@ import (
 	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -20,14 +20,14 @@ type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
 	grpcServer        *grpc.Server
 	listener          net.Listener
-	connectionHandler core.HandshakeHandler
+	connectionHandler handshake.HandshakeHandler
 	peerRegistry      *PeerRegistry
 }
 
-func NewServer(connectionHandler core.HandshakeHandler) *Server {
+func NewServer(connectionHandler handshake.HandshakeHandler, peerRegistry *PeerRegistry) *Server {
 	return &Server{
 		connectionHandler: connectionHandler,
-		peerRegistry:      NewPeerRegistry(),
+		peerRegistry:      peerRegistry,
 	}
 }
 

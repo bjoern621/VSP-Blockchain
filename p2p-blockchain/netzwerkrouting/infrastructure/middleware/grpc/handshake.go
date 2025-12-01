@@ -4,7 +4,8 @@ import (
 	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	grpcPeer "google.golang.org/grpc/peer"
@@ -25,7 +26,7 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 }
 
 // toVersionInfo converts protobuf VersionInfo to domain VersionInfo.
-func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
+func toVersionInfo(req *pb.VersionInfo) handshake.VersionInfo {
 	var endpoint netip.AddrPort
 	if req.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(req.ListeningEndpoint.IpAddress); ok {
@@ -33,13 +34,13 @@ func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
 		}
 	}
 
-	services := make([]string, len(req.SupportedServices))
-	for i, svc := range req.SupportedServices {
-		services[i] = svc.String()
+	services := make([]handshake.ServiceType, len(req.SupportedServices))
+	for i, pbService := range req.SupportedServices {
+		services[i] = handshake.ServiceType(pbService)
 	}
 
-	return core.VersionInfo{
-		Version:           req.Version,
+	return handshake.VersionInfo{
+		Version:           req.GetVersion(),
 		SupportedServices: services,
 		ListeningEndpoint: endpoint,
 	}
@@ -69,4 +70,19 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 
 	s.connectionHandler.HandleAck(peerID)
 	return &emptypb.Empty{}, nil
+}
+
+// Compile-time check that Client implements HandshakeInitiator
+var _ handshake.HandshakeInitiator = (*Client)(nil)
+
+func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo) {
+
+}
+
+func (c *Client) SendVerack(peerID peer.PeerID, info handshake.VersionInfo) {
+
+}
+
+func (c *Client) SendAck(peerID peer.PeerID) {
+
 }
