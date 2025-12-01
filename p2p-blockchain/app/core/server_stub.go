@@ -26,7 +26,7 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-// Start starts the external API gRPC server on the given port.
+// Start starts the external API gRPC server on the given port in a goroutine.
 func (s *Server) Start(port uint16) error {
 	addr := fmt.Sprintf(":%d", port)
 	listener, err := net.Listen("tcp", addr)
