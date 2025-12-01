@@ -4,5 +4,5 @@ plugins:
     out: internal/pb
     opt: paths=source_relative
   - name: go-grpc
-    out: internal
+    out: internal/pb
     opt: paths=source_relative
