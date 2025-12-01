@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	grpcPeer "google.golang.org/grpc/peer"
@@ -25,7 +25,7 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 }
 
 // toVersionInfo converts protobuf VersionInfo to domain VersionInfo.
-func toVersionInfo(req *pb.VersionInfo) peer.VersionInfo {
+func toVersionInfo(req *pb.VersionInfo) core.VersionInfo {
 	var endpoint netip.AddrPort
 	if req.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(req.ListeningEndpoint.IpAddress); ok {
@@ -38,7 +38,7 @@ func toVersionInfo(req *pb.VersionInfo) peer.VersionInfo {
 		services[i] = svc.String()
 	}
 
-	return peer.VersionInfo{
+	return core.VersionInfo{
 		Version:           req.Version,
 		SupportedServices: services,
 		ListeningEndpoint: endpoint,

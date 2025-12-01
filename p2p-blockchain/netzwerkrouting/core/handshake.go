@@ -1,12 +1,21 @@
 package core
 
-import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+import (
+	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+)
+
+type VersionInfo struct {
+	Version           string
+	SupportedServices []string
+	ListeningEndpoint netip.AddrPort
+}
 
 // HandshakeHandler defines the interface for handling incoming connection messages.
 // This interface is implemented in the core/domain layer and used by the infrastructure layer.
 type HandshakeHandler interface {
-	HandleVersion(peerID peer.PeerID, info peer.VersionInfo)
-	HandleVerack(peerID peer.PeerID, info peer.VersionInfo)
+	HandleVersion(peerID peer.PeerID, info VersionInfo)
+	HandleVerack(peerID peer.PeerID, info VersionInfo)
 	HandleAck(peerID peer.PeerID)
 }
 
@@ -19,14 +28,14 @@ func NewHandshakeService() *HandshakeService {
 	return &HandshakeService{}
 }
 
-func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info peer.VersionInfo) {
+func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// Domain logic:
 	// 1. Validate version compatibility
 	// 2. Store peer info
 	// 3. Send Verack back to the peer (via MessageSender interface)
 }
 
-func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info peer.VersionInfo) {
+func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 	// Domain logic:
 	// 1. Validate the verack
 	// 2. Send Ack back to complete the handshake

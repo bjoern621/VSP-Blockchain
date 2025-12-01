@@ -2,8 +2,6 @@
 package peer
 
 import (
-	"net/netip"
-
 	"bjoernblessin.de/go-utils/util/logger"
 	"github.com/google/uuid"
 )
@@ -19,17 +17,12 @@ const (
 	StateHandshakeComplete
 )
 
-type VersionInfo struct {
-	Version           string
-	SupportedServices []string
-	ListeningEndpoint netip.AddrPort
-}
-
 // Peer represents a peer in the network.
 type Peer struct {
-	ID          PeerID
-	VersionInfo VersionInfo
-	State       PeerConnectionState
+	ID                PeerID
+	Version           string
+	SupportedServices []string
+	State             PeerConnectionState
 }
 
 func NewPeer() PeerID {
