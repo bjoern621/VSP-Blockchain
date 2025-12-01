@@ -13,8 +13,7 @@ tasks:
     proto:
         desc: Generate gRPC code from shared and local .proto files
         cmds:
-            - protoc --proto_path=../proto --go_out=. --go-grpc_out=. ../proto/*.proto
-            - protoc --proto_path=./proto --go_out=. --go-grpc_out=. ./proto/*.proto
+            - buf generate
 
     prepare:
         internal: true
