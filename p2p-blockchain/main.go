@@ -4,7 +4,7 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/config"
-	netzwerkroutingInterface "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/interface"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"strconv"
 
 	"bjoernblessin.de/go-utils/util/env"
@@ -61,7 +61,7 @@ func main() {
 	}
 
 	logger.Infof("Starting P2P server on port %d...", p2pPort)
-	err = netzwerkroutingInterface.NewServer().Start(p2pPort)
+	err = api.NewServer().Start(p2pPort)
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	}
