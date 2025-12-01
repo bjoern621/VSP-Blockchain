@@ -3,6 +3,7 @@ package grpc
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
 )
 
 // Client represents the P2P gRPC client for peer-to-peer communication.
@@ -10,13 +11,13 @@ import (
 // It contains no domain logic, only type transformation and delegation.
 type Client struct {
 	grpcClient   pb.ConnectionEstablishmentClient
-	peerRegistry *PeerRegistry
+	peerRegistry *peerregistry.PeerRegistry
 }
 
 // Compile-time check that Client implements HandshakeInitiator
 var _ handshake.HandshakeInitiator = (*Client)(nil)
 
-func NewClient(peerRegistry *PeerRegistry) *Client {
+func NewClient(peerRegistry *peerregistry.PeerRegistry) *Client {
 	return &Client{
 		peerRegistry: peerRegistry,
 	}

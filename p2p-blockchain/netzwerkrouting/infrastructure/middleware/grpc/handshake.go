@@ -8,6 +8,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -25,8 +27,8 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 	return addrPort
 }
 
-// toVersionInfo converts protobuf VersionInfo to domain VersionInfo.
-func toVersionInfo(req *pb.VersionInfo) handshake.VersionInfo {
+// versionInfoFromProto converts protobuf VersionInfo to domain VersionInfo.
+func versionInfoFromProto(req *pb.VersionInfo) handshake.VersionInfo {
 	var endpoint netip.AddrPort
 	if req.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(req.ListeningEndpoint.IpAddress); ok {
@@ -46,10 +48,24 @@ func toVersionInfo(req *pb.VersionInfo) handshake.VersionInfo {
 	}
 }
 
+func versionInfoToProto(info handshake.VersionInfo) *pb.VersionInfo {
+	pbInfo := &pb.VersionInfo{
+		Version: info.Version,
+		ListeningEndpoint: &pb.Endpoint{
+			IpAddress:     info.ListeningEndpoint.Addr().AsSlice(),
+			ListeningPort: uint32(info.ListeningEndpoint.Port()),
+		},
+	}
+	for _, service := range info.SupportedServices {
+		pbInfo.SupportedServices = append(pbInfo.SupportedServices, pb.ServiceType(service))
+	}
+	return pbInfo
+}
+
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	peerAddrPort := getPeerAddr(ctx)
 	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
-	info := toVersionInfo(req)
+	info := versionInfoFromProto(req)
 
 	s.connectionHandler.HandleVersion(peerID, info)
 	return &emptypb.Empty{}, nil
@@ -58,7 +74,7 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	peerAddrPort := getPeerAddr(ctx)
 	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
-	info := toVersionInfo(req)
+	info := versionInfoFromProto(req)
 
 	s.connectionHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
@@ -73,7 +89,29 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 }
 
 func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo, addrPort netip.AddrPort) {
+	conn, err := grpc.NewClient(addrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Errorf("failed to connect to %s: %v", addrPort.String(), err)
+		return
+	}
 
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			logger.Errorf("failed to close gRPC connection: %v", err)
+		}
+	}(conn)
+
+	c.peerRegistry.AddPeer(peerID, addrPort)
+
+	client := pb.NewConnectionEstablishmentClient(conn)
+
+	pbInfo := versionInfoToProto(info)
+
+	_, err = client.Version(context.Background(), pbInfo)
+	if err != nil {
+		logger.Errorf("failed to send Version to %s: %v", addrPort.String(), err)
+	}
 }
 
 func (c *Client) SendVerack(peerID peer.PeerID, info handshake.VersionInfo) {

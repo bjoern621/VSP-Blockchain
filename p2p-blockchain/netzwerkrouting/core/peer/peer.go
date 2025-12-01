@@ -17,19 +17,30 @@ const (
 	StateHandshakeComplete
 )
 
+type Direction int
+
+const (
+	DirectionInbound Direction = iota
+	DirectionOutbound
+)
+
 // Peer represents a peer in the network.
 type Peer struct {
 	ID                PeerID
 	Version           string
 	SupportedServices []string
 	State             PeerConnectionState
+	Direction         Direction
 }
 
-func NewPeer() PeerID {
+// NewPeer creates a new peer with a unique ID and adds it to the peer store.
+// PeerConnectionState is initialized to StateFirstSeen which indicates that we just received the first message by this peer or we are trying to establish a connection.
+func NewPeer(direction Direction) PeerID {
 	peerID := PeerID(uuid.NewString())
 	peer := &Peer{
-		ID:    peerID,
-		State: 0,
+		ID:        peerID,
+		State:     0,
+		Direction: direction,
 	}
 	peerStore.AddPeer(peer)
 	logger.Debugf("new peer %v created", peerID)

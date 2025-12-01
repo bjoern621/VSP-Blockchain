@@ -2,6 +2,8 @@ package handshake
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // HandshakeHandler defines the interface for handling incoming connection messages.
@@ -17,6 +19,7 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// 1. Validate version compatibility
 	// 2. Store peer info
 	// 3. Send Verack back to the peer (via MessageSender interface)
+	logger.Infof("Received Version from peer %s: %+v", peerID, info)
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {

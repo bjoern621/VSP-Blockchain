@@ -15,7 +15,7 @@ type HandshakeInitiator interface {
 }
 
 func (h *HandshakeService) InitiateHandshake(addrPort netip.AddrPort) {
-	peerID := peer.NewPeer()
+	peerID := peer.NewPeer(peer.DirectionOutbound)
 
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,

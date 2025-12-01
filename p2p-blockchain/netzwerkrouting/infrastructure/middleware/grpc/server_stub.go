@@ -8,6 +8,7 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -21,10 +22,10 @@ type Server struct {
 	grpcServer        *grpc.Server
 	listener          net.Listener
 	connectionHandler handshake.HandshakeHandler
-	peerRegistry      *PeerRegistry
+	peerRegistry      *peerregistry.PeerRegistry
 }
 
-func NewServer(connectionHandler handshake.HandshakeHandler, peerRegistry *PeerRegistry) *Server {
+func NewServer(connectionHandler handshake.HandshakeHandler, peerRegistry *peerregistry.PeerRegistry) *Server {
 	return &Server{
 		connectionHandler: connectionHandler,
 		peerRegistry:      peerRegistry,

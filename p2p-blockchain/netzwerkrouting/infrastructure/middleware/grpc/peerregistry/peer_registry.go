@@ -1,4 +1,4 @@
-package grpc
+package peerregistry
 
 import (
 	"net/netip"
@@ -19,12 +19,15 @@ func NewPeerRegistry() *PeerRegistry {
 	}
 }
 
+// GetOrCreatePeerID returns the PeerID for the given address.
+// If no PeerID exists for the address, a new one is created and returned.
+// Is called when receiving a connection from a peer.
 func (r *PeerRegistry) GetOrCreatePeerID(addr netip.AddrPort) peer.PeerID {
 	if id, exists := r.addrToPeer[addr]; exists {
 		return id
 	}
 
-	peerID := peer.NewPeer()
+	peerID := peer.NewPeer(peer.DirectionInbound)
 	r.addrToPeer[addr] = peerID
 	r.peerToAddr[peerID] = addr
 
@@ -34,4 +37,16 @@ func (r *PeerRegistry) GetOrCreatePeerID(addr netip.AddrPort) peer.PeerID {
 func (r *PeerRegistry) GetAddrPort(peerID peer.PeerID) (netip.AddrPort, bool) {
 	addr, exists := r.peerToAddr[peerID]
 	return addr, exists
+}
+
+func (r *PeerRegistry) RemovePeer(peerID peer.PeerID) {
+	if addr, exists := r.peerToAddr[peerID]; exists {
+		delete(r.peerToAddr, peerID)
+		delete(r.addrToPeer, addr)
+	}
+}
+
+func (r *PeerRegistry) AddPeer(peerID peer.PeerID, addr netip.AddrPort) {
+	r.peerToAddr[peerID] = addr
+	r.addrToPeer[addr] = peerID
 }
