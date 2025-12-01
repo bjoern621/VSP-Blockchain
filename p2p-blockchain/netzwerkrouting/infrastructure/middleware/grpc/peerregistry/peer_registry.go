@@ -10,12 +10,14 @@ import (
 type PeerRegistry struct {
 	addrToPeer map[netip.AddrPort]peer.PeerID
 	peerToAddr map[peer.PeerID]netip.AddrPort
+	peerStore  *peer.PeerStore
 }
 
-func NewPeerRegistry() *PeerRegistry {
+func NewPeerRegistry(peerStore *peer.PeerStore) *PeerRegistry {
 	return &PeerRegistry{
 		addrToPeer: make(map[netip.AddrPort]peer.PeerID),
 		peerToAddr: make(map[peer.PeerID]netip.AddrPort),
+		peerStore:  peerStore,
 	}
 }
 
@@ -27,7 +29,7 @@ func (r *PeerRegistry) GetOrCreatePeerID(addr netip.AddrPort) peer.PeerID {
 		return id
 	}
 
-	peerID := peer.NewPeer(peer.DirectionInbound)
+	peerID := r.peerStore.NewPeer(peer.DirectionInbound)
 	r.addrToPeer[addr] = peerID
 	r.peerToAddr[peerID] = addr
 

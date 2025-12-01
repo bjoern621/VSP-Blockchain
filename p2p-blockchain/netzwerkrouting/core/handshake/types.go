@@ -1,6 +1,9 @@
 package handshake
 
-import "net/netip"
+import (
+	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+)
 
 type VersionInfo struct {
 	Version           string
@@ -21,13 +24,15 @@ const (
 // HandshakeService implements ConnectionHandler with the actual domain logic.
 type HandshakeService struct {
 	handshakeInitiator HandshakeInitiator
+	peerStore          *peer.PeerStore
 }
 
 // Compile-time check that HandshakeService implements HandshakeHandler
 var _ HandshakeHandler = (*HandshakeService)(nil)
 
-func NewHandshakeService(handshakeInitiator HandshakeInitiator) *HandshakeService {
+func NewHandshakeService(handshakeInitiator HandshakeInitiator, peerStore *peer.PeerStore) *HandshakeService {
 	return &HandshakeService{
 		handshakeInitiator: handshakeInitiator,
+		peerStore:          peerStore,
 	}
 }

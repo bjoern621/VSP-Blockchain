@@ -20,6 +20,10 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// 2. Store peer info
 	// 3. Send Verack back to the peer (via MessageSender interface)
 	logger.Infof("Received Version from peer %s: %+v", peerID, info)
+
+	peer, _ := h.peerStore.GetPeer(peerID)
+
+	logger.Infof("peer: %v", peer)
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {

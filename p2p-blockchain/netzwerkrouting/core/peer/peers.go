@@ -1,16 +1,10 @@
 package peer
 
-var peerStore *PeerStore
-
 type PeerStore struct {
 	peers map[PeerID]*Peer
 }
 
-func init() {
-	peerStore = newPeerStore()
-}
-
-func newPeerStore() *PeerStore {
+func NewPeerStore() *PeerStore {
 	return &PeerStore{
 		peers: make(map[PeerID]*Peer),
 	}
@@ -21,7 +15,7 @@ func (s *PeerStore) GetPeer(id PeerID) (*Peer, bool) {
 	return peer, exists
 }
 
-func (s *PeerStore) AddPeer(peer *Peer) {
+func (s *PeerStore) addPeer(peer *Peer) {
 	s.peers[peer.ID] = peer
 }
 
