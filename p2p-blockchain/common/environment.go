@@ -55,7 +55,11 @@ func readAppPort() uint16 {
 
 // readP2PPort is similar to readAppPort but for the P2P port.
 func readP2PPort() uint16 {
-	portStr := env.ReadNonEmptyRequiredEnv(p2pPortEnvVar)
+	portStr, found := env.ReadOptionalEnv(p2pPortEnvVar)
+
+	if !found {
+		return defaultP2PPort
+	}
 
 	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
