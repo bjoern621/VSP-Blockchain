@@ -722,6 +722,31 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
+## Verwendete Hash-Algorithmen
+Als Hash Algorithmus wird SHA-256 verwendet. Dieser wird verwendet, wenn ein Block-Header oder eine Transaktion erstellt wird.
+Weiter findet dieser Anwendung in den Merkle-Trees und Merkle-Pfaden.
+
+## Aufbau Block und Transaktion
+### Block
+Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das zweifache Hashen des Block-Headers
+erstellt werden und identifiziert einen Block eindeutig.
+Ein Block besteht aus einem Block-Header und einer List von Transaktionen.
+Ein Block-Header besteht aus:
+- Hash des vorherigen Blocks
+- Merkle-Root der Transaktionen
+- Zeitstempel
+- Nonce
+- Zeitstempel
+
+### Transaktion
+Eine Transaktion besteht aus mehreren Ein- und Ausgaben sowie einer Lock-Time. TODO: @Bjarne: Was genau macht die LockTime?
+Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
+Ein Transaktions-Eingang besteht aus dem Hash der vorherigen Transaktion, dem Index es Ausgangs der vorherigen Transaktion, 
+einem Signatur Script und einer Sequenznummer.
+
+Transaktions-Ausgänge bestehen aus dem Wert der kleinsten teilbaren Einheit, sowie einer Signatur, welche bestätigt, dass dieser
+Output tatsächlich dem Nutzer gehört.
+
 ## _\<Konzept n\>_
 
 _\<Erklärung\>_
