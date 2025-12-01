@@ -114,7 +114,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 | **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                                | Logs, Health-Check-Responses                                                                   |
 
 ## Technischer Kontext
-![Diagram](https://www.plantuml.com/plantuml/png/PL1BJeH04DtNALw8YRFX0gxc4p-Jk203STyqvT2ngIPDCIQUnvjuCM56Hj3bUrNrFhNkr4Jj6qyIAaQoZU6zuuY764HPgWIcGtaXYMnesY0iYkHmdnVOP7la74_EyddHj8w8WDdUoyrZS99kVR1ljZPEBeeZt8sGw1RFmNlNXZRDRIrEjLFsdc4Q_7KX9yhnrLX6WiboFt4q1qZJSJZgJwMarmz5vHWB8_hfDroi5dgumrDHPFceSKrIVttAKN4AWjzICEN_QELrl1boBD1WDV-1EJEhvSNWVZnaErgpL7tZlm40)
+![Diagram](https://www.plantuml.com/plantuml/png/TL91QiCm4BmN-eV159ABFf13ILAQ4WYbrALtMLPZ4NbbP2MbVKz_qezrRTMkPQWEXXtFpiwEX7KRf0_dsbvVWG-vKYFRUlVUQe-TTnGqbHbaYoA2aHU_ojMD8qq1sVDz_eBDqnwvzXUZTDyY6pEbH_63EqchyNhpu0pXaR6UQvsIjgkct4WIM_vvKfKq59rqvLrNJjKNE3XhJUCQaQkAJ0Xjq9OdoHfpTx73y7B-JIeUXC7lVi0YPOf0YFb62mnHqJby1fH68naUQR_HiS0oLLoX_I1LSSofwkYt-lwYOy354Vv2W2p-MQ0OEPl1Q09rAyo2bZswdF5Mh9Ou6xiWl3bMGTnEhY6bh_d5y8Fw0G00)
 
 <details>
     <summary>Code</summary>
@@ -125,29 +125,31 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     
     component "REST API Service" as api
     
-    
-      component "V$Goin-Blockchain" as blockChain
+    node "Lokale V$Goin Node" as localNode
+    node "V$Goin-Blockchain" as blockChain
     
     ' Lollipop-Schnittstelle am REST API Service
     interface " " as apiInterface
     apiInterface -- api
     
     ' Browser nutzt die Schnittstelle
-    browser --( apiInterface : HTTPS
+    browser --( apiInterface : synchron
     
     ' REST API hängt von Blockchain ab
     interface " " as blockchainApi
-    blockchainApi -- blockChain
-    api --( blockchainApi : gRPC
-    @enduml
+    blockchainApi -- localNode
+    api --( blockchainApi : asynchron
+    localNode -right-> blockChain : asynchron
+@enduml
     ````
 </details>
 
 
-| **Kommunikationspartner** | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung** |
-|----------------------------|-------------------------------------|------------------------------|-------------------------------|
-| **Frontend (Web-Client)** | HTTPS REST-API | JSON | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen |
-| **V$Goin Blockchain-System** | RPC | JSON | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen |
+| **Kommunikationspartner**    | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung**                                                                                      |
+|------------------------------|--------------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **Frontend (Web-Client)**    | HTTPS REST-API                       | JSON                        | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen                                                  |
+| **Lokale V$Goin Node**       | RPC                                  | Byte                        | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen, sowie erhalten von Transaktionsdaten |
+| **V$Goin Blockchain-System** | RPC                                  | Byte                        | Weiterleiten der erstellten Transaktion an alle weiteren Knoten                                                   |
 
 # Lösungsstrategie
 ## Technologieentscheidungen
@@ -166,7 +168,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ## Top-Level-Architekturentscheidungen
 - **Architekturmuster:**  
-  Mehrschichtige Client-Server Architektur mit einem Frontend für die Nutzer, einem Backend, welches die Anfragen der Nutzer bearbeitet und mit einem weiteren Blockchain-Backend, welches die Währung repräsentiert, interagiert.
+  Mehrschichtige Client-Server Architektur mit einem Frontend für die Nutzer (in diesem Fall wird nur eine REST Schnittstelle angeboten, es könnte aber eine Frontend Anwendung angeboten werden), einem Backend, welches die Anfragen der Nutzer bearbeitet und an eine lokalen V$Goin Node weiterleitet, welches die Anfragen bearbeitet und an die restlichen Knoten im System weiterleitet.
 
 
 ---
@@ -183,7 +185,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 # Bausteinsicht
 
 ## Whitebox Gesamtsystem
-![Diagramm](https://www.plantuml.com/plantuml/png/dLJDZjCm4BxdAKOL4gTgxwkbshHQVWIggcPLBbpSPBQrwewhiRFBikBA0_0yt7WJdeI9NTCG82BroMD_C_w-oJUvTbwnh_Sc8riXZAPi7nmol6HB7gaQWNAmZeTPzXnU_6t9EK3nw3pkOMfhgXG__XDRslt14fA7qVAck8LyyGOAv7jTOdXC7JGyPHd8Qa5lMP5JEwyj1PGFSTd4FL1tZsnKVHTIZlik_Aq8jG6mQtRTwzMpLrRJ-9rUZ_DA7JnoP1dtsUV-fjny510f0vBFVLs9tR-wmf0mcNoW-30KYnNCvJ9L2AyRlOQdBjFtoXZqwJv6NSmS_QS7v1tRsclQ9B0S_xUIgR7bhjmgJVrYKkTE-EYb9fo5zER1yP0b-EJF7r--7XqtkCZHpP8rQTi8BW5P2Xg3qB9G6vui9D0xLXiFgsEircrOD9A0WhKKDLYaSzH6XQ2fwVtW_BOuePKyAyIStf16_bre4YUh0zzQW_1QEszPOnRL_OaIZSYXQb5kpVTlpg61YvYSI-3TEIq8GnS_U1g1mLKIH-5x6WrXd5UCGkoYa7OeNpFawLjrCkO2Xylmgvf9iXDPopX1PqXACeAarZGDBHHv1OgdeHAMoyLi_4l8DL9LxyrF)
+![Diagramm](https://www.plantuml.com/plantuml/png/hLJBQW8n5DqN-WyNANGbxiMAKx0FMefqn5KtSUQgmPX84hLIkkq7z7kwwv_qItgJp4XyGBMQXIJZEPTpppr9orYcxMmYpi-0bbGvGkLQguL13JTQIOiohm0pq0yV0oxyNiBLhbN-2P0kZSK9NAkPp9bUxi7Ar6Ig94eBbUTsseMaSmyfwZdFqAjWKmvliOODKbSpQTZOSYKztlfpviv_uSqSjM2pWUSL-vsS1t95UTJOxNPYUXUtYilg4_bPJN8sjQY3_h0FdFU3p6o_4b4o0O-yh_TpCuopqK1FRJPVPD05QQS7JflN97WVOYNhggg7h99K9kZduxC8mH7bYkGHjHdF4-g0caeBWH2DSPjJp9Bm0ys65dh5cVMtiNwYXFGpPj8HK9x0aE8cSEa6SKIbk7-djyWJAHxI5ECqvuokBYoGh-9M-k3MEdUaoCCxRgpI70Cu6B4D9JkGG1eXpKRY-yiO550B5H8wM7C2jueRu-EpaVP_r2l5kqPSrkjKNoDfhKL-GR8sx4sE8_dkW9wobLKK8KygMuvRRz73IU_gBm00)
 <details>
     <summary> Code </summary>
 
@@ -199,21 +201,14 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
         component "Transaktion" as transaction
         component "Transaktionsverlauf" as verlauf
         component "Konto" as konto
-        component "V$Goin-Lib-Adapter" as adapter
+        component "V$Goin-Node-Adapter" as adapter
     }
     
     ' =====================
     '   External Library
     ' =====================
-    node "<<extern>>\nV$Goin SPV Node Library" as lib {
-        component "Wallet" as libWallet
-        component "Netzwerkrouting" as libNet
-    }
+    node "<<extern>>\nV$Goin SPV Node" as lib 
     
-    ' =====================
-    '   External Blockchain
-    ' =====================
-    node "V$Goin-Blockchain" as blockChain
     
     
     ' ---------------------------------------------
@@ -226,20 +221,17 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     ' ---------------------------------------------
     ' System intern
     ' ---------------------------------------------
-    transaction --> adapter : signiere Transaktion
+    transaction --> adapter : gib Transaktionsdaten weiter
     verlauf     --> adapter : hole Historie
     konto     --> adapter : generiere Schlüssel / hole Assets
     
     ' ---------------------------------------------
     ' Adapter → Library
     ' ---------------------------------------------
-    adapter --> libWallet : Adresse/Signatur Anfragen
-    adapter --> libNet  : API Calls / Routing
+    adapter --> lib : Adresse/Transaktion Anfragen
+    adapter --> lib  : Assets und Historie abfrage
     
-    ' ---------------------------------------------
-    ' Library → Blockchain
-    ' ---------------------------------------------
-    libNet --> blockChain : RPC-Anfragen
+
     
     @enduml
     ````
@@ -251,9 +243,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 1. [Transaktion](#transaktion-blackbox)
 2. [Transaktionsverlauf](#transaktionsverlauf-blackbox)
 3. [Konto](#konto-blackbox)
-4. [V$Goin-Lib-Adapter](#vgoin-lib-adapter-blackbox)
-5. [V$Goin SPV Node Library](#vgoin-spv-node-library-blackbox)
-6. [V$Goin-Blockchain](#vgoin-blockchain-blackbox)
+4. [V$Goin-Node-Adapter](#vgoin-node-adapter-blackbox)
 
 ---
 
@@ -334,40 +324,25 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ---
 
-### V$Goin-Lib-Adapter (Blackbox)
+### V$Goin-Node-Adapter (Blackbox)
 
 #### Zweck / Verantwortung
-- Einzige Schnittstelle zum SPV-Node-Library
-- Übersetzung der internen Systemaufrufe in Library-Funktionen
-- Entkopplung des Systems von Library-Änderungen
+- Einzige Schnittstelle zur lokalen SPV-Node
+- Übersetzung der internen Systemaufrufe zur V$Goin RPC Schnittstelle
+- Entkopplung des Systems von V$Goin-Änderungen
 
 #### Schnittstelle
 - Funktionen: Signatur, Key-Generierung, Key-Ableitung, Historie, Balance, Broadcast
 - [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)
 
 #### Eingaben / Ausgaben
-- Eingaben: Transaktionen, Wallet Adressen, Private Keys
-- Ausgaben: normalisierte Ergebnisse aus der Library
-
-#### Abhängigkeiten
-- V$Goin SPV Node Library
-
----
-
-### V$Goin SPV Node Library (Blackbox)
-
-- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
-
----
-
-### V$Goin-Blockchain (Blackbox)
-
-- Siehe [MinerNetwork Dokumentation](../arc42-MinerNetwork/MinerNetwork.md)
+- Eingaben: Transaktionendaten, Wallet Adressen, Private Keys
+- Ausgaben: normalisierte Ergebnisse aus der Node
 
 ## Ebene 2
 
 ### Whitebox *\<Konto\>*
-![Diagramm](https://www.plantuml.com/plantuml/png/NSyzJiGm40NWVaxnv8fc6qgqMYrqA5HGK8-S0Ldhs8azGOeG4dVWXfo41ES7uiepVlFPFcVbf7tZIPrwmOEyYSSrlZ-_KCMcZK622amLWqP3b2ykj9ouWHlxwOMjFEdW1HD1BTiBlwvnl1DXN7Q1O6xh93cB0MVC-tsc36VbKF_6jf8-YDPhOUxls7Em1LkAH-becy3XSFNt23Su7fDqlKkIJwT_sZDxBrgmIeO9cbzObDBR2sS9zVZt7m00)
+![Diagramm](https://www.plantuml.com/plantuml/png/VP312i8m38RlWkyGUlBYnQECCNUJUT8d25tKigxTsauO8lWElg5FObtdDb3C8JJD_tzDcbY7nZMbdC_0XnDE4kpeGX9MyBm_8DDbfHKfHy0ohPncGHcoBOIgq609mYlC4JaTNEiH0p7a2dc1fm41rsdp7Vpp3B1DRiXQOe0M-lCVTGVqIwYyCunbKD-crc56OAdKlE1d5AgpRLEKg3ZjgGxIaGFBvMBQXpL4aQ6w4NwqEFuYPzJQC0gr0wxVesE5-v-OX5JkV-u5)
 <details>
     <summary>Code</summary>
     
@@ -384,39 +359,41 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
         component "Kontostand" as Kontostand
     }
     
-    interface "IBalance" as IBalanceReq
+    interface "Blockchain" as IBalanceReq
     Kontostand --( IBalanceReq : <<requires>>
-    interface "IWallet" as IKeyReq
-    Adresse --( IKeyReq : <<requires>>
+    interface "Keys" as KeyReq
+    Adresse --( KeyReq : <<requires>>
     @enduml
     ````
 </details>
 
-### Whitebox *\<V$Goin-Lib-Adapter\>*
-![Diagramm](https://www.plantuml.com/plantuml/png/VO_1IWCn48RlUOgXUEWb5uzIIlKYfKL4GS_ZxbZ2PfDqThPB5S5ty0rz4jEjgPjLp2dC_F_t_xDe15dQsYenOWdMj2CBv_3v_W4hNmVlo0d1vE7isXkdr-P9NvOOX7YYL5CP5v2n1XD5_8m5tSi-KWuy5R2eSFEt5rwLWlYA506JHxIMv4U13Hn7tvDVXXkIbuwuoYnns7ckakTDdPgbX5wsl4ABhg0xsgei1NJfEwUdGmLSm6p6j6qDKpEV3v6f0_jMZDiSsIlQ7xXv5T0zUPhM_q2Nmw9HVSj-DsxP1dtQzQWGFwOSez8LsT4zRzmk0ZF16BeWLxQr_G80)
+### Whitebox *\<V$Goin-Node-Adapter\>*
+![Diagramm](https://www.plantuml.com/plantuml/png/ZPB1IWCn48RlWkymB1wyvBB7KahjHQHI2egUX-oeORD9JB8jHGJVmJVqIKmJkvijQpM7x2Hy_pz_afqxZzQtZJm_Wp2yy9BWbZOaeOIlZqzOwiPeHSeJ50yNrreejj8LiQiAZITR95sQNIsKGOiDYC3R9-HqvtV1iFDFiq5Uu_ClXl2Me_l13n6WkBUe778ljEe5wE0HfIJ_itD2lv2Qr_m5nL2-8h_LjXxetzEdEyaXBUpJ9bKe_WMLYHg415RfhMAN4O09JAUMNbjXoSrc2H-60XO5YIz71LcA9UrSR7yJghNLcz44hM4T41rDA4GrwfZTV3JErYVzZxY_slGFbE8lKABYrBSulfLuXemQRJ0dLOL_y1i0)
 
 <details>
     <summary>Code</summary>
     
     ````plantuml
     @startuml
-    title Level 2 – Komponente "V$Goin-Lib-Adapter"
+    title Level 2 – Komponente "V$Goin-Node-Adapter"
     
     skinparam interfaceStyle uml
     
-    package "V$Goin-Lib-Adapter" {
+    package "V$Goin-Node-Adapter" {
     
-        component "Wallet-Adapter" as WalletAdapter
+        component "Transaction-Adapter" as WalletAdapter
     
-        component "Netzwerk-Adapter" as NetworkAdapter
+        component "Blockchain-Adapter" as NetworkAdapter
     }
-    interface "Wallet" as IBalanceReq
-    WalletAdapter -down-( IBalanceReq : <<requires>>
-    interface "Netzwerkrouting" as IKeyReq
-    NetworkAdapter --down( IKeyReq : <<requires>>
-    interface "IWallet" as IKeyProv
+    interface "V$Goin Node" as Node
+    interface "V$Goin Node" as Node2
+    WalletAdapter -down-( Node : <<requires>>
+    NetworkAdapter --down( Node2 : <<requires>>
+    interface "Keys" as IKeyProv
     WalletAdapter -up- IKeyProv : <<provides>>
-    interface "IBalance" as IBalanceProv
+    interface "Transaction" as TransactionProv
+    WalletAdapter -up- TransactionProv : <<provides>>
+    interface "Blockchain" as IBalanceProv
     NetworkAdapter -up- IBalanceProv : <<provides>>
     @enduml
     ````
@@ -488,7 +465,7 @@ Zentrale fachliche Objekte sind:
 - Jede Transaktion muss gültig signiert sein.
 - Ausreichende UTXOs müssen für Transaktionen verfügbar sein.
 - Adressen und Schlüssel dürfen nur Base58 encoded.
-- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Library bzw. Miner Network validiert werden.
+- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Node bzw. Miner Network validiert werden.
 
 ## 2. Sicherheitskonzept
 - Die REST Schnittstellen kommunizieren ausschließlich über TLS.
@@ -496,28 +473,28 @@ Zentrale fachliche Objekte sind:
 ## 3. Persistenz- und Datenhaltungskonzept
 
 ### 3.1 Persistenzstrategien
-Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die Library ab.  
+Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die lokale V$Goin Node ab.  
 Temporäre Daten:
 
 - Kurzzeit-Caches im Adapter und Backend
-- JSON als API-Format, binäre Formate innerhalb der Library
+- JSON als API-Format, binäre Formate der V$Goin Blockchain
 
 ### 3.2 Formatkonzept
 - Adressen → Base58
 - Schlüssel → Base58 
-- Transaktionen → binäre Library-Formate, API JSON
+- Transaktionen → binäre V$Goin-Formate, API JSON
 
 ## 4. Kommunikations- und Integrationskonzept
 
 ### 4.1 Architekturprinzip
-- Der Adapter kapselt sämtliche Interaktionen mit der SPV-Library.
+- Der Adapter kapselt sämtliche Interaktionen mit der SPV-Node.
 - Das Backend ist vollständig entkoppelt von Blockchain-gRPC-Details.
 
 ### 4.2 Kommunikationsmechanismen
 - Browser ↔ API: REST/HTTPS
 - API ↔ Adapter: interne Funktionsaufrufe
-- Adapter ↔ Library: Funktionsaufrufe
-- Library ↔ Blockchain: gRPC-Kommunikation
+- Adapter ↔ Node: RPC Aufrufe
+- Node ↔ Blockchain: gRPC-Kommunikation
 
 ### 4.3 Schnittstellen
 - Schnittstellen sind in der [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml) dokumentiert.
@@ -529,12 +506,12 @@ Temporäre Daten:
 - Manuelle Code Reviews vor jedem Merge
 
 ## 6. Adapter-Pattern
-Das System verwendet ein komponentenweites Adapter-Muster, um die SPV-Library von der fachlichen Logik der API zu entkoppeln.  
-Der Adapter kapselt sämtliche Low-Level-Funktionen der Library und stellt eine stabile interne Schnittstelle bereit.  
-Dadurch können Änderungen an der Library oder der Blockchain-Technologie vorgenommen werden, ohne das Backend anzupassen.
+Das System verwendet ein komponentenweites Adapter-Muster, um die SPV-Node von der fachlichen Logik der API zu entkoppeln.  
+Der Adapter kapselt sämtliche Low-Level-Funktionen der Node und stellt eine stabile interne Schnittstelle bereit.  
+Dadurch können Änderungen an der Blockchain-Technologie vorgenommen werden, ohne das Backend groß anzupassen.
 
 **Motivation:**
-- Keine Abhängigkeiten alle Komponenten direkt zur Library
+- Keine Abhängigkeiten alle Komponenten direkt zur RPC Schnittstelle
 - Austauschbarkeit der Blockchain-Implementierung
 - Einheitliche Formate intern
 
