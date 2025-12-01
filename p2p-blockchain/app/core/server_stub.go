@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -9,6 +10,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	netzwerkroutingCore "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
 
+	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 )
 
@@ -38,7 +40,7 @@ func (s *Server) Start(port uint16) error {
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
-			// Log error but don't crash - server may have been stopped intentionally
+			logger.Warnf("App gRPC server stopped with error: %v", err)
 		}
 	}()
 
@@ -82,4 +84,14 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 		Success:      true,
 		ErrorMessage: "",
 	}, nil
+}
+
+// ListeningEndpoint returns the server's listening endpoint as netip.AddrPort.
+// If the server is not started, it returns an error.
+func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
+	if s.listener == nil {
+		return netip.AddrPort{}, errors.New("server not started")
+	}
+	addr := s.listener.Addr().(*net.TCPAddr)
+	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
 }

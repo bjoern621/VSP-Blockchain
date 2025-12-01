@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/netip"
 
-	"s3b/vsp-blockchain/p2p-blockchain/internal/config"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 
 	"google.golang.org/grpc"
@@ -30,8 +30,8 @@ func ConnectTo(ctx context.Context, ip netip.Addr, port uint16) error {
 		Version:           "vsgoin-1.0",
 		SupportedServices: []pb.ServiceType{pb.ServiceType_SERVICE_NETZWERKROUTING, pb.ServiceType_SERVICE_BLOCKCHAIN_FULL, pb.ServiceType_SERVICE_WALLET, pb.ServiceType_SERVICE_MINER},
 		ListeningEndpoint: &pb.Endpoint{
-			IpAddress:     config.GetLocalIPBytes(),
-			ListeningPort: uint32(config.GetP2PPort()),
+			IpAddress:     common.P2PListeningIpAddr.AsSlice(),
+			ListeningPort: uint32(common.P2PPort),
 		},
 	}
 

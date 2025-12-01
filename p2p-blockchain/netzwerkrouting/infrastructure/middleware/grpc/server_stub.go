@@ -1,8 +1,10 @@
 package grpc
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
@@ -46,4 +48,14 @@ func (s *Server) Start(port uint16) error {
 	}()
 
 	return nil
+}
+
+// ListeningEndpoint returns the server's listening endpoint as netip.AddrPort.
+// If the server is not started, it returns an error.
+func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
+	if s.listener == nil {
+		return netip.AddrPort{}, errors.New("server not started")
+	}
+	addr := s.listener.Addr().(*net.TCPAddr)
+	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
 }
