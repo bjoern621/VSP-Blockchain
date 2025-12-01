@@ -72,7 +72,7 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo) {
+func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo, addrPort netip.AddrPort) {
 
 }
 
