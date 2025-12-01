@@ -19,7 +19,7 @@ type HandshakeInitiator interface {
 	SendAck(peerID peer.PeerID)
 }
 
-func InitiateHandshake(addrPort netip.AddrPort) error {
+func (h *HandshakeService) InitiateHandshake(addrPort netip.AddrPort) {
 	addr := addrPort.String()
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -30,19 +30,13 @@ func InitiateHandshake(addrPort netip.AddrPort) error {
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
-	versionInfo := &pb.VersionInfo{
-		Version:           "vsgoin-1.0",
-		SupportedServices: []pb.ServiceType{pb.ServiceType_SERVICE_NETZWERKROUTING, pb.ServiceType_SERVICE_BLOCKCHAIN_FULL, pb.ServiceType_SERVICE_WALLET, pb.ServiceType_SERVICE_MINER},
-		ListeningEndpoint: &pb.Endpoint{
-			IpAddress:     common.P2PListeningIpAddr.AsSlice(),
-			ListeningPort: uint32(common.P2PPort),
-		},
+	peerID := peer.NewPeer()
+
+	versionInfo := VersionInfo{
+		Version:           common.VersionString,
+		SupportedServices: []ServiceType{ServiceType_Netzwerkrouting, ServiceType_BlockchainFull, ServiceType_Wallet, ServiceType_Miner},
+		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
 	}
 
-	_, err = client.Version(ctx, versionInfo)
-	if err != nil {
-		return fmt.Errorf("failed to send version: %w", err)
-	}
-
-	return nil
+	h.handshakeInitiator.SendVersion(peerID, versionInfo)
 }

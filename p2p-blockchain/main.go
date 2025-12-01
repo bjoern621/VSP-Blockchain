@@ -4,7 +4,7 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	ninfrastructure "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -27,9 +27,10 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	handshakeSerivce := handshake.NewHandshakeService()
-	peerRegistry := ninfrastructure.NewPeerRegistry()
-	grpcServer := ninfrastructure.NewServer(handshakeSerivce, peerRegistry)
+	peerRegistry := grpc.NewPeerRegistry()
+	handshakeInitiator := grpc.NewClient(peerRegistry)
+	handshakeSerivce := handshake.NewHandshakeService(handshakeInitiator)
+	grpcServer := grpc.NewServer(handshakeSerivce, peerRegistry)
 
 	err = grpcServer.Start(common.P2PPort)
 	if err != nil {

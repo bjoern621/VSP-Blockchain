@@ -1,10 +1,18 @@
 package common
 
-import "net/netip"
+import (
+	"fmt"
+	"net/netip"
+)
 
 const (
 	defaultP2PPort = 50051
 	defaultAppPort = 50050
+	VersionNumber  = 1
+)
+
+var (
+	VersionString = fmt.Sprintf("vsgoin-%d.0", VersionNumber)
 )
 
 var (

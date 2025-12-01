@@ -72,9 +72,6 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-// Compile-time check that Client implements HandshakeInitiator
-var _ handshake.HandshakeInitiator = (*Client)(nil)
-
 func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo) {
 
 }

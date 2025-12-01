@@ -12,18 +12,6 @@ type HandshakeHandler interface {
 	HandleAck(peerID peer.PeerID)
 }
 
-// HandshakeService implements ConnectionHandler with the actual domain logic.
-type HandshakeService struct {
-	// Add dependencies here (e.g., peer store, message sender)
-}
-
-// Compile-time check that HandshakeService implements HandshakeHandler
-var _ HandshakeHandler = (*HandshakeService)(nil)
-
-func NewHandshakeService() *HandshakeService {
-	return &HandshakeService{}
-}
-
 func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// Domain logic:
 	// 1. Validate version compatibility

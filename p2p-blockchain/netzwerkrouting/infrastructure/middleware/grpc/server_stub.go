@@ -14,8 +14,8 @@ import (
 )
 
 // Server represents the P2P gRPC server for peer-to-peer communication.
-// This is the server stub (skeleton) in Tanenbaum's terminology.
-// It contains no domain logic, only marshalling/unmarshalling and delegation.
+// This is the application stub / grpc adapter.
+// It contains no domain logic, only type transformation and delegation.
 type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
 	grpcServer        *grpc.Server
