@@ -26,7 +26,7 @@ func init() {
 	P2PPort = readP2PPort()
 }
 
-// readAppPort reads the application port used by the app endpoint  from the environment variable APP_PORT.
+// readAppPort reads the application port used by the app endpoint from the environment variable appPortEnvVar.
 // Environment variable is optional. If
 //   - 0 is provided, 0 is returned.
 //   - no value is provided, the default port is used.
@@ -43,7 +43,7 @@ func readAppPort() uint16 {
 		logger.Errorf("invalid PORT value: %s, must be between 0 and 65535", portStr)
 	}
 
-	assert.Assert(port < math.MaxUint16, "port value %d out of range", port)
+	assert.Assert(port <= math.MaxUint16, "port value %d out of range", port)
 
 	return uint16(port)
 }
@@ -61,7 +61,7 @@ func readP2PPort() uint16 {
 		logger.Errorf("invalid P2P_PORT value: %s, must be between 0 and 65535", portStr)
 	}
 
-	assert.Assert(port < math.MaxUint16, "port value %d out of range", port)
+	assert.Assert(port <= math.MaxUint16, "port value %d out of range", port)
 
 	return uint16(port)
 }
