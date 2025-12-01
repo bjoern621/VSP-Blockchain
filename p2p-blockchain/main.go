@@ -14,6 +14,8 @@ import (
 func main() {
 	logger.Infof("Running...")
 
+	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
+
 	logger.Infof("Starting App server...")
 	appServer := appcore.NewServer()
 	err := appServer.Start(common.AppPort)
