@@ -32,8 +32,8 @@ func main() {
 
 	peerRegistry := peerregistry.NewPeerRegistry()
 	handshakeInitiator := grpc.NewClient(peerRegistry)
-	handshakeSerivce := handshake.NewHandshakeService(handshakeInitiator)
-	grpcServer := grpc.NewServer(handshakeSerivce, peerRegistry)
+	handshakeHandler := handshake.NewHandshakeService(handshakeInitiator)
+	grpcServer := grpc.NewServer(handshakeHandler, peerRegistry)
 
 	err = grpcServer.Start(common.P2PPort)
 	if err != nil {

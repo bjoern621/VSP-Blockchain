@@ -25,9 +25,9 @@ type Server struct {
 	peerRegistry      *peerregistry.PeerRegistry
 }
 
-func NewServer(connectionHandler handshake.HandshakeHandler, peerRegistry *peerregistry.PeerRegistry) *Server {
+func NewServer(handshakeHandler handshake.HandshakeHandler, peerRegistry *peerregistry.PeerRegistry) *Server {
 	return &Server{
-		connectionHandler: connectionHandler,
+		connectionHandler: handshakeHandler,
 		peerRegistry:      peerRegistry,
 	}
 }
