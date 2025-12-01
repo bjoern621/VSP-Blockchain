@@ -13,33 +13,30 @@ import (
 func main() {
 	logger.Infof("Running...")
 
-	appPort := common.AppPort
-	p2pPort := common.P2PPort
-
 	logger.Infof("Starting App server...")
 	appServer := appcore.NewServer()
-	err := appServer.Start(appPort)
+	err := appServer.Start(common.AppPort)
 	if err != nil {
 		logger.Warnf("couldn't start App server: %v", err)
 	} else {
-		logger.Infof("App server started on port %d", appPort)
 		addrPort, err := appServer.ListeningEndpoint()
 		assert.IsNil(err)
 		common.SetAppPort(addrPort.Port())
+		logger.Infof("App server started on port %d", common.AppPort)
 	}
 
-	logger.Infof("Starting P2P server...", p2pPort)
+	logger.Infof("Starting P2P server...")
 	handshakeSerivce := ncore.NewHandshakeService()
 	grpcServer := ninfrastructure.NewServer(handshakeSerivce)
-	err = grpcServer.Start(p2pPort)
+	err = grpcServer.Start(common.P2PPort)
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
-		logger.Infof("P2P server started on port %d", p2pPort)
 		addrPort, err := grpcServer.ListeningEndpoint()
 		assert.IsNil(err)
 		common.SetP2PPort(addrPort.Port())
 		common.SetP2PListeningIpAddr(addrPort.Addr())
+		logger.Infof("P2P server started on port %d", common.P2PPort)
 	}
 
 	select {}
