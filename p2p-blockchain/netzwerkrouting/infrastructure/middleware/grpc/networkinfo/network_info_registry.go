@@ -93,7 +93,7 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID peer.PeerID, listeningEndpoint
 		r.listeningEndpointToPeer[listeningEndpoint] = peerID
 	}
 
-	logger.Debugf("registered peer %s: listening=%s", peerID, listeningEndpoint)
+	logger.Debugf("registered peer %s in network info registry infrastructure: listening=%s", peerID, listeningEndpoint)
 }
 
 // AddInboundAddress adds an inbound address to a peer's list if not already present.
