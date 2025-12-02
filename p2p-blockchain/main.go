@@ -24,7 +24,7 @@ func main() {
 
 	logger.Infof("Starting App server...")
 
-	appServer := appcore.NewServer(handshakeService)
+	appServer := appcore.NewServer(handshakeService, peerRegistry)
 
 	err := appServer.Start(common.AppPort)
 	if err != nil {

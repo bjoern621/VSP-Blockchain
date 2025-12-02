@@ -10,7 +10,7 @@ import (
 // It is implemented by the infrastructure layer.
 type HandshakeInitiator interface {
 	SendVersion(peerID peer.PeerID, info VersionInfo, addrPort netip.AddrPort)
-	SendVerack(peerID peer.PeerID, info VersionInfo)
+	SendVerack(peerID peer.PeerID, info VersionInfo, addrPort netip.AddrPort)
 	SendAck(peerID peer.PeerID)
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -20,12 +21,14 @@ type Server struct {
 	grpcServer   *grpc.Server
 	listener     net.Listener
 	handshakeAPI api.HandshakeAPI
+	peerRegistry *peerregistry.PeerRegistry
 }
 
 // NewServer creates a new external API server.
-func NewServer(handshakeAPI api.HandshakeAPI) *Server {
+func NewServer(handshakeAPI api.HandshakeAPI, peerRegistry *peerregistry.PeerRegistry) *Server {
 	return &Server{
 		handshakeAPI: handshakeAPI,
+		peerRegistry: peerRegistry,
 	}
 }
 
@@ -93,4 +96,23 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 	}
 	addr := s.listener.Addr().(*net.TCPAddr)
 	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
+}
+
+// GetPeerRegistry returns the current peer registry for debugging purposes.
+func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryRequest) (*pb.GetPeerRegistryResponse, error) {
+	entries := s.peerRegistry.GetAllEntries()
+
+	response := &pb.GetPeerRegistryResponse{
+		Entries: make([]*pb.PeerRegistryEntry, 0, len(entries)),
+	}
+
+	for peerID, addrPort := range entries {
+		response.Entries = append(response.Entries, &pb.PeerRegistryEntry{
+			PeerId:    string(peerID),
+			IpAddress: addrPort.Addr().AsSlice(),
+			Port:      uint32(addrPort.Port()),
+		})
+	}
+
+	return response, nil
 }

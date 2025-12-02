@@ -76,6 +76,8 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
 	info := versionInfoFromProto(req)
 
+	// TODO outbound address and inbound address into one peerid / entry, this entry has one grpcs conn. erlaubt zuordnung von antwort zu anfrage
+
 	s.connectionHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
 }
@@ -88,34 +90,42 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-func (c *Client) SendVersion(peerID peer.PeerID, info handshake.VersionInfo, addrPort netip.AddrPort) {
-	conn, err := grpc.NewClient(addrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo, remoteAddrPort netip.AddrPort) {
+	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Errorf("failed to connect to %s: %v", addrPort.String(), err)
+		logger.Errorf("failed to connect to %s: %v", remoteAddrPort.String(), err)
 		return
 	}
 
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			logger.Errorf("failed to close gRPC connection: %v", err)
-		}
-	}(conn)
-
-	c.peerRegistry.AddPeer(peerID, addrPort)
+	c.peerRegistry.AddPeer(peerID, remoteAddrPort, conn)
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
-	pbInfo := versionInfoToProto(info)
+	pbInfo := versionInfoToProto(localInfo)
 
 	_, err = client.Version(context.Background(), pbInfo)
 	if err != nil {
-		logger.Errorf("failed to send Version to %s: %v", addrPort.String(), err)
+		logger.Warnf("failed to send Version to %s: %v", remoteAddrPort.String(), err)
 	}
 }
 
-func (c *Client) SendVerack(peerID peer.PeerID, info handshake.VersionInfo) {
+func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo, remoteAddrPort netip.AddrPort) {
+	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Errorf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		return
+	}
 
+	c.peerRegistry.AddConnection(peerID, conn)
+
+	client := pb.NewConnectionEstablishmentClient(conn)
+
+	pbInfo := versionInfoToProto(localInfo)
+
+	_, err = client.Verack(context.Background(), pbInfo)
+	if err != nil {
+		logger.Warnf("failed to send Verack to %s: %v", peerID, err)
+	}
 }
 
 func (c *Client) SendAck(peerID peer.PeerID) {

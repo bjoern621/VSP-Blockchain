@@ -17,10 +17,6 @@ type HandshakeHandler interface {
 }
 
 func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
-	// Domain logic:
-	// 1. Validate version compatibility
-	// 2. Store peer info
-	// 3. Send Verack back to the peer (via MessageSender interface)
 	logger.Infof("Received Version from peer %s: %+v", peerID, info)
 
 	p, ok := h.peerStore.GetPeer(peerID)
@@ -46,7 +42,7 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
 	}
 
-	h.handshakeInitiator.SendVerack(peerID, versionInfo)
+	h.handshakeInitiator.SendVerack(peerID, versionInfo, info.ListeningEndpoint)
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
