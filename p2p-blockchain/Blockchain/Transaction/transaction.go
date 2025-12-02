@@ -28,7 +28,7 @@ func NewTransaction(
 
 	tx := fillInTransactionData(selected, amount, toPubKeyHash, privateKey, change)
 
-	if err := tx.SignTransaction(privateKey, selected); err != nil {
+	if err := tx.Sign(privateKey, selected); err != nil {
 		return nil, err
 	}
 
