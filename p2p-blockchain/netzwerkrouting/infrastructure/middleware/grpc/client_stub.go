@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 )
@@ -10,7 +9,6 @@ import (
 // This is the application stub / grpc proxy.
 // It contains no domain logic, only type transformation and delegation.
 type Client struct {
-	grpcClient          pb.ConnectionEstablishmentClient
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
