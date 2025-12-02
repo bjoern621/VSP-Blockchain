@@ -11,13 +11,17 @@ import (
 // HandshakeInitiator defines the interface for initiating a handshake with a peer.
 // It is implemented by the infrastructure layer.
 type HandshakeInitiator interface {
+	// SendVersion sends a Version message to the specified peer.
 	SendVersion(peerID peer.PeerID, info VersionInfo)
+	// SendVerack sends a Verack message to the specified peer.
 	SendVerack(peerID peer.PeerID, info VersionInfo)
+	// SendAck sends an Ack message to the specified peer.
 	SendAck(peerID peer.PeerID)
 }
 
 // HandshakeService interface for the API layer.
 type HandshakeServiceAPI interface {
+	// InitiateHandshake starts the handshake process with the given peer.
 	InitiateHandshake(peerID peer.PeerID)
 }
 
