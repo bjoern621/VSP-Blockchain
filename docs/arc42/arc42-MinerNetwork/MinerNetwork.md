@@ -52,7 +52,7 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 ## Stakeholder
 
-| Nummer | Rolle                            | Erwartungshaltung                                                                                                                                                                                                                                                               |
+| Nummer | Rolle                            |                                                                                                                                                                                                                                                      |
 | ------ | -------------------------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS). Der Featureumfang sollte entsprechend klein gewählt werden. Zudem sind die Überwindungskosten Geld auszegeben sehr hoch, wodurch eher Features entfallen, anstatt dass Geld ausgegeben wird. |
 | 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden.                                                                                                                             |
@@ -115,9 +115,13 @@ Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich s
 
 ## Technischer Kontext
 
-<div align="center">
-    <img src="images/business_context_technisch.drawio.svg" alt="Fachlicher Kontext"  height="250">
-</div>
+| Nachbar            | Input technische Schnittstellen | Output technische Schnittstellen                                                         |
+| ------------------ |--------------------------------|------------------------------------------------------------------------------------------|
+| Externer Miner     | gRPC                           | gRPC                                                                                     |
+| Externer Händler   | gRPC                           | gRPC                                                                                     |
+| REST-API           | gRPC                           | gRPC                                                                                     |
+
+
 
 # Lösungsstrategie
 
