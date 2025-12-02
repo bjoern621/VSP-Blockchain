@@ -36,9 +36,9 @@ func versionInfoFromProto(req *pb.VersionInfo) handshake.VersionInfo {
 		}
 	}
 
-	services := make([]handshake.ServiceType, len(req.SupportedServices))
+	services := make([]peer.ServiceType, len(req.SupportedServices))
 	for i, pbService := range req.SupportedServices {
-		services[i] = handshake.ServiceType(pbService)
+		services[i] = peer.ServiceType(pbService)
 	}
 
 	return handshake.VersionInfo{

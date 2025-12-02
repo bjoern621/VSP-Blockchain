@@ -16,7 +16,7 @@ func (s *PeerStore) GetPeer(id PeerID) (*Peer, bool) {
 }
 
 func (s *PeerStore) addPeer(peer *Peer) {
-	s.peers[peer.ID] = peer
+	s.peers[peer.id] = peer
 }
 
 func (s *PeerStore) RemovePeer(id PeerID) {

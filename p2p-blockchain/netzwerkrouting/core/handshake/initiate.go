@@ -19,7 +19,7 @@ func (h *HandshakeService) InitiateHandshake(addrPort netip.AddrPort) {
 
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,
-		SupportedServices: []ServiceType{ServiceType_Netzwerkrouting, ServiceType_BlockchainFull, ServiceType_Wallet, ServiceType_Miner},
+		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
 		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
 	}
 

@@ -24,13 +24,23 @@ const (
 	DirectionOutbound
 )
 
+type ServiceType int
+
+const (
+	ServiceType_Netzwerkrouting ServiceType = iota
+	ServiceType_BlockchainFull
+	ServiceType_BlockchainSimple
+	ServiceType_Wallet
+	ServiceType_Miner
+)
+
 // Peer represents a peer in the network.
 type Peer struct {
-	ID                PeerID
+	id                PeerID
 	Version           string
-	SupportedServices []string
+	SupportedServices []ServiceType
 	State             PeerConnectionState
-	Direction         Direction
+	direction         Direction
 }
 
 // NewPeer creates a new peer with a unique ID and adds it to the peer store.
@@ -38,11 +48,19 @@ type Peer struct {
 func (s *PeerStore) NewPeer(direction Direction) PeerID {
 	peerID := PeerID(uuid.NewString())
 	peer := &Peer{
-		ID:        peerID,
+		id:        peerID,
 		State:     0,
-		Direction: direction,
+		direction: direction,
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created", peerID)
 	return peerID
+}
+
+func (p *Peer) Direction() Direction {
+	return p.direction
+}
+
+func (p *Peer) ID() PeerID {
+	return p.id
 }

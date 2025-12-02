@@ -8,19 +8,9 @@ import (
 
 type VersionInfo struct {
 	Version           string
-	SupportedServices []ServiceType
+	SupportedServices []peer.ServiceType
 	ListeningEndpoint netip.AddrPort
 }
-
-type ServiceType int
-
-const (
-	ServiceType_Netzwerkrouting ServiceType = iota
-	ServiceType_BlockchainFull
-	ServiceType_BlockchainSimple
-	ServiceType_Wallet
-	ServiceType_Miner
-)
 
 // HandshakeService implements ConnectionHandler (for infrastructure) and HandshakeAPI (for api) with the actual domain logic.
 type HandshakeService struct {
@@ -28,7 +18,7 @@ type HandshakeService struct {
 	peerStore          *peer.PeerStore
 }
 
-// Compile-time check that HandshakeService implements specified interfaces
+// Compile-time check that HandshakeService implements specific interfaces
 var _ HandshakeHandler = (*HandshakeService)(nil)
 var _ api.HandshakeAPI = (*HandshakeService)(nil)
 
