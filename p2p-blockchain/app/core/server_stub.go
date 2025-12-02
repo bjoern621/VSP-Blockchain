@@ -34,7 +34,7 @@ func NewServer(handshakeAPI api.HandshakeAPI, peerRegistry *peerregistry.PeerReg
 
 // Start starts the external API gRPC server on the given port in a goroutine.
 func (s *Server) Start(port uint16) error {
-	addr := fmt.Sprintf(":%d", port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", addr, err)
