@@ -1,16 +1,15 @@
 package api
 
 import (
+	"fmt"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
-
-	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // HandshakeAPI is the external API for initiating connections.
 type HandshakeAPI interface {
-	InitiateHandshake(addrPort netip.AddrPort)
+	InitiateHandshake(addrPort netip.AddrPort) error
 }
 
 // PeerRegistry is implemented by the infrastructure layer to manage peer lookups.
@@ -34,12 +33,12 @@ func NewHandshakeAPIService(peerRegistry PeerRegistry, handshakeService handshak
 	}
 }
 
-func (s *HandshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) {
+func (s *HandshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
 	peerID, created := s.peerRegistry.GetOrCreateOutboundPeer(addrPort)
 	if !created {
-		logger.Infof("already connected/connecting to %s (peer %s), skipping", addrPort, peerID)
-		return
+		return fmt.Errorf("peer %s already exists, cannot initiate handshake", peerID)
 	}
 
 	s.handshakeService.InitiateHandshake(peerID)
+	return nil
 }

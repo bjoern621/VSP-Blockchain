@@ -81,7 +81,13 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 
 	addrPort := netip.AddrPortFrom(ip, port)
 
-	s.handshakeAPI.InitiateHandshake(addrPort)
+	err := s.handshakeAPI.InitiateHandshake(addrPort)
+	if err != nil {
+		return &pb.ConnectToResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to initiate handshake: %v", err),
+		}, nil
+	}
 
 	return &pb.ConnectToResponse{
 		Success:      true,
