@@ -17,8 +17,15 @@ func main() {
 
 	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
 
+	peerStore := peer.NewPeerStore()
+	peerRegistry := peerregistry.NewPeerRegistry(peerStore)
+	handshakeInitiator := grpc.NewClient(peerRegistry)
+	handshakeService := handshake.NewHandshakeService(handshakeInitiator, peerStore)
+
 	logger.Infof("Starting App server...")
-	appServer := appcore.NewServer()
+
+	appServer := appcore.NewServer(handshakeService)
+
 	err := appServer.Start(common.AppPort)
 	if err != nil {
 		logger.Warnf("couldn't start App server: %v", err)
@@ -31,11 +38,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	peerStore := peer.NewPeerStore()
-	peerRegistry := peerregistry.NewPeerRegistry(peerStore)
-	handshakeInitiator := grpc.NewClient(peerRegistry)
-	handshakeHandler := handshake.NewHandshakeService(handshakeInitiator, peerStore)
-	grpcServer := grpc.NewServer(handshakeHandler, peerRegistry)
+	grpcServer := grpc.NewServer(handshakeService, peerRegistry)
 
 	err = grpcServer.Start(common.P2PPort)
 	if err != nil {

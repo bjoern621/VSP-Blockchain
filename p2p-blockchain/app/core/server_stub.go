@@ -8,7 +8,7 @@ import (
 	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	netzwerkroutingCore "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -17,13 +17,16 @@ import (
 // Server represents the app gRPC server for external local systems.
 type Server struct {
 	pb.UnimplementedAppServiceServer
-	grpcServer *grpc.Server
-	listener   net.Listener
+	grpcServer   *grpc.Server
+	listener     net.Listener
+	handshakeAPI api.HandshakeAPI
 }
 
 // NewServer creates a new external API server.
-func NewServer() *Server {
-	return &Server{}
+func NewServer(handshakeAPI api.HandshakeAPI) *Server {
+	return &Server{
+		handshakeAPI: handshakeAPI,
+	}
 }
 
 // Start starts the external API gRPC server on the given port in a goroutine.
@@ -72,13 +75,9 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 		}, nil
 	}
 
-	err := netzwerkroutingCore.ConnectTo(ctx, ip, port)
-	if err != nil {
-		return &pb.ConnectToResponse{
-			Success:      false,
-			ErrorMessage: err.Error(),
-		}, nil
-	}
+	addrPort := netip.AddrPortFrom(ip, port)
+
+	s.handshakeAPI.InitiateHandshake(addrPort)
 
 	return &pb.ConnectToResponse{
 		Success:      true,
