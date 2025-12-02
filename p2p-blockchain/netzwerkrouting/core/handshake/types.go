@@ -22,7 +22,7 @@ const (
 	ServiceType_Miner
 )
 
-// HandshakeService implements ConnectionHandler with the actual domain logic.
+// HandshakeService implements ConnectionHandler (for infrastructure) and HandshakeAPI (for api) with the actual domain logic.
 type HandshakeService struct {
 	handshakeInitiator HandshakeInitiator
 	peerStore          *peer.PeerStore
