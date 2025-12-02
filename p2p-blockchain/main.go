@@ -3,10 +3,11 @@ package main
 import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -18,13 +19,14 @@ func main() {
 	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
 
 	peerStore := peer.NewPeerStore()
-	peerRegistry := peerregistry.NewPeerRegistry(peerStore)
-	handshakeInitiator := grpc.NewClient(peerRegistry)
-	handshakeService := handshake.NewHandshakeService(handshakeInitiator, peerStore)
+	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
+	grpcClient := grpc.NewClient(networkInfoRegistry)
+	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
+	handshakeAPIService := api.NewHandshakeAPIService(networkInfoRegistry, handshakeService)
 
 	logger.Infof("Starting App server...")
 
-	appServer := appcore.NewServer(handshakeService, peerRegistry)
+	appServer := appcore.NewServer(handshakeAPIService, networkInfoRegistry)
 
 	err := appServer.Start(common.AppPort)
 	if err != nil {
@@ -38,7 +40,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, peerRegistry)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
 
 	err = grpcServer.Start(common.P2PPort)
 	if err != nil {

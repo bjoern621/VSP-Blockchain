@@ -25,12 +25,11 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 		return
 	}
 
-	if p.State != peer.StateFirstSeen {
+	if p.State != peer.StateNew {
 		logger.Warnf("peer %s sent Version message in invalid state %v", peerID, p.State)
 		return
 	}
 
-	p.State = peer.StateVersionReceived
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices
 
@@ -42,17 +41,45 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
 	}
 
-	h.handshakeInitiator.SendVerack(peerID, versionInfo, info.ListeningEndpoint)
+	p.State = peer.StateAwaitingAck
+
+	h.handshakeInitiator.SendVerack(peerID, versionInfo)
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
-	// Domain logic:
-	// 1. Validate the verack
-	// 2. Send Ack back to complete the handshake
 	logger.Infof("Received Verack from peer %s: %+v", peerID, info)
+
+	p, ok := h.peerStore.GetPeer(peerID)
+	if !ok {
+		logger.Warnf("unknown peer %s sent Verack message", peerID)
+		return
+	}
+
+	if p.State != peer.StateAwaitingVerack {
+		logger.Warnf("peer %s sent Verack message in invalid state %v", peerID, p.State)
+		return
+	}
+
+	p.State = peer.StateConnected
+	p.Version = info.Version
+	p.SupportedServices = info.SupportedServices
+
+	h.handshakeInitiator.SendAck(peerID)
 }
 
 func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
-	// Domain logic:
-	// 1. Mark connection as fully established
+	logger.Infof("Received Ack from peer %s", peerID)
+
+	p, ok := h.peerStore.GetPeer(peerID)
+	if !ok {
+		logger.Warnf("unknown peer %s sent Ack message", peerID)
+		return
+	}
+
+	if p.State != peer.StateAwaitingAck {
+		logger.Warnf("peer %s sent Ack message in invalid state %v", peerID, p.State)
+		return
+	}
+
+	p.State = peer.StateConnected
 }

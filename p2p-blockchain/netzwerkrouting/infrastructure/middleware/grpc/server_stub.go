@@ -8,7 +8,7 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -19,16 +19,16 @@ import (
 // It contains no domain logic, only type transformation and delegation.
 type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
-	grpcServer        *grpc.Server
-	listener          net.Listener
-	connectionHandler handshake.HandshakeHandler
-	peerRegistry      *peerregistry.PeerRegistry
+	grpcServer          *grpc.Server
+	listener            net.Listener
+	connectionHandler   handshake.HandshakeHandler
+	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
-func NewServer(handshakeHandler handshake.HandshakeHandler, peerRegistry *peerregistry.PeerRegistry) *Server {
+func NewServer(handshakeHandler handshake.HandshakeHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
 	return &Server{
-		connectionHandler: handshakeHandler,
-		peerRegistry:      peerRegistry,
+		connectionHandler:   handshakeHandler,
+		networkInfoRegistry: networkInfoRegistry,
 	}
 }
 

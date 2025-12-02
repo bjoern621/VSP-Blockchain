@@ -9,7 +9,8 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/peerregistry"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -18,17 +19,17 @@ import (
 // Server represents the app gRPC server for external local systems.
 type Server struct {
 	pb.UnimplementedAppServiceServer
-	grpcServer   *grpc.Server
-	listener     net.Listener
-	handshakeAPI api.HandshakeAPI
-	peerRegistry *peerregistry.PeerRegistry
+	grpcServer          *grpc.Server
+	listener            net.Listener
+	handshakeAPI        api.HandshakeAPI
+	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
 // NewServer creates a new external API server.
-func NewServer(handshakeAPI api.HandshakeAPI, peerRegistry *peerregistry.PeerRegistry) *Server {
+func NewServer(handshakeAPI api.HandshakeAPI, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
 	return &Server{
-		handshakeAPI: handshakeAPI,
-		peerRegistry: peerRegistry,
+		handshakeAPI:        handshakeAPI,
+		networkInfoRegistry: networkInfoRegistry,
 	}
 }
 
@@ -100,19 +101,92 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 
 // GetPeerRegistry returns the current peer registry for debugging purposes.
 func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryRequest) (*pb.GetPeerRegistryResponse, error) {
-	entries := s.peerRegistry.GetAllEntries()
+	allInfo := s.networkInfoRegistry.GetAllNetworkInfo()
 
 	response := &pb.GetPeerRegistryResponse{
-		Entries: make([]*pb.PeerRegistryEntry, 0, len(entries)),
+		Entries: make([]*pb.PeerRegistryEntry, 0, len(allInfo)),
 	}
 
-	for peerID, addrPort := range entries {
-		response.Entries = append(response.Entries, &pb.PeerRegistryEntry{
-			PeerId:    string(peerID),
-			IpAddress: addrPort.Addr().AsSlice(),
-			Port:      uint32(addrPort.Port()),
-		})
+	for _, info := range allInfo {
+		entry := &pb.PeerRegistryEntry{
+			PeerId:                string(info.PeerID),
+			HasOutboundConnection: info.HasOutboundConn,
+		}
+
+		// Listening endpoint
+		if info.ListeningEndpoint.IsValid() {
+			entry.ListeningEndpoint = &pb.Endpoint{
+				IpAddress:     info.ListeningEndpoint.Addr().AsSlice(),
+				ListeningPort: uint32(info.ListeningEndpoint.Port()),
+			}
+		}
+
+		// Inbound addresses
+		for _, addr := range info.InboundAddresses {
+			entry.InboundAddresses = append(entry.InboundAddresses, &pb.Endpoint{
+				IpAddress:     addr.Addr().AsSlice(),
+				ListeningPort: uint32(addr.Port()),
+			})
+		}
+
+		// Peer info from PeerStore
+		if info.Peer != nil {
+			entry.Version = info.Peer.Version
+			entry.ConnectionState = connectionStateToString(info.Peer.State)
+			entry.Direction = directionToString(info.Peer.Direction)
+
+			for _, svc := range info.Peer.SupportedServices {
+				entry.SupportedServices = append(entry.SupportedServices, serviceTypeToString(svc))
+			}
+		}
+
+		response.Entries = append(response.Entries, entry)
 	}
 
 	return response, nil
+}
+
+func connectionStateToString(state peer.PeerConnectionState) string {
+	switch state {
+	case peer.StateNew:
+		return "new"
+	case peer.StateAwaitingVerack:
+		return "awaiting_verack"
+	case peer.StateAwaitingAck:
+		return "awaiting_ack"
+	case peer.StateConnected:
+		return "connected"
+	default:
+		return "unknown"
+	}
+}
+
+func directionToString(dir peer.Direction) string {
+	switch dir {
+	case peer.DirectionInbound:
+		return "inbound"
+	case peer.DirectionOutbound:
+		return "outbound"
+	case peer.DirectionBoth:
+		return "both"
+	default:
+		return "unknown"
+	}
+}
+
+func serviceTypeToString(svc peer.ServiceType) string {
+	switch svc {
+	case peer.ServiceType_Netzwerkrouting:
+		return "netzwerkrouting"
+	case peer.ServiceType_BlockchainFull:
+		return "blockchain_full"
+	case peer.ServiceType_BlockchainSimple:
+		return "blockchain_simple"
+	case peer.ServiceType_Wallet:
+		return "wallet"
+	case peer.ServiceType_Miner:
+		return "miner"
+	default:
+		return "unknown"
+	}
 }

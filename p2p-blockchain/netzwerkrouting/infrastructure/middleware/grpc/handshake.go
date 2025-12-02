@@ -63,41 +63,53 @@ func versionInfoToProto(info handshake.VersionInfo) *pb.VersionInfo {
 }
 
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	peerAddrPort := getPeerAddr(ctx)
-	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
+	inboundAddr := getPeerAddr(ctx)
 	info := versionInfoFromProto(req)
+
+	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, info.ListeningEndpoint)
+	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
+	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
 	s.connectionHandler.HandleVersion(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	peerAddrPort := getPeerAddr(ctx)
-	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
+	inboundAddr := getPeerAddr(ctx)
 	info := versionInfoFromProto(req)
 
-	// TODO outbound address and inbound address into one peerid / entry, this entry has one grpcs conn. erlaubt zuordnung von antwort zu anfrage
+	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, info.ListeningEndpoint)
+	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
+	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
 	s.connectionHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	peerAddrPort := getPeerAddr(ctx)
-	peerID := s.peerRegistry.GetOrCreatePeerID(peerAddrPort)
+	inboundAddr := getPeerAddr(ctx)
+
+	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, netip.AddrPort{})
+	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 
 	s.connectionHandler.HandleAck(peerID)
 	return &emptypb.Empty{}, nil
 }
 
-func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo, remoteAddrPort netip.AddrPort) {
-	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logger.Errorf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
+	if !ok {
+		logger.Warnf("failed to send Version: no listening endpoint for peer %s", peerID)
 		return
 	}
 
-	c.peerRegistry.AddPeer(peerID, remoteAddrPort, conn)
+	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		return
+	}
+
+	c.networkInfoRegistry.SetConnection(peerID, conn)
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
@@ -109,14 +121,20 @@ func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo
 	}
 }
 
-func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo, remoteAddrPort netip.AddrPort) {
-	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logger.Errorf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
+	if !ok {
+		logger.Warnf("failed to send Verack: no listening endpoint for peer %s", peerID)
 		return
 	}
 
-	c.peerRegistry.AddConnection(peerID, conn)
+	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		return
+	}
+
+	c.networkInfoRegistry.SetConnection(peerID, conn)
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
@@ -129,5 +147,16 @@ func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo,
 }
 
 func (c *Client) SendAck(peerID peer.PeerID) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
+	if !ok {
+		logger.Warnf("failed to send Ack: no connection for peer %s", peerID)
+		return
+	}
 
+	client := pb.NewConnectionEstablishmentClient(conn)
+
+	_, err := client.Ack(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		logger.Warnf("failed to send Ack to peer %s: %v", peerID, err)
+	}
 }

@@ -2,7 +2,6 @@ package handshake
 
 import (
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
@@ -20,7 +19,7 @@ type HandshakeService struct {
 
 // Compile-time check that HandshakeService implements specific interfaces
 var _ HandshakeHandler = (*HandshakeService)(nil)
-var _ api.HandshakeAPI = (*HandshakeService)(nil)
+var _ HandshakeServiceAPI = (*HandshakeService)(nil)
 
 func NewHandshakeService(handshakeInitiator HandshakeInitiator, peerStore *peer.PeerStore) *HandshakeService {
 	return &HandshakeService{
