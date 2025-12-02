@@ -19,6 +19,9 @@ service AppService {
     //  - Node attempts to connect to the specified peer.
     //  - Returns success/failure status.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse);
+
+    // GetPeerRegistry returns the current peer registry for debugging purposes.
+    rpc GetPeerRegistry(GetPeerRegistryRequest) returns (GetPeerRegistryResponse);
 }
 
 message ConnectToRequest {
@@ -30,4 +33,16 @@ message ConnectToRequest {
 message ConnectToResponse {
     bool success = 1;
     string error_message = 2;
+}
+
+message GetPeerRegistryRequest {}
+
+message GetPeerRegistryResponse {
+    repeated PeerRegistryEntry entries = 1;
+}
+
+message PeerRegistryEntry {
+    string peer_id = 1;
+    bytes ip_address = 2;
+    uint32 port = 3;
 }
