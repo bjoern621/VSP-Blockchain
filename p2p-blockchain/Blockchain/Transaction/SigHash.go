@@ -62,17 +62,17 @@ func addInput(buf *bytes.Buffer, referenced Output, in Input, toBeSigned bool) {
 	writeUint32(buf, in.Sequence)
 }
 
-/*
-* Helpers are being used to ignore Error for Write() since bytes.Buffer doesnt fail
- */
+// Helper is used to ignore Error for binary.Write() since bytes.Buffer doesnt fail
 func writeBytes(buf *bytes.Buffer, data []byte) {
 	_, _ = buf.Write(data)
 }
 
+// Helper is used to ignore Error for binary.Write() since bytes.Buffer doesnt fail
 func writeUint32(buf *bytes.Buffer, val uint32) {
 	_ = binary.Write(buf, binary.LittleEndian, val)
 }
 
+// Helper is used to ignore Error for binary.Write() since bytes.Buffer doesnt fail
 func writeUint64(buf *bytes.Buffer, val uint64) {
 	_ = binary.Write(buf, binary.LittleEndian, val)
 }
