@@ -168,7 +168,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ## Top-Level-Architekturentscheidungen
 - **Architekturmuster:**  
-  Mehrschichtige Client-Server Architektur mit einem Frontend für die Nutzer (in diesem Fall wird nur eine REST Schnittstelle angeboten, es könnte aber eine Frontend Anwendung angeboten werden), einem Backend, welches die Anfragen der Nutzer bearbeitet und an eine lokalen V$Goin Node weiterleitet, welches die Anfragen bearbeitet und an die restlichen Knoten im System weiterleitet.
+  Mehrschichtige Client-Server Architektur mit einer Facade für REST Request von Nutzern, einem Backend, welches die Anfragen der Nutzer annimmt und an eine lokalen V$Goin Node weiterleitet, welches die Anfragen verarbeitet und an die restlichen Knoten im System weiterleitet.
 
 
 ---
@@ -336,7 +336,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 - [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)
 
 #### Eingaben / Ausgaben
-- Eingaben: Transaktionendaten, Wallet Adressen, Private Keys
+- Eingaben: Transaktionsdaten, Wallet Adressen, Private Keys
 - Ausgaben: normalisierte Ergebnisse aus der Node
 
 ## Ebene 2
@@ -476,7 +476,6 @@ Zentrale fachliche Objekte sind:
 Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die lokale V$Goin Node ab.  
 Temporäre Daten:
 
-- Kurzzeit-Caches im Adapter und Backend
 - JSON als API-Format, binäre Formate der V$Goin Blockchain
 
 ### 3.2 Formatkonzept
