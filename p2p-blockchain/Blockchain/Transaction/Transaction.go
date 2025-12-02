@@ -50,7 +50,7 @@ func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHa
 }
 
 func (tx *Transaction) addChange(change uint64, privateKey *ecdsa.PrivateKey) {
-	compressedPubKey := elliptic.MarshalCompressed(privateKey.Curve, privateKey.PublicKey.X, privateKey.PublicKey.Y)
+	compressedPubKey := elliptic.MarshalCompressed(privateKey.Curve, privateKey.X, privateKey.Y)
 	var pubKey PubKey
 	copy(pubKey[:], compressedPubKey)
 	ownAddress := Hash160(pubKey)
