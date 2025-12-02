@@ -733,23 +733,37 @@ Das SHA256 Verfahren wird auch heute (2025) noch als sicher angesehen.
 
 ## Aufbau Block und Transaktion
 ### Block
-Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das zweifache Hashen des Block-Headers
+Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das Hashen des Block-Headers
 erstellt werden und identifiziert einen Block eindeutig.
 Ein Block besteht aus einem Block-Header und einer List von Transaktionen.
 Ein Block-Header besteht aus:
-- Hash des vorherigen Blocks
-- Merkle-Root der Transaktionen
-- Zeitstempel
-- Nonce
-- Zeitstempel
+
+| Name                          | Datentyp |
+|-------------------------------|----------|
+| Hash des vorherigen Blocks    | 32 Byte  |
+| Merkle-Root der Transaktionen | 32 Byte  |
+| Zeitstempel                   | long     |
+| Nonce                         | UInt     |
+| Schwierigkeitsziel            | UInt     |
+
+Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenbehaftete 64-Bit-Ganzzahl.
+Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 ### Transaktion
 Eine Transaktion besteht aus mehreren Ein- und Ausgaben sowie einer Lock-Time. TODO: @Bjarne: Was genau macht die LockTime?
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
-Ein Transaktions-Eingang besteht aus dem Hash der vorherigen Transaktion, dem Index es Ausgangs der vorherigen Transaktion, 
-einem Signatur Script und einer Sequenznummer.
+Ein Transaktions-Eingang besteht aus folgendem:
 
-Transaktions-Ausgänge bestehen aus dem Wert der kleinsten teilbaren Einheit sowie einer Signatur, welche bestätigt, dass dieser
+| Name                                      | Datentyp          |
+|-------------------------------------------|-------------------|
+| vorheriger Transkations-Hash              | 32 Byte           |
+| Output Index (der vorherigen Transaktion) | UInt              |
+| Signatur                                  | TODO              |
+| Sequence                                  | Brauchen wir die? |
+
+Für die Datentypen, gilt das gleiche, wie bereits für die des Block-Headers.
+
+Transaktions-Ausgänge bestehen aus dem Wert (Long) der kleinsten teilbaren Einheit sowie einer Signatur (TODO), welche bestätigt, dass dieser
 Output tatsächlich dem Nutzer gehört.
 
 ## _\<Konzept n\>_
