@@ -728,47 +728,98 @@ _\<Erklärung\>_
 
 # Architekturentscheidungen
 
-## Serialisierung
+## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
+### Kontext
+Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielte eine Reihe technischer und organisatorischer
+Faktoren eine Rolle. Die Entscheidung musste sicherstellen, dass Daten zuverlässig beschrieben, automatisch generiert, typsicher verarbeitet und effizient übertragen werden können.
+Zudem sollte die Lösung gut in bestehende Entwicklungsprozesse passen und möglichst geringe Einarbeitungsaufwände verursachen.
 
-Um Daten in RPC Calls zu Serialisieren, wurde sich für Protobuf entschieden. Für den Einsatz von Protobuf sprachen folgende Gründe:
+### Entscheidung
+Es wurde entschieden, Protobuf [(Protocol Buffers)](https://protobuf.dev/) für die Serialisierung der Daten in RPC-Kommunikation einzusetzen.
 
--   Durch IDL Definition maschinenlesbar → automatisches generieren von aktuellen Datentypen in Pipeline möglich
--   Typsicherheit (Reduziert Fehler zur Laufzeit)
--   Kompaktes Datenformat (Kleiner als bei XML/JSON)
--   Einige Entwickler im Team haben bereits mit Protobuf gearbeitet → weniger Einarbeitungszeit
--   Protobuf ist ein weitverbreiteter Standard unter unterstützt somit das Ziel der Offenheit
+### Status
+Akzeptiert
 
-Die verwendeten Datentypen werden in einer [IDL beschrieben](/p2p-blockchain/proto/). Dadurch können die verwendeten Datentypen
-automatisch generiert werden. Somit lassen sich von uns verwendete Daten typsicher serialisieren, über das Netzwerk übertragen und wieder deserialisieren.
+### Konsequenzen
+Positiv:
+- IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
+- Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
+- Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
+- Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
+- Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
 
-## Kommunikation
+Negativ:
+- Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
 
-### Kommunikationsart
+### Auswirkungen
+Die Entscheidung ermöglicht es, dass die verwendeten Daten typsicher serialisiert, über das Netzwerk übertragen und wieder deserialisiert werden können.
+Dadurch wird eine robuste und effiziente RPC-Kommunikation sichergestellt.
 
-Die Kommunikation zwischen Nodes verläuft asynchron. Da in unserer Anwendung mit mehreren Clients kommuniziert werden muss,
-ist es wichtig, dass man nicht auf die Antwort eines einzelnen warten muss, weil eine Antwort nie garantiert ist.
+## ADR 2: Entscheidung für asynchrone, transiente und zustandslose Kommunikation
+### Kontext
+Die Kommunikation zwischen den Nodes der Anwendung erfolgt in einem dezentralen P2P Netzwerk, in dem mehrere Clients gleichzeitig beteiligt sind.
+Da Antwortzeiten aufgrund geografischer Distanzen, unterschiedlicher Hardware-Ressourcen oder möglicher Ausfälle einzelner Nodes nicht garantiert werden können,
+darf die Verarbeitung nicht von der Antwort eines einzelnen Nodes abhängen.
+Zusätzlich arbeitet das System transient, d. h. Nachrichten werden nicht dauerhaft gespeichert, und der Zustand der Blockchain wird lediglich zur Laufzeit im Speicher gehalten.
 
-Dieser Ansatz erhöht die Unabhängigkeit von der Auslastung oder dem Ausfall einzelner Nodes und trägt zur Fehlertoleranz bei. In einem dezentralen Netzwerk variieren die Antwortzeiten zwangsläufig, bedingt durch geografische Distanzen oder unterschiedliche Hardware-Ressourcen. Dank der asynchronen Verarbeitung kann ein Node seine Arbeit fortsetzen, während Antworten anderer Nodes noch ausstehen.
+### Entscheidung
 
-Zusätzlich verbessert die asynchrone Kommunikation die Skalierbarkeit: Eine steigende Anzahl von Nodes führt nicht zu linearen Wartezeiten, da Prozesse parallel und entkoppelt ablaufen können.
+Es wurde entschieden, dass die Kommunikation zwischen den Nodes asynchron, transient und zustandslos erfolgt.
 
-Weiterhin arbeitet das System transient. Nachrichten werden nicht dauerhaft gespeichert. Der Zustand der Blockchain wird in unserer Implementierung
-nur zur Laufzeit im Speicher gehalten.
+### Status
+Akzeptiert
 
-Abschließend ist zu sagen, dass die Kommunikation zustandslos erfolgt. Dies erleichtert die Implementierung und ermöglicht eine leichtere Skalierung.
+### Konsequenzen
+Positive Konsequenzen:
+- Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
+- Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
+- Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
+- Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
+- Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
+- Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
 
-### RPC Framework
+Negative Konsequenzen:
+- Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
+- Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
 
-Wir verwenden gRPC zum Aufrufen von entfernten Funktionen. Dabei überträgt gRPC Nachrichten zwischen Nodes. gRPC verwendet Protobuf, wodurch Nachrichten effizient serialisiert werden, was die zu übertragende Nachrichtengröße reduziert.
-Weiter können Client und Server Stubs automatisch generiert werden.
-Durch die Nutzung einer IDL gibt es eine klare Trennung zwischen Schnittstelle und Application.
-Ebenfalls nutzt gRPC HTTP/2 Verbindungen, wodurch die Latenz gering gehalten werden kann. gRPC garantiert eine vollständige und reihenfolge gesicherte Übertragung der Nachrichten.
-Somit ist garantiert, dass die Daten korrekt bei anderen Nodes ankommen.
-Folglich entfällt der Aufwand für uns in der Implementierung zu prüfen, ob Daten vollständig und in der korrekten Reihenfolge übertragen wurden.
-Dies ist besonders relevant, da in einem Blockchainsystem die Korrektheit der Daten durch Hashes sichergestellt wird. Durch die Nutzung von gRPC können wir also davon ausgehen, dass die Übertragung fehlerfrei ist, sollte kein Fehler auftreten.
-gRPC bietet ebenfalls gute Unterstützung zum Verschlüsseln der Übertragungen, wodurch die Sicherheit erhöht werden kann.
+### Auswirkungen
+Durch die asynchrone und zustandslose Kommunikation bleibt das System trotz variierender Antwortzeiten funktionsfähig, skalierbar und fehlertolerant.
+Nodes können unabhängig voneinander operieren, ohne auf Antworten warten zu müssen, und der Fakt, dass das System transient/zustandslose ist vereinfacht die Verarbeitung und Implementierung.
 
-Abschließend gilt, dass gRPC ein weitverbreiteter, offener Standard ist, was das Ziel der Offenheit erhöht.
+## ADR 3: Entscheidung für Nutzung von gRPC als RPC Framework zur Kommunikation der Middleware
+### Kontext
+Für die Kommunikation zwischen Nodes müssen entfernte Funktionen aufgerufen und Nachrichten zuverlässig, effizient und sicher übertragen werden.
+Die gewählte Technologie soll eine klare Schnittstellentrennung, geringe Latenz, garantierte Reihenfolge der Nachrichten und Unterstützung für Verschlüsselung bieten.
+In einem Blockchainsystem ist die Korrektheit und Vollständigkeit der Datenübertragung besonders kritisch, da Daten über Hashes validiert werden.
+Somit ist eine Übertragungstechnologie erforderlich, die diese Anforderungen zuverlässig erfüllt.
+
+### Entscheidung
+Es wurde sich entschieden, [gRPC](https://grpc.io/) als RPC Framework einzusetzen.
+
+### Status
+Akzeptiert
+
+### Konsequenzen
+Positive Konsequenzen:
+- Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
+- Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
+- Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
+- Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
+- Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
+- Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
+- Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
+- Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert. 
+
+Negative Konsequenzen:
+- Abhängigkeit vom gRPC Tool
+- Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
+
+### Auswirkung
+Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher und zuverlässig umgesetzt. Die garantierte Reihenfolge und Vollständigkeit der
+Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
+Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
 
 # Qualitätsanforderungen
 
