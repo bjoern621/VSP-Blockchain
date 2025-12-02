@@ -852,65 +852,35 @@ In diesem Abschnitt werden weitere Details und zusätzliche Qualitätsanforderun
 Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokuments in [Qualitätsziele](#qualitätsziele) definiert.
 
 Resource Sharing  
-Ein weiteeres grundlegendes Ziel verteilter Systeme ist die gemeinsame Nutzung von Ressourcen. Im P2P-Netzwerk wird die Rechenleistung zum Validieren von Transaktionen und Mining von Blöcken auf alle Miner verteilt. Ebenso wird die Speicherung der Blockchain auf mehrere Nodes aufgeteilt. Durch diese Verteilung wird verhindert, dass einzelne Knoten überlastet werden und das Netzwerk bleibt auch bei hoher Last funktionsfähig. Resource Sharing ist eng mit der Skalierbarkeit verknüpft und wird z.&nbsp;B. durch den [Registry Crawler](#registry-crawler-blackbox) aktiv unterstützt, der Verbindungsanfragen gleichmäßig auf Nodes verteilt.
+Ein weiteres grundlegendes Ziel verteilter Systeme ist die gemeinsame Nutzung von Ressourcen. Im P2P-Netzwerk wird die Rechenleistung zum Validieren von Transaktionen und Mining von Blöcken auf alle Miner verteilt. Ebenso wird die Speicherung der Blockchain auf mehrere Nodes aufgeteilt. Durch diese Verteilung wird verhindert, dass einzelne Knoten überlastet werden und das Netzwerk bleibt auch bei hoher Last funktionsfähig. Resource Sharing ist eng mit der Skalierbarkeit verknüpft und wird z.&nbsp;B. durch den [Registry Crawler](#registry-crawler-blackbox) aktiv unterstützt, der Verbindungsanfragen gleichmäßig auf Nodes verteilt.
 
-Die folgende Übersicht kategorisiert die Qualitätsanforderungen nach dem Q42-Qualitätsmodell.
+Die folgende Übersicht kategorisiert die Qualitätsanforderungen nach dem [Q42-Qualitätsmodell](https://quality.arc42.org/).
 
 | Kategorie | Beschreibung                                                                                                                                                                                   |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Efficient | Das System muss Anfragen innerhalb akzeptabler Zeitgrenzen bearbeiten. Der Speicher- und CPU-Verbrauch muss innerhalb der ICC-Ressourcenquoten bleiben.                                        |
-| Flexible  | Die Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) müssen weitgehend unabhängig voneinander nutzbar sein.                                                                            |
+| Flexible  | Die Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) müssen weitgehend unabhängig voneinander nutzbar sein. Dies erlaubt eine flexible Nutzung je nach Bedarf des Nutzers.             |
 | Reliable  | Das Netzwerk muss auch bei Ausfall einzelner Nodes funktionsfähig bleiben.                                                                                                                     |
 | Secure    | Die Blockchain ist durch kryptographische Verfahren (Hashing, digitale Signaturen) gegen Manipulation geschützt. Transaktionen können nur vom Besitzer der privaten Schlüssel erstellt werden. |
-| Usable    | Akteure (Händler / Miner) sollen das System so nutzen können, als ob dieses nur aus einem Knoten bestehen würde (Verteilungstransparenz). Die Blockchain-Synchronisation erfolgt automatisch.  |
+| Usable    | Das System soll einfach sein und gut für Nutzer dokumentiert. Die grundlegenden Funktionalitäten (siehe [Use Cases](#aufgabenstellung)) sollen alle erüllt sein.                               |
+
+Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größere Beachtung geschenkt werden.
 
 ## Qualitätsszenarien
 
-Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und machen sie messbar. Jedes Szenario beschreibt eine Situation und ein messbares Akzeptanzkriterium.
+Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt.
 
-### Skalierbarkeit
-
-| ID  | Szenario                                                                                                            | Akzeptanzkriterium                                                                                             |
-| --- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| QS- | 50 Nodes treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau). | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden. Normale Bedingungen vorausgesetzt. |
-| QS- | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                           | Der Block erreicht 90% aller Nodes innerhalb von 10 Sekunden. Normale Bedingungen vorausgesetzt.               |
-|     |
-
-### Verteilungstransparenz
-
-| ID  | Szenario                                                             | Akzeptanzkriterium                                                                                                                              |
-| --- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| QS- | Ein Händler sendet eine Transaktion an das Netzwerk.                 | Die Transaktion wird unabhängig davon, mit welcher Node der Händler verbunden ist, an den Mempool propagiert.                                   |
-| QS- | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk. | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Der Nutzer muss keine manuelle Synchronisation anstoßen. |
-
-### Offenheit
-
-| ID  | Szenario                                                                                                                               | Akzeptanzkriterium                                                                                                                             |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| QS- | Ein externer Entwickler möchte eine eigene Node-Implementierung erstellen.                                                             | Die Protobuf-Definitionen und Dokumentation ermöglichen es dem Entwickler, innerhalb eines Arbeitstages eine lauffähige Verbindung aufzubauen. |
-| QS- | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar.                                                                                   |
-
-### Resource Sharing
-
-| ID  | Szenario                                                                        | Akzeptanzkriterium                                                                                                   |
-| --- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| QS- | 10 Miner sind im Netzwerk aktiv und suchen parallel nach gültigen Blöcken.      | Die Rechenleistung wird auf alle Miner verteilt. Kein Miner hat einen systematischen Vorteil.                        |
-| QS- | Der [Registry Crawler](#registry-crawler-blackbox) aktualisiert die Peer-Liste. | Die Peer-Liste enthält eine rotierte Auswahl von Nodes, sodass neue Verbindungsanfragen gleichmäßig verteilt werden. |
-| QS- | Eine SPV Node benötigt Blockchain-Daten zur Verifizierung einer Transaktion.    | Die Anfragen werden an Full Nodes verteilt. Einzelne Full Nodes werden nicht mit Anfragen überflutet.                |
-
-### Verständlichkeit
-
-| ID  | Szenario                               | Akzeptanzkriterium                                                                                         |
-| --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| QS- | Ein Reviewer prüft eine Code-Änderung. | Die Änderung ist durch Kommentare und Dokumentation nachvollziehbar. Go Best Practices wurden eingehalten. |
-
-### Fehlerszenarien
-
-| ID  | Szenario                                                       | Akzeptanzkriterium                                                                                                             |
-| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| QS- | Eine Node empfängt eine malformed Nachricht.                   | Die Node sendet eine `reject`-Nachricht mit `REJECT_MALFORMED` und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen. |
-| QS- | Eine Node empfängt einen Block mit ungültigem Proof-of-Work.   | Der Block wird abgelehnt (`reject` mit `REJECT_INVALID`) und der Zustand der Blockchain ändert sich nicht.                     |
-| QS- | 5 % der Nodes verlassen das Netzwerk zeitgleich durch Absturz. | Die verbleibenden Nodes können weiterhin alle Anforderungen erfüllen.                                                          |
+| ID   | Szenario                                                                                                                               | Akzeptanzkriterium                                                                                                                              | Relevante Qualitätsanforderungen                                       |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).         | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                     | Efficient > Scalable                                                   |
+| QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                              | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                           | Efficient > Scalable<br/>Efficient > Responsive                        |
+| QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                   | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Der Nutzer muss keine manuelle Synchronisation anstoßen. | Usable > Self-Explanatory<br/>Reliable > Autonomous                    |
+| QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar.                                                                                    | Flexible > Modular<br/>Flexible > Composable                           |
+| QS-5 | 10 Miner sind im Netzwerk aktiv und suchen parallel nach gültigen Blöcken.                                                             | Die Rechenleistung wird auf alle Miner verteilt.                                                                                                | Efficient > Resource-Efficient<br/>Reliable > Fair                     |
+| QS-6 | Eine SPV Node benötigt Blockchain-Daten zur Verifizierung einer Transaktion.                                                           | Die Anfragen werden an Full Nodes verteilt. Einzelne Full Nodes werden nicht mit Anfragen überflutet.                                           | Efficient > Resource-Efficient<br/>Reliable > Robust                   |
+| QS-7 | Ein Reviewer prüft eine Code-Änderung.                                                                                                 | Die Änderung ist durch Kommentare und Dokumentation nachvollziehbar. Go Best Practices wurden eingehalten.                                      | Usable > Learnable<br/>Flexible > Maintainable                         |
+| QS-8 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                 | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                         | Reliable > Fault-Tolerant<br/>Reliable > Robust<br/>Secure > Integrity |
+| QS-9 | Gleichmäßig verteilte 5 % der Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                      | Die verbleibenden Nodes können weiterhin alle Anforderungen erfüllen.                                                                           | Reliable > Resilient<br/>Reliable > Fault-Tolerant                     |
 
 # Risiken und technische Schulden
 
