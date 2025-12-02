@@ -9,7 +9,8 @@ import (
 	"math/big"
 )
 
-func (tx *Transaction) SignTransaction(privateKey *ecdsa.PrivateKey, utxos []UTXO) error {
+// Sign calculates the Signature for all Inputs in the Transaction
+func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey, utxos []UTXO) error {
 	for i := range tx.Inputs {
 		err := tx.signInput(privateKey, utxos, i)
 		if err != nil {
