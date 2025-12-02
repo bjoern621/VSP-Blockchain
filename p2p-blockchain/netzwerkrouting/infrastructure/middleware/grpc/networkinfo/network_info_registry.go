@@ -26,15 +26,13 @@ type NetworkInfoEntry struct {
 // - Outbound gRPC connection
 // One PeerID represents one real remote node.
 type NetworkInfoRegistry struct {
-	peerStore               *peer.PeerStore
 	listeningEndpointToPeer map[netip.AddrPort]peer.PeerID
 	inboundAddrToPeer       map[netip.AddrPort]peer.PeerID
 	networkInfoEntries      map[peer.PeerID]*NetworkInfoEntry
 }
 
-func NewNetworkInfoRegistry(peerStore *peer.PeerStore) *NetworkInfoRegistry {
+func NewNetworkInfoRegistry() *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{
-		peerStore:               peerStore,
 		listeningEndpointToPeer: make(map[netip.AddrPort]peer.PeerID),
 		inboundAddrToPeer:       make(map[netip.AddrPort]peer.PeerID),
 		networkInfoEntries:      make(map[peer.PeerID]*NetworkInfoEntry),
@@ -55,11 +53,9 @@ func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID,
 	return "", false
 }
 
-// GetOrCreatePeer returns the PeerID for a peer identified by listening endpoint or inbound address.
-// If no peer exists, creates a new one.
-// Both inboundAddr and listeningEndpoint are optional (can be zero value).
-// At least one must be provided.
-func (r *NetworkInfoRegistry) GetOrCreatePeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) peer.PeerID {
+// GetPeerByAddrs looks up a peer by listening endpoint or inbound address.
+// Returns the PeerID and true if found, empty string and false otherwise.
+func (r *NetworkInfoRegistry) GetPeerByAddrs(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) (peer.PeerID, bool) {
 	hasInbound := inboundAddr != netip.AddrPort{}
 	hasListening := listeningEndpoint != netip.AddrPort{}
 	assert.Assert(hasInbound || hasListening, "at least one of inboundAddr or listeningEndpoint must be provided")
@@ -67,22 +63,18 @@ func (r *NetworkInfoRegistry) GetOrCreatePeer(inboundAddr netip.AddrPort, listen
 	// Try to find existing peer by listening endpoint
 	if hasListening {
 		if peerID, exists := r.listeningEndpointToPeer[listeningEndpoint]; exists {
-			return peerID
+			return peerID, true
 		}
 	}
 
 	// Try to find existing peer by inbound address
 	if hasInbound {
 		if peerID, exists := r.inboundAddrToPeer[inboundAddr]; exists {
-			return peerID
+			return peerID, true
 		}
 	}
 
-	peerID := r.peerStore.NewPeer()
-	r.networkInfoEntries[peerID] = &NetworkInfoEntry{}
-
-	logger.Debugf("created peer %s", peerID)
-	return peerID
+	return "", false
 }
 
 // RegisterPeer registers an existing peerID and a listening endpoint.
@@ -163,17 +155,10 @@ func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID peer.PeerID) (netip.Ad
 	return entry.ListeningEndpoint, entry.ListeningEndpoint != (netip.AddrPort{})
 }
 
-// GetOrCreateOutboundPeer returns the PeerID for an outbound connection to the given address.
-// Returns created=true if a new peer was created, false if one already exists.
-func (r *NetworkInfoRegistry) GetOrCreateOutboundPeer(addrPort netip.AddrPort) (peerID peer.PeerID, created bool) {
-	if existingID, exists := r.GetPeerIDByAddr(addrPort); exists {
-		return existingID, false
-	}
-
-	peerID = r.peerStore.NewPeer()
-	r.RegisterPeer(peerID, addrPort)
-
-	return peerID, true
+// GetOutboundPeer looks up a peer by address for outbound connections.
+// Returns the PeerID and true if found, empty string and false otherwise.
+func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.PeerID, bool) {
+	return r.GetPeerIDByAddr(addrPort)
 }
 
 // DEBUG:
@@ -184,7 +169,6 @@ type FullNetworkInfo struct {
 	ListeningEndpoint netip.AddrPort
 	InboundAddresses  []netip.AddrPort
 	HasOutboundConn   bool
-	Peer              *peer.Peer
 }
 
 // GetAllNetworkInfo returns all available information for all peers.
@@ -196,9 +180,6 @@ func (r *NetworkInfoRegistry) GetAllNetworkInfo() []FullNetworkInfo {
 			ListeningEndpoint: entry.ListeningEndpoint,
 			InboundAddresses:  entry.InboundAddresses,
 			HasOutboundConn:   entry.OutboundConn != nil,
-		}
-		if p, exists := r.peerStore.GetPeer(peerID); exists {
-			info.Peer = p
 		}
 		result = append(result, info)
 	}

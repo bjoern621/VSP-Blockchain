@@ -16,9 +16,11 @@ type HandshakeHandler interface {
 	HandleAck(peerID peer.PeerID)
 }
 
-func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
-	logger.Infof("Received Version from peer %s: %+v", peerID, info)
+func checkVersionCompatibility(string) bool {
+	return true
+}
 
+func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Version message", peerID)
@@ -30,10 +32,15 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 		return
 	}
 
+	if !checkVersionCompatibility(info.Version) {
+		logger.Warnf("peer %s has incompatible version %s", peerID, info.Version)
+		return
+	}
+
+	// Valid
+
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices
-
-	logger.Infof("peer: %v", p)
 
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,
@@ -47,8 +54,6 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
-	logger.Infof("Received Verack from peer %s: %+v", peerID, info)
-
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
@@ -60,6 +65,13 @@ func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 		return
 	}
 
+	if !checkVersionCompatibility(info.Version) {
+		logger.Warnf("peer %s has incompatible version %s", peerID, info.Version)
+		return
+	}
+
+	// Valid
+
 	p.State = peer.StateConnected
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices
@@ -68,8 +80,6 @@ func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 }
 
 func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
-	logger.Infof("Received Ack from peer %s", peerID)
-
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)

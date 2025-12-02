@@ -66,7 +66,11 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 	inboundAddr := getPeerAddr(ctx)
 	info := versionInfoFromProto(req)
 
-	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, info.ListeningEndpoint)
+	peerID, exists := s.networkInfoRegistry.GetPeerByAddrs(inboundAddr, info.ListeningEndpoint)
+	if !exists {
+		peerID = s.peerCreator.NewInboundPeer()
+		s.networkInfoRegistry.RegisterPeer(peerID, info.ListeningEndpoint)
+	}
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
@@ -78,7 +82,11 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 	inboundAddr := getPeerAddr(ctx)
 	info := versionInfoFromProto(req)
 
-	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, info.ListeningEndpoint)
+	peerID, exists := s.networkInfoRegistry.GetPeerByAddrs(inboundAddr, info.ListeningEndpoint)
+	if !exists {
+		peerID = s.peerCreator.NewInboundPeer()
+		s.networkInfoRegistry.RegisterPeer(peerID, info.ListeningEndpoint)
+	}
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
@@ -89,7 +97,11 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
 
-	peerID := s.networkInfoRegistry.GetOrCreatePeer(inboundAddr, netip.AddrPort{})
+	peerID, exists := s.networkInfoRegistry.GetPeerByAddrs(inboundAddr, netip.AddrPort{})
+	if !exists {
+		peerID = s.peerCreator.NewInboundPeer()
+		//s.networkInfoRegistry.RegisterPeer(peerID, info.ListeningEndpoint)
+	}
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 
 	s.connectionHandler.HandleAck(peerID)

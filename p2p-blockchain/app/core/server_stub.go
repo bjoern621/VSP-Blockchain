@@ -23,13 +23,15 @@ type Server struct {
 	listener            net.Listener
 	handshakeAPI        api.HandshakeAPI
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
+	peerStore           *peer.PeerStore
 }
 
 // NewServer creates a new external API server.
-func NewServer(handshakeAPI api.HandshakeAPI, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
+func NewServer(handshakeAPI api.HandshakeAPI, networkInfoRegistry *networkinfo.NetworkInfoRegistry, peerStore *peer.PeerStore) *Server {
 	return &Server{
 		handshakeAPI:        handshakeAPI,
 		networkInfoRegistry: networkInfoRegistry,
+		peerStore:           peerStore,
 	}
 }
 
@@ -136,12 +138,12 @@ func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryReq
 		}
 
 		// Peer info from PeerStore
-		if info.Peer != nil {
-			entry.Version = info.Peer.Version
-			entry.ConnectionState = connectionStateToString(info.Peer.State)
-			entry.Direction = directionToString(info.Peer.Direction)
+		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
+			entry.Version = p.Version
+			entry.ConnectionState = connectionStateToString(p.State)
+			entry.Direction = directionToString(p.Direction)
 
-			for _, svc := range info.Peer.SupportedServices {
+			for _, svc := range p.SupportedServices {
 				entry.SupportedServices = append(entry.SupportedServices, serviceTypeToString(svc))
 			}
 		}

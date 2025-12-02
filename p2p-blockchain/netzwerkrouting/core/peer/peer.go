@@ -45,15 +45,16 @@ type Peer struct {
 }
 
 // NewPeer creates a new peer with a unique ID and adds it to the peer store.
-// PeerConnectionState is initialized to StateFirstSeen which indicates that we just received the first message by this peer or we are trying to establish a connection.
-func (s *PeerStore) NewPeer() PeerID {
+// PeerConnectionState is initialized to StateNew.
+func (s *PeerStore) NewPeer(direction Direction) PeerID {
 	peerID := PeerID(uuid.NewString())
 	peer := &Peer{
-		id:    peerID,
-		State: 0,
+		id:        peerID,
+		State:     StateNew,
+		Direction: direction,
 	}
 	s.addPeer(peer)
-	logger.Debugf("new peer %v created", peerID)
+	logger.Debugf("new peer %v created (direction: %v)", peerID, direction)
 	return peerID
 }
 
