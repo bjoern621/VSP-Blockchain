@@ -722,6 +722,7 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
 ## Verwendete Hash-Algorithmen
+
 Als Hash Algorithmus wird SHA-256 verwendet. Dieser wird verwendet, wenn ein Block-Header oder eine Transaktion erstellt wird.
 Weiter findet dieser Anwendung in den Merkle-Trees und Merkle-Pfaden.
 
@@ -731,14 +732,16 @@ Das Ergebnis eines SHA256 Aufrufs ist also häufig als 64 Zeichen langer Hexadez
 Das SHA256 Verfahren wird auch heute (2025) noch als sicher angesehen.
 
 ## Aufbau Block und Transaktion
+
 ### Block
+
 Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das Hashen des Block-Headers
 erstellt werden und identifiziert einen Block eindeutig.
 Ein Block besteht aus einem Block-Header und einer List von Transaktionen.
 Ein Block-Header besteht aus:
 
 | Name                          | Datentyp |
-|-------------------------------|----------|
+| ----------------------------- | -------- |
 | Hash des vorherigen Blocks    | 32 Byte  |
 | Merkle-Root der Transaktionen | 32 Byte  |
 | Zeitstempel                   | long     |
@@ -749,12 +752,13 @@ Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenb
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 ### Transaktion
+
 Eine Transaktion besteht aus mehreren Ein- und Ausgaben sowie einer Lock-Time. TODO: @Bjarne: Was genau macht die LockTime?
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions-Eingang besteht aus folgendem:
 
 | Name                                      | Datentyp          |
-|-------------------------------------------|-------------------|
+| ----------------------------------------- | ----------------- |
 | vorheriger Transkations-Hash              | 32 Byte           |
 | Output Index (der vorherigen Transaktion) | UInt              |
 | Signatur                                  | TODO              |
@@ -774,6 +778,7 @@ _\<Erklärung\>_
 ## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
 
 ### Kontext
+
 Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielten eine Reihe technischer und organisatorischer
 Faktoren eine Rolle. Die Entscheidung musste sicherstellen, dass Daten zuverlässig beschrieben, automatisch generiert, typsicher verarbeitet und effizient übertragen werden können.
 Zudem sollte die Lösung gut in bestehende Entwicklungsprozesse passen und möglichst geringe Einarbeitungsaufwände verursachen.
@@ -905,25 +910,23 @@ Die folgende Übersicht kategorisiert die Qualitätsanforderungen nach dem [Q42-
 | Flexible  | Die Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) müssen weitgehend unabhängig voneinander nutzbar sein. Dies erlaubt eine flexible Nutzung je nach Bedarf des Nutzers.             |
 | Reliable  | Das Netzwerk muss auch bei Ausfall einzelner Nodes funktionsfähig bleiben.                                                                                                                     |
 | Secure    | Die Blockchain ist durch kryptographische Verfahren (Hashing, digitale Signaturen) gegen Manipulation geschützt. Transaktionen können nur vom Besitzer der privaten Schlüssel erstellt werden. |
-| Usable    | Das System soll einfach sein und gut für Nutzer dokumentiert. Die grundlegenden Funktionalitäten (siehe [Use Cases](#aufgabenstellung)) sollen alle erüllt sein.                               |
 
 Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größere Beachtung geschenkt werden.
 
 ## Qualitätsszenarien
 
-Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt.
+Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt. Verwendete Werte sind, wenn nicht anders angegeben, Educated Guesses.
 
-| ID   | Szenario                                                                                                                               | Akzeptanzkriterium                                                                                                                              | Relevante Qualitätsanforderungen                                       |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).         | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                     | Efficient > Scalable                                                   |
-| QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                              | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                           | Efficient > Scalable<br/>Efficient > Responsive                        |
-| QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                   | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Der Nutzer muss keine manuelle Synchronisation anstoßen. | Usable > Self-Explanatory<br/>Reliable > Autonomous                    |
-| QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar.                                                                                    | Flexible > Modular<br/>Flexible > Composable                           |
-| QS-5 | 10 Miner sind im Netzwerk aktiv und suchen parallel nach gültigen Blöcken.                                                             | Die Rechenleistung wird auf alle Miner verteilt.                                                                                                | Efficient > Resource-Efficient<br/>Reliable > Fair                     |
-| QS-6 | Eine SPV Node benötigt Blockchain-Daten zur Verifizierung einer Transaktion.                                                           | Die Anfragen werden an Full Nodes verteilt. Einzelne Full Nodes werden nicht mit Anfragen überflutet.                                           | Efficient > Resource-Efficient<br/>Reliable > Robust                   |
-| QS-7 | Ein Reviewer prüft eine Code-Änderung.                                                                                                 | Die Änderung ist durch Kommentare und Dokumentation nachvollziehbar. Go Best Practices wurden eingehalten.                                      | Usable > Learnable<br/>Flexible > Maintainable                         |
-| QS-8 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                 | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                         | Reliable > Fault-Tolerant<br/>Reliable > Robust<br/>Secure > Integrity |
-| QS-9 | Gleichmäßig verteilte 5 % der Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                      | Die verbleibenden Nodes können weiterhin alle Anforderungen erfüllen.                                                                           | Reliable > Resilient<br/>Reliable > Fault-Tolerant                     |
+| ID   | Szenario                                                                                                                                                                                                                                  | Akzeptanzkriterium                                                                                                                                        | Relevante Qualitätsanforderungen                                                                                                                                                                                                                 |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).                                                                                                            | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                               | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)                                                                                                                                                                       |
+| QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                                                                                                                                 | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                                     | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)<br/>Efficient > [Responsiveness](https://quality.arc42.org/qualities/responsiveness)                                                                                  |
+| QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                                                                                                                      | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Synchronisation beginnt innerhalb von 10 Sekunden.                 | Reliable > [Recoverability](https://quality.arc42.org/qualities/recoverability)                                                                                                                                                                  |
+| QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. Siehe [Aufgabenstellung](#aufgabenstellung) für Unterscheidung zwischen Händler-/Mining-Funktionen | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar. Es besteht keine Abhängigkeit von Wallet zu Miner-Teilsystem.                                | Flexible > [Modularity](https://quality.arc42.org/qualities/modularity)<br/>Flexible > [Composability](https://quality.arc42.org/qualities/composability)                                                                                        |
+| QS-5 | Eine SPV Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                                   | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
+| QS-6 | Ein Reviewer prüft eine Code-Änderung.                                                                                                                                                                                                    | Die Änderung ist durch Kommentare und Dokumentation unterstützt. Go Best Practices wurden eingehalten. Tool: [Golangci-lint](https://golangci-lint.run/). | Flexible > [Maintainability](https://quality.arc42.org/qualities/maintainability)                                                                                                                                                                |
+| QS-7 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                                                                                                                    | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                                   | Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance) <br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)<br/>Secure > [Data Integrity](https://quality.arc42.org/qualities/data-integrity) |
+| QS-8 | 5 % gleichmäßig im Netzwerk verteilte Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                                                                                                                 | Die verbleibenden Nodes können weiterhin [alle Anforderungen](#aufgabenstellung) erfüllen.                                                                | Reliable > [Resilience](https://quality.arc42.org/qualities/resilience)<br/>Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance)                                                                                    |
 
 # Risiken und technische Schulden
 
