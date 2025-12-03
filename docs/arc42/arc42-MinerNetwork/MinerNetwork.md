@@ -97,12 +97,6 @@ Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich s
 
 # Lösungsstrategie
 
-Beispiele:
-Entwurfsentscheidungen und Lösungsstrategien Gesamtarchitektur
-Technologieentscheidungen, Top-Level-Zerlegungsstrategie, Ansätze Erreichung Qualitätsziele,
-Organisationsentscheidungen
-TODO entfernern
-
 -   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
 -   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
 -   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
