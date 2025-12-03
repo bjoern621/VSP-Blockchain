@@ -28,21 +28,21 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 }
 
 // versionInfoFromProto converts protobuf VersionInfo to domain VersionInfo.
-func versionInfoFromProto(req *pb.VersionInfo) handshake.VersionInfo {
+func versionInfoFromProto(info *pb.VersionInfo) handshake.VersionInfo {
 	var endpoint netip.AddrPort
-	if req.ListeningEndpoint != nil {
-		if ip, ok := netip.AddrFromSlice(req.ListeningEndpoint.IpAddress); ok {
-			endpoint = netip.AddrPortFrom(ip, uint16(req.ListeningEndpoint.ListeningPort))
+	if info.ListeningEndpoint != nil {
+		if ip, ok := netip.AddrFromSlice(info.ListeningEndpoint.IpAddress); ok {
+			endpoint = netip.AddrPortFrom(ip, uint16(info.ListeningEndpoint.ListeningPort))
 		}
 	}
 
-	services := make([]peer.ServiceType, len(req.SupportedServices))
-	for i, pbService := range req.SupportedServices {
+	services := make([]peer.ServiceType, len(info.SupportedServices))
+	for i, pbService := range info.SupportedServices {
 		services[i] = peer.ServiceType(pbService)
 	}
 
 	return handshake.VersionInfo{
-		Version:           req.GetVersion(),
+		Version:           info.GetVersion(),
 		SupportedServices: services,
 		ListeningEndpoint: endpoint,
 	}
