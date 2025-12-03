@@ -24,24 +24,24 @@ type OutboundPeerResolver interface {
 	RegisterPeer(peerID peer.PeerID, listeningEndpoint netip.AddrPort)
 }
 
-// HandshakeAPIService implements HandshakeAPI.
-type HandshakeAPIService struct {
+// handshakeAPIService implements HandshakeAPI.
+type handshakeAPIService struct {
 	outboundPeerResolver OutboundPeerResolver
 	peerCreator          peer.PeerCreator
 	handshakeService     handshake.HandshakeServiceAPI
 }
 
-var _ HandshakeAPI = (*HandshakeAPIService)(nil)
+var _ HandshakeAPI = (*handshakeAPIService)(nil)
 
-func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeServiceAPI) *HandshakeAPIService {
-	return &HandshakeAPIService{
+func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeServiceAPI) HandshakeAPI {
+	return &handshakeAPIService{
 		outboundPeerResolver: outboundPeerResolver,
 		peerCreator:          peerCreator,
 		handshakeService:     handshakeService,
 	}
 }
 
-func (s *HandshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
+func (s *handshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
 	if peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort); exists {
 		return fmt.Errorf("peer %s already exists for address %s", peerID, addrPort)
 	}
