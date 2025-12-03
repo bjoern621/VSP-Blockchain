@@ -930,6 +930,59 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 
 # Risiken und technische Schulden
 
+## Risiken
+
+| R-1: Funktionsumfang zu ambitioniert |                                                                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                     | Der geplante Funktionsumfang könnte für den zeitlichen Rahmen (15 Wochen, 3+1 SWS) zu umfangreich sein.                                               |
+| **Folgen**                           | Features werden nicht fertiggestellt, Qualität leidet unter Zeitdruck, Dokumentation wird vernachlässigt, Abnahme gefährdet.                          |
+| **Eintrittswahrscheinlichkeit**      | Mittel (2)                                                                                                                                            |
+| **Auswirkung**                       | Hoch (3)                                                                                                                                              |
+| **Priorität**                        | 6                                                                                                                                                     |
+| **Maßnahmen**                        | Projektplan mit priorisierten Features und Meilensteinen. Regelmäßige Überprüfung des Fortschritts. Frühzeitiges Streichen von Nice-to-have Features. |
+| **Status**                           | Aktiv überwacht                                                                                                                                       |
+
+| R-2: Unzureichende ICC Ressourcen |                                                                                                                              |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                  | Die begrenzten Ressourcen der ICC könnten für das Testen der Skalierbarkeit mit 50 gleichzeitigen Akteuren nicht ausreichen. |
+| **Folgen**                        | Qualitätsziel Skalierbarkeit kann nicht vollständig getestet werden, Performance-Probleme werden erst spät entdeckt.         |
+| **Eintrittswahrscheinlichkeit**   | Mittel (2)                                                                                                                   |
+| **Auswirkung**                    | Mittel (2)                                                                                                                   |
+| **Priorität**                     | 4                                                                                                                            |
+| **Maßnahmen**                     | Frühzeitige Tests in der ICC. Bei Bedarf Ressourcenerhöhung beantragen. Lokale Lasttests als Alternative.                    |
+| **Status**                        | Offen                                                                                                                        |
+
+| R-3: Registry DNS Konfiguration und externe Erreichbarkeit |                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                                           | Unklar, ob DNS Einträge für `vsgoin.informatik.haw-hamburg.de` frei modifiziert werden können, da sie von der ICC verwaltet werden. Zusätzlich ist unklar, ob Nodes innerhalb der ICC direkt über IP und Port von außen angesprochen werden können.                                                      |
+| **Folgen**                                                 | Registry Konzept funktioniert nicht wie geplant, Verbindungsaufbau zum Netzwerk erschwert. Falls externe Nodes die ICC-Nodes nicht direkt erreichen können, müsste das Feature "externe Nodes" gestrichen oder nur über Umwege (z.B. Proxy, Ingress) realisiert werden.                                  |
+| **Eintrittswahrscheinlichkeit**                            | Mittel (2)                                                                                                                                                                                                                                                                                               |
+| **Auswirkung**                                             | Mittel (2)                                                                                                                                                                                                                                                                                               |
+| **Priorität**                                              | 4                                                                                                                                                                                                                                                                                                        |
+| **Maßnahmen**                                              | Tests mit ICC durchführen. Recherche über ICC/gRPC/DNS/Proxy. Alternativen: eigene Domain nutzen, Registry innerhalb ICC, Ingress/Proxy für externe Verbindungen.                                                                                                                                        |
+| **Status**                                                 | Eingetreten                                                                                                                                                                                                                                                                                              |
+| **Updates**                                                | 02.12.2025 - Erstellt<br/>03.12.2025 - Status aktualisiert: In Klärung -> Eingetreten, Status aktualisieren zu: Technisch aktuell nicht mit dem Zeitbudget umsetzbar -> Eingetreten; Handling: Streichung des Features "Externe Miner"; Begründung: Technisch aktuell nicht mit dem Zeitbudget umsetzbar |
+
+## Technische Schulden
+
+| TD-1: Fehlende Unit Tests |                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **Beschreibung**          | Kritische Komponenten wie Netzwerkrouting haben noch keine ausreichende Testabdeckung. |
+| **Ursache**               | Zeitdruck bei der initialen Implementierung, Fokus auf Funktionalität.                 |
+| **Auswirkung**            | Regressionsfehler werden spät erkannt, Refactoring wird riskant.                       |
+| **Priorität**             | Hoch                                                                                   |
+| **Maßnahmen**             | Testabdeckung für kritische Pfade erhöhen, Tests in CI/CD Pipeline integrieren.        |
+| **Status**                | Offen                                                                                  |
+
+| TD-2: Nichteinhaltung der Go Konventionen |                                                                                                                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                          | Go Konventionen werden nicht konsequent eingehalten (z.B. Kleinschreibung bei Ordnernamen, Package-Struktur, Naming Conventions).                                                  |
+| **Ursache**                               | Unerfahrenheit des Teams mit Go als Programmiersprache.                                                                                                                            |
+| **Auswirkung**                            | Wirkt sich negativ auf die Verständlichkeit des Codes aus. Widerspricht den [Go Best Practices](https://go.dev/doc/effective_go), obwohl dieses Handbuch als Referenz dienen soll. |
+| **Priorität**                             | Mittel                                                                                                                                                                             |
+| **Maßnahmen**                             | Bei Code Reviews mehr Fokus auf Konventionen. Schrittweise Anpassung bei zukünftigen Änderungen. Wird sich nach einer gewissen Einarbeitungsphase natürlicherweise verbessern.     |
+| **Status**                                | Offen                                                                                                                                                                              |
+
 # Glossar
 
 | Begriff       | Definition                                                                                                                                                                                                            |
