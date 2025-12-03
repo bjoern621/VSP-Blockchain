@@ -873,15 +873,15 @@ Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während
 | **Maßnahmen**                     | Frühzeitige Tests in der ICC. Bei Bedarf Ressourcenerhöhung beantragen. Lokale Lasttests als Alternative.                    |
 | **Status**                        | Offen                                                                                                                        |
 
-| R-3: Registry DNS Konfiguration |                                                                                                                                     |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Beschreibung**                | Unklar, ob DNS Einträge für `vsgoin.informatik.haw-hamburg.de` frei modifiziert werden können, da sie von der ICC verwaltet werden. |
-| **Folgen**                      | Registry Konzept funktioniert nicht wie geplant, Verbindungsaufbau zum Netzwerk erschwert.                                          |
-| **Eintrittswahrscheinlichkeit** | Mittel (2)                                                                                                                          |
-| **Auswirkung**                  | Mittel (2)                                                                                                                          |
-| **Priorität**                   | 4                                                                                                                                   |
-| **Maßnahmen**                   | Tests mit ICC durchführen. Recherche über ICC/GRPC/DNS/Proxy Alternative: eigene Domain nutzen, Registry innerhalb ICC              |
-| **Status**                      | In Klärung                                                                                                                          |
+| R-3: Registry DNS Konfiguration und externe Erreichbarkeit |                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                                           | Unklar, ob DNS Einträge für `vsgoin.informatik.haw-hamburg.de` frei modifiziert werden können, da sie von der ICC verwaltet werden. Zusätzlich ist unklar, ob Nodes innerhalb der ICC direkt über IP und Port von außen angesprochen werden können.                     |
+| **Folgen**                                                 | Registry Konzept funktioniert nicht wie geplant, Verbindungsaufbau zum Netzwerk erschwert. Falls externe Nodes die ICC-Nodes nicht direkt erreichen können, müsste das Feature "externe Nodes" gestrichen oder nur über Umwege (z.B. Proxy, Ingress) realisiert werden. |
+| **Eintrittswahrscheinlichkeit**                            | Mittel (2)                                                                                                                                                                                                                                                              |
+| **Auswirkung**                                             | Mittel (2)                                                                                                                                                                                                                                                              |
+| **Priorität**                                              | 4                                                                                                                                                                                                                                                                       |
+| **Maßnahmen**                                              | Tests mit ICC durchführen. Recherche über ICC/gRPC/DNS/Proxy. Alternativen: eigene Domain nutzen, Registry innerhalb ICC, Ingress/Proxy für externe Verbindungen.                                                                                                       |
+| **Status**                                                 | In Klärung                                                                                                                                                                                                                                                              |
 
 ## Technische Schulden
 
