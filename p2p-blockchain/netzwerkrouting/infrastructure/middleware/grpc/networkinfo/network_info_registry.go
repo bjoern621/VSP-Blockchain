@@ -56,9 +56,9 @@ func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID,
 	return "", false
 }
 
-// GetPeerByAddrs looks up a peer by listening endpoint or inbound address.
+// GetPeerIDByAddrs looks up a peer by listening endpoint or inbound address.
 // Returns the PeerID and true if found, empty string and false otherwise.
-func (r *NetworkInfoRegistry) GetPeerByAddrs(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) (peer.PeerID, bool) {
+func (r *NetworkInfoRegistry) GetPeerIDByAddrs(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) (peer.PeerID, bool) {
 	hasInbound := inboundAddr != netip.AddrPort{}
 	hasListening := listeningEndpoint != netip.AddrPort{}
 	assert.Assert(hasInbound || hasListening, "at least one of inboundAddr or listeningEndpoint must be provided")
