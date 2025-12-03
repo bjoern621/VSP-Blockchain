@@ -723,6 +723,7 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
 ## Verwendete Hash-Algorithmen
+
 Als Hash Algorithmus wird SHA-256 verwendet. Dieser wird verwendet, wenn ein Block-Header oder eine Transaktion erstellt wird.
 Weiter findet dieser Anwendung in den Merkle-Trees und Merkle-Pfaden.
 
@@ -732,14 +733,16 @@ Das Ergebnis eines SHA256 Aufrufs ist also häufig als 64 Zeichen langer Hexadez
 Das SHA256 Verfahren wird auch heute (2025) noch als sicher angesehen.
 
 ## Aufbau Block und Transaktion
+
 ### Block
+
 Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das Hashen des Block-Headers
 erstellt werden und identifiziert einen Block eindeutig.
 Ein Block besteht aus einem Block-Header und einer List von Transaktionen.
 Ein Block-Header besteht aus:
 
 | Name                          | Datentyp |
-|-------------------------------|----------|
+| ----------------------------- | -------- |
 | Hash des vorherigen Blocks    | 32 Byte  |
 | Merkle-Root der Transaktionen | 32 Byte  |
 | Zeitstempel                   | long     |
@@ -750,12 +753,13 @@ Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenb
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 ### Transaktion
+
 Eine Transaktion besteht aus mehreren Ein- und Ausgaben sowie einer Lock-Time. TODO: @Bjarne: Was genau macht die LockTime?
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions-Eingang besteht aus folgendem:
 
 | Name                                      | Datentyp          |
-|-------------------------------------------|-------------------|
+| ----------------------------------------- | ----------------- |
 | vorheriger Transkations-Hash              | 32 Byte           |
 | Output Index (der vorherigen Transaktion) | UInt              |
 | Signatur                                  | TODO              |
@@ -773,35 +777,45 @@ _\<Erklärung\>_
 # Architekturentscheidungen
 
 ## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
+
 ### Kontext
+
 Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielten eine Reihe technischer und organisatorischer
 Faktoren eine Rolle. Die Entscheidung musste sicherstellen, dass Daten zuverlässig beschrieben, automatisch generiert, typsicher verarbeitet und effizient übertragen werden können.
 Zudem sollte die Lösung gut in bestehende Entwicklungsprozesse passen und möglichst geringe Einarbeitungsaufwände verursachen.
 
 ### Entscheidung
+
 Es wurde entschieden, Protobuf [(Protocol Buffers)](https://protobuf.dev/) für die Serialisierung der Daten in RPC-Kommunikation einzusetzen.
 
 ### Status
+
 Akzeptiert
 
 ### Konsequenzen
+
 Positiv:
-- IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
-- Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
-- Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
-- Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
-- Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
-- Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
+
+-   IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
+-   Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
+-   Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
+-   Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
+-   Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+-   Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
 
 Negativ:
-- Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
+
+-   Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
 
 ### Auswirkungen
+
 Die Entscheidung ermöglicht es, dass die verwendeten Daten typsicher serialisiert, über das Netzwerk übertragen und wieder deserialisiert werden können.
 Dadurch wird eine robuste und effiziente RPC-Kommunikation sichergestellt.
 
 ## ADR 2: Entscheidung für asynchrone, transiente und zustandslose Kommunikation
+
 ### Kontext
+
 Die Kommunikation zwischen den Nodes der Anwendung erfolgt in einem dezentralen P2P Netzwerk, in dem mehrere Clients gleichzeitig beteiligt sind.
 Da Antwortzeiten aufgrund geografischer Distanzen, unterschiedlicher Hardware-Ressourcen oder möglicher Ausfälle einzelner Nodes nicht garantiert werden können,
 darf die Verarbeitung nicht von der Antwort eines einzelnen Nodes abhängen.
@@ -812,55 +826,68 @@ Zusätzlich arbeitet das System transient, d. h. Nachrichten werden nicht dauerh
 Es wurde entschieden, dass die Kommunikation zwischen den Nodes asynchron, transient und zustandslos erfolgt.
 
 ### Status
+
 Akzeptiert
 
 ### Konsequenzen
+
 Positive Konsequenzen:
-- Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
-- Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
-- Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
-- Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
-- Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
-- Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
+
+-   Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
+-   Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
+-   Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
+-   Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
+-   Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
+-   Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
 
 Negative Konsequenzen:
-- Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
-- Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
+
+-   Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
+-   Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
 
 ### Auswirkungen
+
 Durch die asynchrone und zustandslose Kommunikation bleibt das System trotz variierender Antwortzeiten funktionsfähig, skalierbar und fehlertolerant.
 Nodes können unabhängig voneinander operieren, ohne auf Antworten warten zu müssen, und der Fakt, dass das System transient/zustandslose ist vereinfacht die Verarbeitung und Implementierung.
 
 ## ADR 3: Entscheidung für Nutzung von gRPC als RPC Framework zur Kommunikation der Middleware
+
 ### Kontext
+
 Für die Kommunikation zwischen Nodes müssen entfernte Funktionen aufgerufen und Nachrichten zuverlässig, effizient und sicher übertragen werden.
 Die gewählte Technologie soll eine klare Schnittstellentrennung, geringe Latenz, garantierte Reihenfolge der Nachrichten und Unterstützung für Verschlüsselung bieten.
 In einem Blockchainsystem ist die Korrektheit und Vollständigkeit der Datenübertragung besonders kritisch, da Daten über Hashes validiert werden.
 Somit ist eine Übertragungstechnologie erforderlich, die diese Anforderungen zuverlässig erfüllt.
 
 ### Entscheidung
+
 Es wurde sich entschieden, [gRPC](https://grpc.io/) als RPC Framework einzusetzen.
 
 ### Status
+
 Akzeptiert
 
 ### Konsequenzen
+
 Positive Konsequenzen:
-- Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
-- Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
-- Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
-- Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
-- Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
-- Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
-- Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
-- Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
-- Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert. 
+
+-   Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
+-   Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
+-   Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
+-   Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
+-   Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
+-   Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
+-   Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
+-   Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+-   Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert.
 
 Negative Konsequenzen:
-- Abhängigkeit vom gRPC Tool
-- Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
+
+-   Abhängigkeit vom gRPC Tool
+-   Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
 
 ### Auswirkung
+
 Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher und zuverlässig umgesetzt. Die garantierte Reihenfolge und Vollständigkeit der
 Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
 Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
@@ -872,6 +899,59 @@ Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während
 ## Qualitätsszenarien
 
 # Risiken und technische Schulden
+
+## Risiken
+
+| R-1: Funktionsumfang zu ambitioniert |                                                                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                     | Der geplante Funktionsumfang könnte für den zeitlichen Rahmen (15 Wochen, 3+1 SWS) zu umfangreich sein.                                               |
+| **Folgen**                           | Features werden nicht fertiggestellt, Qualität leidet unter Zeitdruck, Dokumentation wird vernachlässigt, Abnahme gefährdet.                          |
+| **Eintrittswahrscheinlichkeit**      | Mittel (2)                                                                                                                                            |
+| **Auswirkung**                       | Hoch (3)                                                                                                                                              |
+| **Priorität**                        | 6                                                                                                                                                     |
+| **Maßnahmen**                        | Projektplan mit priorisierten Features und Meilensteinen. Regelmäßige Überprüfung des Fortschritts. Frühzeitiges Streichen von Nice-to-have Features. |
+| **Status**                           | Aktiv überwacht                                                                                                                                       |
+
+| R-2: Unzureichende ICC Ressourcen |                                                                                                                              |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                  | Die begrenzten Ressourcen der ICC könnten für das Testen der Skalierbarkeit mit 50 gleichzeitigen Akteuren nicht ausreichen. |
+| **Folgen**                        | Qualitätsziel Skalierbarkeit kann nicht vollständig getestet werden, Performance-Probleme werden erst spät entdeckt.         |
+| **Eintrittswahrscheinlichkeit**   | Mittel (2)                                                                                                                   |
+| **Auswirkung**                    | Mittel (2)                                                                                                                   |
+| **Priorität**                     | 4                                                                                                                            |
+| **Maßnahmen**                     | Frühzeitige Tests in der ICC. Bei Bedarf Ressourcenerhöhung beantragen. Lokale Lasttests als Alternative.                    |
+| **Status**                        | Offen                                                                                                                        |
+
+| R-3: Registry DNS Konfiguration und externe Erreichbarkeit |                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                                           | Unklar, ob DNS Einträge für `vsgoin.informatik.haw-hamburg.de` frei modifiziert werden können, da sie von der ICC verwaltet werden. Zusätzlich ist unklar, ob Nodes innerhalb der ICC direkt über IP und Port von außen angesprochen werden können.                                                      |
+| **Folgen**                                                 | Registry Konzept funktioniert nicht wie geplant, Verbindungsaufbau zum Netzwerk erschwert. Falls externe Nodes die ICC-Nodes nicht direkt erreichen können, müsste das Feature "externe Nodes" gestrichen oder nur über Umwege (z.B. Proxy, Ingress) realisiert werden.                                  |
+| **Eintrittswahrscheinlichkeit**                            | Mittel (2)                                                                                                                                                                                                                                                                                               |
+| **Auswirkung**                                             | Mittel (2)                                                                                                                                                                                                                                                                                               |
+| **Priorität**                                              | 4                                                                                                                                                                                                                                                                                                        |
+| **Maßnahmen**                                              | Tests mit ICC durchführen. Recherche über ICC/gRPC/DNS/Proxy. Alternativen: eigene Domain nutzen, Registry innerhalb ICC, Ingress/Proxy für externe Verbindungen.                                                                                                                                        |
+| **Status**                                                 | Eingetreten                                                                                                                                                                                                                                                                                              |
+| **Updates**                                                | 02.12.2025 - Erstellt<br/>03.12.2025 - Status aktualisiert: In Klärung -> Eingetreten, Status aktualisieren zu: Technisch aktuell nicht mit dem Zeitbudget umsetzbar -> Eingetreten; Handling: Streichung des Features "Externe Miner"; Begründung: Technisch aktuell nicht mit dem Zeitbudget umsetzbar |
+
+## Technische Schulden
+
+| TD-1: Fehlende Unit Tests |                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **Beschreibung**          | Kritische Komponenten wie Netzwerkrouting haben noch keine ausreichende Testabdeckung. |
+| **Ursache**               | Zeitdruck bei der initialen Implementierung, Fokus auf Funktionalität.                 |
+| **Auswirkung**            | Regressionsfehler werden spät erkannt, Refactoring wird riskant.                       |
+| **Priorität**             | Hoch                                                                                   |
+| **Maßnahmen**             | Testabdeckung für kritische Pfade erhöhen, Tests in CI/CD Pipeline integrieren.        |
+| **Status**                | Offen                                                                                  |
+
+| TD-2: Nichteinhaltung der Go Konventionen |                                                                                                                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Beschreibung**                          | Go Konventionen werden nicht konsequent eingehalten (z.B. Kleinschreibung bei Ordnernamen, Package-Struktur, Naming Conventions).                                                  |
+| **Ursache**                               | Unerfahrenheit des Teams mit Go als Programmiersprache.                                                                                                                            |
+| **Auswirkung**                            | Wirkt sich negativ auf die Verständlichkeit des Codes aus. Widerspricht den [Go Best Practices](https://go.dev/doc/effective_go), obwohl dieses Handbuch als Referenz dienen soll. |
+| **Priorität**                             | Mittel                                                                                                                                                                             |
+| **Maßnahmen**                             | Bei Code Reviews mehr Fokus auf Konventionen. Schrittweise Anpassung bei zukünftigen Änderungen. Wird sich nach einer gewissen Einarbeitungsphase natürlicherweise verbessern.     |
+| **Status**                                | Offen                                                                                                                                                                              |
 
 # Glossar
 
