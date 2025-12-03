@@ -62,6 +62,15 @@ func versionInfoToProto(info handshake.VersionInfo) *pb.VersionInfo {
 	return pbInfo
 }
 
+func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		return nil, err
+	}
+	return conn, nil
+}
+
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
 	info := versionInfoFromProto(req)
@@ -115,9 +124,9 @@ func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo
 		return
 	}
 
-	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := createGRPCClient(remoteAddrPort)
 	if err != nil {
-		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
 		return
 	}
 
@@ -140,9 +149,9 @@ func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo)
 		return
 	}
 
-	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := createGRPCClient(remoteAddrPort)
 	if err != nil {
-		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
 		return
 	}
 
