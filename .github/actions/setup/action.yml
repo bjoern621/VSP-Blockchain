@@ -11,5 +11,3 @@ runs:
 
         - name: Generate protos
           uses: ./.github/actions/generate_grpc
-          with:
-              protoc_version: '33.0'
