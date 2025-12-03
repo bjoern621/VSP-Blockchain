@@ -7,7 +7,7 @@ Dieses Dokument beschreibt, wie eine lokale Entwicklungsumgebung für VSP-Blockc
 Stelle sicher, dass die folgenden Programme auf deinem System installiert sind:
 
 -   **Go 1.25.3** (`winget install GoLang.Go`)
--   **Protoc** Protocol Buffer Compiler (`winget install Google.Protobuf`)
+-   **Buf** Buf (Protoc Wrapper) (`winget install -e --id bufbuild.buf -v "v1.55.1"`)
 -   **Go protoc plugins**
 
     ```
