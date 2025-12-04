@@ -28,14 +28,14 @@ type OutboundPeerResolver interface {
 type handshakeAPIService struct {
 	outboundPeerResolver OutboundPeerResolver
 	peerCreator          peer.PeerCreator
-	handshakeService     handshake.HandshakeServiceAPI
+	handshakeInitiator   handshake.HandshakeInitiator
 }
 
-func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeServiceAPI) HandshakeAPI {
+func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeInitiator) HandshakeAPI {
 	return &handshakeAPIService{
 		outboundPeerResolver: outboundPeerResolver,
 		peerCreator:          peerCreator,
-		handshakeService:     handshakeService,
+		handshakeInitiator:   handshakeService,
 	}
 }
 
@@ -47,6 +47,6 @@ func (s *handshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
 	peerID := s.peerCreator.NewOutboundPeer()
 	s.outboundPeerResolver.RegisterPeer(peerID, addrPort)
 
-	s.handshakeService.InitiateHandshake(peerID)
+	s.handshakeInitiator.InitiateHandshake(peerID)
 	return nil
 }

@@ -20,12 +20,12 @@ type HandshakeMsgSender interface {
 }
 
 // HandshakeService interface for the API layer.
-type HandshakeServiceAPI interface {
+type HandshakeInitiator interface {
 	// InitiateHandshake starts the handshake process with the given peer.
 	InitiateHandshake(peerID peer.PeerID)
 }
 
-func (h *HandshakeService) InitiateHandshake(peerID peer.PeerID) {
+func (h *handshakeService) InitiateHandshake(peerID peer.PeerID) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("peer %s not found in store", peerID)

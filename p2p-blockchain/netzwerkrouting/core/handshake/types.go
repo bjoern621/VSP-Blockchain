@@ -11,15 +11,15 @@ type VersionInfo struct {
 	ListeningEndpoint netip.AddrPort
 }
 
-// HandshakeService implements ConnectionHandler (for infrastructure) and HandshakeAPI (for api) with the actual domain logic.
-type HandshakeService struct {
+// handshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
+type handshakeService struct {
 	handshakeMsgSender HandshakeMsgSender
 	peerStore          *peer.PeerStore
 }
 
-func NewHandshakeService(handshakeInitiator HandshakeMsgSender, peerStore *peer.PeerStore) *HandshakeService {
-	return &HandshakeService{
-		handshakeMsgSender: handshakeInitiator,
+func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerStore *peer.PeerStore) *handshakeService {
+	return &handshakeService{
+		handshakeMsgSender: handshakeMsgSender,
 		peerStore:          peerStore,
 	}
 }
