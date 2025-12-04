@@ -17,10 +17,6 @@ type HandshakeService struct {
 	peerStore          *peer.PeerStore
 }
 
-// Compile-time check that HandshakeService implements specific interfaces
-var _ HandshakeHandler = (*HandshakeService)(nil)
-var _ HandshakeServiceAPI = (*HandshakeService)(nil)
-
 func NewHandshakeService(handshakeInitiator HandshakeInitiator, peerStore *peer.PeerStore) *HandshakeService {
 	return &HandshakeService{
 		handshakeInitiator: handshakeInitiator,

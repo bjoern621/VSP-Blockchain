@@ -10,8 +10,6 @@ type PeerCreator interface {
 	NewInboundPeer() PeerID
 }
 
-var _ PeerCreator = (*PeerStore)(nil)
-
 func NewPeerStore() *PeerStore {
 	return &PeerStore{
 		peers: make(map[PeerID]*Peer),

@@ -4,7 +4,6 @@ package networkinfo
 
 import (
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 
@@ -31,8 +30,6 @@ type NetworkInfoRegistry struct {
 	inboundAddrToPeer       map[netip.AddrPort]peer.PeerID
 	networkInfoEntries      map[peer.PeerID]*NetworkInfoEntry
 }
-
-var _ api.OutboundPeerResolver = (*NetworkInfoRegistry)(nil)
 
 func NewNetworkInfoRegistry() *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{

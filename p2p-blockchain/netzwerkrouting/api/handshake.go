@@ -31,8 +31,6 @@ type handshakeAPIService struct {
 	handshakeService     handshake.HandshakeServiceAPI
 }
 
-var _ HandshakeAPI = (*handshakeAPIService)(nil)
-
 func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeServiceAPI) HandshakeAPI {
 	return &handshakeAPIService{
 		outboundPeerResolver: outboundPeerResolver,

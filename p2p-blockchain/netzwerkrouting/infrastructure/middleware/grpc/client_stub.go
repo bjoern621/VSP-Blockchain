@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 )
 
@@ -11,9 +10,6 @@ import (
 type Client struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
-
-// Compile-time check that Client implements HandshakeInitiator
-var _ handshake.HandshakeInitiator = (*Client)(nil)
 
 func NewClient(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Client {
 	return &Client{

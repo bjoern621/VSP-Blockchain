@@ -22,11 +22,11 @@ func main() {
 	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry()
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
-	handshakeAPIService := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
+	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 
 	logger.Infof("Starting App server...")
 
-	appServer := appcore.NewServer(handshakeAPIService, networkInfoRegistry, peerStore)
+	appServer := appcore.NewServer(handshakeAPI, networkInfoRegistry, peerStore)
 
 	err := appServer.Start(common.AppPort)
 	if err != nil {
