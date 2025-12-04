@@ -83,7 +83,7 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
-	s.connectionHandler.HandleVersion(peerID, info)
+	s.handshakeMsgHandler.HandleVersion(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
@@ -99,7 +99,7 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
 
-	s.connectionHandler.HandleVerack(peerID, info)
+	s.handshakeMsgHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
 }
 
@@ -113,7 +113,7 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 	}
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 
-	s.connectionHandler.HandleAck(peerID)
+	s.handshakeMsgHandler.HandleAck(peerID)
 	return &emptypb.Empty{}, nil
 }
 

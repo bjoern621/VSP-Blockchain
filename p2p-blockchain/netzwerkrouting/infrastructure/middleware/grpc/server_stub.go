@@ -22,14 +22,14 @@ type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
 	grpcServer          *grpc.Server
 	listener            net.Listener
-	connectionHandler   handshake.HandshakeMsgHandler
+	handshakeMsgHandler handshake.HandshakeMsgHandler
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 	peerCreator         peer.PeerCreator
 }
 
-func NewServer(handshakeHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, peerCreator peer.PeerCreator) *Server {
+func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, peerCreator peer.PeerCreator) *Server {
 	return &Server{
-		connectionHandler:   handshakeHandler,
+		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
 		peerCreator:         peerCreator,
 	}
