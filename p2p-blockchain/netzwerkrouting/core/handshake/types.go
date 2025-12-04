@@ -13,13 +13,13 @@ type VersionInfo struct {
 
 // HandshakeService implements ConnectionHandler (for infrastructure) and HandshakeAPI (for api) with the actual domain logic.
 type HandshakeService struct {
-	handshakeInitiator HandshakeMsgSender
+	handshakeMsgSender HandshakeMsgSender
 	peerStore          *peer.PeerStore
 }
 
 func NewHandshakeService(handshakeInitiator HandshakeMsgSender, peerStore *peer.PeerStore) *HandshakeService {
 	return &HandshakeService{
-		handshakeInitiator: handshakeInitiator,
+		handshakeMsgSender: handshakeInitiator,
 		peerStore:          peerStore,
 	}
 }

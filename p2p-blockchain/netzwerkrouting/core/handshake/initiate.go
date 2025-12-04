@@ -40,5 +40,5 @@ func (h *HandshakeService) InitiateHandshake(peerID peer.PeerID) {
 
 	p.State = peer.StateAwaitingVerack
 
-	h.handshakeInitiator.SendVersion(peerID, versionInfo)
+	h.handshakeMsgSender.SendVersion(peerID, versionInfo)
 }

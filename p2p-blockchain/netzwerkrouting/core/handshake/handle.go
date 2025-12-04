@@ -50,7 +50,7 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 
 	p.State = peer.StateAwaitingAck
 
-	h.handshakeInitiator.SendVerack(peerID, versionInfo)
+	h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
 
 func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
@@ -76,7 +76,7 @@ func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices
 
-	h.handshakeInitiator.SendAck(peerID)
+	h.handshakeMsgSender.SendAck(peerID)
 }
 
 func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
