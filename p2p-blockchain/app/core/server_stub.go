@@ -73,13 +73,14 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 		}, nil
 	}
 
-	port := uint16(req.Port)
 	if req.Port > 65535 {
 		return &pb.ConnectToResponse{
 			Success:      false,
 			ErrorMessage: "port must be between 0 and 65535",
 		}, nil
 	}
+
+	port := uint16(req.Port)
 
 	addrPort := netip.AddrPortFrom(ip, port)
 
