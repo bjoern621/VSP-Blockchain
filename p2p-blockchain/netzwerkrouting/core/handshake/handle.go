@@ -8,9 +8,9 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-// HandshakeHandler defines the interface for handling incoming connection messages.
+// HandshakeMsgHandler defines the interface for handling incoming connection messages.
 // This interface is implemented in the core/domain layer and used by the infrastructure layer.
-type HandshakeHandler interface {
+type HandshakeMsgHandler interface {
 	HandleVersion(peerID peer.PeerID, info VersionInfo)
 	HandleVerack(peerID peer.PeerID, info VersionInfo)
 	HandleAck(peerID peer.PeerID)

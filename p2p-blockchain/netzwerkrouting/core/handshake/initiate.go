@@ -8,9 +8,9 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-// HandshakeInitiator defines the interface for initiating a handshake with a peer.
+// HandshakeMsgSender defines the interface for initiating a handshake with a peer.
 // It is implemented by the infrastructure layer.
-type HandshakeInitiator interface {
+type HandshakeMsgSender interface {
 	// SendVersion sends a Version message to the specified peer.
 	SendVersion(peerID peer.PeerID, info VersionInfo)
 	// SendVerack sends a Verack message to the specified peer.
