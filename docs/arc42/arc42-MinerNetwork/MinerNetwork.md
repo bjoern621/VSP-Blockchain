@@ -344,8 +344,60 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 # Laufzeitsicht
 
-## Verbindungsaufbau
 
+## State machine Miner
+
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    [*] --> pre_operational
+    pre_operational --> Operational
+    
+    pre_operational: Pre Operational
+    Operational: Operational Idle
+    
+```
+<p><em>Abbildung: Zustandsgraph - Miner</em></p>
+</div>
+
+## State machine Miner: Pre-Operational
+
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    [*] --> pre_operational
+    pre_operational --> Operational
+    
+    pre_operational: Pre Operational
+    Operational: Operational Idle
+    
+```
+<p><em>Abbildung: Zustandsgraph - Miner Pre-Operational</em></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Verbindungsaufbau
 <div align="center">
 
 ```mermaid
