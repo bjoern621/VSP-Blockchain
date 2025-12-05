@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"net/http"
 
 	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
 	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
-	"s3b/vsp-blockchain/rest-api/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -28,14 +26,6 @@ func main() {
 			logger.Errorf("failed to close gRPC connection: %v", err)
 		}
 	}(conn)
-
-	client := pb.NewTestClient(conn)
-	resp, err := client.TestRPC(context.Background(), &pb.TestRequest{Message: "Hello from REST Schnittstelle"})
-	if err != nil {
-		logger.Warnf("gRPC call failed: %v", err)
-	} else {
-		logger.Infof("gRPC response: %s", resp.Message)
-	}
 
 	// REST API Server
 

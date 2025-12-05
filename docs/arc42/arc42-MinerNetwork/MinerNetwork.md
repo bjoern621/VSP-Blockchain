@@ -721,12 +721,37 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 </div>
 
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
+## Verwendete Hash-Algorithmen
+Als Hash Algorithmus wird SHA-256 verwendet. Dieser wird verwendet, wenn ein Block-Header oder eine Transaktion erstellt wird.
+Weiter findet dieser Anwendung in den Merkle-Trees und Merkle-Pfaden.
+
+Dieser kann beliebige Daten annehmen und diese auf einer 256 Bit großen Zahl (32 Byte) abbilden.
+Zur Darstellung wird häufig die Hexadezimalschreibweise verwendet. Dabei stellen vier Hexadezimal Symbole vier Bits dar.
+Das Ergebnis eines SHA256 Aufrufs ist also häufig als 64 Zeichen langer Hexadezimalstring dargestellt.
+Das SHA256 Verfahren wird auch heute (2025) noch als sicher angesehen.
 
 ## Fachliche Konzepte
 
 ### Domänenmodell V$Goin
 
 Die folgenden Kernobjekte definieren das Domänenmodell der V$Goin-Blockchain:
+
+#### Block
+Ein Block dient dazu mehrere Transaktionen zu speichern. Ein Block-Header-Hash kann durch das Hashen des Block-Headers
+erstellt werden und identifiziert einen Block eindeutig.
+Ein Block besteht aus einem Block-Header und einer List von Transaktionen.
+Ein Block-Header besteht aus:
+
+| Name                          | Datentyp |
+|-------------------------------|----------|
+| Hash des vorherigen Blocks    | 32 Byte  |
+| Merkle-Root der Transaktionen | 32 Byte  |
+| Zeitstempel                   | long     |
+| Nonce                         | UInt     |
+| Schwierigkeitsziel            | UInt     |
+
+Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenbehaftete 64-Bit-Ganzzahl.
+Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 #### PubKey (öffentlicher Schlüssel)
 - Länge: **33 Byte**
@@ -783,7 +808,9 @@ Legt fest, wohin der Wert übertragen wird.
 ---
 
 #### Transaktion
-Eine Transaktion besteht aus:
+Eine Transaktion besteht aus mehreren Ein- und Ausgaben.
+Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
+Ein Transaktions besteht aus folgendem:
 - **Inputs**
 - **Outputs**
 
@@ -825,7 +852,7 @@ _\<Erklärung\>_
 
 ## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
 ### Kontext
-Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielte eine Reihe technischer und organisatorischer
+Für die Serialisierung von Daten in RPC-Calls musste eine geeignete Technologie ausgewählt werden. Dabei spielten eine Reihe technischer und organisatorischer
 Faktoren eine Rolle. Die Entscheidung musste sicherstellen, dass Daten zuverlässig beschrieben, automatisch generiert, typsicher verarbeitet und effizient übertragen werden können.
 Zudem sollte die Lösung gut in bestehende Entwicklungsprozesse passen und möglichst geringe Einarbeitungsaufwände verursachen.
 
