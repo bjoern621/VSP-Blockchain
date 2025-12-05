@@ -836,8 +836,8 @@ Signaturprüfung:
 3. Prüfung mittels: ecdsa
 
 #### 3. PubKey-Bindung
-Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten:
-HASH160(PubKey) == UTXO.PubKeyHash
+Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
+HASH160(PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.
 
 ## _\<Konzept n\>_
