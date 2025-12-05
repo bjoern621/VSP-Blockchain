@@ -722,6 +722,101 @@ Dabei müssen nur die Hashes übermittelt werden, welche auf dem Weg von der Tra
 
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
 
+## Fachliche Konzepte
+
+### Domänenmodell V$Goin
+
+Die folgenden Kernobjekte definieren das Domänenmodell der V$Goin-Blockchain:
+
+#### PubKey (öffentlicher Schlüssel)
+- Länge: **33 Byte**
+- Format: **komprimierter secp256k1-Public Key**
+- Verwendung:
+    - Bestandteil der Signaturprüfung eines Inputs
+    - Basis für die Adressgenerierung
+
+#### PubKeyHash / Adresse
+- Länge: **20 Byte**
+- Bildung:
+    1. SHA-256 über den 33-Byte-PubKey
+    2. SHA-256 über den 33-Byte-Hash
+    3. ersten 20 Byte als Adresse nehmen
+- Verwendung:
+    - Identifiziert die Empfänger eines Outputs
+    - Dient als vereinfachter `scriptPubKey`
+
+#### UTXO (Unspent Transaction Output)
+Ein UTXO beschreibt einen nicht ausgegebenen Output einer früheren Transaktion.
+
+Bestandteile:
+- `TransactionID` (32 Byte)
+- `OutputIndex` (uint32)
+- `Value` (uint64)
+- `PubKeyHash` (PubKeyHash)
+
+UTXOs repräsentieren das Guthaben einer Adresse innerhalb des Systems.
+
+#### `Input`
+Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur den Besitz des dazugehörigen Private Keys.
+
+**Bestandteile:**
+- `PrevTxID` — 32-Byte ID der vorherigen Transaktion
+- `Index` — Output-Index innerhalb der referenzierten Transaktion
+- `Signature` — Byte-Slice
+- `PubKey` — PubKey
+
+**Zweck:**  
+Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszugeben.
+
+---
+
+#### `Output`
+Ein Output definiert einen neuen UTXO.
+
+**Bestandteile:**
+- `Value` — uint64, Wert des Outputs
+- `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
+
+**Zweck:**  
+Legt fest, wohin der Wert übertragen wird.
+
+---
+
+#### Transaktion
+Eine Transaktion besteht aus:
+- **Inputs**
+- **Outputs**
+
+Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eventueller Gebühren).
+
+---
+
+### Validierungsregeln
+
+Die Validierung stellt sicher, dass Transaktionen korrekt, sicher und konsistent mit dem UTXO-Modell verarbeitet werden. Die Regeln orientieren sich teilweise an Bitcoin, sind jedoch für V$Goin vereinfacht.
+
+#### 1. Input-Referenzierung
+- Jeder Input muss einen existierenden UTXO referenzieren.
+- Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
+- Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
+
+#### 2. Signatur und SIGHASH
+Für jeden Input wird ein SIGHASH berechnet:
+- Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
+- Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
+- Alle Outputs werden vollständig serialisiert.
+- Der Hash wird als **double-SHA-256** berechnet.
+
+Signaturprüfung:
+1. DER-decodieren der Signatur → `(r, s)`
+2. Komprimierter Public Key wird dekomprimiert
+3. Prüfung mittels: ecdsa
+
+#### 3. PubKey-Bindung
+Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten:
+HASH160(PubKey) == UTXO.PubKeyHash
+Falls nicht erfüllt → Input ist ungültig.
+
 ## _\<Konzept n\>_
 
 _\<Erklärung\>_
