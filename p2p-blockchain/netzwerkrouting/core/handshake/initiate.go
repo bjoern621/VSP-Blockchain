@@ -19,7 +19,7 @@ type HandshakeMsgSender interface {
 	SendAck(peerID peer.PeerID)
 }
 
-// HandshakeService interface for the API layer.
+// HandshakeInitiator defines the interface for initiating handshakes with peers.
 type HandshakeInitiator interface {
 	// InitiateHandshake starts the handshake process with the given peer.
 	InitiateHandshake(peerID peer.PeerID)
