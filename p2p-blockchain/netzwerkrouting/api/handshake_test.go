@@ -205,7 +205,7 @@ func TestInitiateHandshake_ConcurrentCalls(t *testing.T) {
 	for i := range numCalls {
 		go func(idx int) {
 			defer wg.Done()
-			api.InitiateHandshake(addresses[idx])
+			_ = api.InitiateHandshake(addresses[idx])
 		}(i)
 	}
 
