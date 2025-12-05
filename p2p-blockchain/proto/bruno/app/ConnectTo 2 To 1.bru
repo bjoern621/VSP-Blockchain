@@ -1,11 +1,11 @@
 meta {
-  name: ConnectTo
+  name: ConnectTo 2 To 1
   type: grpc
-  seq: 3
+  seq: 5
 }
 
 grpc {
-  url: localhost:50050
+  url: localhost:50058
   method: /app.AppService/ConnectTo
   body: grpc
   protoPath: ../../app.proto
@@ -18,7 +18,7 @@ body:grpc {
   content: '''
     {
       "ip_address": "fwAAAQ==", 
-      "port": 50052
+      "port": 50051
     }
   '''
 }

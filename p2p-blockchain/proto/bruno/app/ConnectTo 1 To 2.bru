@@ -1,12 +1,12 @@
 meta {
-  name: GetPeerRegistry Node 2
+  name: ConnectTo 1 To 2
   type: grpc
-  seq: 4
+  seq: 3
 }
 
 grpc {
-  url: localhost:50058
-  method: /app.AppService/GetPeerRegistry
+  url: localhost:50050
+  method: /app.AppService/ConnectTo
   body: grpc
   protoPath: ../../app.proto
   auth: inherit
@@ -16,6 +16,9 @@ grpc {
 body:grpc {
   name: message 1
   content: '''
-    {}
+    {
+      "ip_address": "fwAAAQ==", 
+      "port": 50052
+    }
   '''
 }
