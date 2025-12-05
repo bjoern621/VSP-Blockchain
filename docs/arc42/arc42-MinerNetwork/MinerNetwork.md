@@ -97,18 +97,12 @@ Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich s
 
 # Lösungsstrategie
 
-Beispiele:
-Entwurfsentscheidungen und Lösungsstrategien Gesamtarchitektur
-Technologieentscheidungen, Top-Level-Zerlegungsstrategie, Ansätze Erreichung Qualitätsziele,
-Organisationsentscheidungen
-TODO entfernern
-
 -   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
 -   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
 -   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
 -   das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
 -   jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
--   Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#rpc-framework) in den Architekturentscheidungen zu finden.
+-   Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) in den Architekturentscheidungen zu finden.
 
 # Bausteinsicht
 
@@ -216,7 +210,7 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### SPV Node (Blackbox)
 
 Zweck/Verantwortung  
-Eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist. Enthält die Teilsystene Netzwerkrouting und Wallet.
+Eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist. Enthält die Teilsysteme Netzwerkrouting und Wallet.
 
 Schnittstellen
 
@@ -894,9 +888,40 @@ Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während
 
 # Qualitätsanforderungen
 
+In diesem Abschnitt werden weitere Details und zusätzliche Qualitätsanforderungen beschrieben, die weniger kritisch und eher _nice-to-have_ sind.
+
 ## Übersicht der Qualitätsanforderungen
 
+Die vier wichtigsten Qualitätsanforderungen wurden bereits zu Beginn des Dokuments in [Qualitätsziele](#qualitätsziele) definiert.
+
+Resource Sharing  
+Ein weiteres grundlegendes Ziel verteilter Systeme ist die gemeinsame Nutzung von Ressourcen. Im P2P-Netzwerk wird die Rechenleistung zum Validieren von Transaktionen und Mining von Blöcken auf alle Miner verteilt. Ebenso wird die Speicherung der Blockchain auf mehrere Nodes aufgeteilt. Durch diese Verteilung wird verhindert, dass einzelne Knoten überlastet werden und das Netzwerk bleibt auch bei hoher Last funktionsfähig. Resource Sharing ist eng mit der Skalierbarkeit verknüpft und wird z.&nbsp;B. durch den [Registry Crawler](#registry-crawler-blackbox) aktiv unterstützt, der Verbindungsanfragen gleichmäßig auf Nodes verteilt.
+
+Die folgende Übersicht kategorisiert die Qualitätsanforderungen nach dem [Q42-Qualitätsmodell](https://quality.arc42.org/).
+
+| Kategorie | Beschreibung                                                                                                                                                                                   |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Efficient | Das System muss Anfragen innerhalb akzeptabler Zeitgrenzen bearbeiten. Der Speicher- und CPU-Verbrauch muss innerhalb der ICC-Ressourcenquoten bleiben.                                        |
+| Flexible  | Die Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) müssen weitgehend unabhängig voneinander nutzbar sein. Dies erlaubt eine flexible Nutzung je nach Bedarf des Nutzers.             |
+| Reliable  | Das Netzwerk muss auch bei Ausfall einzelner Nodes funktionsfähig bleiben.                                                                                                                     |
+| Secure    | Die Blockchain ist durch kryptographische Verfahren (Hashing, digitale Signaturen) gegen Manipulation geschützt. Transaktionen können nur vom Besitzer der privaten Schlüssel erstellt werden. |
+
+Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größere Beachtung geschenkt werden.
+
 ## Qualitätsszenarien
+
+Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt. Verwendete Werte sind, wenn nicht anders angegeben, Educated Guesses.
+
+| ID   | Szenario                                                                                                                                                                                                                                  | Akzeptanzkriterium                                                                                                                                        | Relevante Qualitätsanforderungen                                                                                                                                                                                                                 |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).                                                                                                            | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                               | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)                                                                                                                                                                       |
+| QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                                                                                                                                 | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                                     | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)<br/>Efficient > [Responsiveness](https://quality.arc42.org/qualities/responsiveness)                                                                                  |
+| QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                                                                                                                      | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Synchronisation beginnt innerhalb von 10 Sekunden.                 | Reliable > [Recoverability](https://quality.arc42.org/qualities/recoverability)                                                                                                                                                                  |
+| QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. Siehe [Aufgabenstellung](#aufgabenstellung) für Unterscheidung zwischen Händler-/Mining-Funktionen | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar. Es besteht keine Abhängigkeit von Wallet zu Miner-Teilsystem.                                | Flexible > [Modularity](https://quality.arc42.org/qualities/modularity)<br/>Flexible > [Composability](https://quality.arc42.org/qualities/composability)                                                                                        |
+| QS-5 | Eine SPV Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                                   | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
+| QS-6 | Ein Reviewer prüft eine Code-Änderung.                                                                                                                                                                                                    | Die Änderung ist durch Kommentare und Dokumentation unterstützt. Go Best Practices wurden eingehalten. Tool: [Golangci-lint](https://golangci-lint.run/). | Flexible > [Maintainability](https://quality.arc42.org/qualities/maintainability)                                                                                                                                                                |
+| QS-7 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                                                                                                                    | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                                   | Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance) <br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)<br/>Secure > [Data Integrity](https://quality.arc42.org/qualities/data-integrity) |
+| QS-8 | 5 % gleichmäßig im Netzwerk verteilte Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                                                                                                                 | Die verbleibenden Nodes können weiterhin [alle Anforderungen](#aufgabenstellung) erfüllen.                                                                | Reliable > [Resilience](https://quality.arc42.org/qualities/resilience)<br/>Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance)                                                                                    |
 
 # Risiken und technische Schulden
 
@@ -957,9 +982,13 @@ Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während
 
 | Begriff       | Definition                                                                                                                                                                                                            |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SPV           | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, Netzwerk-Routing                                                                                                                                                             |
-| Miner (Node)  | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
-| ICC           | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
-| Node          | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für Peer.                                                                                                                                          |
 | Genesis Block | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
+| gRPC          | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
+| ICC           | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
+| Mempool       | Memory Pool, Zwischenspeicher für unbestätigte Transaktionen, die noch nicht in einem Block aufgenommen wurden.                                                                                                       |
+| Miner Node    | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
+| Node          | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
+| Protobuf      | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
+| SPV           | Simplified Payment Verification                                                                                                                                                                                       |
+| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
+| UTXO          | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |
