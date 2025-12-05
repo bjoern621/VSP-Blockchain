@@ -140,6 +140,7 @@ func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryReq
 
 		// Peer info from PeerStore
 		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
+			p.Lock()
 			entry.Version = p.Version
 			entry.ConnectionState = connectionStateToString(p.State)
 			entry.Direction = directionToString(p.Direction)
@@ -147,6 +148,7 @@ func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryReq
 			for _, svc := range p.SupportedServices {
 				entry.SupportedServices = append(entry.SupportedServices, serviceTypeToString(svc))
 			}
+			p.Unlock()
 		}
 
 		response.Entries = append(response.Entries, entry)

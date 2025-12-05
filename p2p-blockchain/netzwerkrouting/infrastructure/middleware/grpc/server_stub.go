@@ -8,7 +8,6 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -24,14 +23,12 @@ type Server struct {
 	listener            net.Listener
 	handshakeMsgHandler handshake.HandshakeMsgHandler
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
-	peerCreator         peer.PeerCreator
 }
 
-func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, peerCreator peer.PeerCreator) *Server {
+func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
-		peerCreator:         peerCreator,
 	}
 }
 

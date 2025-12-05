@@ -32,10 +32,18 @@ func (h *handshakeService) InitiateHandshake(peerID peer.PeerID) {
 		return
 	}
 
+	p.Lock()
+	defer p.Unlock()
+
+	if p.State != peer.StateNew {
+		logger.Warnf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
+		return
+	}
+
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,
 		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
+		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr(), common.P2PPort()),
 	}
 
 	p.State = peer.StateAwaitingVerack

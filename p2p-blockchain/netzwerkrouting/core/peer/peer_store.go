@@ -1,6 +1,9 @@
 package peer
 
+import "sync"
+
 type PeerStore struct {
+	mu    sync.RWMutex
 	peers map[PeerID]*Peer
 }
 
@@ -17,15 +20,21 @@ func NewPeerStore() *PeerStore {
 }
 
 func (s *PeerStore) GetPeer(id PeerID) (*Peer, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	peer, exists := s.peers[id]
 	return peer, exists
 }
 
 func (s *PeerStore) addPeer(peer *Peer) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.peers[peer.id] = peer
 }
 
 func (s *PeerStore) RemovePeer(id PeerID) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	delete(s.peers, id)
 }
 

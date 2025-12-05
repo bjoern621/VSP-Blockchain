@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"net/netip"
+	"sync/atomic"
 )
 
 const (
@@ -16,9 +17,17 @@ var (
 )
 
 var (
-	P2PListeningIpAddr netip.Addr
+	p2pListeningIpAddr atomic.Value // netip.Addr
 )
 
+func init() {
+	p2pListeningIpAddr.Store(netip.Addr{})
+}
+
+func P2PListeningIpAddr() netip.Addr {
+	return p2pListeningIpAddr.Load().(netip.Addr)
+}
+
 func SetP2PListeningIpAddr(ip netip.Addr) {
-	P2PListeningIpAddr = ip
+	p2pListeningIpAddr.Store(ip)
 }

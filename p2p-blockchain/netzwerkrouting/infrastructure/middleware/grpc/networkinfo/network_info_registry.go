@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
+	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -26,22 +27,28 @@ type NetworkInfoEntry struct {
 // - Outbound gRPC connection
 // One PeerID represents one real remote node.
 type NetworkInfoRegistry struct {
+	mu                      sync.RWMutex
 	listeningEndpointToPeer map[netip.AddrPort]peer.PeerID
 	inboundAddrToPeer       map[netip.AddrPort]peer.PeerID
 	networkInfoEntries      map[peer.PeerID]*NetworkInfoEntry
+	peerCreator             peer.PeerCreator
 }
 
-func NewNetworkInfoRegistry() *NetworkInfoRegistry {
+func NewNetworkInfoRegistry(peerCreator peer.PeerCreator) *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{
 		listeningEndpointToPeer: make(map[netip.AddrPort]peer.PeerID),
 		inboundAddrToPeer:       make(map[netip.AddrPort]peer.PeerID),
 		networkInfoEntries:      make(map[peer.PeerID]*NetworkInfoEntry),
+		peerCreator:             peerCreator,
 	}
 }
 
 // GetPeerIDByAddr looks up a peer by address and port.
 // Searches both listening endpoints and inbound addresses.
 func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	if id, exists := r.listeningEndpointToPeer[addr]; exists {
 		return id, true
 	}
@@ -53,32 +60,11 @@ func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID,
 	return "", false
 }
 
-// GetPeerIDByAddrs looks up a peer by listening endpoint or inbound address.
-// Returns the PeerID and true if found, empty string and false otherwise.
-func (r *NetworkInfoRegistry) GetPeerIDByAddrs(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) (peer.PeerID, bool) {
-	hasInbound := inboundAddr != netip.AddrPort{}
-	hasListening := listeningEndpoint != netip.AddrPort{}
-	assert.Assert(hasInbound || hasListening, "at least one of inboundAddr or listeningEndpoint must be provided")
-
-	// Try to find existing peer by listening endpoint
-	if hasListening {
-		if peerID, exists := r.listeningEndpointToPeer[listeningEndpoint]; exists {
-			return peerID, true
-		}
-	}
-
-	// Try to find existing peer by inbound address
-	if hasInbound {
-		if peerID, exists := r.inboundAddrToPeer[inboundAddr]; exists {
-			return peerID, true
-		}
-	}
-
-	return "", false
-}
-
 // RegisterPeer registers an existing peerID and a listening endpoint.
 func (r *NetworkInfoRegistry) RegisterPeer(peerID peer.PeerID, listeningEndpoint netip.AddrPort) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	_, exists := r.networkInfoEntries[peerID]
 	assert.Assert(!exists, "peer %s already registered", peerID)
 
@@ -93,9 +79,50 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID peer.PeerID, listeningEndpoint
 	logger.Debugf("registered peer %s in network info registry infrastructure: listening=%s", peerID, listeningEndpoint)
 }
 
+// GetOrRegisterPeer atomically looks up a peer by addresses, or registers a new one if not found.
+// Returns the peerID and true if the peer already existed, or the new peerID and false if created.
+func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) peer.PeerID {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	hasInbound := inboundAddr != netip.AddrPort{}
+	hasListening := listeningEndpoint != netip.AddrPort{}
+	assert.Assert(hasInbound || hasListening, "at least one of inboundAddr or listeningEndpoint must be provided")
+
+	// Try to find existing peer by listening endpoint
+	if hasListening {
+		if peerID, exists := r.listeningEndpointToPeer[listeningEndpoint]; exists {
+			return peerID
+		}
+	}
+
+	// Try to find existing peer by inbound address
+	if hasInbound {
+		if peerID, exists := r.inboundAddrToPeer[inboundAddr]; exists {
+			return peerID
+		}
+	}
+
+	// Not found, create new peer
+	peerID := r.peerCreator.NewInboundPeer()
+	entry := &NetworkInfoEntry{
+		ListeningEndpoint: listeningEndpoint,
+	}
+	r.networkInfoEntries[peerID] = entry
+	if hasListening {
+		r.listeningEndpointToPeer[listeningEndpoint] = peerID
+	}
+
+	logger.Debugf("registered new peer %s in network info registry: listening=%s", peerID, listeningEndpoint)
+	return peerID
+}
+
 // AddInboundAddress adds an inbound address to a peer's list if not already present.
 // The peer must already exist.
 func (r *NetworkInfoRegistry) AddInboundAddress(peerID peer.PeerID, addr netip.AddrPort) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	entry, exists := r.networkInfoEntries[peerID]
 	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
 
@@ -109,6 +136,9 @@ func (r *NetworkInfoRegistry) AddInboundAddress(peerID peer.PeerID, addr netip.A
 
 // SetListeningEndpoint sets the listening endpoint for an existing peer.
 func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID peer.PeerID, listeningEndpoint netip.AddrPort) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	entry, exists := r.networkInfoEntries[peerID]
 	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
 
@@ -129,6 +159,9 @@ func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID peer.PeerID, listening
 
 // SetConnection sets the outbound gRPC connection for an existing peer.
 func (r *NetworkInfoRegistry) SetConnection(peerID peer.PeerID, conn *grpc.ClientConn) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	entry, exists := r.networkInfoEntries[peerID]
 	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
 
@@ -139,6 +172,9 @@ func (r *NetworkInfoRegistry) SetConnection(peerID peer.PeerID, conn *grpc.Clien
 
 // GetConnection returns the outbound gRPC connection for a peer.
 func (r *NetworkInfoRegistry) GetConnection(peerID peer.PeerID) (*grpc.ClientConn, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	entry, exists := r.networkInfoEntries[peerID]
 	if !exists {
 		return nil, false
@@ -148,6 +184,9 @@ func (r *NetworkInfoRegistry) GetConnection(peerID peer.PeerID) (*grpc.ClientCon
 
 // GetListeningEndpoint returns the listening endpoint for a peer.
 func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID peer.PeerID) (netip.AddrPort, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	entry, exists := r.networkInfoEntries[peerID]
 	if !exists {
 		return netip.AddrPort{}, false
@@ -173,6 +212,9 @@ type FullNetworkInfo struct {
 
 // GetAllNetworkInfo returns all available information for all peers.
 func (r *NetworkInfoRegistry) GetAllNetworkInfo() []FullNetworkInfo {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	result := make([]FullNetworkInfo, 0, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
 		info := FullNetworkInfo{

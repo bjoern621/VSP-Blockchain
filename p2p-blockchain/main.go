@@ -19,7 +19,7 @@ func main() {
 	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
 
 	peerStore := peer.NewPeerStore()
-	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry()
+	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
@@ -28,21 +28,21 @@ func main() {
 
 	appServer := appcore.NewServer(handshakeAPI, networkInfoRegistry, peerStore)
 
-	err := appServer.Start(common.AppPort)
+	err := appServer.Start(common.AppPort())
 	if err != nil {
 		logger.Warnf("couldn't start App server: %v", err)
 	} else {
 		addrPort, err := appServer.ListeningEndpoint()
 		assert.IsNil(err)
 		common.SetAppPort(addrPort.Port())
-		logger.Infof("App server started on port %d", common.AppPort)
+		logger.Infof("App server started on port %d", common.AppPort())
 	}
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, peerStore)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
 
-	err = grpcServer.Start(common.P2PPort)
+	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
@@ -50,7 +50,7 @@ func main() {
 		assert.IsNil(err)
 		common.SetP2PPort(addrPort.Port())
 		common.SetP2PListeningIpAddr(addrPort.Addr())
-		logger.Infof("P2P server started on port %d", common.P2PPort)
+		logger.Infof("P2P server started on port %d", common.P2PPort())
 	}
 
 	select {}

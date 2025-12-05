@@ -3,6 +3,7 @@ package common
 import (
 	"math"
 	"strconv"
+	"sync/atomic"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/env"
@@ -15,15 +16,23 @@ const (
 )
 
 var (
-	AppPort uint16
-	P2PPort uint16
+	appPort atomic.Uint32
+	p2pPort atomic.Uint32
 )
 
 // init reads all required environment variables at startup.
 // Read values are stored in package-level variables for easy access.
 func init() {
-	AppPort = readAppPort()
-	P2PPort = readP2PPort()
+	appPort.Store(uint32(readAppPort()))
+	p2pPort.Store(uint32(readP2PPort()))
+}
+
+func AppPort() uint16 {
+	return uint16(appPort.Load())
+}
+
+func P2PPort() uint16 {
+	return uint16(p2pPort.Load())
 }
 
 // readAppPort reads the application port used by the app endpoint from the environment variable appPortEnvVar.
@@ -69,9 +78,9 @@ func readP2PPort() uint16 {
 // SetAppPort sets the application port to the given value.
 // Is needed for example for dynamic port assignment.
 func SetAppPort(port uint16) {
-	AppPort = port
+	appPort.Store(uint32(port))
 }
 
 func SetP2PPort(port uint16) {
-	P2PPort = port
+	p2pPort.Store(uint32(port))
 }

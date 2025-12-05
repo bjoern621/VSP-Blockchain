@@ -2,6 +2,8 @@
 package peer
 
 import (
+	"sync"
+
 	"bjoernblessin.de/go-utils/util/logger"
 	"github.com/google/uuid"
 )
@@ -37,6 +39,7 @@ const (
 
 // Peer represents a peer in the network.
 type Peer struct {
+	mu                sync.Mutex
 	id                PeerID
 	Version           string
 	SupportedServices []ServiceType
@@ -59,5 +62,16 @@ func (s *PeerStore) NewPeer(direction Direction) PeerID {
 }
 
 func (p *Peer) ID() PeerID {
+	// id is immutable, no lock needed
 	return p.id
+}
+
+// Lock acquires the peer's mutex. Caller must call Unlock when done.
+func (p *Peer) Lock() {
+	p.mu.Lock()
+}
+
+// Unlock releases the peer's mutex.
+func (p *Peer) Unlock() {
+	p.mu.Unlock()
 }

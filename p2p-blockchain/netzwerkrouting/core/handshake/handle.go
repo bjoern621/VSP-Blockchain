@@ -27,6 +27,9 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 		return
 	}
 
+	p.Lock()
+	defer p.Unlock()
+
 	if p.State != peer.StateNew {
 		logger.Warnf("peer %s sent Version message in invalid state %v", peerID, p.State)
 		return
@@ -45,7 +48,7 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,
 		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr, common.P2PPort),
+		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr(), common.P2PPort()),
 	}
 
 	p.State = peer.StateAwaitingAck
@@ -59,6 +62,9 @@ func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
 		return
 	}
+
+	p.Lock()
+	defer p.Unlock()
 
 	if p.State != peer.StateAwaitingVerack {
 		logger.Warnf("peer %s sent Verack message in invalid state %v", peerID, p.State)
@@ -85,6 +91,9 @@ func (h *handshakeService) HandleAck(peerID peer.PeerID) {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)
 		return
 	}
+
+	p.Lock()
+	defer p.Unlock()
 
 	if p.State != peer.StateAwaitingAck {
 		logger.Warnf("peer %s sent Ack message in invalid state %v", peerID, p.State)
