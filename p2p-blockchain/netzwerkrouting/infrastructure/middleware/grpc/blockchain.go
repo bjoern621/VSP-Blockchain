@@ -144,6 +144,15 @@ func protoToBlockHeader(header *pb.BlockHeader) *blockchain.BlockHeader {
 	}
 }
 
+func protoToBlockHeaders(pbHeaders []*pb.BlockHeader) []*blockchain.BlockHeader {
+	var headers = make([]*blockchain.BlockHeader, len(pbHeaders))
+	for _, header := range pbHeaders {
+		headers = append(headers, protoToBlockHeader(header))
+	}
+
+	return headers
+}
+
 func protoToBlock(block *pb.Block) *blockchain.Block {
 	if block == nil {
 		return nil
@@ -253,9 +262,11 @@ func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emp
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) Headers(ctx context.Context, headers *pb.BlockHeaders) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*emptypb.Empty, error) {
+	headers := protoToBlockHeaders(pbHeaders.Headers)
+	go s.NotifyHeaders(headers)
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*emptypb.Empty, error) {
@@ -301,5 +312,11 @@ func (s *Server) NotifyTx(txMsg blockchain.TxMsg) {
 func (s *Server) NotifyGetHeaders(locator blockchain.BlockLocator) {
 	for observer := range s.observers {
 		observer.GetHeaders(locator)
+	}
+}
+
+func (s *Server) NotifyHeaders(headers []*blockchain.BlockHeader) {
+	for observer := range s.observers {
+		observer.Headers(headers)
 	}
 }

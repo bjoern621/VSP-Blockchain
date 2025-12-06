@@ -9,4 +9,5 @@ type BlockchainObserver interface {
 	MerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg)
 	Tx(txMsg blockchain.TxMsg)
 	GetHeaders(locator blockchain.BlockLocator)
+	Headers(headers []*blockchain.BlockHeader)
 }
