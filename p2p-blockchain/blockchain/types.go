@@ -10,15 +10,50 @@ const (
 	InvType_MSG_FILTERED_BLOCK
 )
 
-type InvVector struct {
-	InvType InvType
-	Hash    *Hash
-}
-
 type InvMsg struct {
 	Inventory []*InvVector
 }
 
 type GetDataMsg struct {
 	Inventory []*InvVector
+}
+
+type BlockMsg struct {
+	Block *Block
+}
+
+type InvVector struct {
+	InvType InvType
+	Hash    *Hash
+}
+
+type BlockHeader struct {
+	Hash             *Hash
+	MerkleRoot       *Hash
+	Timestamp        int64
+	DifficultyTarget uint32
+	Nonce            uint32
+}
+
+type TxInput struct {
+	PreviousTxHash  *Hash
+	PreviousIndex   uint32
+	SignatureScript []byte
+	Sequence        uint32
+}
+
+type TxOutput struct {
+	Value           int64
+	PublicKeyScript []byte
+}
+
+type Transaction struct {
+	Inputs   []*TxInput
+	Outputs  []*TxOutput
+	LockTime int64
+}
+
+type Block struct {
+	Header       *BlockHeader
+	Transactions []*Transaction
 }

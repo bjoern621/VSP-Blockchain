@@ -20,7 +20,11 @@ func bytesToHash(bytes []byte) (*blockchain.Hash, error) {
 	return &hash, nil
 }
 
-func fromProtoInvVector(vector *pb.InvVector) *blockchain.InvVector {
+func protoToInvVector(vector *pb.InvVector) *blockchain.InvVector {
+	if vector == nil {
+		return nil
+	}
+
 	hash, err := bytesToHash(vector.Hash)
 	assert.IsNil(err, "failed to convert hash from proto")
 
@@ -30,17 +34,117 @@ func fromProtoInvVector(vector *pb.InvVector) *blockchain.InvVector {
 	}
 }
 
-func fromProtoInvVectors(inventoryVector []*pb.InvVector) []*blockchain.InvVector {
+func protoInvVectors(inventoryVector []*pb.InvVector) []*blockchain.InvVector {
+	if inventoryVector == nil {
+		return nil
+	}
+
 	invVectors := make([]*blockchain.InvVector, len(inventoryVector))
 	for _, pbInvVector := range inventoryVector {
-		invVectors = append(invVectors, fromProtoInvVector(pbInvVector))
+		invVectors = append(invVectors, protoToInvVector(pbInvVector))
 	}
 
 	return invVectors
 }
 
+func protoToTxInput(input *pb.TxInput) *blockchain.TxInput {
+	if input == nil {
+		return nil
+	}
+
+	hash, err := bytesToHash(input.PrevTxHash)
+	assert.IsNil(err, "failed to convert previous tx hash from proto")
+
+	return &blockchain.TxInput{
+		PreviousTxHash:  hash,
+		PreviousIndex:   input.OutputIndex,
+		SignatureScript: input.SignatureScript,
+		Sequence:        input.Sequence,
+	}
+}
+
+func protoToTxInputs(pbInputs []*pb.TxInput) []*blockchain.TxInput {
+	var inputs []*blockchain.TxInput
+	for _, input := range pbInputs {
+		inputs = append(inputs, protoToTxInput(input))
+	}
+
+	return inputs
+}
+
+func protoToTxOutput(output *pb.TxOutput) *blockchain.TxOutput {
+	if output == nil {
+		return nil
+	}
+
+	return &blockchain.TxOutput{
+		Value:           output.Value,
+		PublicKeyScript: output.PublicKeyScript,
+	}
+}
+
+func protoToTxOutputs(pbOutputs []*pb.TxOutput) []*blockchain.TxOutput {
+	var outputs []*blockchain.TxOutput
+	for _, output := range pbOutputs {
+		outputs = append(outputs, protoToTxOutput(output))
+	}
+
+	return outputs
+}
+
+func protoToTransaction(tx *pb.Transaction) *blockchain.Transaction {
+	if tx == nil {
+		return nil
+	}
+
+	return &blockchain.Transaction{
+		Inputs:   protoToTxInputs(tx.Inputs),
+		Outputs:  protoToTxOutputs(tx.Outputs),
+		LockTime: tx.LockTime,
+	}
+}
+
+func protoToTransactions(pbTransactions []*pb.Transaction) []*blockchain.Transaction {
+	transactions := make([]*blockchain.Transaction, len(pbTransactions))
+	for _, tx := range pbTransactions {
+		transactions = append(transactions, protoToTransaction(tx))
+	}
+
+	return transactions
+}
+
+func protoToBlockHeader(header *pb.BlockHeader) *blockchain.BlockHeader {
+	if header == nil {
+		return nil
+	}
+
+	prevBlockHash, err := bytesToHash(header.PrevBlockHash)
+	assert.IsNil(err, "failed to convert previous block hash from proto")
+	merkleRoot, err := bytesToHash(header.MerkleRoot)
+	assert.IsNil(err, "failed to convert merkle root hash from proto")
+
+	return &blockchain.BlockHeader{
+		Hash:             prevBlockHash,
+		MerkleRoot:       merkleRoot,
+		Timestamp:        header.Timestamp,
+		DifficultyTarget: header.DifficultyTarget,
+		Nonce:            header.Nonce,
+	}
+}
+
+func protoToBlock(block *pb.Block) *blockchain.Block {
+	if block == nil {
+		return nil
+	}
+
+	return &blockchain.Block{
+		Header:       protoToBlockHeader(block.Header),
+		Transactions: protoToTransactions(block.Transactions),
+	}
+}
+
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
-	invVectors := fromProtoInvVectors(msg.Inventory)
+	invVectors := protoInvVectors(msg.Inventory)
 	go s.NotifyInv(blockchain.InvMsg{
 		Inventory: invVectors,
 	})
@@ -49,7 +153,7 @@ func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error
 }
 
 func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empty, error) {
-	invVectors := fromProtoInvVectors(msg.Inventory)
+	invVectors := protoInvVectors(msg.Inventory)
 	go s.NotifyGetData(blockchain.GetDataMsg{
 		Inventory: invVectors,
 	})
@@ -58,8 +162,12 @@ func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empt
 }
 
 func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	block := protoToBlock(msg.Block)
+	go s.NotifyBlock(blockchain.BlockMsg{
+		Block: block,
+	})
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
@@ -101,5 +209,11 @@ func (s *Server) NotifyInv(invMsg blockchain.InvMsg) {
 func (s *Server) NotifyGetData(getDataMsg blockchain.GetDataMsg) {
 	for observer := range s.observers {
 		observer.GetData(getDataMsg)
+	}
+}
+
+func (s *Server) NotifyBlock(blockMsg blockchain.BlockMsg) {
+	for observer := range s.observers {
+		observer.Block(blockMsg)
 	}
 }
