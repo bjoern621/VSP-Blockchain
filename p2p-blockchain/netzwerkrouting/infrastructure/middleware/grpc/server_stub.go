@@ -26,7 +26,8 @@ type Server struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 
 	pb.UnimplementedBlockchainServiceServer
-	observer []*observer.BlockchainObserver
+	// Warum hat go kein Set??? https://stackoverflow.com/questions/34018908/golang-why-dont-we-have-a-set-datastructure
+	observers map[observer.BlockchainObserver]struct{}
 }
 
 func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
