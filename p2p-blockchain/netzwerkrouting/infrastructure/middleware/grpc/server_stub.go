@@ -19,6 +19,7 @@ import (
 // It contains no domain logic, only type transformation and delegation.
 type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
+	pb.UnimplementedBlockchainServiceServer
 	grpcServer          *grpc.Server
 	listener            net.Listener
 	handshakeMsgHandler handshake.HandshakeMsgHandler
@@ -43,6 +44,7 @@ func (s *Server) Start(port uint16) error {
 
 	s.grpcServer = grpc.NewServer()
 	pb.RegisterConnectionEstablishmentServer(s.grpcServer, s)
+	pb.RegisterBlockchainServiceServer(s.grpcServer, s)
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
