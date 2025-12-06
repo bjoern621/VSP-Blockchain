@@ -1,0 +1,59 @@
+// External API for local system communication.
+// This service provides an interface for external software on the local device
+// to interact with the p2p-blockchain node.
+// 
+// Note: This is different from the netzwerkrouting RPC which handles
+// peer-to-peer communication between nodes in the network.
+
+syntax="proto3";
+
+package app;
+
+import "netzwerkrouting.proto";
+
+option go_package = "./internal/pb";
+
+// AppService provides an interface for external local systems to interact with the node.
+service AppService {
+    // ConnectTo instructs the node to establish a connection to a peer at the given address.
+    //
+    // Post-conditions:
+    //  - Node attempts to connect to the specified peer.
+    //  - Returns success/failure status.
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse);
+
+    // GetPeerRegistry returns the current peer registry for debugging purposes.
+    rpc GetPeerRegistry(GetPeerRegistryRequest) returns (GetPeerRegistryResponse);
+}
+
+message ConnectToRequest {
+    // IP address of the peer to connect to (IPv4 or IPv6).
+    bytes ip_address = 1;
+    uint32 port = 2;
+}
+
+message ConnectToResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message GetPeerRegistryRequest {}
+
+message GetPeerRegistryResponse {
+    repeated PeerRegistryEntry entries = 1;
+}
+
+message PeerRegistryEntry {
+    string peer_id = 1;
+    
+    // Network-level info (from PeerRegistry)
+    netzwerkrouting.Endpoint listening_endpoint = 2;       // The reachable address (from VersionInfo)
+    repeated netzwerkrouting.Endpoint inbound_addresses = 3; // Ephemeral ports we've seen from this peer
+    bool has_outbound_connection = 4;      // Whether we have an outbound gRPC connection
+    
+    // Peer-level info (from PeerStore)
+    string version = 5;                    // Protocol version string
+    repeated string supported_services = 6; // List of supported services
+    string connection_state = 7;           // Current handshake state
+    string direction = 8;                  // "inbound" or "outbound"
+}

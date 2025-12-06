@@ -323,10 +323,11 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### Whitebox Teilsystem
 
 Begründung  
-Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems. Jedes Teilsystem ist in die drei Layer Interface, Business, Data geteilt. Der Interface Layer bildet die Schnittstelle des Teilsystems und interagiert mit anderen Teilsystemen / Komponenten des Systems. Der Business Layer enthält die Kern-Logik des Systems und der Data Layer ist für die Speicherung und das Laden von Daten verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
+Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems.
 
-Offene Punkte/Probleme/Risiken  
-Architektur ist Subjekt To Change, aber Vorgabe ist mMn, dass mindestens MVC genutzt wird.
+Jedes Teilsystem ist in die drei Domain Layer Interface, Business, Data geteilt. Der Interface Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
+
+Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein. Jeder Layer kann `infrastructure/` nutzen.
 
 ### Whitebox Blockchain
 

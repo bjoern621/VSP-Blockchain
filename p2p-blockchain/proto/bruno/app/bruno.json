@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "name": "VSP Blockchain App API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.0006809234619140625,
+  "filesCount": 4,
+  "protobuf": {
+    "importPaths": [],
+    "protoFiles": [
+      {
+        "path": "../../app.proto",
+        "type": "file"
+      }
+    ]
+  }
+}

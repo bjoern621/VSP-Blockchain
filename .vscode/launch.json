@@ -3,6 +3,14 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "port",
+            "type": "promptString",
+            "description": "Port number for the P2P node",
+            "default": "50051"
+        }
+    ],
     "configurations": [
         {
             "name": "Launch P2P-Blockchain",
@@ -10,7 +18,47 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG" }
+            "env": { "LOG_LEVEL": "DEBUG", "P2P_PORT": "${input:port}" },
+            "preLaunchTask": "p2p-blockchain: prepare"
+        },
+        {
+            "name": "P2P Node 50051",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/p2p-blockchain",
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "50050",
+                "P2P_PORT": "50051"
+            },
+            "presentation": { "hidden": true }
+        },
+        {
+            "name": "P2P Node 50052",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/p2p-blockchain",
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "50058",
+                "P2P_PORT": "50052"
+            },
+            "presentation": { "hidden": true }
+        },
+        {
+            "name": "P2P Node 50053",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/p2p-blockchain",
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "APP_PORT": "50059",
+                "P2P_PORT": "50053"
+            },
+            "presentation": { "hidden": true }
         },
         {
             "name": "Launch REST-Schnittstelle",
@@ -19,6 +67,36 @@
             "mode": "debug",
             "program": "${workspaceFolder}/rest-schnittstelle",
             "env": { "LOG_LEVEL": "DEBUG" }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch P2P-Blockchain (Port 50051)",
+            "configurations": ["P2P Node 50051"],
+            "preLaunchTask": "p2p-blockchain: prepare",
+            "stopAll": true
+        },
+        {
+            "name": "Launch P2P-Blockchain (Port 50052)",
+            "configurations": ["P2P Node 50052"],
+            "preLaunchTask": "p2p-blockchain: prepare",
+            "stopAll": true
+        },
+        {
+            "name": "Launch P2P-Blockchain (Port 50053)",
+            "configurations": ["P2P Node 50053"],
+            "preLaunchTask": "p2p-blockchain: prepare",
+            "stopAll": true
+        },
+        {
+            "name": "Launch 3 P2P Peers",
+            "configurations": [
+                "P2P Node 50051",
+                "P2P Node 50052",
+                "P2P Node 50053"
+            ],
+            "preLaunchTask": "p2p-blockchain: prepare",
+            "stopAll": true
         }
     ]
 }

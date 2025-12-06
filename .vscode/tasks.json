@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "p2p-blockchain: prepare",
+            "type": "shell",
+            "command": "task",
+            "args": ["prepare"],
+            "options": {
+                "cwd": "${workspaceFolder}/p2p-blockchain"
+            },
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
