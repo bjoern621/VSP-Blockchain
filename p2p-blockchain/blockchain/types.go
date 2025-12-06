@@ -11,10 +11,10 @@ const (
 )
 
 type InvVector struct {
-	invType InvType
-	hash    Hash
+	InvType InvType
+	Hash    *Hash
 }
 
 type InvMsg struct {
-	inventory []*InvVector
+	Inventory []*InvVector
 }
