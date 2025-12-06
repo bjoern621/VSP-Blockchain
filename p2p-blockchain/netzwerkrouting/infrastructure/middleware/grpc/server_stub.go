@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/observer"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
@@ -19,11 +20,13 @@ import (
 // It contains no domain logic, only type transformation and delegation.
 type Server struct {
 	pb.UnimplementedConnectionEstablishmentServer
-	pb.UnimplementedBlockchainServiceServer
 	grpcServer          *grpc.Server
 	listener            net.Listener
 	handshakeMsgHandler handshake.HandshakeMsgHandler
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
+
+	pb.UnimplementedBlockchainServiceServer
+	observer []*observer.BlockchainObserver
 }
 
 func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
