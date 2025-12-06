@@ -6,4 +6,5 @@ type BlockchainObserver interface {
 	Inv(invMsg blockchain.InvMsg)
 	GetData(getDataMsg blockchain.GetDataMsg)
 	Block(blockMsg blockchain.BlockMsg)
+	MerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg)
 }

@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// TODO: Die ganzen Methoden in einen Adapter auslagern?
 func bytesToHash(bytes []byte) (*blockchain.Hash, error) {
 	var hash blockchain.Hash
 	if len(bytes) != 32 {
@@ -18,6 +19,17 @@ func bytesToHash(bytes []byte) (*blockchain.Hash, error) {
 
 	copy(hash[:], bytes)
 	return &hash, nil
+}
+
+func byteListToHashes(byteList [][]byte) []*blockchain.Hash {
+	var hashes = make([]*blockchain.Hash, len(byteList))
+	for _, bytes := range byteList {
+		hash, err := bytesToHash(bytes)
+		assert.IsNil(err, "invalid hash length")
+		hashes = append(hashes, hash)
+	}
+
+	return hashes
 }
 
 func protoToInvVector(vector *pb.InvVector) *blockchain.InvVector {
@@ -143,6 +155,38 @@ func protoToBlock(block *pb.Block) *blockchain.Block {
 	}
 }
 
+func protoToMerkleProof(pbProof *pb.MerkleProof) *blockchain.MerkleProof {
+	if pbProof == nil {
+		return nil
+	}
+
+	return &blockchain.MerkleProof{
+		Transaction: protoToTransaction(pbProof.Transaction),
+		Siblings:    byteListToHashes(pbProof.Siblings),
+		Index:       pbProof.Index,
+	}
+}
+
+func protoToMerkleProofs(pbProofs []*pb.MerkleProof) []*blockchain.MerkleProof {
+	proofs := make([]*blockchain.MerkleProof, len(pbProofs))
+	for _, proof := range pbProofs {
+		proofs = append(proofs, protoToMerkleProof(proof))
+	}
+
+	return proofs
+}
+
+func protoToMerkleBlock(block *pb.MerkleBlock) *blockchain.MerkleBlock {
+	if block == nil {
+		return nil
+	}
+
+	return &blockchain.MerkleBlock{
+		BlockHeader: protoToBlockHeader(block.Header),
+		Proofs:      protoToMerkleProofs(block.Proofs),
+	}
+}
+
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	invVectors := protoInvVectors(msg.Inventory)
 	go s.NotifyInv(blockchain.InvMsg{
@@ -171,8 +215,12 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 }
 
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	merkleBlock := protoToMerkleBlock(msg.MerkleBlock)
+	go s.NotifyMerkleBlock(blockchain.MerkleBlockMsg{
+		MerkleBlock: merkleBlock,
+	})
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
@@ -215,5 +263,11 @@ func (s *Server) NotifyGetData(getDataMsg blockchain.GetDataMsg) {
 func (s *Server) NotifyBlock(blockMsg blockchain.BlockMsg) {
 	for observer := range s.observers {
 		observer.Block(blockMsg)
+	}
+}
+
+func (s *Server) NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg) {
+	for observer := range s.observers {
+		observer.MerkleBlock(merkleBlockMsg)
 	}
 }

@@ -22,6 +22,10 @@ type BlockMsg struct {
 	Block *Block
 }
 
+type MerkleBlockMsg struct {
+	MerkleBlock *MerkleBlock
+}
+
 type InvVector struct {
 	InvType InvType
 	Hash    *Hash
@@ -56,4 +60,15 @@ type Transaction struct {
 type Block struct {
 	Header       *BlockHeader
 	Transactions []*Transaction
+}
+
+type MerkleProof struct {
+	Transaction *Transaction
+	Siblings    []*Hash
+	Index       uint32
+}
+
+type MerkleBlock struct {
+	BlockHeader *BlockHeader
+	Proofs      []*MerkleProof
 }
