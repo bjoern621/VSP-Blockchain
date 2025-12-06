@@ -1,10 +1,12 @@
 package observer
 
-import "s3b/vsp-blockchain/p2p-blockchain/blockchain"
+import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain"
+)
 
 type ObservableBlockchainServer interface {
-	Attach(o *BlockchainObserver) (bool, error)
-	Detach(o *BlockchainObserver) (bool, error)
+	Attach(o *BlockchainObserver)
+	Detach(o *BlockchainObserver)
 
 	NotifyInv(invMsg blockchain.InvMsg)
 }
