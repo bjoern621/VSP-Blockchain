@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/observer"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"

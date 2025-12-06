@@ -224,8 +224,12 @@ func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*empt
 }
 
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	transaction := protoToTransaction(msg.Transaction)
+	go s.NotifyTx(blockchain.TxMsg{
+		Transaction: transaction,
+	})
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emptypb.Empty, error) {
@@ -269,5 +273,11 @@ func (s *Server) NotifyBlock(blockMsg blockchain.BlockMsg) {
 func (s *Server) NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg) {
 	for observer := range s.observers {
 		observer.MerkleBlock(merkleBlockMsg)
+	}
+}
+
+func (s *Server) NotifyTx(txMsg blockchain.TxMsg) {
+	for observer := range s.observers {
+		observer.Tx(txMsg)
 	}
 }

@@ -26,6 +26,10 @@ type MerkleBlockMsg struct {
 	MerkleBlock *MerkleBlock
 }
 
+type TxMsg struct {
+	Transaction *Transaction
+}
+
 type InvVector struct {
 	InvType InvType
 	Hash    *Hash
