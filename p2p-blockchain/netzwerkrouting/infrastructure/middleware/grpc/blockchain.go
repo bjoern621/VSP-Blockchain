@@ -187,6 +187,20 @@ func protoToMerkleBlock(block *pb.MerkleBlock) *blockchain.MerkleBlock {
 	}
 }
 
+func protoToBlockLocator(locator *pb.BlockLocator) *blockchain.BlockLocator {
+	if locator == nil {
+		return nil
+	}
+
+	hash, err := bytesToHash(locator.HashStop)
+	assert.IsNil(err, "error converting stop hash")
+
+	return &blockchain.BlockLocator{
+		BlockLocatorHashes: byteListToHashes(locator.BlockLocatorHashes),
+		StopHash:           hash,
+	}
+}
+
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	invVectors := protoInvVectors(msg.Inventory)
 	go s.NotifyInv(blockchain.InvMsg{
@@ -233,8 +247,10 @@ func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) 
 }
 
 func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	blockLocator := protoToBlockLocator(locator)
+	go s.NotifyGetHeaders(*blockLocator)
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Headers(ctx context.Context, headers *pb.BlockHeaders) (*emptypb.Empty, error) {
@@ -279,5 +295,11 @@ func (s *Server) NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg) {
 func (s *Server) NotifyTx(txMsg blockchain.TxMsg) {
 	for observer := range s.observers {
 		observer.Tx(txMsg)
+	}
+}
+
+func (s *Server) NotifyGetHeaders(locator blockchain.BlockLocator) {
+	for observer := range s.observers {
+		observer.GetHeaders(locator)
 	}
 }

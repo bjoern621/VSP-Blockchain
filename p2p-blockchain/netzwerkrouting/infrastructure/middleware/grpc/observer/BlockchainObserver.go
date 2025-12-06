@@ -7,5 +7,6 @@ type BlockchainObserver interface {
 	GetData(getDataMsg blockchain.GetDataMsg)
 	Block(blockMsg blockchain.BlockMsg)
 	MerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg)
-	Tx(msg blockchain.TxMsg)
+	Tx(txMsg blockchain.TxMsg)
+	GetHeaders(locator blockchain.BlockLocator)
 }

@@ -76,3 +76,8 @@ type MerkleBlock struct {
 	BlockHeader *BlockHeader
 	Proofs      []*MerkleProof
 }
+
+type BlockLocator struct {
+	BlockLocatorHashes []*Hash
+	StopHash           *Hash
+}

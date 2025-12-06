@@ -13,4 +13,5 @@ type ObservableBlockchainServer interface {
 	NotifyBlock(blockMsg blockchain.BlockMsg)
 	NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg)
 	NotifyTx(txMsg blockchain.TxMsg)
+	NotifyGetHeaders(blockLocator blockchain.BlockLocator)
 }
