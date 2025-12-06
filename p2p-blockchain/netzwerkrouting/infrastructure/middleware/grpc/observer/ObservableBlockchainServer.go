@@ -16,4 +16,5 @@ type ObservableBlockchainServer interface {
 	NotifyGetHeaders(blockLocator *blockchain.BlockLocator)
 	NotifyHeaders(headers []*blockchain.BlockHeader)
 	NotifySetFilterRequest(setFilterRequest *blockchain.SetFilterRequest)
+	NotifyMempool()
 }

@@ -279,8 +279,9 @@ func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*
 }
 
 func (s *Server) Mempool(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	go s.NotifyMempool()
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) NotifyInv(invMsg *blockchain.InvMsg) {
@@ -328,5 +329,11 @@ func (s *Server) NotifyHeaders(headers []*blockchain.BlockHeader) {
 func (s *Server) NotifySetFilterRequest(setFilterRequest *blockchain.SetFilterRequest) {
 	for observer := range s.observers {
 		observer.SetFilter(setFilterRequest)
+	}
+}
+
+func (s *Server) NotifyMempool() {
+	for observer := range s.observers {
+		observer.Mempool()
 	}
 }

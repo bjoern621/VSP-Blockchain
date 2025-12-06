@@ -11,4 +11,5 @@ type BlockchainObserver interface {
 	GetHeaders(locator *blockchain.BlockLocator)
 	Headers(headers []*blockchain.BlockHeader)
 	SetFilter(setFilterRequest *blockchain.SetFilterRequest)
+	Mempool()
 }
