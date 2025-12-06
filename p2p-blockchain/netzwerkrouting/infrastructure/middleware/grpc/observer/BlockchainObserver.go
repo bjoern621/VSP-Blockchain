@@ -3,5 +3,5 @@ package observer
 import "s3b/vsp-blockchain/p2p-blockchain/blockchain"
 
 type BlockchainObserver interface {
-	Inv(msg blockchain.InvMsg)
+	Inv(invMsg blockchain.InvMsg)
 }
