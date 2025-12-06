@@ -8,11 +8,12 @@ type ObservableBlockchainServer interface {
 	Attach(o *BlockchainObserver)
 	Detach(o *BlockchainObserver)
 
-	NotifyInv(invMsg blockchain.InvMsg)
-	NotifyGetData(getDataMsg blockchain.GetDataMsg)
-	NotifyBlock(blockMsg blockchain.BlockMsg)
-	NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg)
-	NotifyTx(txMsg blockchain.TxMsg)
-	NotifyGetHeaders(blockLocator blockchain.BlockLocator)
+	NotifyInv(invMsg *blockchain.InvMsg)
+	NotifyGetData(getDataMsg *blockchain.GetDataMsg)
+	NotifyBlock(blockMsg *blockchain.BlockMsg)
+	NotifyMerkleBlock(merkleBlockMsg *blockchain.MerkleBlockMsg)
+	NotifyTx(txMsg *blockchain.TxMsg)
+	NotifyGetHeaders(blockLocator *blockchain.BlockLocator)
 	NotifyHeaders(headers []*blockchain.BlockHeader)
+	NotifySetFilterRequest(setFilterRequest *blockchain.SetFilterRequest)
 }

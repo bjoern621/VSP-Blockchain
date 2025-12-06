@@ -212,7 +212,7 @@ func protoToBlockLocator(locator *pb.BlockLocator) *blockchain.BlockLocator {
 
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	invVectors := protoInvVectors(msg.Inventory)
-	go s.NotifyInv(blockchain.InvMsg{
+	go s.NotifyInv(&blockchain.InvMsg{
 		Inventory: invVectors,
 	})
 
@@ -221,7 +221,7 @@ func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error
 
 func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empty, error) {
 	invVectors := protoInvVectors(msg.Inventory)
-	go s.NotifyGetData(blockchain.GetDataMsg{
+	go s.NotifyGetData(&blockchain.GetDataMsg{
 		Inventory: invVectors,
 	})
 
@@ -230,7 +230,7 @@ func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empt
 
 func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, error) {
 	block := protoToBlock(msg.Block)
-	go s.NotifyBlock(blockchain.BlockMsg{
+	go s.NotifyBlock(&blockchain.BlockMsg{
 		Block: block,
 	})
 
@@ -239,7 +239,7 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
 	merkleBlock := protoToMerkleBlock(msg.MerkleBlock)
-	go s.NotifyMerkleBlock(blockchain.MerkleBlockMsg{
+	go s.NotifyMerkleBlock(&blockchain.MerkleBlockMsg{
 		MerkleBlock: merkleBlock,
 	})
 
@@ -248,7 +248,7 @@ func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*empt
 
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
 	transaction := protoToTransaction(msg.Transaction)
-	go s.NotifyTx(blockchain.TxMsg{
+	go s.NotifyTx(&blockchain.TxMsg{
 		Transaction: transaction,
 	})
 
@@ -257,7 +257,7 @@ func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) 
 
 func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emptypb.Empty, error) {
 	blockLocator := protoToBlockLocator(locator)
-	go s.NotifyGetHeaders(*blockLocator)
+	go s.NotifyGetHeaders(blockLocator)
 
 	return &emptypb.Empty{}, nil
 }
@@ -270,8 +270,12 @@ func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*empt
 }
 
 func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	filterRequest := byteListToHashes(request.PublicKeyHashes)
+	go s.NotifySetFilterRequest(&blockchain.SetFilterRequest{
+		PublicKeyHashes: filterRequest,
+	})
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Mempool(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
@@ -279,37 +283,37 @@ func (s *Server) Mempool(ctx context.Context, empty *emptypb.Empty) (*emptypb.Em
 	panic("implement me")
 }
 
-func (s *Server) NotifyInv(invMsg blockchain.InvMsg) {
+func (s *Server) NotifyInv(invMsg *blockchain.InvMsg) {
 	for observer := range s.observers {
 		observer.Inv(invMsg)
 	}
 }
 
-func (s *Server) NotifyGetData(getDataMsg blockchain.GetDataMsg) {
+func (s *Server) NotifyGetData(getDataMsg *blockchain.GetDataMsg) {
 	for observer := range s.observers {
 		observer.GetData(getDataMsg)
 	}
 }
 
-func (s *Server) NotifyBlock(blockMsg blockchain.BlockMsg) {
+func (s *Server) NotifyBlock(blockMsg *blockchain.BlockMsg) {
 	for observer := range s.observers {
 		observer.Block(blockMsg)
 	}
 }
 
-func (s *Server) NotifyMerkleBlock(merkleBlockMsg blockchain.MerkleBlockMsg) {
+func (s *Server) NotifyMerkleBlock(merkleBlockMsg *blockchain.MerkleBlockMsg) {
 	for observer := range s.observers {
 		observer.MerkleBlock(merkleBlockMsg)
 	}
 }
 
-func (s *Server) NotifyTx(txMsg blockchain.TxMsg) {
+func (s *Server) NotifyTx(txMsg *blockchain.TxMsg) {
 	for observer := range s.observers {
 		observer.Tx(txMsg)
 	}
 }
 
-func (s *Server) NotifyGetHeaders(locator blockchain.BlockLocator) {
+func (s *Server) NotifyGetHeaders(locator *blockchain.BlockLocator) {
 	for observer := range s.observers {
 		observer.GetHeaders(locator)
 	}
@@ -318,5 +322,11 @@ func (s *Server) NotifyGetHeaders(locator blockchain.BlockLocator) {
 func (s *Server) NotifyHeaders(headers []*blockchain.BlockHeader) {
 	for observer := range s.observers {
 		observer.Headers(headers)
+	}
+}
+
+func (s *Server) NotifySetFilterRequest(setFilterRequest *blockchain.SetFilterRequest) {
+	for observer := range s.observers {
+		observer.SetFilter(setFilterRequest)
 	}
 }

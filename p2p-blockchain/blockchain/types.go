@@ -81,3 +81,7 @@ type BlockLocator struct {
 	BlockLocatorHashes []*Hash
 	StopHash           *Hash
 }
+
+type SetFilterRequest struct {
+	PublicKeyHashes []*Hash
+}
