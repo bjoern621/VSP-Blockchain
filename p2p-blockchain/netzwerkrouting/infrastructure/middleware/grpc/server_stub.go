@@ -68,3 +68,11 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 	addr := s.listener.Addr().(*net.TCPAddr)
 	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
 }
+
+func (s *Server) Attach(o *observer.BlockchainObserver) {
+	s.observers[*o] = struct{}{}
+}
+
+func (s *Server) Detach(o *observer.BlockchainObserver) {
+	delete(s.observers, *o)
+}
