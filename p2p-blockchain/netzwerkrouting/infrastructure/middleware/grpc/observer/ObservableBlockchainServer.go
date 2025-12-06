@@ -9,4 +9,5 @@ type ObservableBlockchainServer interface {
 	Detach(o *BlockchainObserver)
 
 	NotifyInv(invMsg blockchain.InvMsg)
+	NotifyGetData(getDataMsg blockchain.GetDataMsg)
 }

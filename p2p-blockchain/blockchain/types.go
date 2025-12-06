@@ -18,3 +18,7 @@ type InvVector struct {
 type InvMsg struct {
 	Inventory []*InvVector
 }
+
+type GetDataMsg struct {
+	Inventory []*InvVector
+}

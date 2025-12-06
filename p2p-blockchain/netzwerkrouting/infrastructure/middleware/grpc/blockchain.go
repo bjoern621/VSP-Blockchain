@@ -20,40 +20,41 @@ func bytesToHash(bytes []byte) (*blockchain.Hash, error) {
 	return &hash, nil
 }
 
-func fromProtoInvMsg(msg *pb.InvMsg) blockchain.InvMsg {
-	invVector := make([]*blockchain.InvVector, len(msg.Inventory))
-	for _, pbInvVector := range msg.Inventory {
-		hash, err := bytesToHash(pbInvVector.Hash)
-		assert.IsNil(err, "failed to convert hash from proto")
+func fromProtoInvVector(vector *pb.InvVector) *blockchain.InvVector {
+	hash, err := bytesToHash(vector.Hash)
+	assert.IsNil(err, "failed to convert hash from proto")
 
-		invVector = append(invVector, &blockchain.InvVector{
-			InvType: blockchain.InvType(pbInvVector.Type),
-			Hash:    hash,
-		})
+	return &blockchain.InvVector{
+		InvType: blockchain.InvType(vector.Type),
+		Hash:    hash,
+	}
+}
+
+func fromProtoInvVectors(inventoryVector []*pb.InvVector) []*blockchain.InvVector {
+	invVectors := make([]*blockchain.InvVector, len(inventoryVector))
+	for _, pbInvVector := range inventoryVector {
+		invVectors = append(invVectors, fromProtoInvVector(pbInvVector))
 	}
 
-	invMsg := blockchain.InvMsg{
-		Inventory: invVector,
-	}
-	return invMsg
+	return invVectors
 }
 
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
-	invMsg := fromProtoInvMsg(msg)
-	go s.NotifyInv(invMsg)
+	invVectors := fromProtoInvVectors(msg.Inventory)
+	go s.NotifyInv(blockchain.InvMsg{
+		Inventory: invVectors,
+	})
 
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) NotifyInv(invMsg blockchain.InvMsg) {
-	for observer := range s.observers {
-		observer.Inv(invMsg)
-	}
-}
-
 func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+	invVectors := fromProtoInvVectors(msg.Inventory)
+	go s.NotifyGetData(blockchain.GetDataMsg{
+		Inventory: invVectors,
+	})
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, error) {
@@ -89,4 +90,16 @@ func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*
 func (s *Server) Mempool(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (s *Server) NotifyInv(invMsg blockchain.InvMsg) {
+	for observer := range s.observers {
+		observer.Inv(invMsg)
+	}
+}
+
+func (s *Server) NotifyGetData(getDataMsg blockchain.GetDataMsg) {
+	for observer := range s.observers {
+		observer.GetData(getDataMsg)
+	}
 }
