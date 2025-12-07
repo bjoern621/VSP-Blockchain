@@ -22,7 +22,7 @@ func bytesToHash(bytes []byte) (*blockchain.Hash, error) {
 }
 
 func byteListToHashes(byteList [][]byte) []*blockchain.Hash {
-	var hashes = make([]*blockchain.Hash, len(byteList))
+	var hashes = make([]*blockchain.Hash, 0, len(byteList))
 	for _, bytes := range byteList {
 		hash, err := bytesToHash(bytes)
 		assert.IsNil(err, "invalid hash length")
@@ -51,7 +51,7 @@ func protoInvVectors(inventoryVector []*pb.InvVector) []*blockchain.InvVector {
 		return nil
 	}
 
-	invVectors := make([]*blockchain.InvVector, len(inventoryVector))
+	invVectors := make([]*blockchain.InvVector, 0, len(inventoryVector))
 	for _, pbInvVector := range inventoryVector {
 		invVectors = append(invVectors, protoToInvVector(pbInvVector))
 	}
@@ -117,7 +117,7 @@ func protoToTransaction(tx *pb.Transaction) *blockchain.Transaction {
 }
 
 func protoToTransactions(pbTransactions []*pb.Transaction) []*blockchain.Transaction {
-	transactions := make([]*blockchain.Transaction, len(pbTransactions))
+	transactions := make([]*blockchain.Transaction, 0, len(pbTransactions))
 	for _, tx := range pbTransactions {
 		transactions = append(transactions, protoToTransaction(tx))
 	}
@@ -145,7 +145,7 @@ func protoToBlockHeader(header *pb.BlockHeader) *blockchain.BlockHeader {
 }
 
 func protoToBlockHeaders(pbHeaders []*pb.BlockHeader) []*blockchain.BlockHeader {
-	var headers = make([]*blockchain.BlockHeader, len(pbHeaders))
+	var headers = make([]*blockchain.BlockHeader, 0, len(pbHeaders))
 	for _, header := range pbHeaders {
 		headers = append(headers, protoToBlockHeader(header))
 	}
@@ -177,7 +177,7 @@ func protoToMerkleProof(pbProof *pb.MerkleProof) *blockchain.MerkleProof {
 }
 
 func protoToMerkleProofs(pbProofs []*pb.MerkleProof) []*blockchain.MerkleProof {
-	proofs := make([]*blockchain.MerkleProof, len(pbProofs))
+	proofs := make([]*blockchain.MerkleProof, 0, len(pbProofs))
 	for _, proof := range pbProofs {
 		proofs = append(proofs, protoToMerkleProof(proof))
 	}
