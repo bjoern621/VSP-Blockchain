@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/observer"
-
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
@@ -35,6 +33,7 @@ func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoReg
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
+		observers:           make(map[observer.BlockchainObserver]struct{}),
 	}
 }
 
@@ -70,10 +69,10 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
 }
 
-func (s *Server) Attach(o *observer.BlockchainObserver) {
-	s.observers[*o] = struct{}{}
+func (s *Server) Attach(o observer.BlockchainObserver) {
+	s.observers[o] = struct{}{}
 }
 
-func (s *Server) Detach(o *observer.BlockchainObserver) {
-	delete(s.observers, *o)
+func (s *Server) Detach(o observer.BlockchainObserver) {
+	delete(s.observers, o)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
@@ -41,6 +42,9 @@ func main() {
 	logger.Infof("Starting P2P server...")
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
+
+	blockchain := core.NewBlockchain(grpcServer)
+	blockchain.Mempool()
 
 	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
