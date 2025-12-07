@@ -345,36 +345,81 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 # Laufzeitsicht
 
 
-## State machine Miner
+## State machine Miner: Allgmein
 
 <div align="center">
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pre_operational
-    pre_operational --> Operational
+    [*] --> running
+    running --> connection_establishment
+    connection_establishment --> running: HandleConnectionEstablishment()
     
-    pre_operational: Pre Operational
-    Operational: Operational Idle
+    running --> inv_received: Inv()
+    inv_received --> running: HandleInv()
+    
+    running --> getData_received: GetData()
+    getData_received --> running: HandleGetData()
+    
+    running --> block_received: Block()
+    block_received --> running: HandleBlock()
+    
+   running --> merkleBlock_received: MerkleBlock()
+   merkleBlock_received --> running: HandleMerkleBlock()
+   
+  running --> tx_received: Tx()
+  tx_received --> running: HandleTx()
+  
+  running --> getHeaders_received: GetHeaders()
+  getHeaders_received --> running: HandleGetHeaders()
+  
+  running --> headers_received: Headers()
+  headers_received --> running: HandleHeaders()
+  
+  running --> setFilter_received: SetFilter()
+  setFilter_received --> running: HandleSetFilter()
+  
+  running --> mempool_received: Mempool()
+  mempool_received --> running: HandleMempool()
+    
+    connection_establishment: Connection Establishment
+    running: Running
     
 ```
 <p><em>Abbildung: Zustandsgraph - Miner</em></p>
 </div>
 
-## State machine Miner: Pre-Operational
+## State machine Miner: Handshake
+
+Unser allgemeines System ist zustandslos. Dargestellt ist also nicht der Zustand des Gesamtsystems, sondern der Zustand,
+in welchem sich der aktuell verbindende Peer befindet. Für jeden neu verbindenden Peer wird der Zustand separat gespeichert.
+
+Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dargestellt sind, so werden diese ignoriert.
 
 <div align="center">
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pre_operational
-    pre_operational --> Operational
+    [*] --> initiateHandshake: InitiateHandshake()
+    [*] --> handleHandshake: HandleHandshake()
     
-    pre_operational: Pre Operational
-    Operational: Operational Idle
+    state initiateHandshake {
+        [*] --> new
+        new --> awaiting_verack: SendVersion()
+        awaiting_verack --> connected: ReceiveVerack()
+        connected --> [*]: SendAck()
+    }
+    
+    state handleHandshake {
+        [*] --> new_: connect_to()
+        new_ --> awaiting_ack
+        
+    }
+    
+    new_: new
     
 ```
-<p><em>Abbildung: Zustandsgraph - Miner Pre-Operational</em></p>
+<p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
 </div>
 
 
