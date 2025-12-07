@@ -25,7 +25,7 @@ type HandshakeInitiator interface {
 	InitiateHandshake(peerID peer.PeerID)
 }
 
-func (h *handshakeService) InitiateHandshake(peerID peer.PeerID) {
+func (h *HandshakeService) InitiateHandshake(peerID peer.PeerID) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("peer %s not found in store", peerID)

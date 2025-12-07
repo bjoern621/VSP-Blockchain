@@ -20,7 +20,7 @@ func checkVersionCompatibility(string) bool {
 	return true
 }
 
-func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
+func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Version message", peerID)
@@ -56,7 +56,7 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	go h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
 
-func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
+func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
@@ -85,7 +85,7 @@ func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 	go h.handshakeMsgSender.SendAck(peerID)
 }
 
-func (h *handshakeService) HandleAck(peerID peer.PeerID) {
+func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)
