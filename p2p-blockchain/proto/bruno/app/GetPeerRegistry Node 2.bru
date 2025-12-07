@@ -1,0 +1,21 @@
+meta {
+  name: GetPeerRegistry Node 2
+  type: grpc
+  seq: 4
+}
+
+grpc {
+  url: localhost:50058
+  method: /app.AppService/GetPeerRegistry
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}

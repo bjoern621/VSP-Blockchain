@@ -17,11 +17,15 @@ tasks:
             - buf generate
 
     prepare:
-        internal: true
         desc: Prepare the module for build
         cmds:
             - task: proto
             - task: tidy
+
+    test:
+        desc: Run tests with race detector
+        cmds:
+            - go test -race ./...
 
     build:
         desc: Build the docker image for p2p-miner
