@@ -9,6 +9,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
+	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ type Server struct {
 
 	pb.UnimplementedBlockchainServiceServer
 	// Warum hat go kein Set??? https://stackoverflow.com/questions/34018908/golang-why-dont-we-have-a-set-datastructure
+	lock      sync.RWMutex
 	observers map[observer.BlockchainObserver]struct{}
 }
 
@@ -70,9 +72,13 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 }
 
 func (s *Server) Attach(o observer.BlockchainObserver) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.observers[o] = struct{}{}
 }
 
 func (s *Server) Detach(o observer.BlockchainObserver) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	delete(s.observers, o)
 }
