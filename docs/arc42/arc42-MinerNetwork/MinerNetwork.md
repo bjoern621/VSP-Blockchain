@@ -166,7 +166,7 @@ Schnittstellen
 Begründung  
 Diese Ebene soll einen Überblick über die verschiedenen Akteure des Netzwerks bieten. Das Netzwerk besteht aus mehreren Peers, die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein.
 
-Die Arten der Nodes (SPV vs. Miner Node) unterscheiden sich in den enthaltenen Teilsystemen. Nodes müssen nicht auf diese beiden Arten begrenzt sein, Teilsysteme können (fast) beliebig kombiniert werden. So könnte z. B. eine _Full Node_ eine Kombination aus SPV und Miner Node sein. Mehr zu Teilsystemen in [Ebene 3](#ebene-3). Der Registry Crawler ist ebenfalls eine Node bestehend aus dem Teilsysteme [Netzwerkrouting](#netzwerkrouting-blackbox).
+Die Arten der Nodes (SPV vs. Miner Node) unterscheiden sich in den enthaltenen Teilsystemen. Nodes müssen nicht auf diese beiden Arten begrenzt sein, Teilsysteme können (fast) beliebig kombiniert werden. So könnte z. B. eine _Full Node_ eine Kombination aus SPV und Miner Node sein. Mehr zu Teilsystemen in [Ebene 3](#ebene-3). Der Registry Crawler ist ebenfalls eine Node bestehend aus dem Teilsystem [Netzwerkrouting](#netzwerkrouting-blackbox).
 
 ### Registry Crawler (Blackbox)
 
