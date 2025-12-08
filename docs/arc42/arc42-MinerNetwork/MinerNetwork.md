@@ -346,7 +346,10 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 
 ## State machine Miner: Allgemein
-Da unser System zustandslos und asynchron arbeitet, ist sind die Sequenzen (Remote Procedure Calls) trivial.
+Da unser System zustandslos- und asynchron arbeitet, sind die Sequenzen (Remote Procedure Calls) trivial. Diese werden
+hier nicht separat dargestellt. Ein Receive{Methoden Name} wird immer dann ausgeführt, wenn ein Remote Procedure Call empfangen wird.
+Ein Send{Methoden Name} bedeutet, dass ein Remote Procedure Call gesendet wird. In dem Diagramm wird dies nicht explizit dargestellt, 
+da es sich um eine triviale Sequenz handelt.
 <div align="center">
 
 ```mermaid
