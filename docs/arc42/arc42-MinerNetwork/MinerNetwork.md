@@ -246,14 +246,14 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### Whitebox Full Node
 
 <div align="center">
-    <img src="images/Layer 3.drawio.svg" alt="Layer 3"  height="400">
+    <img src="images/Layer 3_neu.drawio.svg" alt="Layer 3"  height="500">
     <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
 </div>
 
 Begründung  
 Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine SPV Node würde zum Beispiel keine Miner Komponente haben. Ein Miner kann auch ohne Wallet agieren.
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine SPV Node würde zum Beispiel keine Miner Komponente haben. Ein Miner kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme.
 
 ### Blockchain (Blackbox)
 
@@ -288,7 +288,12 @@ Weitere Informationen / Quellen:
 
 Schnittstellen
 
--   `Nachrichten senden / empfangen` muss die Blockchain Komponente über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über neue Nachrichten benachrichtigt zu werden, kann das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+-   `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
+-   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.#
+-   `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    -   TODO
+
+Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
@@ -297,9 +302,70 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 
 ### Wallet (Blackbox)
 
+Zweck/Verantwortung  
+Das Teilsystem Wallet ist für die Verwaltung der digitalen Geldbörse zuständig. Kernaufgaben sind die sichere Erzeugung und Speicherung von kryptographischen Schlüsselpaaren (Private und Public Keys) sowie das Erstellen und Signieren von Transaktionen.
+
+Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Blockchain-Teilsystems zurück. Es identifiziert die dem Nutzer zugehörigen Unspent Transaction Outputs (UTXOs) und nutzt diese als Input für neue Transaktionen. Das Wallet dient somit als primäre Schnittstelle für Händler, um am Zahlungsverkehr teilzunehmen.
+
+Schnittstellen
+
+-   `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    -   TODO
+
+Die Schnittstellen sind in der `api/`-Schicht zu finden.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [Meilenstein Wallet (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Wallet%20(Teilsystem)%22>)
+
 ### Miner (Blackbox)
 
+Zweck/Verantwortung  
+Das Teilsystem Miner ist für die Erstellung neuer Blöcke und damit für die Erweiterung der Blockchain zuständig. Kernaufgabe ist das Berechnen des kryptographischen Proof-of-Work, um einen validen Block-Hash zu finden, der den aktuellen Schwierigkeitsanforderungen entspricht.
+
+Der Miner sammelt unbestätigte Transaktionen aus dem Mempool des Blockchain-Teilsystems und fasst sie in einem neuen Block zusammen. Sobald ein gültiger Block gefunden wurde, wird dieser als neuer Block in die Blockchain aufgenommen und somit an das Netzwerk propagiert. Für diese Arbeit erhält der Miner eine Belohnung in Form von neu geschöpften Coins (Coinbase-Transaktion) sowie die Transaktionsgebühren der enthaltenen Transaktionen.
+
+Schnittstellen
+
+-   `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    -   TODO
+
+Die Schnittstellen sind in der `api/`-Schicht zu finden.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [Meilenstein Miner (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Miner%20(Teilsystem)%22>)
+
 ### Netzwerkrouting (Blackbox)
+
+Zweck/Verantwortung  
+Das Teilsystem Netzwerkrouting bildet das Fundament der Kommunikation zwischen den Nodes und abstrahiert die Netzwerkinteraktion für andere Komponenten. Es verantwortet das Entdecken neuer Peers, das Management von Verbindungen sowie die effiziente und zuverlässige Weiterleitung von Informationen an die relevanten Nachbarn im P2P-Netzwerk.
+
+Schnittstellen
+
+-   `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+-   `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    -   TODO
+
+Die Schnittstellen sind in der `api/`-Schicht zu finden.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [Meilenstein Netzwerkrouting (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Netzwerkrouting%20(Teilsystem)%22>)
+
+### App (Blackbox)
+
+Zweck/Verantwortung  
+Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.&nbsp;B. REST-API, CLI-Tools), die mit dem P2P-Knoten interagieren möchten. Sie bündelt die Funktionalitäten der verschiedenen Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) und stellt diese über eine einheitliche gRPC-Schnittstelle nach außen bereit. Dadurch wird die interne Komplexität der Node vor externen Konsumenten verborgen.
+
+Schnittstellen
+
+-   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme.
+
+Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 ## Ebene 4
 
@@ -734,41 +800,47 @@ Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenb
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 #### PubKey (öffentlicher Schlüssel)
-- Länge: **33 Byte**
-- Format: **komprimierter secp256k1-Public Key**
-- Verwendung:
-    - Bestandteil der Signaturprüfung eines Inputs
-    - Basis für die Adressgenerierung
+
+-   Länge: **33 Byte**
+-   Format: **komprimierter secp256k1-Public Key**
+-   Verwendung:
+    -   Bestandteil der Signaturprüfung eines Inputs
+    -   Basis für die Adressgenerierung
 
 #### PubKeyHash / Adresse
-- Länge: **20 Byte**
-- Bildung:
+
+-   Länge: **20 Byte**
+-   Bildung:
     1. SHA-256 über den 33-Byte-PubKey
     2. SHA-256 über den 33-Byte-Hash
     3. ersten 20 Byte als Adresse nehmen
-- Verwendung:
-    - Identifiziert die Empfänger eines Outputs
-    - Dient als vereinfachter `scriptPubKey`
+-   Verwendung:
+    -   Identifiziert die Empfänger eines Outputs
+    -   Dient als vereinfachter `scriptPubKey`
 
 #### UTXO (Unspent Transaction Output)
+
 Ein UTXO beschreibt einen nicht ausgegebenen Output einer früheren Transaktion.
 
 Bestandteile:
-- `TransactionID` (32 Byte)
-- `OutputIndex` (uint32)
-- `Value` (uint64)
-- `PubKeyHash` (PubKeyHash)
+
+-   `TransactionID` (32 Byte)
+-   `OutputIndex` (uint32)
+-   `Value` (uint64)
+-   `PubKeyHash` (PubKeyHash)
 
 UTXOs repräsentieren das Guthaben einer Adresse innerhalb des Systems.
 
 #### `Input`
+
 Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur den Besitz des dazugehörigen Private Keys.
 
 **Bestandteile:**
-- `PrevTxID` — 32-Byte ID der vorherigen Transaktion
-- `Index` — Output-Index innerhalb der referenzierten Transaktion
-- `Signature` — Byte-Slice
-- `PubKey` — PubKey
+
+-   `PrevTxID` — 32-Byte ID der vorherigen Transaktion
+-   `Index` — Output-Index innerhalb der referenzierten Transaktion
+-   `Signature` — Byte-Slice
+-   `PubKey` — PubKey
 
 **Zweck:**  
 Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszugeben.
@@ -776,11 +848,13 @@ Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszu
 ---
 
 #### `Output`
+
 Ein Output definiert einen neuen UTXO.
 
 **Bestandteile:**
-- `Value` — uint64, Wert des Outputs
-- `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
+
+-   `Value` — uint64, Wert des Outputs
+-   `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
 
 **Zweck:**  
 Legt fest, wohin der Wert übertragen wird.
@@ -788,11 +862,13 @@ Legt fest, wohin der Wert übertragen wird.
 ---
 
 #### Transaktion
+
 Eine Transaktion besteht aus mehreren Ein- und Ausgaben.
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions besteht aus folgendem:
-- **Inputs**
-- **Outputs**
+
+-   **Inputs**
+-   **Outputs**
 
 Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eventueller Gebühren).
 
@@ -803,23 +879,28 @@ Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eve
 Die Validierung stellt sicher, dass Transaktionen korrekt, sicher und konsistent mit dem UTXO-Modell verarbeitet werden. Die Regeln orientieren sich teilweise an Bitcoin, sind jedoch für V$Goin vereinfacht.
 
 #### 1. Input-Referenzierung
-- Jeder Input muss einen existierenden UTXO referenzieren.
-- Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
-- Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
+
+-   Jeder Input muss einen existierenden UTXO referenzieren.
+-   Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
+-   Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
 
 #### 2. Signatur und SIGHASH
+
 Für jeden Input wird ein SIGHASH berechnet:
-- Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
-- Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
-- Alle Outputs werden vollständig serialisiert.
-- Der Hash wird als **double-SHA-256** berechnet.
+
+-   Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
+-   Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
+-   Alle Outputs werden vollständig serialisiert.
+-   Der Hash wird als **double-SHA-256** berechnet.
 
 Signaturprüfung:
+
 1. DER-decodieren der Signatur → `(r, s)`
 2. Komprimierter Public Key wird dekomprimiert
 3. Prüfung mittels: ecdsa
 
 #### 3. PubKey-Bindung
+
 Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
 HASH160(PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.
