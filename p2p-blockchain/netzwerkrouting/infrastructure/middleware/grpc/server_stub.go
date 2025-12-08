@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
