@@ -159,7 +159,7 @@ Schnittstellen
 ### Whitebox Node(s)
 
 <div align="center">
-    <img src="images/Layer 2_neu_3.drawio.svg" alt="Layer 2"  height="400">
+    <img src="images/Layer 2_neu_4.drawio.svg" alt="Layer 2"  height="400">
     <p><em>Abbildung: Layer 2 - Whitebox Node(s)</em></p>
 </div>
 
