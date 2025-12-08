@@ -411,11 +411,14 @@ stateDiagram-v2
     }
     
     state handleHandshake {
-        [*] --> new_: connect_to()
-        new_ --> awaiting_ack
+        [*] --> new_: ReceiveVersion()
+        new_ --> awaiting_ack: SendVerack()
+        awaiting_ack --> connected_: ReceiveAck()
+        connected_ --> [*]
         
     }
     
+    connected_: connected
     new_: new
     
 ```
