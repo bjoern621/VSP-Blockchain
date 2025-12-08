@@ -76,7 +76,7 @@ func (m *MockObserver) Mempool(peerID peer.PeerID) {
 
 // Tests
 
-func TestServer_Notify(t *testing.T) {
+func TestObserverBlockchainServer_Notify(t *testing.T) {
 	// 1. Create the Mock Observer
 	mockObs := NewMockObserver()
 
