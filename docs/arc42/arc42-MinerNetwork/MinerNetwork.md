@@ -345,48 +345,50 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 # Laufzeitsicht
 
 
-## State machine Miner: Allgmein
-
+## State machine Miner: Allgemein
+Da unser System zustandslos und asynchron arbeitet, ist sind die Sequenzen (Remote Procedure Calls) trivial.
 <div align="center">
 
 ```mermaid
 stateDiagram-v2
+    direction LR
+
     [*] --> running
+    state "Running" as running
+
     running --> connection_establishment
     connection_establishment --> running: HandleConnectionEstablishment()
-    
-    running --> inv_received: Inv()
-    inv_received --> running: HandleInv()
-    
-    running --> getData_received: GetData()
-    getData_received --> running: HandleGetData()
-    
-    running --> block_received: Block()
-    block_received --> running: HandleBlock()
-    
-   running --> merkleBlock_received: MerkleBlock()
-   merkleBlock_received --> running: HandleMerkleBlock()
-   
-  running --> tx_received: Tx()
-  tx_received --> running: HandleTx()
-  
-  running --> getHeaders_received: GetHeaders()
-  getHeaders_received --> running: HandleGetHeaders()
-  
-  running --> headers_received: Headers()
-  headers_received --> running: HandleHeaders()
-  
-  running --> setFilter_received: SetFilter()
-  setFilter_received --> running: HandleSetFilter()
-  
-  running --> mempool_received: Mempool()
-  mempool_received --> running: HandleMempool()
-    
     connection_establishment: Connection Establishment
-    running: Running
-    
+
+
+    running --> inv_received: ReceiveInv()
+    inv_received --> running: HandleInv()
+
+    running --> getData_received: ReceiveGetData()
+    getData_received --> running: HandleGetData()
+
+    running --> block_received: ReceiveBlock()
+    block_received --> running: HandleBlock()
+
+    running --> merkleBlock_received: ReceiveMerkleBlock()
+    merkleBlock_received --> running: HandleMerkleBlock()
+
+    running --> tx_received: ReceiveTx()
+    tx_received --> running: HandleTx()
+
+    running --> getHeaders_received: ReceiveGetHeaders()
+    getHeaders_received --> running: HandleGetHeaders()
+
+    running --> headers_received: ReceiveHeaders()
+    headers_received --> running: HandleHeaders()
+
+    running --> setFilter_received: ReceiveSetFilter()
+    setFilter_received --> running: HandleSetFilter()
+
+    running --> mempool_received: ReceiveMempool()
+    mempool_received --> running: HandleMempool()
 ```
-<p><em>Abbildung: Zustandsgraph - Miner</em></p>
+<p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
 </div>
 
 ## State machine Miner: Handshake
