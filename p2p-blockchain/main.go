@@ -43,8 +43,8 @@ func main() {
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
 
-	blockchain := core.NewBlockchain(grpcServer)
-	blockchain.Mempool()
+	blockchain := core.NewBlockchain()
+	grpcServer.Attach(blockchain)
 
 	err = grpcServer.Start(common.P2PPort())
 	if err != nil {

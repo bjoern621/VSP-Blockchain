@@ -4,25 +4,17 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type Blockchain struct {
-	server *grpc.Server
 }
 
 var _ observer.BlockchainObserverAPI = (*Blockchain)(nil)
 
-func NewBlockchain(server *grpc.Server) *Blockchain {
-	chain := &Blockchain{
-		server: server,
-	}
-
-	server.Attach(chain)
-
-	return chain
+func NewBlockchain() *Blockchain {
+	return &Blockchain{}
 }
 
 func (b *Blockchain) Inv(invMsg *blockchain.InvMsg, peerID peer.PeerID) {
