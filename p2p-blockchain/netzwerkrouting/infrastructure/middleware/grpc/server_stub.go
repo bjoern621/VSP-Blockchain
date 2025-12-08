@@ -28,14 +28,14 @@ type Server struct {
 	pb.UnimplementedBlockchainServiceServer
 	// Warum hat go kein Set??? https://stackoverflow.com/questions/34018908/golang-why-dont-we-have-a-set-datastructure
 	lock      sync.RWMutex
-	observers map[observer.BlockchainObserver]struct{}
+	observers map[observer.BlockchainObserverAPI]struct{}
 }
 
 func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
-		observers:           make(map[observer.BlockchainObserver]struct{}),
+		observers:           make(map[observer.BlockchainObserverAPI]struct{}),
 	}
 }
 
@@ -71,13 +71,13 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 	return netip.AddrPortFrom(netip.MustParseAddr(addr.IP.String()), uint16(addr.Port)), nil
 }
 
-func (s *Server) Attach(o observer.BlockchainObserver) {
+func (s *Server) Attach(o observer.BlockchainObserverAPI) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.observers[o] = struct{}{}
 }
 
-func (s *Server) Detach(o observer.BlockchainObserver) {
+func (s *Server) Detach(o observer.BlockchainObserverAPI) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.observers, o)

@@ -10,7 +10,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/observer"
 )
 
-// MockObserver implements observer.BlockchainObserver for testing purposes.
+// MockObserver implements observer.BlockchainObserverAPI for testing purposes.
 // It uses channels to signal when methods are called, allowing synchronization in tests.
 type MockObserver struct {
 	InvCh         chan *blockchain.InvMsg
@@ -67,7 +67,7 @@ func (m *MockObserver) Mempool() {
 }
 
 // Ensure MockObserver implements the interface
-var _ observer.BlockchainObserver = (*MockObserver)(nil)
+var _ observer.BlockchainObserverAPI = (*MockObserver)(nil)
 
 func setupTestServer() (*Server, *MockObserver) {
 	// Pass nil for dependencies as we are testing the observer pattern wiring only.

@@ -12,7 +12,7 @@ type Blockchain struct {
 	server *grpc.Server
 }
 
-var _ observer.BlockchainObserver = (*Blockchain)(nil)
+var _ observer.BlockchainObserverAPI = (*Blockchain)(nil)
 
 func NewBlockchain(server *grpc.Server) *Blockchain {
 	chain := &Blockchain{
