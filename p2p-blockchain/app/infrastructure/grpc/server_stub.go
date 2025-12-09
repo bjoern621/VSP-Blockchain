@@ -17,15 +17,17 @@ import (
 // Server represents the app gRPC server for external local systems.
 type Server struct {
 	pb.UnimplementedAppServiceServer
-	grpcServer *grpc.Server
-	listener   net.Listener
-	appService core.AppService
+	grpcServer  *grpc.Server
+	listener    net.Listener
+	connService *core.ConnectionEstablishmentService
+	regService  *core.InternsalViewService
 }
 
 // NewServer creates a new external API server.
-func NewServer(appService core.AppService) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternsalViewService) *Server {
 	return &Server{
-		appService: appService,
+		connService: connService,
+		regService:  regService,
 	}
 }
 
@@ -76,7 +78,7 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 
 	port := uint16(req.Port)
 
-	err := s.appService.ConnectTo(ip, port)
+	err := s.connService.ConnectTo(ip, port)
 	if err != nil {
 		return &pb.ConnectToResponse{
 			Success:      false,
@@ -102,7 +104,7 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 
 // GetPeerRegistry returns the current peer registry for debugging purposes.
 func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryRequest) (*pb.GetPeerRegistryResponse, error) {
-	peers := s.appService.GetPeerRegistry()
+	peers := s.regService.GetPeerRegistry()
 
 	response := &pb.GetPeerRegistryResponse{
 		Entries: make([]*pb.PeerRegistryEntry, 0, len(peers)),

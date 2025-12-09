@@ -28,8 +28,9 @@ func main() {
 
 	logger.Infof("Starting App server...")
 
-	appService := appcore.NewAppService(handshakeAPI, networkRegistryAPI)
-	appServer := appgrpc.NewServer(appService)
+	connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
+	internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
+	appServer := appgrpc.NewServer(connService, internalViewService)
 
 	err := appServer.Start(common.AppPort())
 	if err != nil {
