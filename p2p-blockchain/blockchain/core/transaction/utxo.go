@@ -1,13 +1,16 @@
-package Transaction
+package transaction
 
-import "sort"
+import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/constants"
+	"sort"
+)
 
 type UTXO struct {
 	TxID        TransactionID
 	OutputIndex uint32
 	Output      Output
 }
-type TransactionID [32]byte
+type TransactionID [constants.HashSize]byte
 
 func selectUTXOs(utxos []UTXO, amount uint64) (selected []UTXO, total uint64) {
 	sort.Slice(utxos, func(i, j int) bool {
