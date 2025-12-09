@@ -1,4 +1,4 @@
-package core
+package grpc
 
 import (
 	"context"
@@ -7,10 +7,8 @@ import (
 	"net"
 	"net/netip"
 
+	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
@@ -19,19 +17,15 @@ import (
 // Server represents the app gRPC server for external local systems.
 type Server struct {
 	pb.UnimplementedAppServiceServer
-	grpcServer          *grpc.Server
-	listener            net.Listener
-	handshakeAPI        api.HandshakeAPI
-	networkInfoRegistry *networkinfo.NetworkInfoRegistry
-	peerStore           *peer.PeerStore
+	grpcServer *grpc.Server
+	listener   net.Listener
+	appService core.AppService
 }
 
 // NewServer creates a new external API server.
-func NewServer(handshakeAPI api.HandshakeAPI, networkInfoRegistry *networkinfo.NetworkInfoRegistry, peerStore *peer.PeerStore) *Server {
+func NewServer(appService core.AppService) *Server {
 	return &Server{
-		handshakeAPI:        handshakeAPI,
-		networkInfoRegistry: networkInfoRegistry,
-		peerStore:           peerStore,
+		appService: appService,
 	}
 }
 
@@ -82,9 +76,7 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 
 	port := uint16(req.Port)
 
-	addrPort := netip.AddrPortFrom(ip, port)
-
-	err := s.handshakeAPI.InitiateHandshake(addrPort)
+	err := s.appService.ConnectTo(ip, port)
 	if err != nil {
 		return &pb.ConnectToResponse{
 			Success:      false,
@@ -110,94 +102,40 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 
 // GetPeerRegistry returns the current peer registry for debugging purposes.
 func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryRequest) (*pb.GetPeerRegistryResponse, error) {
-	allInfo := s.networkInfoRegistry.GetAllNetworkInfo()
+	peers := s.appService.GetPeerRegistry()
 
 	response := &pb.GetPeerRegistryResponse{
-		Entries: make([]*pb.PeerRegistryEntry, 0, len(allInfo)),
+		Entries: make([]*pb.PeerRegistryEntry, 0, len(peers)),
 	}
 
-	for _, info := range allInfo {
+	for _, p := range peers {
 		entry := &pb.PeerRegistryEntry{
-			PeerId:                string(info.PeerID),
-			HasOutboundConnection: info.HasOutboundConn,
+			PeerId:                p.PeerID,
+			HasOutboundConnection: p.HasOutboundConnection,
+			Version:               p.Version,
+			ConnectionState:       p.ConnectionState,
+			Direction:             p.Direction,
+			SupportedServices:     p.SupportedServices,
 		}
 
 		// Listening endpoint
-		if info.ListeningEndpoint.IsValid() {
+		if p.ListeningEndpoint.IsValid() {
 			entry.ListeningEndpoint = &pb.Endpoint{
-				IpAddress:     info.ListeningEndpoint.Addr().AsSlice(),
-				ListeningPort: uint32(info.ListeningEndpoint.Port()),
+				IpAddress:     p.ListeningEndpoint.Addr().AsSlice(),
+				ListeningPort: uint32(p.ListeningEndpoint.Port()),
 			}
 		}
 
 		// Inbound addresses
-		for _, addr := range info.InboundAddresses {
+		for _, addr := range p.InboundAddresses {
 			entry.InboundAddresses = append(entry.InboundAddresses, &pb.Endpoint{
 				IpAddress:     addr.Addr().AsSlice(),
 				ListeningPort: uint32(addr.Port()),
 			})
 		}
 
-		// Peer info from PeerStore
-		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
-			p.Lock()
-			entry.Version = p.Version
-			entry.ConnectionState = connectionStateToString(p.State)
-			entry.Direction = directionToString(p.Direction)
-
-			for _, svc := range p.SupportedServices {
-				entry.SupportedServices = append(entry.SupportedServices, serviceTypeToString(svc))
-			}
-			p.Unlock()
-		}
-
 		response.Entries = append(response.Entries, entry)
 	}
 
 	return response, nil
-}
-
-func connectionStateToString(state peer.PeerConnectionState) string {
-	switch state {
-	case peer.StateNew:
-		return "new"
-	case peer.StateAwaitingVerack:
-		return "awaiting_verack"
-	case peer.StateAwaitingAck:
-		return "awaiting_ack"
-	case peer.StateConnected:
-		return "connected"
-	default:
-		return "unknown"
-	}
-}
-
-func directionToString(dir peer.Direction) string {
-	switch dir {
-	case peer.DirectionInbound:
-		return "inbound"
-	case peer.DirectionOutbound:
-		return "outbound"
-	case peer.DirectionBoth:
-		return "both"
-	default:
-		return "unknown"
-	}
-}
-
-func serviceTypeToString(svc peer.ServiceType) string {
-	switch svc {
-	case peer.ServiceType_Netzwerkrouting:
-		return "netzwerkrouting"
-	case peer.ServiceType_BlockchainFull:
-		return "blockchain_full"
-	case peer.ServiceType_BlockchainSimple:
-		return "blockchain_simple"
-	case peer.ServiceType_Wallet:
-		return "wallet"
-	case peer.ServiceType_Miner:
-		return "miner"
-	default:
-		return "unknown"
-	}
 }

@@ -4,6 +4,7 @@ package networkinfo
 
 import (
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 	"sync"
@@ -200,24 +201,13 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 	return r.GetPeerIDByAddr(addrPort)
 }
 
-// DEBUG:
-
-// FullNetworkInfo contains all available information about a peer.
-type FullNetworkInfo struct {
-	PeerID            peer.PeerID
-	ListeningEndpoint netip.AddrPort
-	InboundAddresses  []netip.AddrPort
-	HasOutboundConn   bool
-}
-
-// GetAllNetworkInfo returns all available information for all peers.
-func (r *NetworkInfoRegistry) GetAllNetworkInfo() []FullNetworkInfo {
+func (r *NetworkInfoRegistry) GetAllNetworkInfo() []core.FullNetworkInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]FullNetworkInfo, 0, len(r.networkInfoEntries))
+	result := make([]core.FullNetworkInfo, 0, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
-		info := FullNetworkInfo{
+		info := core.FullNetworkInfo{
 			PeerID:            peerID,
 			ListeningEndpoint: entry.ListeningEndpoint,
 			InboundAddresses:  entry.InboundAddresses,
