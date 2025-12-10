@@ -121,6 +121,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 		}
 
 		entry := &pb.PeerRegistryEntry{
+			PeerId:             string(p.PeerID),
 			InfrastructureData: infraJSON,
 			Version:            p.Version,
 			ConnectionState:    p.ConnectionState,
