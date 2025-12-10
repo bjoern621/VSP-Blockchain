@@ -93,6 +93,12 @@ func TestArchitecture(t *testing.T) {
 
 	if !result.Pass {
 		jsonBytes, _ := json.MarshalIndent(result, "", "  ")
+
+		if filteredBytes, err := filterFailedResults(jsonBytes); err == nil {
+			t.Fatalf("Architecture tests failed:\n%s", string(filteredBytes))
+			return
+		}
+
 		t.Fatalf("Architecture tests failed:\n%s", string(jsonBytes))
 	}
 }
@@ -122,4 +128,36 @@ func addCommonInfrastructureDependencies() []string {
 	return []string{
 		"**.p2p-blockchain.internal.pb.**",
 	}
+}
+
+func filterFailedResults(jsonBytes []byte) ([]byte, error) {
+	var resultMap map[string]any
+	if err := json.Unmarshal(jsonBytes, &resultMap); err != nil {
+		return nil, err
+	}
+
+	// Helper to filter results
+	filterResults := func(key string) {
+		if ruleResult, ok := resultMap[key].(map[string]any); ok {
+			if results, ok := ruleResult["results"].([]any); ok {
+				var failedResults []any
+				for _, r := range results {
+					if rMap, ok := r.(map[string]any); ok {
+						if passes, ok := rMap["passes"].(bool); ok && !passes {
+							failedResults = append(failedResults, r)
+						}
+					}
+				}
+				ruleResult["results"] = failedResults
+			}
+		}
+	}
+
+	filterResults("DependenciesRuleResult")
+	filterResults("FunctionsRuleResult")
+	filterResults("ContentsRuleResult")
+	filterResults("NamingRuleResult")
+	filterResults("CyclicDependencyRuleResult")
+
+	return json.MarshalIndent(resultMap, "", "  ")
 }
