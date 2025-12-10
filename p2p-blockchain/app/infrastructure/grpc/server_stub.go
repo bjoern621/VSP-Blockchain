@@ -115,9 +115,12 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 			PeerId:             string(p.PeerID),
 			InfrastructureData: infraStruct,
 			Version:            p.Version,
-			ConnectionState:    p.ConnectionState,
-			Direction:          p.Direction,
-			SupportedServices:  p.SupportedServices,
+			ConnectionState:    p.ConnectionState.String(),
+			Direction:          p.Direction.String(),
+		}
+
+		for _, svc := range p.SupportedServices {
+			entry.SupportedServices = append(entry.SupportedServices, svc.String())
 		}
 
 		response.Entries = append(response.Entries, entry)

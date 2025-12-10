@@ -2,6 +2,7 @@ package api
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"slices"
 )
 
 // FullInfrastructureInfo is a map from PeerID to arbitrary infrastructure data.
@@ -25,9 +26,9 @@ type PeerInfo struct {
 	PeerInfrastructureData map[string]any
 
 	Version           string
-	ConnectionState   string
-	Direction         string
-	SupportedServices []string
+	ConnectionState   peer.PeerConnectionState
+	Direction         peer.Direction
+	SupportedServices []peer.ServiceType
 }
 
 // NetworkInfoAPI provides access to peer information.
@@ -61,12 +62,10 @@ func (s *networkRegistryService) GetInternalPeerInfo() []PeerInfo {
 		if p, exists := s.peerStore.GetPeer(peerID); exists {
 			p.Lock()
 			pInfo.Version = p.Version
-			pInfo.ConnectionState = p.State.String()
-			pInfo.Direction = p.Direction.String()
+			pInfo.ConnectionState = p.State
+			pInfo.Direction = p.Direction
 
-			for _, svc := range p.SupportedServices {
-				pInfo.SupportedServices = append(pInfo.SupportedServices, svc.String())
-			}
+			pInfo.SupportedServices = slices.Clone(p.SupportedServices)
 			p.Unlock()
 		}
 
