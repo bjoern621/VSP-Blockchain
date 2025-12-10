@@ -112,8 +112,8 @@ func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryReq
 
 	for _, p := range peers {
 		entry := &pb.PeerRegistryEntry{
-			PeerId:                p.PeerID,
-			HasOutboundConnection: p.HasOutboundConnection,
+			PeerId:                string(p.PeerID),
+			HasOutboundConnection: p.HasOutboundConn,
 			Version:               p.Version,
 			ConnectionState:       p.ConnectionState,
 			Direction:             p.Direction,

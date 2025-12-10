@@ -13,7 +13,7 @@ type FullNetworkInfo struct {
 	HasOutboundConn   bool
 }
 
-// NetworkInfoProvider provides access to network-level information about peers.
+// NetworkInfoProvider provides access to network-level (infrastructure / grpc) information about peers.
 type NetworkInfoProvider interface {
 	// GetAllNetworkInfo returns all available information for all peers.
 	GetAllNetworkInfo() []FullNetworkInfo
@@ -21,10 +21,7 @@ type NetworkInfoProvider interface {
 
 // PeerInfo containes information about a peer from the network registry and peer store.
 type PeerInfo struct {
-	PeerID                string
-	HasOutboundConnection bool
-	ListeningEndpoint     netip.AddrPort
-	InboundAddresses      []netip.AddrPort
+	FullNetworkInfo
 
 	Version           string
 	ConnectionState   string
@@ -56,10 +53,12 @@ func (s *networkRegistryService) GetPeers() []PeerInfo {
 
 	for _, info := range allInfo {
 		pInfo := PeerInfo{
-			PeerID:                string(info.PeerID),
-			HasOutboundConnection: info.HasOutboundConn,
-			ListeningEndpoint:     info.ListeningEndpoint,
-			InboundAddresses:      info.InboundAddresses,
+			FullNetworkInfo: FullNetworkInfo{
+				PeerID:            info.PeerID,
+				HasOutboundConn:   info.HasOutboundConn,
+				ListeningEndpoint: info.ListeningEndpoint,
+				InboundAddresses:  info.InboundAddresses,
+			},
 		}
 
 		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
