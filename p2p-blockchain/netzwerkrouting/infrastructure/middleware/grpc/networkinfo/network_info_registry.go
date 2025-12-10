@@ -218,14 +218,6 @@ func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureI
 	return result
 }
 
-func formatAddrPorts(addrs []netip.AddrPort) []string {
-	result := make([]string, len(addrs))
-	for i, addr := range addrs {
-		result[i] = addr.String()
-	}
-	return result
-}
-
 // formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.
 func formatAddrPortsAsAny(addrs []netip.AddrPort) []any {
 	result := make([]any, len(addrs))
