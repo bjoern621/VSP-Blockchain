@@ -4,16 +4,16 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 )
 
-type InternsalViewService struct {
+type InternalViewService struct {
 	networkRegistryAPI api.NetworkInfoAPI
 }
 
-func NewInternsalViewService(networkRegistryAPI api.NetworkInfoAPI) *InternsalViewService {
-	return &InternsalViewService{
+func NewInternsalViewService(networkRegistryAPI api.NetworkInfoAPI) *InternalViewService {
+	return &InternalViewService{
 		networkRegistryAPI: networkRegistryAPI,
 	}
 }
 
-func (s *InternsalViewService) GetPeerRegistry() []api.PeerInfo {
-	return s.networkRegistryAPI.GetPeers()
+func (svc *InternalViewService) GetInternalPeerInfo() []api.PeerInfo {
+	return svc.networkRegistryAPI.GetInternalPeerInfo()
 }

@@ -201,12 +201,12 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 	return r.GetPeerIDByAddr(addrPort)
 }
 
-// GetAllNetworkInfo returns all available network-level information for all peers.
-func (r *NetworkInfoRegistry) GetAllNetworkInfo() api.FullNetworkInfo {
+// GetAllInfrastructureInfo implements the InfrastructureInfoProvider interface from api.
+func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make(api.FullNetworkInfo, len(r.networkInfoEntries))
+	result := make(api.FullInfrastructureInfo, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
 		result[peerID] = map[string]any{
 			"peerID":            string(peerID),

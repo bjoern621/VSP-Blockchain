@@ -21,11 +21,11 @@ type Server struct {
 	grpcServer  *grpc.Server
 	listener    net.Listener
 	connService *core.ConnectionEstablishmentService
-	regService  *core.InternsalViewService
+	regService  *core.InternalViewService
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternsalViewService) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService) *Server {
 	return &Server{
 		connService: connService,
 		regService:  regService,
@@ -104,18 +104,18 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 }
 
 // GetPeerRegistry returns the current peer registry for debugging purposes.
-func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryRequest) (*pb.GetPeerRegistryResponse, error) {
-	peers := s.regService.GetPeerRegistry()
+func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPeerInfoRequest) (*pb.GetInternalPeerInfoResponse, error) {
+	peers := s.regService.GetInternalPeerInfo()
 
-	response := &pb.GetPeerRegistryResponse{
+	response := &pb.GetInternalPeerInfoResponse{
 		Entries: make([]*pb.PeerRegistryEntry, 0, len(peers)),
 	}
 
 	for _, p := range peers {
 		// Serialize infrastructure data to JSON
 		infraJSON := "{}"
-		if p.InfrastructureData != nil {
-			if jsonBytes, err := json.Marshal(p.InfrastructureData); err == nil {
+		if p.PeerInfrastructureData != nil {
+			if jsonBytes, err := json.Marshal(p.PeerInfrastructureData); err == nil {
 				infraJSON = string(jsonBytes)
 			}
 		}

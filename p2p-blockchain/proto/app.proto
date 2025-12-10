@@ -20,8 +20,8 @@ service AppService {
     //  - Returns success/failure status.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse);
 
-    // GetPeerRegistry returns the current peer registry for debugging purposes.
-    rpc GetPeerRegistry(GetPeerRegistryRequest) returns (GetPeerRegistryResponse);
+    // GetInternalPeerInfo returns the current internal state per peer for debugging purposes.
+    rpc GetInternalPeerInfo(GetInternalPeerInfoRequest) returns (GetInternalPeerInfoResponse);
 }
 
 message ConnectToRequest {
@@ -35,21 +35,23 @@ message ConnectToResponse {
     string error_message = 2;
 }
 
-message GetPeerRegistryRequest {}
+message GetInternalPeerInfoRequest {}
 
-message GetPeerRegistryResponse {
+message GetInternalPeerInfoResponse {
     repeated PeerRegistryEntry entries = 1;
 }
 
 message PeerRegistryEntry {
+    string peer_id = 1;
+
     // Infrastructure data as JSON string.
     // The infrastructure layer is free to fill this with any data.
     // Callers can deserialize this JSON to display the data.
-    string infrastructure_data = 1;
+    string infrastructure_data = 2;
     
     // Domain-Peer information
-    string version = 2;                    // Protocol version string
-    repeated string supported_services = 3;
-    string connection_state = 4;
-    string direction = 5;
+    string version = 3; // Protocol version string
+    repeated string supported_services = 4;
+    string connection_state = 5;
+    string direction = 6;
 }
