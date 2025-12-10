@@ -1,27 +1,26 @@
 package api
 
 import (
-	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
-// FullNetworkInfo contains all available information about a peer.
-type FullNetworkInfo struct {
-	PeerID            peer.PeerID
-	ListeningEndpoint netip.AddrPort
-	InboundAddresses  []netip.AddrPort
-	HasOutboundConn   bool
-}
+// FullNetworkInfo is a map from PeerID to arbitrary infrastructure data.
+// The infrastructure layer is free to fill this with any data it wants.
+// Callers can serialize the data to JSON or string for display.
+type FullNetworkInfo map[peer.PeerID]any
 
 // NetworkInfoProvider provides access to network-level (infrastructure / grpc) information about peers.
 type NetworkInfoProvider interface {
 	// GetAllNetworkInfo returns all available information for all peers.
-	GetAllNetworkInfo() []FullNetworkInfo
+	// Returns a map from PeerID to arbitrary data that the infrastructure layer provides.
+	GetAllNetworkInfo() FullNetworkInfo
 }
 
-// PeerInfo containes information about a peer from the network registry and peer store.
+// PeerInfo contains information about a peer from the network registry and peer store.
 type PeerInfo struct {
-	FullNetworkInfo
+	// InfrastructureData contains arbitrary data from the infrastructure layer.
+	// This can be serialized to JSON for display.
+	InfrastructureData any
 
 	Version           string
 	ConnectionState   string
@@ -51,17 +50,12 @@ func (s *networkRegistryService) GetPeers() []PeerInfo {
 
 	result := make([]PeerInfo, 0, len(allInfo))
 
-	for _, info := range allInfo {
+	for peerID, infraData := range allInfo {
 		pInfo := PeerInfo{
-			FullNetworkInfo: FullNetworkInfo{
-				PeerID:            info.PeerID,
-				HasOutboundConn:   info.HasOutboundConn,
-				ListeningEndpoint: info.ListeningEndpoint,
-				InboundAddresses:  info.InboundAddresses,
-			},
+			InfrastructureData: infraData,
 		}
 
-		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
+		if p, exists := s.peerStore.GetPeer(peerID); exists {
 			p.Lock()
 			pInfo.Version = p.Version
 			pInfo.ConnectionState = p.State.String()

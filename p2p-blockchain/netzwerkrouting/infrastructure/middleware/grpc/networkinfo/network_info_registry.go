@@ -202,19 +202,26 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 }
 
 // GetAllNetworkInfo returns all available network-level information for all peers.
-func (r *NetworkInfoRegistry) GetAllNetworkInfo() []api.FullNetworkInfo {
+func (r *NetworkInfoRegistry) GetAllNetworkInfo() api.FullNetworkInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]api.FullNetworkInfo, 0, len(r.networkInfoEntries))
+	result := make(api.FullNetworkInfo, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
-		info := api.FullNetworkInfo{
-			PeerID:            peerID,
-			ListeningEndpoint: entry.ListeningEndpoint,
-			InboundAddresses:  entry.InboundAddresses,
-			HasOutboundConn:   entry.OutboundConn != nil,
+		result[peerID] = map[string]any{
+			"peerID":            string(peerID),
+			"listeningEndpoint": entry.ListeningEndpoint.String(),
+			"inboundAddresses":  formatAddrPorts(entry.InboundAddresses),
+			"hasOutboundConn":   entry.OutboundConn != nil,
 		}
-		result = append(result, info)
+	}
+	return result
+}
+
+func formatAddrPorts(addrs []netip.AddrPort) []string {
+	result := make([]string, len(addrs))
+	for i, addr := range addrs {
+		result[i] = addr.String()
 	}
 	return result
 }

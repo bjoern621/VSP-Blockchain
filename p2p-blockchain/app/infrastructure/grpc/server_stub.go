@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -111,29 +112,20 @@ func (s *Server) GetPeerRegistry(ctx context.Context, req *pb.GetPeerRegistryReq
 	}
 
 	for _, p := range peers {
-		entry := &pb.PeerRegistryEntry{
-			PeerId:                string(p.PeerID),
-			HasOutboundConnection: p.HasOutboundConn,
-			Version:               p.Version,
-			ConnectionState:       p.ConnectionState,
-			Direction:             p.Direction,
-			SupportedServices:     p.SupportedServices,
-		}
-
-		// Listening endpoint
-		if p.ListeningEndpoint.IsValid() {
-			entry.ListeningEndpoint = &pb.Endpoint{
-				IpAddress:     p.ListeningEndpoint.Addr().AsSlice(),
-				ListeningPort: uint32(p.ListeningEndpoint.Port()),
+		// Serialize infrastructure data to JSON
+		infraJSON := "{}"
+		if p.InfrastructureData != nil {
+			if jsonBytes, err := json.Marshal(p.InfrastructureData); err == nil {
+				infraJSON = string(jsonBytes)
 			}
 		}
 
-		// Inbound addresses
-		for _, addr := range p.InboundAddresses {
-			entry.InboundAddresses = append(entry.InboundAddresses, &pb.Endpoint{
-				IpAddress:     addr.Addr().AsSlice(),
-				ListeningPort: uint32(addr.Port()),
-			})
+		entry := &pb.PeerRegistryEntry{
+			InfrastructureData: infraJSON,
+			Version:            p.Version,
+			ConnectionState:    p.ConnectionState,
+			Direction:          p.Direction,
+			SupportedServices:  p.SupportedServices,
 		}
 
 		response.Entries = append(response.Entries, entry)
