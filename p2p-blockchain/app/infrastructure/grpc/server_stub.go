@@ -105,20 +105,9 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 
 	for _, p := range peers {
 		// Convert infrastructure data to structpb.Struct
-		var infraStruct *structpb.Struct
-		if p.PeerInfrastructureData != nil {
-			// Type assert to map[string]any which is what the infrastructure layer returns
-			if infraMap, ok := p.PeerInfrastructureData.(map[string]any); ok {
-				var err error
-				infraStruct, err = structpb.NewStruct(infraMap)
-				if err != nil {
-					logger.Warnf("failed to create structpb from infra data: %v", err)
-					infraStruct, _ = structpb.NewStruct(nil)
-				}
-			}
-		}
-
-		if infraStruct == nil {
+		infraStruct, err := structpb.NewStruct(p.PeerInfrastructureData)
+		if err != nil {
+			logger.Warnf("failed to create structpb from infra data: %v", err)
 			infraStruct, _ = structpb.NewStruct(nil)
 		}
 

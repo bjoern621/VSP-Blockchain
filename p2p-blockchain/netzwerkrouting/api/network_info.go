@@ -7,7 +7,7 @@ import (
 // FullInfrastructureInfo is a map from PeerID to arbitrary infrastructure data.
 // The infrastructure layer is free to fill this with any data it wants.
 // Callers can serialize the data to JSON or string for display.
-type FullInfrastructureInfo map[peer.PeerID]any
+type FullInfrastructureInfo map[peer.PeerID]map[string]any
 
 // InfrastructureInfoProvider provides access to network-level (infrastructure / grpc) information about peers.
 type InfrastructureInfoProvider interface {
@@ -22,7 +22,7 @@ type PeerInfo struct {
 
 	// PeerInfrastructureData contains arbitrary data from the infrastructure layer.
 	// This can be serialized to JSON for display.
-	PeerInfrastructureData any
+	PeerInfrastructureData map[string]any
 
 	Version           string
 	ConnectionState   string
