@@ -16,7 +16,7 @@ func TestArchitecture(t *testing.T) {
 
 	for _, s := range subsystems {
 		// API Rule
-		// api can depend on: itself, core (same subsystem), api (other subsystems)
+		// api can depend on: itself, core (same subsystem), common package
 		allowedApiDeps := []string{
 			fmt.Sprintf("**.%s.api.**", s),
 			fmt.Sprintf("**.%s.core.**", s),
@@ -32,7 +32,7 @@ func TestArchitecture(t *testing.T) {
 		})
 
 		// Core Rule
-		// core can depend on: itself, data (same subsystem), api (other subsystems)
+		// core can depend on: itself, data (same subsystem), common package
 		allowedCoreDeps := []string{
 			fmt.Sprintf("**.%s.core.**", s),
 			fmt.Sprintf("**.%s.data.**", s),
@@ -48,7 +48,7 @@ func TestArchitecture(t *testing.T) {
 		})
 
 		// Data Rule
-		// data can depend on: itself, api (other subsystems)
+		// data can depend on: itself, common package
 		allowedDataDeps := []string{
 			fmt.Sprintf("**.%s.data.**", s),
 		}
@@ -59,6 +59,25 @@ func TestArchitecture(t *testing.T) {
 			Package: fmt.Sprintf("**.%s.data.**", s),
 			ShouldOnlyDependsOn: &config.Dependencies{
 				Internal: allowedDataDeps,
+			},
+		})
+
+		// Infrastructure Rule
+		// infrastructure can depend on: itself, api (same subsystem), core (same subsystem), data (same subsystem), common package
+		allowedInfrastructureDeps := []string{
+			fmt.Sprintf("**.%s.infrastructure.**", s),
+			fmt.Sprintf("**.%s.api.**", s),
+			fmt.Sprintf("**.%s.core.**", s),
+			fmt.Sprintf("**.%s.data.**", s),
+		}
+
+		allowedInfrastructureDeps = append(allowedInfrastructureDeps, addCommonDependencies(s)...)
+		allowedInfrastructureDeps = append(allowedInfrastructureDeps, addCommonInfrastructureDependencies()...)
+
+		rules = append(rules, &config.DependenciesRule{
+			Package: fmt.Sprintf("**.%s.infrastructure.**", s),
+			ShouldOnlyDependsOn: &config.Dependencies{
+				Internal: allowedInfrastructureDeps,
 			},
 		})
 	}
@@ -93,4 +112,12 @@ func addCommonDependencies(currentSubsystem string) []string {
 	out := append(commonDeps, commonDeps...)
 
 	return out
+}
+
+// addCommonInfrastructureDependencies adds common dependencies for the  infrastructure layer.
+// This includes dependencies on protobuf generated packages.
+func addCommonInfrastructureDependencies() []string {
+	return []string{
+		"**.p2p-blockchain.internal.pb.**",
+	}
 }
