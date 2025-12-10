@@ -46,6 +46,21 @@ func TestArchitecture(t *testing.T) {
 				Internal: allowedCoreDeps,
 			},
 		})
+
+		// Data Rule
+		// data can depend on: itself, api (other subsystems)
+		allowedDataDeps := []string{
+			fmt.Sprintf("**.%s.data.**", s),
+		}
+
+		allowedDataDeps = append(allowedDataDeps, addCommonDependencies(s)...)
+
+		rules = append(rules, &config.DependenciesRule{
+			Package: fmt.Sprintf("**.%s.data.**", s),
+			ShouldOnlyDependsOn: &config.Dependencies{
+				Internal: allowedDataDeps,
+			},
+		})
 	}
 
 	configuration := config.Config{
