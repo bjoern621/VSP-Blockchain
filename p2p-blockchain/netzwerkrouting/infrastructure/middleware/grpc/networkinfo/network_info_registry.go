@@ -211,7 +211,7 @@ func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureI
 		result[peerID] = map[string]any{
 			"peerID":            string(peerID),
 			"listeningEndpoint": entry.ListeningEndpoint.String(),
-			"inboundAddresses":  formatAddrPorts(entry.InboundAddresses),
+			"inboundAddresses":  formatAddrPortsAsAny(entry.InboundAddresses),
 			"hasOutboundConn":   entry.OutboundConn != nil,
 		}
 	}
@@ -220,6 +220,15 @@ func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureI
 
 func formatAddrPorts(addrs []netip.AddrPort) []string {
 	result := make([]string, len(addrs))
+	for i, addr := range addrs {
+		result[i] = addr.String()
+	}
+	return result
+}
+
+// formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.
+func formatAddrPortsAsAny(addrs []netip.AddrPort) []any {
+	result := make([]any, len(addrs))
 	for i, addr := range addrs {
 		result[i] = addr.String()
 	}

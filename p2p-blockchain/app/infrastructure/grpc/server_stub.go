@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -13,6 +12,7 @@ import (
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // Server represents the app gRPC server for external local systems.
@@ -112,17 +112,27 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 	}
 
 	for _, p := range peers {
-		// Serialize infrastructure data to JSON
-		infraJSON := "{}"
+		// Convert infrastructure data to structpb.Struct
+		var infraStruct *structpb.Struct
 		if p.PeerInfrastructureData != nil {
-			if jsonBytes, err := json.Marshal(p.PeerInfrastructureData); err == nil {
-				infraJSON = string(jsonBytes)
+			// Type assert to map[string]any which is what the infrastructure layer returns
+			if infraMap, ok := p.PeerInfrastructureData.(map[string]any); ok {
+				var err error
+				infraStruct, err = structpb.NewStruct(infraMap)
+				if err != nil {
+					logger.Warnf("failed to create structpb from infra data: %v", err)
+					infraStruct, _ = structpb.NewStruct(nil)
+				}
 			}
+		}
+
+		if infraStruct == nil {
+			infraStruct, _ = structpb.NewStruct(nil)
 		}
 
 		entry := &pb.PeerRegistryEntry{
 			PeerId:             string(p.PeerID),
-			InfrastructureData: infraJSON,
+			InfrastructureData: infraStruct,
 			Version:            p.Version,
 			ConnectionState:    p.ConnectionState,
 			Direction:          p.Direction,

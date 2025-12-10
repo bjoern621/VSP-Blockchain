@@ -9,6 +9,8 @@ syntax="proto3";
 
 package app;
 
+import "google/protobuf/struct.proto";
+
 option go_package = "./internal/pb";
 
 // AppService provides an interface for external local systems to interact with the node.
@@ -44,10 +46,9 @@ message GetInternalPeerInfoResponse {
 message PeerRegistryEntry {
     string peer_id = 1;
 
-    // Infrastructure data as JSON string.
-    // The infrastructure layer is free to fill this with any data.
-    // Callers can deserialize this JSON to display the data.
-    string infrastructure_data = 2;
+    // Infrastructure data as a JSON object.
+    // Uses google.protobuf.Struct which automatically serializes to native JSON.
+    google.protobuf.Struct infrastructure_data = 2;
     
     // Domain-Peer information
     string version = 3; // Protocol version string
