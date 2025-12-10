@@ -117,9 +117,7 @@ func addCommonDependencies(currentSubsystem string) []string {
 		}
 	}
 
-	out := append(commonDeps, commonDeps...)
-
-	return out
+	return commonDeps
 }
 
 // addCommonInfrastructureDependencies adds common dependencies for the  infrastructure layer.
