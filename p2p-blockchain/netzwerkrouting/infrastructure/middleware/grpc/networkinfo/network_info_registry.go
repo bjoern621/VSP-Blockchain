@@ -201,6 +201,7 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 	return r.GetPeerIDByAddr(addrPort)
 }
 
+// GetAllNetworkInfo returns all available network-level information for all peers.
 func (r *NetworkInfoRegistry) GetAllNetworkInfo() []api.FullNetworkInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
