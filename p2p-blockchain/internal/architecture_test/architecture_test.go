@@ -1,3 +1,5 @@
+// package architecture_test contains tests to verify the architectural constraints of the p2p-blockchain module.
+// The architectural contraints are defined in the ARC42 documentation.
 package architecture_test
 
 import (
