@@ -29,6 +29,7 @@ service AppService {
 message ConnectToRequest {
     // IP address of the peer to connect to (IPv4 or IPv6).
     bytes ip_address = 1;
+    // Domain layer: uint16
     uint32 port = 2;
 }
 
@@ -40,10 +41,10 @@ message ConnectToResponse {
 message GetInternalPeerInfoRequest {}
 
 message GetInternalPeerInfoResponse {
-    repeated PeerRegistryEntry entries = 1;
+    repeated InternalPeerInfoEntry entries = 1;
 }
 
-message PeerRegistryEntry {
+message InternalPeerInfoEntry {
     string peer_id = 1;
 
     // Infrastructure data as a JSON object.

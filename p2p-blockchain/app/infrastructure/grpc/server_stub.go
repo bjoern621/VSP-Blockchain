@@ -62,14 +62,6 @@ func (s *Server) Stop() {
 
 // ConnectTo handles the ConnectTo RPC call from external local systems.
 func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToResponse, error) {
-	ip, ok := netip.AddrFromSlice(req.IpAddress)
-	if !ok {
-		return &pb.ConnectToResponse{
-			Success:      false,
-			ErrorMessage: "invalid IP address format",
-		}, nil
-	}
-
 	if req.Port > 65535 {
 		return &pb.ConnectToResponse{
 			Success:      false,
@@ -79,7 +71,7 @@ func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.C
 
 	port := uint16(req.Port)
 
-	err := s.connService.ConnectTo(ip, port)
+	err := s.connService.ConnectTo(req.IpAddress, port)
 	if err != nil {
 		return &pb.ConnectToResponse{
 			Success:      false,
@@ -108,7 +100,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 	peers := s.regService.GetInternalPeerInfo()
 
 	response := &pb.GetInternalPeerInfoResponse{
-		Entries: make([]*pb.PeerRegistryEntry, 0, len(peers)),
+		Entries: make([]*pb.InternalPeerInfoEntry, 0, len(peers)),
 	}
 
 	for _, p := range peers {
@@ -130,7 +122,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 			infraStruct, _ = structpb.NewStruct(nil)
 		}
 
-		entry := &pb.PeerRegistryEntry{
+		entry := &pb.InternalPeerInfoEntry{
 			PeerId:             string(p.PeerID),
 			InfrastructureData: infraStruct,
 			Version:            p.Version,
