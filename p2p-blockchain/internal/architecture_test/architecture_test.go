@@ -9,23 +9,20 @@ import (
 	config "github.com/arch-go/arch-go/api/configuration"
 )
 
+var subsystems = []string{"netzwerkrouting", "wallet", "miner", "blockchain", "app"}
+
 func TestArchitecture(t *testing.T) {
-	subsystems := []string{"netzwerkrouting", "wallet", "miner", "blockchain", "app"}
 	var rules []*config.DependenciesRule
 
 	for _, s := range subsystems {
 		// API Rule
-		// api can depend on: core (same subsystem), api (other subsystems)
+		// api can depend on: itself, core (same subsystem), api (other subsystems)
 		allowedApiDeps := []string{
 			fmt.Sprintf("**.%s.api.**", s),
 			fmt.Sprintf("**.%s.core.**", s),
 		}
-		// Add other subsystems' APIs
-		for _, other := range subsystems {
-			if other != s {
-				allowedApiDeps = append(allowedApiDeps, fmt.Sprintf("**.%s.api.**", other))
-			}
-		}
+
+		allowedApiDeps = append(allowedApiDeps, addCommonDependencies(s)...)
 
 		rules = append(rules, &config.DependenciesRule{
 			Package: fmt.Sprintf("**.%s.api.**", s),
@@ -35,17 +32,13 @@ func TestArchitecture(t *testing.T) {
 		})
 
 		// Core Rule
-		// core can depend on: data (same subsystem), api (other subsystems)
+		// core can depend on: itself, data (same subsystem), api (other subsystems)
 		allowedCoreDeps := []string{
 			fmt.Sprintf("**.%s.core.**", s),
 			fmt.Sprintf("**.%s.data.**", s),
-			"**.p2p-blockchain.internal.common.**",
 		}
-		for _, other := range subsystems {
-			if other != s {
-				allowedCoreDeps = append(allowedCoreDeps, fmt.Sprintf("**.%s.api.**", other))
-			}
-		}
+
+		allowedCoreDeps = append(allowedCoreDeps, addCommonDependencies(s)...)
 
 		rules = append(rules, &config.DependenciesRule{
 			Package: fmt.Sprintf("**.%s.core.**", s),
@@ -66,4 +59,23 @@ func TestArchitecture(t *testing.T) {
 		jsonBytes, _ := json.MarshalIndent(result, "", "  ")
 		t.Fatalf("Architecture tests failed:\n%s", string(jsonBytes))
 	}
+}
+
+// addCommonDependencies adds common dependencies to the given rules for a specific subsystem.
+// This includes (1) dependencies on the common package and (2) APIs of other subsystems.
+func addCommonDependencies(currentSubsystem string) []string {
+	commonDeps := []string{
+		"**.p2p-blockchain.internal.common.**",
+	}
+
+	// Add other subsystems' APIs
+	for _, other := range subsystems {
+		if other != currentSubsystem {
+			commonDeps = append(commonDeps, fmt.Sprintf("**.%s.api.**", other))
+		}
+	}
+
+	out := append(commonDeps, commonDeps...)
+
+	return out
 }
