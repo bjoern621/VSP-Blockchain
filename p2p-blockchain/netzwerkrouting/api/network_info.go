@@ -2,9 +2,22 @@ package api
 
 import (
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
+
+// FullNetworkInfo contains all available information about a peer.
+type FullNetworkInfo struct {
+	PeerID            peer.PeerID
+	ListeningEndpoint netip.AddrPort
+	InboundAddresses  []netip.AddrPort
+	HasOutboundConn   bool
+}
+
+// NetworkInfoProvider provides access to network-level information about peers.
+type NetworkInfoProvider interface {
+	// GetAllNetworkInfo returns all available information for all peers.
+	GetAllNetworkInfo() []FullNetworkInfo
+}
 
 // PeerInfo containes information about a peer from the network registry and peer store.
 type PeerInfo struct {
@@ -25,11 +38,11 @@ type NetworkInfoAPI interface {
 }
 
 type networkRegistryService struct {
-	networkInfoProvider core.NetworkInfoProvider
+	networkInfoProvider NetworkInfoProvider
 	peerStore           *peer.PeerStore
 }
 
-func NewNetworkRegistryService(networkInfoProvider core.NetworkInfoProvider, peerStore *peer.PeerStore) NetworkInfoAPI {
+func NewNetworkRegistryService(networkInfoProvider NetworkInfoProvider, peerStore *peer.PeerStore) NetworkInfoAPI {
 	return &networkRegistryService{
 		networkInfoProvider: networkInfoProvider,
 		peerStore:           peerStore,
@@ -52,11 +65,11 @@ func (s *networkRegistryService) GetPeers() []PeerInfo {
 		if p, exists := s.peerStore.GetPeer(info.PeerID); exists {
 			p.Lock()
 			pInfo.Version = p.Version
-			pInfo.ConnectionState = connectionStateToString(p.State)
-			pInfo.Direction = directionToString(p.Direction)
+			pInfo.ConnectionState = p.State.String()
+			pInfo.Direction = p.Direction.String()
 
 			for _, svc := range p.SupportedServices {
-				pInfo.SupportedServices = append(pInfo.SupportedServices, serviceTypeToString(svc))
+				pInfo.SupportedServices = append(pInfo.SupportedServices, svc.String())
 			}
 			p.Unlock()
 		}
@@ -65,49 +78,4 @@ func (s *networkRegistryService) GetPeers() []PeerInfo {
 	}
 
 	return result
-}
-
-func connectionStateToString(state peer.PeerConnectionState) string {
-	switch state {
-	case peer.StateNew:
-		return "new"
-	case peer.StateAwaitingVerack:
-		return "awaiting_verack"
-	case peer.StateAwaitingAck:
-		return "awaiting_ack"
-	case peer.StateConnected:
-		return "connected"
-	default:
-		return "unknown"
-	}
-}
-
-func directionToString(dir peer.Direction) string {
-	switch dir {
-	case peer.DirectionInbound:
-		return "inbound"
-	case peer.DirectionOutbound:
-		return "outbound"
-	case peer.DirectionBoth:
-		return "both"
-	default:
-		return "unknown"
-	}
-}
-
-func serviceTypeToString(svc peer.ServiceType) string {
-	switch svc {
-	case peer.ServiceType_Netzwerkrouting:
-		return "netzwerkrouting"
-	case peer.ServiceType_BlockchainFull:
-		return "blockchain_full"
-	case peer.ServiceType_BlockchainSimple:
-		return "blockchain_simple"
-	case peer.ServiceType_Wallet:
-		return "wallet"
-	case peer.ServiceType_Miner:
-		return "miner"
-	default:
-		return "unknown"
-	}
 }

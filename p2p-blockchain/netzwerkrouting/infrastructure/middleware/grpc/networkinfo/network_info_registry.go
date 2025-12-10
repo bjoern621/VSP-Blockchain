@@ -4,7 +4,7 @@ package networkinfo
 
 import (
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 	"sync"
@@ -201,13 +201,13 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 	return r.GetPeerIDByAddr(addrPort)
 }
 
-func (r *NetworkInfoRegistry) GetAllNetworkInfo() []core.FullNetworkInfo {
+func (r *NetworkInfoRegistry) GetAllNetworkInfo() []api.FullNetworkInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]core.FullNetworkInfo, 0, len(r.networkInfoEntries))
+	result := make([]api.FullNetworkInfo, 0, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
-		info := core.FullNetworkInfo{
+		info := api.FullNetworkInfo{
 			PeerID:            peerID,
 			ListeningEndpoint: entry.ListeningEndpoint,
 			InboundAddresses:  entry.InboundAddresses,
