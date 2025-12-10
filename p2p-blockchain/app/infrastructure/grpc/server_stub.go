@@ -104,7 +104,6 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 	}
 
 	for _, p := range peers {
-		// Convert infrastructure data to structpb.Struct
 		infraStruct, err := structpb.NewStruct(p.PeerInfrastructureData)
 		if err != nil {
 			logger.Warnf("failed to create structpb from infra data: %v", err)
