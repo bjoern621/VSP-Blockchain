@@ -11,7 +11,7 @@ import (
 	config "github.com/arch-go/arch-go/api/configuration"
 )
 
-var subsystems = []string{"netzwerkrouting", "wallet", "miner", "blockchain", "app"}
+var subsystems = []string{"netzwerkrouting", "wallet", "miner", "blockchain", "app"} // Note technically "app" is not a subsystem, but we treat it as one for the purpose of architecture tests.
 
 func TestArchitecture(t *testing.T) {
 	var rules []*config.DependenciesRule
