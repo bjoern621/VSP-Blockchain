@@ -289,7 +289,7 @@ Weitere Informationen / Quellen:
 Schnittstellen
 
 -   `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
--   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.#
+-   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.
 -   `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
     -   TODO
 
