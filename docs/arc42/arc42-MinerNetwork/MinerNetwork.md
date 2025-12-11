@@ -152,7 +152,7 @@ Hinweise: Der Name _Node(s)_ wurde gewählt, um Namenskonflikte mit späteren Da
 
 Schnittstellen
 
--   `AppService` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle.
+-   `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle.
 
 ## Ebene 2
 
@@ -195,51 +195,12 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 
 -   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
 
-### SPV Node (Blackbox)
-
-Zweck/Verantwortung  
-Eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist. Enthält die Teilsysteme Netzwerkrouting und Wallet.
-
-Schnittstellen
-
--   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox). Sowie die Nachrichten für das [Wallet Teilsystem](#ebene-3).
-
-### Miner Node (Blackbox)
-
-Zweck/Verantwortung  
-Ein Node, die auf das Mining von Blöcken konzentriert ist. Enthält die Teilsysteme Netzwerkrouting, Blockchain und Miner.
-
-Schnittstellen
-
--   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox). Sowie die Nachrichten für das [Blockchain](#ebene-3) und [Miner Teilsystem](#ebene-3).
-
 ### Node (Blackbox)
 
-Zweck/Verantwortung  
-Jeder Peer im P2P Netzwerk ist eine Netzwerknode. Die einzige Voraussetzung ist, dass der Peer das grundlegende P2P Protokoll sprechen muss und somit das Teilsystem Netzwerkrouting haben muss. Mit anderen Worten: Jede Node hat immer das Netzwerkrouting Teilsystem (Teilsysteme: [Ebene 3](#ebene-3)).
-
 Schnittstellen
-
--   `P2P Nachrichten` Es gibt eine ganze Reihe von Nachrichten im V$Goin P2P Protokoll. Manche Nachrichten werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Nachrichten werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Nachrichten gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Für Kontext siehe [Laufzeitsichten](#laufzeitsicht).
-
-    | Kategorie         | Nachrichten          | Beschreibung                                                                                                                                                                                                   |
-    | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | Verbindungsaufbau | version, verack, ack | Ein Drei-Wege-Handshake, der zusätzlich verfügbare Teilsysteme austauscht. Dies sind die ersten Nachrichten des P2P Protokolls. (getpeers wird kurz vorher aufgerufen, ist aber nicht Teil des P2P Protokolls) |
-    | Peer Discovery    | getaddr, addr        | Diese Nachrichten sorgen für stets aktuelle Peers und genügend Alternativrouten, falls ein Peer das Netzwerk verlässt.                                                                                         |
-    | Keepalive         | heartbeat            | Eng verbunden mit den Peer Discovery Nachrichten. Ein Heartbeat wird in regelmäßigen Abständen an direkte Nachbarn gesendet, um inaktive Verbindungen zu erkennen.                                             |
-    | Error Handling    | reject               | Nachrichten, die sich um Error Handling bemühen. Wirkt sich direkt auf die Fehlertransparenz (Distribution Transparency) aus.                                                                                  |
 
 -   `updatepeers` Wird von dem Registry Crawler regelmäßig aufgerufen, um die Liste der aktuell verfügbaren Peers zu aktualisieren. Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) und [Registry Crawler (Blackbox)](#registry-crawler-blackbox) Beschreibung.
 -   `getpeers` Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über diesen anderen Knoten mögliche Verbindungen bestimmt ([getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) Beschreibung.
-
-Erfüllte Anforderungen  
-Trägt zur Erfüllung dieser Anforderungen bei:
-
--   [US-81 Periodisches Überprüfen der Verbindungen](https://github.com/bjoern621/VSP-Blockchain/issues/81)
--   [US-76 Heartbeat-Nachrichten](https://github.com/bjoern621/VSP-Blockchain/issues/76)
--   [US-93 Reject Nachrichten](https://github.com/bjoern621/VSP-Blockchain/issues/93)
--   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83)
--   viele weitere
 
 ## Ebene 3
 
@@ -253,7 +214,9 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 Begründung  
 Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine SPV Node würde zum Beispiel keine Miner Komponente haben. Ein Miner kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme.
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _SPV Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
+
+Das Netzwerk besteht aus mehreren Nodes (Peers), die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein. Die Peers kommunizieren über die P2P-Protokoll-API (bestehend aus [1](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) und [2](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto)).
 
 ### Blockchain (Blackbox)
 
@@ -351,6 +314,14 @@ Schnittstellen
         -   `InitiateHandshake(addrPort netip.AddrPort) error`
     -   `NetworkInfoAPI`
         -   `GetInternalPeerInfo() []PeerInfo`
+-   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Für Kontext wie / wann diese Schnittstelle genutzt wird, siehe [Laufzeitsichten](#laufzeitsicht).
+
+    | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                   |
+    | ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+    | Verbindungsaufbau | version, verack, ack | Ein Drei-Wege-Handshake, der zusätzlich verfügbare Teilsysteme austauscht. Dies sind die ersten aufgerufenen Funktionen des P2P Protokolls. (getpeers wird oft kurz vorher aufgerufen, ist aber nicht Teil des P2P Protokolls) |
+    | Peer Discovery    | getaddr, addr        | Diese Funktionen sorgen für stets aktuelle Peers und genügend Alternativrouten, falls ein Peer das Netzwerk verlässt.                                                                                                          |
+    | Keepalive         | heartbeat            | Eng verbunden mit den Peer Discovery Funktionen. Ein Heartbeat wird in regelmäßigen Abständen an direkte Nachbarn gesendet, um inaktive Verbindungen zu erkennen.                                                              |
+    | Error Handling    | reject               | Funktionen, die sich um Error Handling bemühen. Wirkt sich direkt auf die Fehlertransparenz (Distribution Transparency) aus.                                                                                                   |
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -362,13 +333,18 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### App (Blackbox)
 
 Zweck/Verantwortung  
-Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.&nbsp;B. REST-API, CLI-Tools), die mit dem P2P-Knoten interagieren möchten. Sie bündelt die Funktionalitäten der verschiedenen Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) und stellt diese über eine einheitliche gRPC-Schnittstelle nach außen bereit. Dadurch wird die interne Komplexität der Node vor externen Konsumenten verborgen.
+Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.&nbsp;B. REST-API, CLI-Tools), die mit dem P2P-Knoten interagieren möchten. Sie bündelt einige der Funktionalitäten der verschiedenen Teilsysteme (Wallet, Miner, Blockchain, Netzwerkrouting) und stellt diese über eine einheitliche gRPC-Schnittstelle nach außen bereit. Dadurch wird die interne Komplexität der Node vor externen Konsumenten verborgen. Die Komponente ist optional, sie könnte also auch bei einem Build ausgelassen werden, wenn keine exterene Systeme interagieren müssen.
 
 Schnittstellen
 
 -   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
+
+### Whitebox Registry Crawler
+
+Begründung  
+Der Registry Crawler ist eine besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
 
 ## Ebene 4
 
@@ -908,7 +884,7 @@ Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
 HASH160(PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.
 
-## AppService RPC vs. P2P Protkoll RPC
+## AppAPI RPC vs. P2P Protkoll RPC
 
 -   AppService generell synchorn, vorgesehen, dass nur über localhost kommuniziert wird
 -   dient der interaktion zur lokalen node für externe system (wie rest api)
