@@ -347,7 +347,10 @@ Schnittstellen
 
 -   `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
 -   `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+    -   `HandshakeAPI`
+        -   `InitiateHandshake(addrPort netip.AddrPort) error`
+    -   `NetworkInfoAPI`
+        -   `GetInternalPeerInfo() []PeerInfo`
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
