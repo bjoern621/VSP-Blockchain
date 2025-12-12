@@ -360,7 +360,7 @@ Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte
 
 Der `infrastructure/` Layer sollte durch andere Layer nicht direkt genutzt werden, um technische Abhängigkeiten zu vermeiden. Stattdessen sollten die Abhängigkeiten mithilfe von [Dependency Inversion](https://en.wikipedia.org/wiki/Dependency_inversion_principle#Dependency_inversion_pattern) aufgelöst werden. Obere Layer sollten also Interfaces für genutzte Funktionalität definieren ("Genutztes Interface"), die von der Infrastructure implementiert werden (Implements-Beziehungen).
 
-Sollte der Infrastructure Layer Funktionalität der oberen Layer benötigen, muss der obere Layer diese über ein Interface bereitstellen ("Angebotenes Interface Upcalls"). Meist werden `Handle...()` Funktionen von oberen Layern definiert, die von der Infrastructure aufgerufen werden. Dies wird auch als Upcall bezeichnet (Van Steen, M. R. (2017). Distributed systems., S. 57; David D. Clark, The Structuring of Systems
+Sollte der Infrastructure Layer Funktionalität der oberen Layer benötigen, muss der obere Layer diese über ein Interface bereitstellen ("Angebotenes Interface Upcalls"). Oft werden `Handle...()` Funktionen von oberen Layern definiert, die von der Infrastructure aufgerufen werden, dieser Name ist aber kein muss. Dies wird auch als Upcall bezeichnet (Van Steen, M. R. (2017). Distributed systems., S. 57; David D. Clark, The Structuring of Systems
 Using Upcalls, S. 8).
 
 # Laufzeitsicht
