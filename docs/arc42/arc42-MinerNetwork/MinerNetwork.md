@@ -347,7 +347,7 @@ Schnittstellen
 ### Whitebox Teilsystem
 
 <div align="center">
-    <img src="images/Layer 3_layers.drawio.svg" alt="Layer 3"  height="400">
+    <img src="images/Layer 3_layers.drawio.svg" alt="Layer 3"  height="500">
     <p><em>Abbildung: Layer 3 - Whitebox Teilsystem</em></p>
 </div>
 
@@ -356,7 +356,12 @@ Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Te
 
 Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
 
-Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein. Der `infrastructure/` Layer sollte durch andere Layer nicht direkt genutzt werden, um technische Abhängigkeiten zu vermeiden. Stattdessen sollten die Abhängigkeiten mithilfe von Dependency Inversion aufgelöst werden. Obere Layer sollten also Interfaces für genutzte Funktionalität definieren, die von der Infrastructure implementiert werden. Der Infrastructure Layer dagegen kann die oberen Layer direkt nutzen, meist werden `Handle...()` Funktionen aufgerufen, um auf bestimmte Events zu reagieren.
+Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein.
+
+Der `infrastructure/` Layer sollte durch andere Layer nicht direkt genutzt werden, um technische Abhängigkeiten zu vermeiden. Stattdessen sollten die Abhängigkeiten mithilfe von [Dependency Inversion](https://en.wikipedia.org/wiki/Dependency_inversion_principle#Dependency_inversion_pattern) aufgelöst werden. Obere Layer sollten also Interfaces für genutzte Funktionalität definieren ("Genutztes Interface"), die von der Infrastructure implementiert werden (Implements-Beziehungen).
+
+Sollte der Infrastructure Layer Funktionalität der oberen Layer benötigen, muss der obere Layer diese über ein Interface bereitstellen ("Angebotenes Interface Upcalls"). Meist werden `Handle...()` Funktionen von oberen Layern definiert, die von der Infrastructure aufgerufen werden. Dies wird auch als Upcall bezeichnet (Van Steen, M. R. (2017). Distributed systems., S. 57; David D. Clark, The Structuring of Systems
+Using Upcalls, S. 8).
 
 # Laufzeitsicht
 
