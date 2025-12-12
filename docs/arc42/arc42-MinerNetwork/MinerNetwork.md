@@ -123,10 +123,10 @@ Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekann
 
 Schnittstellen
 
--   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet.
+-   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
 -   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
-Siehe auch [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) für eine genauere Beschreibung der Schnittstellen.
+Siehe auch [Schnittstellen Registry Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) für eine genauere Beschreibung der Schnittstellen.
 
 Qualitäts-/Leistungsmerkmale
 
@@ -156,58 +156,10 @@ Schnittstellen
 
 ## Ebene 2
 
-### Whitebox Node(s)
-
-<div align="center">
-    <img src="images/Layer 2_neu_4.drawio.svg" alt="Layer 2"  height="400">
-    <p><em>Abbildung: Layer 2 - Whitebox Node(s)</em></p>
-</div>
-
-Begründung  
-Diese Ebene soll einen Überblick über die verschiedenen Akteure des Netzwerks bieten. Das Netzwerk besteht aus mehreren Peers, die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein.
-
-Die Arten der Nodes (SPV vs. Miner Node) unterscheiden sich in den enthaltenen Teilsystemen. Nodes müssen nicht auf diese beiden Arten begrenzt sein, Teilsysteme können (fast) beliebig kombiniert werden. So könnte z. B. eine _Full Node_ eine Kombination aus SPV und Miner Node sein. Mehr zu Teilsystemen in [Ebene 3](#ebene-3). Der Registry Crawler ist ebenfalls eine Node bestehend aus dem Teilsystem [Netzwerkrouting](#netzwerkrouting-blackbox).
-
-### Registry Crawler (Blackbox)
-
-Zweck/Verantwortung  
-Besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
-
-Schnittstellen
-
--   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
-
-    Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
-
--   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox).
-
-Qualitäts-/Leistungsmerkmale
-
--   Skalierbarkeit  
-    Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
--   Resource Sharing  
-    Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
--   Resilience  
-    Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
-
-Erfüllte Anforderungen  
-Trägt zur Erfüllung dieser Anforderungen bei:
-
--   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
-
-### Node (Blackbox)
-
-Schnittstellen
-
--   `updatepeers` Wird von dem Registry Crawler regelmäßig aufgerufen, um die Liste der aktuell verfügbaren Peers zu aktualisieren. Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) und [Registry Crawler (Blackbox)](#registry-crawler-blackbox) Beschreibung.
--   `getpeers` Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über diesen anderen Knoten mögliche Verbindungen bestimmt ([getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Wird durch die Registry bereitgestellt. Mehr zu dieser Schnittstelle in der [Registry (Blackbox)](#registry-blackbox) Beschreibung.
-
-## Ebene 3
-
 ### Whitebox Full Node
 
 <div align="center">
-    <img src="images/Layer 3_neu.drawio.svg" alt="Layer 3"  height="500">
+    <img src="images/Layer 2.drawio.svg" alt="Layer 3"  height="500">
     <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
 </div>
 
@@ -343,8 +295,40 @@ Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 ### Whitebox Registry Crawler
 
+<div align="center">
+    <img src="images/Layer 2_2.drawio.svg" alt="Layer 3"  height="500">
+    <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
+</div>
+
 Begründung  
 Der Registry Crawler ist eine besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
+
+### Registry Crawler (Blackbox)
+
+Zweck/Verantwortung  
+Besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
+
+Schnittstellen
+
+-   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+
+    Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
+
+-   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox).
+
+Qualitäts-/Leistungsmerkmale
+
+-   Skalierbarkeit  
+    Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
+-   Resource Sharing  
+    Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
+-   Resilience  
+    Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
+
+Erfüllte Anforderungen  
+Trägt zur Erfüllung dieser Anforderungen bei:
+
+-   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
 
 ## Ebene 4
 
