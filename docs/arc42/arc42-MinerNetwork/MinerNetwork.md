@@ -296,7 +296,7 @@ Die Schnittstellen sind in der `api/`-Schicht zu finden.
 ### Whitebox Registry Crawler
 
 <div align="center">
-    <img src="images/Layer 2_2.drawio.svg" alt="Layer 3"  height="500">
+    <img src="images/Layer 2_2.drawio.svg" alt="Layer 3"  height="400">
     <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
 </div>
 

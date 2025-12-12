@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0" scale="1" border="0" version="29.2.7">
   <diagram name="Seite-1" id="GUns5ndy1-xYYoBjQqIx">
-    <mxGraphModel dx="2072" dy="1080" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2018" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -174,7 +174,7 @@
         <mxCell id="CHZPxPj_9h19odfdi8KL-35" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="BlockchainObserverAPI&lt;div&gt;ObservableBlockchainServerAPI&lt;/div&gt;" vertex="1">
           <mxGeometry height="30" width="195" x="47.5" y="760" as="geometry" />
         </mxCell>
-        <mxCell id="CHZPxPj_9h19odfdi8KL-36" edge="1" parent="1" source="CHZPxPj_9h19odfdi8KL-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=halfCircle;endFill=0;endSize=6;strokeWidth=1;sketch=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" target="CHZPxPj_9h19odfdi8KL-38" value="">
+        <mxCell id="CHZPxPj_9h19odfdi8KL-36" edge="1" parent="1" source="CHZPxPj_9h19odfdi8KL-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=halfCircle;endFill=0;endSize=6;strokeWidth=1;sketch=0;exitX=0;exitY=0.25;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" target="CHZPxPj_9h19odfdi8KL-38" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="280" y="605" as="sourcePoint" />
           </mxGeometry>
@@ -206,10 +206,10 @@
         <mxCell id="CHZPxPj_9h19odfdi8KL-43" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="NetzwerkroutingAppAPI" vertex="1">
           <mxGeometry height="30" width="145" x="110" y="600" as="geometry" />
         </mxCell>
-        <mxCell id="CHZPxPj_9h19odfdi8KL-44" edge="1" parent="1" source="CHZPxPj_9h19odfdi8KL-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=halfCircle;endFill=0;endSize=6;strokeWidth=1;sketch=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" target="CHZPxPj_9h19odfdi8KL-46" value="">
+        <mxCell id="CHZPxPj_9h19odfdi8KL-44" edge="1" parent="1" source="CHZPxPj_9h19odfdi8KL-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=halfCircle;endFill=0;endSize=6;strokeWidth=1;sketch=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" target="CHZPxPj_9h19odfdi8KL-46" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="85" y="544" />
+              <mxPoint x="85" y="565" />
             </Array>
             <mxPoint x="280" y="605" as="sourcePoint" />
           </mxGeometry>
@@ -223,7 +223,7 @@
           <mxGeometry height="10" width="10" x="80" y="585" as="geometry" />
         </mxCell>
         <mxCell id="CHZPxPj_9h19odfdi8KL-47" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="BlockchainAppAPI" vertex="1">
-          <mxGeometry height="30" width="110" x="20" y="555" as="geometry" />
+          <mxGeometry height="30" width="110" x="20" y="535" as="geometry" />
         </mxCell>
         <mxCell id="CHZPxPj_9h19odfdi8KL-48" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="MinerAppAPI" vertex="1">
           <mxGeometry height="30" width="90" x="265" y="450" as="geometry" />
