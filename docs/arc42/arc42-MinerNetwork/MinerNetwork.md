@@ -146,7 +146,7 @@ Wir haben bereits die Domain `vsgoin.informatik.haw-hamburg.de` aber es ist noch
 ### Node(s) (Blackbox)
 
 Zweck/Verantwortung  
-Gesamtheit aller _Peers_ (auch _Nodes_; siehe [Glossar](#glossar)), die über das [V$Goin P2P Protokoll](#vgoin-p2p-protokoll) kommunizieren. Die Komponente enthält die Peers, die zusammen das P2P Netzwerk bilden. Eine genauere Beschreibung des P2P Netzwerk wird in [Ebene 2](#ebene-2) gegeben.
+Gesamtheit aller _Peers_ (auch _Nodes_; siehe [Glossar](#glossar)), die über das [V$Goin P2P Protokoll](#vgoin-p2p-protokoll) kommunizieren. Die Komponente enthält die Peers, die zusammen das P2P Netzwerk bilden. Eine genauere Beschreibung der Nodes des P2P Netzwerks wird in [Ebene 2](#ebene-2) gegeben.
 
 Hinweise: Der Name _Node(s)_ wurde gewählt, um Namenskonflikte mit späteren Darstellungen zu vermeiden. Er wird im gesamten Dokument so einheitlch verwendet. Mit anderen Worten mehrere _Node(s)_ != eine einzelne _Node_ .
 
@@ -160,7 +160,7 @@ Schnittstellen
 
 <div align="center">
     <img src="images/Layer 2.drawio.svg" alt="Layer 3"  height="500">
-    <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
+    <p><em>Abbildung: Layer 2 - Whitebox Full Node</em></p>
 </div>
 
 Begründung  
@@ -188,7 +188,7 @@ Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
 | [**Ausgehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja (Bedient Anfragen von anderen)                                                                                                              | Nein (Kann keine Daten bereitstellen)                                                                                                                          |
 | [**Eingehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja                                                                                                                                             | Ja                                                                                                                                                             |
 | **Blöcke**                                                                        | Speichert alle Blöcke komplett (Block-Header + Tx der Blöcke)                                                                                  | Speichert nur Block Header aller Blöcke                                                                                                                        |
-| **Teil der Registry** (siehe auch [Registry Crawler](#registry-crawler-blackbox)) | Ja                                                                                                                                             | Nein                                                                                                                                                           |
+| **Teil der Registry** (siehe auch [Registry Crawler](#whitebox-registry-crawler)) | Ja                                                                                                                                             | Nein                                                                                                                                                           |
 | **Transaktions-Validierung**                                                      | Verifiziert anhand Höhe in der Blockchain. Validiert Signaturen und Semantik aller eingehenden Transaktionen. Prüft gegen das lokale UTXO Set. | Verifiziert anhand Tiefe in der Blockchain. Verknüpft Transaktion mit Block über Merkle-Pfad und wartet, bis Block tief genug in der Blockchain versunken ist. |
 | **Block-Validierung**                                                             | Prüft gesamten Block (alle Tx gültig + Proof-of-Work + Konsens)                                                                                | Prüft nur Proof-of-Work und Verkettung                                                                                                                         |
 | **Empfang von Transaktionen**                                                     | Empfängt alle und speichert alle (validen) Tx                                                                                                  | Empfängt und speichert nur Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                               |
@@ -266,7 +266,7 @@ Schnittstellen
         -   `InitiateHandshake(addrPort netip.AddrPort) error`
     -   `NetworkInfoAPI`
         -   `GetInternalPeerInfo() []PeerInfo`
--   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Für Kontext wie / wann diese Schnittstelle genutzt wird, siehe [Laufzeitsichten](#laufzeitsicht).
+-   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist die Blockchain Node nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
 
     | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                   |
     | ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -289,32 +289,32 @@ Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.
 
 Schnittstellen
 
--   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme.
-
-Die Schnittstellen sind in der `api/`-Schicht zu finden.
+-   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
 
 ### Whitebox Registry Crawler
 
 <div align="center">
     <img src="images/Layer 2_2.drawio.svg" alt="Layer 3"  height="400">
-    <p><em>Abbildung: Layer 3 - Whitebox Full Node</em></p>
+    <p><em>Abbildung: Layer 2 - Whitebox Registry Crawler</em></p>
 </div>
 
 Begründung  
-Der Registry Crawler ist eine besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
+Der Registry Crawler ist eine besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
 
-### Registry Crawler (Blackbox)
+### Registry Crawler Logic (Blackbox)
 
 Zweck/Verantwortung  
-Besondere Node im Netzwerk, die ständig die Registry aktualisiert. Sie hat nur ein Teilsystem, das Netzwerkrouting. Die grundsätzliche Funktionsweise ist, dass der Crawler regelmäßig Verbindungen zu verschiedenen Nodes herstellt (über [version, verack und ack](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)) und daraufhin die Nachbarn dieses Netzwerkknotens abfragt (über [getaddr](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry)). Durch Wiederholen dieses Prozesses wird das Netzwerk erkundet und so eine Liste aktiver Peers gepflegt.
+Die Registry-Crawler-Logik ist für das kontinuierliche Ermitteln und Pflegen einer aktuellen Teilmenge aktiver Peers verantwortlich, die über die Registry als Einstiegspunkte ins P2P-Netzwerk veröffentlicht werden.
+
+Dazu verbindet sich der Crawler periodisch mit bekannten Nodes, entdeckt über Peer-Discovery weitere Kandidaten und leitet daraus eine Liste erreichbarer Peers ab. Aus dieser Kandidatenmenge wählt er bewusst nur einen Ausschnitt aus (Rotation), um Verbindungsanfragen gleichmäßig zu verteilen und Hotspots zu vermeiden.
+
+Zusätzlich filtert die Logik die Kandidaten anhand technischer Kriterien (z.&nbsp;B. nur Full Nodes mit vollständiger Blockchain und Standardport), bevor die ausgewählten Einträge an die Registry übergeben werden.
 
 Schnittstellen
 
--   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+-   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
 
     Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
-
--   `P2P Nachrichten` Siehe unten [Node (Blackbox)](#node-blackbox).
 
 Qualitäts-/Leistungsmerkmale
 
@@ -330,24 +330,33 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 
 -   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
 
-## Ebene 4
+### Minimal Node (Blackbox)
+
+Zweck/Verantwortung  
+Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P-Netz teilnehmen kann und mit externen System interagieren kann. Sie besteht aus dem Teilsystem Netzwerkrouting und der App-Komponente.
+
+Schnittstellen
+
+-   `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
+    -   `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
+    -   (weitere aufschreiben TODO)
+-   `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
+
+## Ebene 3
 
 ### Whitebox Teilsystem
+
+<div align="center">
+    <img src="images/Layer 3_layers.drawio.svg" alt="Layer 3"  height="400">
+    <p><em>Abbildung: Layer 3 - Whitebox Teilsystem</em></p>
+</div>
 
 Begründung  
 Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems.
 
-Jedes Teilsystem ist in die drei Domain Layer Interface, Business, Data geteilt. Der Interface Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
+Jedes Teilsystem ist in die drei Domain Layer API, Business, Data geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 60-62 für eine genauere Beschreibung.
 
-Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein. Jeder Layer kann `infrastructure/` nutzen.
-
-### Whitebox Blockchain
-
-Begründung  
-Der Fokus dieser Teilung ist die Unterscheidung zwischen vereinfachter Blockchain und vollständiger Blockchain zu veranschaulichen.
-
-Offene Punkte/Probleme/Risiken  
-Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten enthalten sind?)
+Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein. Der `infrastructure/` Layer sollte durch andere Layer nicht direkt genutzt werden, um technische Abhängigkeiten zu vermeiden. Stattdessen sollten die Abhängigkeiten mithilfe von Dependency Inversion aufgelöst werden. Obere Layer sollten also Interfaces für genutzte Funktionalität definieren, die von der Infrastructure implementiert werden. Der Infrastructure Layer dagegen kann die oberen Layer direkt nutzen, meist werden `Handle...()` Funktionen aufgerufen, um auf bestimmte Events zu reagieren.
 
 # Laufzeitsicht
 
@@ -1099,15 +1108,16 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 
 # Glossar
 
-| Begriff       | Definition                                                                                                                                                                                                            |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Genesis Block | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
-| gRPC          | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
-| ICC           | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
-| Mempool       | Memory Pool, Zwischenspeicher für unbestätigte Transaktionen, die noch nicht in einem Block aufgenommen wurden.                                                                                                       |
-| Miner Node    | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
-| Node          | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
-| Protobuf      | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
-| SPV           | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node      | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
-| UTXO          | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |
+| Begriff         | Definition                                                                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Externes System | Software-System außerhalb der Node, das die Funktionalität einer (lokalen) Node erweitert und dafür die `AppAPI`-Schnittstelle nutzt.<br/>Beispiele: REST-API, Registry Crawler.                                      |
+| Genesis Block   | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
+| gRPC            | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
+| ICC             | Informatik Compute Cloud, Cloud-Plattform vom Rechenzentrum der Informatik HAW                                                                                                                                        |
+| Mempool         | Memory Pool, Zwischenspeicher für unbestätigte Transaktionen, die noch nicht in einem Block aufgenommen wurden.                                                                                                       |
+| Miner Node      | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
+| Node            | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
+| Protobuf        | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
+| SPV             | Simplified Payment Verification                                                                                                                                                                                       |
+| SPV Node        | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
+| UTXO            | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |
