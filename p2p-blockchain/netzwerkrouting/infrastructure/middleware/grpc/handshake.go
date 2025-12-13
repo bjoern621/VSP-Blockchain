@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
@@ -28,7 +29,7 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 }
 
 // versionInfoFromProto converts protobuf VersionInfo to domain VersionInfo.
-func versionInfoFromProto(info *pb.VersionInfo) handshake.VersionInfo {
+func versionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.AddrPort) {
 	var endpoint netip.AddrPort
 	if info.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(info.ListeningEndpoint.IpAddress); ok {
@@ -44,16 +45,15 @@ func versionInfoFromProto(info *pb.VersionInfo) handshake.VersionInfo {
 	return handshake.VersionInfo{
 		Version:           info.GetVersion(),
 		SupportedServices: services,
-		ListeningEndpoint: endpoint,
-	}
+	}, endpoint
 }
 
-func versionInfoToProto(info handshake.VersionInfo) *pb.VersionInfo {
+func versionInfoToProto(info handshake.VersionInfo, addrPort netip.AddrPort) *pb.VersionInfo {
 	pbInfo := &pb.VersionInfo{
 		Version: info.Version,
 		ListeningEndpoint: &pb.Endpoint{
-			IpAddress:     info.ListeningEndpoint.Addr().AsSlice(),
-			ListeningPort: uint32(info.ListeningEndpoint.Port()),
+			IpAddress:     addrPort.Addr().AsSlice(),
+			ListeningPort: uint32(addrPort.Port()),
 		},
 	}
 	for _, service := range info.SupportedServices {
@@ -73,11 +73,11 @@ func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
 
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
-	info := versionInfoFromProto(req)
+	info, addrPort := versionInfoFromProto(req)
 
-	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, info.ListeningEndpoint)
+	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
-	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
+	s.networkInfoRegistry.SetListeningEndpoint(peerID, addrPort)
 
 	s.handshakeMsgHandler.HandleVersion(peerID, info)
 	return &emptypb.Empty{}, nil
@@ -85,11 +85,11 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
-	info := versionInfoFromProto(req)
+	info, addrPort := versionInfoFromProto(req)
 
-	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, info.ListeningEndpoint)
+	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
-	s.networkInfoRegistry.SetListeningEndpoint(peerID, info.ListeningEndpoint)
+	s.networkInfoRegistry.SetListeningEndpoint(peerID, addrPort)
 
 	s.handshakeMsgHandler.HandleVerack(peerID, info)
 	return &emptypb.Empty{}, nil
@@ -118,11 +118,13 @@ func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo
 		return
 	}
 
+	localAddrPort := netip.AddrPortFrom(common.P2PListeningIpAddr(), common.P2PPort())
+
 	c.networkInfoRegistry.SetConnection(peerID, conn)
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
-	pbInfo := versionInfoToProto(localInfo)
+	pbInfo := versionInfoToProto(localInfo, localAddrPort)
 
 	_, err = client.Version(context.Background(), pbInfo)
 	if err != nil {
@@ -143,11 +145,13 @@ func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo)
 		return
 	}
 
+	localAddrPort := netip.AddrPortFrom(common.P2PListeningIpAddr(), common.P2PPort())
+
 	c.networkInfoRegistry.SetConnection(peerID, conn)
 
 	client := pb.NewConnectionEstablishmentClient(conn)
 
-	pbInfo := versionInfoToProto(localInfo)
+	pbInfo := versionInfoToProto(localInfo, localAddrPort)
 
 	_, err = client.Verack(context.Background(), pbInfo)
 	if err != nil {
