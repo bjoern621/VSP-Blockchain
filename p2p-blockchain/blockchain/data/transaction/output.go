@@ -1,4 +1,4 @@
-package Transaction
+package transaction
 
 type Output struct {
 	Value      uint64
