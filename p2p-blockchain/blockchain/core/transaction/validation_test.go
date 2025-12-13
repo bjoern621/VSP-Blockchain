@@ -11,9 +11,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 )
 
-// --------------------------
-// Mock UTXO service
-// --------------------------
 type MockUTXOService struct {
 	utxos map[string]transaction.Output
 }
@@ -24,9 +21,6 @@ func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, index uint32) 
 	return out, ok
 }
 
-// --------------------------
-// Helper to create key, UTXO, and transaction
-// --------------------------
 func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transaction, transaction.UTXO, *MockUTXOService) {
 	t.Helper()
 
@@ -71,9 +65,6 @@ func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transact
 	return privKey, *tx, utxo, mockUTXO
 }
 
-// --------------------------
-// Success test
-// --------------------------
 func TestValidateTransaction_Success(t *testing.T) {
 	_, tx, _, mockUTXO := setupTestTransaction(t)
 
@@ -86,9 +77,6 @@ func TestValidateTransaction_Success(t *testing.T) {
 	}
 }
 
-// --------------------------
-// UTXO not found test
-// --------------------------
 func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	_, tx, _, _ := setupTestTransaction(t)
 
@@ -100,9 +88,6 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	}
 }
 
-// --------------------------
-// UTXO does not belong to pubkey
-// --------------------------
 func TestValidateTransaction_PubKeyMismatch(t *testing.T) {
 	_, tx, utxo, _ := setupTestTransaction(t)
 
@@ -121,9 +106,6 @@ func TestValidateTransaction_PubKeyMismatch(t *testing.T) {
 	}
 }
 
-// --------------------------
-// Invalid signature
-// --------------------------
 func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	// Setup original UTXO and key
 	_, realTransaction, utxo, mockUTXO := setupTestTransaction(t)
@@ -134,7 +116,6 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Destination can reuse same pubkey hash
 	toPubKeyHash := utxo.Output.PubKeyHash
 	amount := uint64(500)
 	fee := uint64(10)
@@ -176,9 +157,6 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	}
 }
 
-// --------------------------
-// Fee manipulated (if your validation logic supports it)
-// --------------------------
 func TestValidateTransaction_FeeManipulated(t *testing.T) {
 	_, tx, _, mockUTXO := setupTestTransaction(t)
 
