@@ -7,7 +7,8 @@ import (
 	"errors"
 )
 
-// SigHash computes the Hash of a Transaction used for the Signature of an Input
+// SigHash computes the Hash of a Transaction used for the Signature of an Input.
+// It follows the SIGHASH_ALL scheme, including all inputs and outputs (and the locktime).
 func (tx *Transaction) SigHash(inputIndex int, referenced Output) ([]byte, error) {
 	if inputIndex >= len(tx.Inputs) {
 		return nil, errors.New("input index out of range")
