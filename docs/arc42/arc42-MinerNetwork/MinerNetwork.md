@@ -333,7 +333,7 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### Minimal Node (Blackbox)
 
 Zweck/Verantwortung  
-Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P-Netz teilnehmen kann und mit externen System interagieren kann. Sie besteht aus dem Teilsystem Netzwerkrouting und der App-Komponente.
+Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P-Netz teilnehmen kann und mit externen Systemen interagieren kann. Sie besteht aus dem Teilsystem Netzwerkrouting und der App-Komponente.
 
 Schnittstellen
 
