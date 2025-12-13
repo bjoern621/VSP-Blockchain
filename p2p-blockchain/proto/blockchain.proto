@@ -155,7 +155,7 @@ message SetFilterRequest {
 message Transaction {
     repeated TxInput inputs = 1;
     repeated TxOutput outputs = 2;
-    int64 lock_time = 3;
+    uint64 lock_time = 3;
 }
 
 message TxInput {
@@ -166,7 +166,7 @@ message TxInput {
 }
 
 message TxOutput {
-    int64 value = 1; // Amount in smallest unit
+    uint64 value = 1; // Amount in smallest unit
     bytes public_key_script = 2;
 }
 
