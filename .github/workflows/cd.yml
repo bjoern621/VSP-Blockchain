@@ -92,27 +92,27 @@ jobs:
             - name: Configure kubeconfig
               uses: ./.github/actions/fetch_current_cube_config
               with:
-                ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
+                  ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
 
             - name: Get OpenVPN Config from Secrets
               run: |
-                echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
+                  echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
               env:
-                OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+                  OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
             - name: Install OpenVPN
               run: |
-                sudo apt update
-                sudo apt install -y openvpn openvpn-systemd-resolved
+                  sudo apt update
+                  sudo apt install -y openvpn openvpn-systemd-resolved
             - name: Connect to VPN
               uses: "kota65535/github-openvpn-connect-action@v3.1.0"
               with:
-                echo_config: 'false'
-                config_file: vpn.ovpn
+                  echo_config: "false"
+                  config_file: vpn.ovpn
 
             - name: Deploy to Kubernetes
               env:
-                KUBECONFIG: "~/.kube/config"
+                  KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
                   kubectl apply -f kubernetes-deployment-prod.yaml
@@ -130,5 +130,5 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s || true
-                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s || true
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
