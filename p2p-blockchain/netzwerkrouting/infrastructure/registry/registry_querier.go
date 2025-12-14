@@ -11,17 +11,26 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 )
 
-// dnsRegistryQuerier implements peer.RegistryQuerier using DNS lookups.
+// dnsRegistryQuerier implements peer.RegistryQuerier and api.FullRegistryQuerier using DNS lookups.
 type dnsRegistryQuerier struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
 func NewDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) peer.RegistryQuerier {
+	return newDNSRegistryQuerier(networkInfoRegistry)
+}
+
+func NewDNSFullRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) api.FullRegistryQuerier {
+	return newDNSRegistryQuerier(networkInfoRegistry)
+}
+
+func newDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *dnsRegistryQuerier {
 	return &dnsRegistryQuerier{
 		networkInfoRegistry: networkInfoRegistry,
 	}
 }
 
+// QueryPeers queries the DNS seed registry and returns a list of peer IDs.
 func (r *dnsRegistryQuerier) QueryPeers() ([]peer.PeerID, error) {
 	entries, err := r.queryRegistry()
 	if err != nil {
@@ -34,6 +43,11 @@ func (r *dnsRegistryQuerier) QueryPeers() ([]peer.PeerID, error) {
 	}
 
 	return peers, nil
+}
+
+// QueryFullRegistry queries the DNS seed registry and returns full entries including IP addresses.
+func (r *dnsRegistryQuerier) QueryFullRegistry() ([]api.RegistryEntry, error) {
+	return r.queryRegistry()
 }
 
 // queryRegistry queries the DNS seed registry for available peer addresses.

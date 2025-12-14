@@ -11,37 +11,28 @@ type RegistryEntry struct {
 	PeerID    peer.PeerID
 }
 
-// QueryRegistryAPI provides access to the registry for (manual) peer discovery.
+// QueryRegistryAPI provides access to the registry for (manual) peer discovery or plain reading.
 type QueryRegistryAPI interface {
 	// QueryRegistry queries the registry for available peer addresses.
 	QueryRegistry() ([]RegistryEntry, error)
 }
 
-type queryRegistryService struct {
-	querier peer.RegistryQuerier
+type queryRegistryAPIService struct {
+	querier FullRegistryQuerier
 }
 
-// NewQueryRegistryService creates a new QueryRegistryAPI.
-func NewQueryRegistryService(querier peer.RegistryQuerier) QueryRegistryAPI {
-	return &queryRegistryService{
+func NewQueryRegistryAPIService(querier FullRegistryQuerier) QueryRegistryAPI {
+	return &queryRegistryAPIService{
 		querier: querier,
 	}
 }
 
-func (s *queryRegistryService) QueryRegistry() ([]RegistryEntry, error) {
-	// Note: This simplified version only returns peer IDs.
-	// The full registry entry with IP addresses is available from the infrastructure layer.
-	peers, err := s.querier.QueryPeers()
-	if err != nil {
-		return nil, err
-	}
+// Used interface for full registry queries including IP addresses.
+type FullRegistryQuerier interface {
+	// QueryRegistry queries the registry for available peer addresses.
+	QueryFullRegistry() ([]RegistryEntry, error)
+}
 
-	entries := make([]RegistryEntry, 0, len(peers))
-	for _, peerID := range peers {
-		entries = append(entries, RegistryEntry{
-			PeerID: peerID,
-		})
-	}
-
-	return entries, nil
+func (s *queryRegistryAPIService) QueryRegistry() ([]RegistryEntry, error) {
+	return s.querier.QueryFullRegistry()
 }

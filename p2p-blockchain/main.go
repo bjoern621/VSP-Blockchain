@@ -28,8 +28,8 @@ func main() {
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
-	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
-	queryRegistryAPI := api.NewQueryRegistryService(registryQuerier)
+	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
+	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
