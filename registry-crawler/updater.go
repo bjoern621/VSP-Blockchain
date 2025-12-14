@@ -152,7 +152,6 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 	sort.Strings(addresses)
 
 	source := determineSource(cfg, len(peerManager.GetKnownPeers()))
-	logger.Infof("seed targets: port=%d source=%s addrs=%s", seedPort, source, strings.Join(addresses, ","))
 
 	if strings.TrimSpace(cfg.SeedHostsFile) == "" {
 		return nil
@@ -173,7 +172,8 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	logger.Infof("seed hosts written: %s", cfg.SeedHostsFile)
+	logger.Infof("seed targets updated: port=%d source=%s addrs=%s file=%s", seedPort, source, strings.Join(addresses, ","), cfg.SeedHostsFile)
+
 	return nil
 }
 
