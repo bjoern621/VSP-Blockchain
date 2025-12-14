@@ -26,27 +26,29 @@ func main() {
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
 
-	logger.Infof("Starting App server...")
+	if common.AppEnabled() {
+		logger.Infof("Starting App server...")
 
-	connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
-	internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
-	appServer := appgrpc.NewServer(connService, internalViewService)
+		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
+		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
+		appServer := appgrpc.NewServer(connService, internalViewService)
 
-	err := appServer.Start(common.AppPort())
-	if err != nil {
-		logger.Warnf("couldn't start App server: %v", err)
-	} else {
-		addrPort, err := appServer.ListeningEndpoint()
-		assert.IsNil(err)
-		common.SetAppPort(addrPort.Port())
-		logger.Infof("App server started on port %d", common.AppPort())
+		err := appServer.Start(common.AppPort())
+		if err != nil {
+			logger.Warnf("couldn't start App server: %v", err)
+		} else {
+			addrPort, err := appServer.ListeningEndpoint()
+			assert.IsNil(err)
+			common.SetAppPort(addrPort.Port())
+			logger.Infof("App server started on port %d", common.AppPort())
+		}
 	}
 
 	logger.Infof("Starting P2P server...")
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
 
-	err = grpcServer.Start(common.P2PPort())
+	err := grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {

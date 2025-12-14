@@ -15,27 +15,83 @@ import (
 )
 
 const (
-	appPortEnvVar        = "APP_PORT"
-	p2pPortEnvVar        = "P2P_PORT"
-	appListenAddrEnvVar  = "APP_LISTEN_ADDR"
-	p2pListenAddrEnvVar  = "P2P_LISTEN_ADDR"
-	p2pAdvertiseIPEnvVar = "P2P_ADVERTISE_IP"
+	appPortEnvVar            = "APP_PORT"
+	p2pPortEnvVar            = "P2P_PORT"
+	appListenAddrEnvVar      = "APP_LISTEN_ADDR"
+	p2pListenAddrEnvVar      = "P2P_LISTEN_ADDR"
+	p2pAdvertiseIPEnvVar     = "P2P_ADVERTISE_IP"
+	additionalServicesEnvVar = "ADDITIONAL_SERVICES"
 )
 
 var (
-	appPort       atomic.Uint32
-	p2pPort       atomic.Uint32
-	appListenAddr atomic.Value // string
-	p2pListenAddr atomic.Value // string
+	appPort            atomic.Uint32
+	p2pPort            atomic.Uint32
+	appListenAddr      atomic.Value // string
+	p2pListenAddr      atomic.Value // string
+	additionalServices atomic.Value // []string
 )
 
-// init reads all required environment variables at startup.
+// init reads all environment variables at startup.
 // Read values are stored in package-level variables for easy access.
 func init() {
 	appPort.Store(uint32(readAppPort()))
 	p2pPort.Store(uint32(readP2PPort()))
 	appListenAddr.Store(readListenAddrOrDefault(appListenAddrEnvVar, "127.0.0.1"))
 	p2pListenAddr.Store(readListenAddrOrDefault(p2pListenAddrEnvVar, "127.0.0.1"))
+
+	services := readAdditionalServices()
+	validateAddionalServices(services)
+	additionalServices.Store(services)
+}
+
+func readAdditionalServices() []string {
+	raw := strings.TrimSpace(os.Getenv(additionalServicesEnvVar))
+	if raw == "" {
+		return []string{}
+	}
+
+	parts := strings.Split(raw, ",")
+	services := make([]string, 0, len(parts))
+	for _, part := range parts {
+		svc := strings.TrimSpace(part)
+
+		switch svc {
+		case "blockchain_full", "blockchain_simple", "wallet", "miner", "app":
+			services = append(services, svc)
+		default:
+			logger.Errorf("unknown service in %s: %s", additionalServicesEnvVar, svc)
+		}
+	}
+
+	return services
+}
+
+func validateAddionalServices(services []string) {
+	seen := make(map[string]struct{})
+	for _, svc := range services {
+		if _, exists := seen[svc]; exists {
+			logger.Errorf("duplicate service in %s: %s", additionalServicesEnvVar, svc)
+		}
+		seen[svc] = struct{}{}
+	}
+
+	_, hasWallet := seen["wallet"]
+	_, hasMiner := seen["miner"]
+	_, hasBlockchainFull := seen["blockchain_full"]
+	_, hasBlockchainSimple := seen["blockchain_simple"]
+
+	needsBlockchain := hasWallet || hasMiner
+	if needsBlockchain && !hasBlockchainFull && !hasBlockchainSimple {
+		logger.Errorf("wallet or miner service requires blockchain_full or blockchain_simple to be enabled")
+	}
+
+	if hasBlockchainFull && hasBlockchainSimple {
+		logger.Errorf("blockchain_full and blockchain_simple services are mutually exclusive")
+	}
+}
+
+func getAdditionalServices() []string {
+	return additionalServices.Load().([]string)
 }
 
 func AppPort() uint16 {

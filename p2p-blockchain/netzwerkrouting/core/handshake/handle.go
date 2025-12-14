@@ -1,7 +1,6 @@
 package handshake
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -44,10 +43,7 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices
 
-	versionInfo := VersionInfo{
-		Version:           common.VersionString,
-		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-	}
+	versionInfo := NewLocalVersionInfo()
 
 	p.State = peer.StateAwaitingAck
 

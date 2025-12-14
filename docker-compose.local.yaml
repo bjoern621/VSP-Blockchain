@@ -1,5 +1,5 @@
 services:
-    miner1:
+    minimal_node:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
@@ -9,6 +9,7 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+            ADDITIONAL_SERVICES: "app"
         ports:
             - "20001:50050"
             - "50051:50051"
@@ -23,6 +24,7 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20002:50050"
 
@@ -36,6 +38,7 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20003:50050"
 
@@ -49,10 +52,11 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20004:50050"
 
-    miner5:
+    spv:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
@@ -62,6 +66,7 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+            ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
         ports:
             - "20005:50050"
 
@@ -71,13 +76,13 @@ services:
             dockerfile: Dockerfile
         image: vsp-blockchain/registry-crawler:local
         depends_on:
-            - miner1
+            - minimal_node
             - miner2
             - miner3
             - miner4
-            - miner5
+            - spv
         environment:
-            APP_GRPC_ADDR_PORT: "miner1:50050"
+            APP_GRPC_ADDR_PORT: "minimal_node:50050"
             P2P_PORT: "50051"
             K8S_DISABLED: "true"
             SEED_UPDATE_INTERVAL: "30s"
@@ -104,9 +109,9 @@ services:
             dockerfile: Dockerfile
         image: vsp-blockchain/rest-api:local
         depends_on:
-            - miner1
+            - spv
         environment:
-            GRPC_ADDR_PORT: "miner1:50051"
+            GRPC_ADDR_PORT: "spv:50051"
         ports:
             - "8080:8080"
 

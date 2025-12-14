@@ -29,3 +29,22 @@ func (s ServiceType) String() string {
 		return "unknown"
 	}
 }
+
+// ParseServiceType converts a string like "wallet" or "blockchain_full" into a ServiceType.
+// Returns ok=false for unknown values.
+func ParseServiceType(raw string) (service ServiceType, ok bool) {
+	switch raw {
+	case "netzwerkrouting":
+		return ServiceType_Netzwerkrouting, true
+	case "blockchain_full":
+		return ServiceType_BlockchainFull, true
+	case "blockchain_simple":
+		return ServiceType_BlockchainSimple, true
+	case "wallet":
+		return ServiceType_Wallet, true
+	case "miner":
+		return ServiceType_Miner, true
+	default:
+		return 0, false
+	}
+}
