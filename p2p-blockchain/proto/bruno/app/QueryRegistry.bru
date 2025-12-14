@@ -1,12 +1,12 @@
 meta {
-  name: GetInternalPeerInfo Node 4
+  name: QueryRegistry
   type: grpc
   seq: 8
 }
 
 grpc {
-  url: localhost:20004
-  method: /app.AppService/GetInternalPeerInfo
+  url: localhost:20001
+  method: /app.AppService/QueryRegistry
   body: grpc
   protoPath: ../../app.proto
   auth: inherit

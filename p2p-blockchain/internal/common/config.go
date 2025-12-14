@@ -11,7 +11,7 @@ const (
 	DefaultP2PPort       = 50051
 	defaultAppPort       = 50050
 	VersionNumber        = 1
-	RegistrySeedHostname = "seed.local"
+	RegistrySeedHostname = "miner-seed.seed.local." // or "miner-seed.vsp-blockchain.seed.local.""
 )
 
 var (

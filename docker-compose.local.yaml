@@ -20,6 +20,8 @@ services:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
         image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -38,6 +40,8 @@ services:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
         image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -55,6 +59,8 @@ services:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
         image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -72,6 +78,8 @@ services:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
         image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50052" # Non default P2P port for testing
@@ -89,6 +97,8 @@ services:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
         image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -113,6 +123,8 @@ services:
             - miner4
             - spv
             - registry
+        dns:
+            - 172.28.2.2
         environment:
             APP_GRPC_ADDR_PORT: "172.28.1.10:50050" # Pointing to minimal_node, should normally point to localhost but its easier this way in docker-compose
             P2P_PORT: "50051"
@@ -145,6 +157,8 @@ services:
         image: vsp-blockchain/rest-api:local
         depends_on:
             - spv
+        dns:
+            - 172.28.2.2
         environment:
             APP_GRPC_ADDR_PORT: "172.28.1.20:50050"
         ports:
