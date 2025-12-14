@@ -1,0 +1,23 @@
+services:
+    minimal_node:
+        build:
+            context: ../p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+
+    registry-crawler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: vsp-blockchain/registry-crawler:local
+        depends_on:
+            - minimal_node
+        network_mode: "service:minimal_node"
+        environment:
+            APP_GRPC_ADDR_PORT: "127.0.0.1:50050"
+            P2P_PORT: "50051"
+            K8S_DISABLED: "true"
+            SEED_UPDATE_INTERVAL: "30s"

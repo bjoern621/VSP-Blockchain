@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: seed-dns
+    namespace: vsp-blockchain
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: seed-dns-read
+    namespace: vsp-blockchain
+rules:
+    - apiGroups: [""]
+      resources: ["endpoints", "services", "pods"]
+      verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    name: seed-dns-read
+    namespace: vsp-blockchain
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: seed-dns-read
+subjects:
+    - kind: ServiceAccount
+      name: seed-dns
+      namespace: vsp-blockchain
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: seed-dns-config
+    namespace: vsp-blockchain
+data:
+    Corefile: |
+        seed.local:53 {
+          errors
+          health
+          ready
+          hosts /etc/coredns/seed/seed.hosts {
+            ttl 1
+            reload 5s
+          }
+          log
+        }
+
+        .:53 {
+          errors
+          health
+          ready
+          forward . /etc/resolv.conf
+          cache 30
+          reload
+        }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: seed-dns
+    namespace: vsp-blockchain
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: seed-dns
+    template:
+        metadata:
+            labels:
+                app: seed-dns
+        spec:
+            serviceAccountName: seed-dns
+            containers:
+                - name: coredns
+                  image: coredns/coredns:1.11.3
+                  args: ["-conf", "/etc/coredns/Corefile"]
+                  ports:
+                      - name: dns-udp
+                        containerPort: 53
+                        protocol: UDP
+                      - name: dns-tcp
+                        containerPort: 53
+                        protocol: TCP
+                  volumeMounts:
+                      - name: config
+                        mountPath: /etc/coredns
+                        readOnly: true
+                      - name: hosts
+                        mountPath: /etc/coredns/seed
+                        readOnly: true
+                  livenessProbe:
+                      httpGet:
+                          path: /health
+                          port: 8080
+                      initialDelaySeconds: 10
+                      periodSeconds: 10
+                  readinessProbe:
+                      httpGet:
+                          path: /ready
+                          port: 8181
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+            volumes:
+                - name: config
+                  configMap:
+                      name: seed-dns-config
+                      items:
+                          - key: Corefile
+                            path: Corefile
+                - name: hosts
+                  configMap:
+                      name: seed-dns-hosts
+                      items:
+                          - key: seed.hosts
+                            path: seed.hosts
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: seed-dns-hosts
+    namespace: vsp-blockchain
+data:
+    seed.hosts: |
+        # Managed by registry-crawler. One line per IP.
+        # Static test list (safe to delete once dynamic updates are verified).
+        10.233.111.83 miner-seed.seed.local. miner-seed.vsp-blockchain.seed.local.
+        10.233.116.166 miner-seed.seed.local. miner-seed.vsp-blockchain.seed.local.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: seed-dns
+    namespace: vsp-blockchain
+spec:
+    selector:
+        app: seed-dns
+    ports:
+        - name: dns-udp
+          port: 53
+          protocol: UDP
+          targetPort: 53
+        - name: dns-tcp
+          port: 53
+          protocol: TCP
+          targetPort: 53
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: miner-seed
+    namespace: vsp-blockchain
+spec:
+    clusterIP: None
+    ports:
+        - name: grpc
+          port: 50051
+          targetPort: 50051
