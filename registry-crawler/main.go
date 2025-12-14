@@ -331,19 +331,19 @@ func fetchSeedTargets(ctx context.Context, cfg config) (map[string]struct{}, int
 		logger.Warnf("bootstrap connect failed: %v", bootstrapErr)
 	}
 
-	resp, err := client.GetPeerRegistry(ctx, &pb.GetPeerRegistryRequest{})
+	resp, err := client.GetInternalPeerInfo(ctx, &pb.GetInternalPeerInfoRequest{})
 	if err != nil {
 		return bootstrapTargets, int32(cfg.p2pPort), nil
 	}
 
 	ips := map[string]struct{}{}
-	var port int32 = int32(cfg.p2pPort)
+	port := int32(cfg.p2pPort)
 	for ip := range bootstrapTargets {
 		ips[ip] = struct{}{}
 	}
 
 	for _, entry := range resp.GetEntries() {
-		if entry == nil || entry.ListeningEndpoint == nil {
+		if entry == nil {
 			continue
 		}
 
@@ -360,15 +360,27 @@ func fetchSeedTargets(ctx context.Context, cfg config) (map[string]struct{}, int
 			}
 		}
 
-		addr, ok := netip.AddrFromSlice(entry.ListeningEndpoint.IpAddress)
+		infra := entry.GetInfrastructureData()
+		if infra == nil {
+			continue
+		}
+		infraMap := infra.AsMap()
+		listeningEndpoint, ok := infraMap["listeningEndpoint"].(string)
 		if !ok {
 			continue
 		}
-
-		if p := int32(entry.ListeningEndpoint.ListeningPort); p > 0 {
-			port = p
+		ap, err := netip.ParseAddrPort(strings.TrimSpace(listeningEndpoint))
+		if err != nil {
+			continue
 		}
 
+		addr := ap.Addr()
+		if !addr.Is4() {
+			continue
+		}
+		if p := int32(ap.Port()); p > 0 {
+			port = p
+		}
 		ips[addr.String()] = struct{}{}
 	}
 
