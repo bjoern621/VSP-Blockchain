@@ -2,7 +2,6 @@ package common
 
 import (
 	"math"
-	"net"
 	"net/netip"
 	"os"
 	"strconv"
@@ -17,9 +16,8 @@ import (
 const (
 	appPortEnvVar            = "APP_PORT"
 	p2pPortEnvVar            = "P2P_PORT"
-	appListenAddrEnvVar      = "APP_LISTEN_ADDR"
-	p2pListenAddrEnvVar      = "P2P_LISTEN_ADDR"
-	p2pAdvertiseIPEnvVar     = "P2P_ADVERTISE_IP"
+	appListenAddrEnvVar      = "APP_LISTEN_ADDR" // a IP address the app server binds to, can be 127.0.0.1
+	p2pListenAddrEnvVar      = "P2P_LISTEN_ADDR" // a routable IP address the P2P server binds to
 	additionalServicesEnvVar = "ADDITIONAL_SERVICES"
 )
 
@@ -110,28 +108,6 @@ func P2PListenAddr() string {
 	return p2pListenAddr.Load().(string)
 }
 
-func P2PAdvertiseIP(bindAddr netip.Addr) netip.Addr {
-	raw := strings.TrimSpace(os.Getenv(p2pAdvertiseIPEnvVar))
-	if raw != "" {
-		ip, err := netip.ParseAddr(raw)
-		if err == nil {
-			return ip
-		}
-		logger.Warnf("invalid %s value: %s", p2pAdvertiseIPEnvVar, raw)
-	}
-
-	if bindAddr.IsValid() && !bindAddr.IsUnspecified() {
-		return bindAddr
-	}
-
-	// When binding to 0.0.0.0 in containers, pick a non-loopback IPv4 to advertise.
-	if ip := firstNonLoopbackIPv4(); ip.IsValid() {
-		return ip
-	}
-
-	return bindAddr
-}
-
 // readAppPort reads the application port used by the app endpoint from the environment variable appPortEnvVar.
 // Environment variable is optional. If
 //   - 0 is provided, 0 is returned.
@@ -174,45 +150,6 @@ func readListenAddrOrDefault(key string, fallback string) string {
 		return fallback
 	}
 	return raw
-}
-
-func firstNonLoopbackIPv4() netip.Addr {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return netip.Addr{}
-	}
-
-	var firstIPv4 netip.Addr
-	for _, iface := range ifaces {
-		if (iface.Flags&net.FlagUp) == 0 || (iface.Flags&net.FlagLoopback) != 0 {
-			continue
-		}
-		addrs, err := iface.Addrs()
-		if err != nil {
-			continue
-		}
-		for _, a := range addrs {
-			ip := netip.Addr{}
-			switch v := a.(type) {
-			case *net.IPNet:
-				ip, _ = netip.AddrFromSlice(v.IP)
-			case *net.IPAddr:
-				ip, _ = netip.AddrFromSlice(v.IP)
-			}
-			if !ip.IsValid() || !ip.Is4() || ip.IsLoopback() {
-				continue
-			}
-			// Prefer private ranges.
-			if ip.IsPrivate() {
-				return ip
-			}
-			if !firstIPv4.IsValid() {
-				firstIPv4 = ip
-			}
-		}
-	}
-
-	return firstIPv4
 }
 
 // SetAppPort sets the application port to the given value.
