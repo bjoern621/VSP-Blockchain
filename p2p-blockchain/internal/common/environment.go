@@ -32,14 +32,17 @@ var (
 // init reads all environment variables at startup.
 // Read values are stored in package-level variables for easy access.
 func init() {
-	appPort.Store(uint32(readAppPort()))
 	p2pPort.Store(uint32(readP2PPort()))
-	appListenAddr.Store(readListenAddrOrDefault(appListenAddrEnvVar, "127.0.0.1"))
-	p2pListenAddr.Store(readListenAddrOrDefault(p2pListenAddrEnvVar, "127.0.0.1"))
+	p2pListenAddr.Store(readListenAddr(p2pListenAddrEnvVar))
 
 	services := readAdditionalServices()
 	validateAddionalServices(services)
 	additionalServices.Store(services)
+
+	if AppEnabled() {
+		appPort.Store(uint32(readAppPort()))
+		appListenAddr.Store(readListenAddr(appListenAddrEnvVar))
+	}
 }
 
 func readAdditionalServices() []string {
@@ -139,16 +142,13 @@ func readUint16EnvOrDefault(key string, fallback uint16) uint16 {
 	return uint16(port)
 }
 
-func readListenAddrOrDefault(key string, fallback string) string {
-	raw := strings.TrimSpace(os.Getenv(key))
-	if raw == "" {
-		return fallback
-	}
-	// Validate it's a plain IP address for now.
+func readListenAddr(key string) string {
+	raw := env.ReadNonEmptyRequiredEnv(key)
+
 	if _, err := netip.ParseAddr(raw); err != nil {
-		logger.Warnf("invalid %s value: %s, falling back to %s", key, raw, fallback)
-		return fallback
+		logger.Warnf("invalid %s value: %s", key, raw)
 	}
+
 	return raw
 }
 
