@@ -1,7 +1,7 @@
 package observer
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/block"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
@@ -14,13 +14,13 @@ type ObservableBlockchainServerAPI interface {
 	// Detach is called by the observer to detach itself from the server.
 	Detach(o BlockchainObserverAPI)
 
-	NotifyInv(invMsg block.InvMsg, peerID peer.PeerID)
-	NotifyGetData(getDataMsg block.GetDataMsg, peerID peer.PeerID)
-	NotifyBlock(blockMsg block.BlockMsg, peerID peer.PeerID)
-	NotifyMerkleBlock(merkleBlockMsg block.MerkleBlockMsg, peerID peer.PeerID)
-	NotifyTx(txMsg block.TxMsg, peerID peer.PeerID)
-	NotifyGetHeaders(blockLocator block.BlockLocator, peerID peer.PeerID)
-	NotifyHeaders(headers []block.BlockHeader, peerID peer.PeerID)
-	NotifySetFilterRequest(setFilterRequest block.SetFilterRequest, peerID peer.PeerID)
+	NotifyInv(invMsg dto.InvMsgDTO, peerID peer.PeerID)
+	NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID peer.PeerID)
+	NotifyBlock(blockMsg dto.BlockMsgDTO, peerID peer.PeerID)
+	NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID peer.PeerID)
+	NotifyTx(txMsg dto.TxMsgDTO, peerID peer.PeerID)
+	NotifyGetHeaders(blockLocator dto.BlockLocatorDTO, peerID peer.PeerID)
+	NotifyHeaders(headers dto.BlockHeadersDTO, peerID peer.PeerID)
+	NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID peer.PeerID)
 	NotifyMempool(peerID peer.PeerID)
 }

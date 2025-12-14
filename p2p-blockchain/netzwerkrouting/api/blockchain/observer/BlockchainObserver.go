@@ -1,7 +1,7 @@
 package observer
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/block"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
@@ -11,13 +11,13 @@ import (
 // and be removed via the ObservableBlockchainServerAPI.Detach() method on a valid ObservableBlockchainServerAPI.
 // A blockchain observer shall implement the corresponding methods to handle blockchain events.
 type BlockchainObserverAPI interface {
-	Inv(invMsg block.InvMsg, peerID peer.PeerID)
-	GetData(getDataMsg block.GetDataMsg, peerID peer.PeerID)
-	Block(blockMsg block.BlockMsg, peerID peer.PeerID)
-	MerkleBlock(merkleBlockMsg block.MerkleBlockMsg, peerID peer.PeerID)
-	Tx(txMsg block.TxMsg, peerID peer.PeerID)
-	GetHeaders(locator block.BlockLocator, peerID peer.PeerID)
-	Headers(headers []block.BlockHeader, peerID peer.PeerID)
-	SetFilter(setFilterRequest block.SetFilterRequest, peerID peer.PeerID)
+	Inv(invMsg dto.InvMsgDTO, peerID peer.PeerID)
+	GetData(getDataMsg dto.GetDataMsgDTO, peerID peer.PeerID)
+	Block(blockMsg dto.BlockMsgDTO, peerID peer.PeerID)
+	MerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID peer.PeerID)
+	Tx(txMsg dto.TxMsgDTO, peerID peer.PeerID)
+	GetHeaders(locator dto.BlockLocatorDTO, peerID peer.PeerID)
+	Headers(headers dto.BlockHeadersDTO, peerID peer.PeerID)
+	SetFilter(setFilterRequest dto.SetFilterRequestDTO, peerID peer.PeerID)
 	Mempool(peerID peer.PeerID)
 }
