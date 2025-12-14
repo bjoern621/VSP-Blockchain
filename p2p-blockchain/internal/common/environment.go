@@ -138,33 +138,24 @@ func P2PAdvertiseIP(bindAddr netip.Addr) netip.Addr {
 //   - no value is provided, the default port is used.
 //   - invalid value is provided, the application logs an error and exits.
 func readAppPort() uint16 {
-	portStr, found := env.ReadOptionalEnv(appPortEnvVar)
-
-	if !found {
-		return defaultAppPort
-	}
-
-	port, err := strconv.ParseUint(portStr, 10, 16)
-	if err != nil {
-		logger.Errorf("invalid PORT value: %s, must be between 0 and 65535", portStr)
-	}
-
-	assert.Assert(port <= math.MaxUint16, "port value %d out of range", port)
-
-	return uint16(port)
+	return readUint16EnvOrDefault(appPortEnvVar, defaultAppPort)
 }
 
 // readP2PPort is similar to readAppPort but for the P2P port.
 func readP2PPort() uint16 {
-	portStr, found := env.ReadOptionalEnv(p2pPortEnvVar)
+	return readUint16EnvOrDefault(p2pPortEnvVar, defaultP2PPort)
+}
+
+func readUint16EnvOrDefault(key string, fallback uint16) uint16 {
+	portStr, found := env.ReadOptionalEnv(key)
 
 	if !found {
-		return defaultP2PPort
+		return fallback
 	}
 
 	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
-		logger.Errorf("invalid P2P_PORT value: %s, must be between 0 and 65535", portStr)
+		logger.Errorf("invalid %s value: %s, must be between 0 and 65535", key, portStr)
 	}
 
 	assert.Assert(port <= math.MaxUint16, "port value %d out of range", port)
