@@ -122,8 +122,17 @@ func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
 		return false
 	}
 
-	logger.Debugf("ConnectTo %s:%d result: success=%v", ip, port, resp != nil && resp.Success)
-	return resp != nil && resp.Success
+	success := resp != nil && resp.Success
+	if success {
+		logger.Debugf("ConnectTo %s:%d result: success=true", ip, port)
+	} else {
+		errorMsg := ""
+		if resp != nil {
+			errorMsg = resp.ErrorMessage
+		}
+		logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
+	}
+	return success
 }
 
 // runSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.
