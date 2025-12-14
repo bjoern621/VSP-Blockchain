@@ -119,7 +119,6 @@ func runSeedUpdaterLoop(cfg Config) {
 	defer ticker.Stop()
 
 	for {
-		logger.Debugf("seed update tick")
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		err := updateSeedHostsOnce(ctx, cfg)
 		cancel()

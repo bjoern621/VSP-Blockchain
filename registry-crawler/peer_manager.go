@@ -154,7 +154,6 @@ func (pm *PeerManager) MarkConnected(ip string) {
 	if peer, ok := pm.peers[ip]; ok {
 		peer.State = StateKnown
 		peer.LastSeen = time.Now()
-		logger.Debugf("peer %s marked as known", ip)
 	}
 }
 
