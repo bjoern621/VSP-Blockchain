@@ -19,7 +19,7 @@ services:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
-        image: vsp-blockchain/miner:local
+        image: vsp-blockchain/node:local
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -37,7 +37,7 @@ services:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
-        image: vsp-blockchain/miner:local
+        image: vsp-blockchain/node:local
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -54,7 +54,7 @@ services:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
-        image: vsp-blockchain/miner:local
+        image: vsp-blockchain/node:local
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
@@ -71,7 +71,7 @@ services:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
-        image: vsp-blockchain/miner:local
+        image: vsp-blockchain/node:local
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50052" # Non default P2P port for testing
@@ -88,7 +88,7 @@ services:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
-        image: vsp-blockchain/miner:local
+        image: vsp-blockchain/node:local
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"

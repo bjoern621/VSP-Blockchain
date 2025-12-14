@@ -28,7 +28,7 @@ tasks:
             - go test ./...
 
     build:
-        desc: Build the docker image for p2p-miner
+        desc: Build the docker image for p2p-node
         cmds:
             - task: prepare
-            - docker build -t vsp-blockchain/miner:{{.DOCKER_TAG}} .
+            - docker build -t vsp-blockchain/node:{{.DOCKER_TAG}} .
