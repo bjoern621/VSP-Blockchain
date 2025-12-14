@@ -81,6 +81,7 @@ services:
             - miner3
             - miner4
             - spv
+            - seed-dns
         environment:
             APP_GRPC_ADDR_PORT: "minimal_node:50050"
             P2P_PORT: "50051"
@@ -94,8 +95,6 @@ services:
     seed-dns:
         image: coredns/coredns:1.11.3
         command: ["-conf", "/etc/coredns/Corefile"]
-        depends_on:
-            - registry-crawler
         ports:
             - "1053:53/udp"
             - "1053:53/tcp"
