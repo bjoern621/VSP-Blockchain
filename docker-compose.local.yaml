@@ -137,6 +137,7 @@ services:
             SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
             SEED_HOSTS_FILE: "/seed/seed.hosts"
             LOG_LEVEL: "DEBUG"
+            PEER_DISCOVERY_INTERVAL: "30s"
         volumes:
             - registry-hosts:/seed
         networks:

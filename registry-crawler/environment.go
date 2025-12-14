@@ -32,7 +32,7 @@ const (
 
 	// Required. duration, interval between seed updates. Format: Go duration (e.g. "30s", "1m").
 	seedUpdateIntervalEnvVar = "SEED_UPDATE_INTERVAL"
-	// Optional. duration, interval between peer discovery attempts. Default: 10s. Should be lower than SEED_UPDATE_INTERVAL.
+	// Optional. duration, interval between peer discovery attempts. Default: 30s. Should be lower than SEED_UPDATE_INTERVAL.
 	peerDiscoveryIntervalEnvVar = "PEER_DISCOVERY_INTERVAL"
 	// Optional. duration, TTL for known peers before re-verification. Default: 15m.
 	peerKnownTTLEnvVar = "PEER_KNOWN_TTL"
@@ -59,7 +59,7 @@ const (
 	defaultSeedEndpointsName      = "miner-seed"
 	defaultSeedDNSZone            = "seed.local"
 	defaultDebugCIDR              = "203.0.113.0/24" // TEST-NET-3
-	defaultPeerDiscoveryInterval  = 10 * time.Second
+	defaultPeerDiscoveryInterval  = 30 * time.Second
 	defaultPeerKnownTTL           = 15 * time.Minute
 	defaultPeerRegistrySubsetSize = 5
 )
@@ -68,7 +68,6 @@ const (
 var (
 	appGrpcAddr   atomic.Value // string
 	p2pPort       atomic.Uint32
-	appGrpcTLS    atomic.Bool
 	seedHostsFile atomic.Value // string
 	seedNamespace atomic.Value // string
 	seedName      atomic.Value // string
