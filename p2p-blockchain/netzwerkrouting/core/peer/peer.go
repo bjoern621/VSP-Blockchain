@@ -10,33 +10,6 @@ import (
 
 type PeerID string
 
-type PeerConnectionState int
-
-const (
-	StateNew PeerConnectionState = iota // StateNew is the initial state when a peer is created
-	StateAwaitingVerack
-	StateAwaitingAck
-	StateConnected // Handshake complete
-)
-
-type Direction int
-
-const (
-	DirectionInbound Direction = iota
-	DirectionOutbound
-	DirectionBoth
-)
-
-type ServiceType int
-
-const (
-	ServiceType_Netzwerkrouting ServiceType = iota
-	ServiceType_BlockchainFull
-	ServiceType_BlockchainSimple
-	ServiceType_Wallet
-	ServiceType_Miner
-)
-
 // Peer represents a peer in the network.
 type Peer struct {
 	mu                sync.Mutex

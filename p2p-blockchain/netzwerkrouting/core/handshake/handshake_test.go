@@ -1,7 +1,6 @@
 package handshake
 
 import (
-	"net/netip"
 	"sync"
 	"testing"
 	"time"
@@ -115,7 +114,6 @@ func TestHandleVersion(t *testing.T) {
 	versionInfo := VersionInfo{
 		Version:           "2.5.1",
 		SupportedServices: services,
-		ListeningEndpoint: netip.MustParseAddrPort("192.168.1.1:9000"),
 	}
 
 	service.HandleVersion(peerID, versionInfo)
@@ -154,7 +152,6 @@ func TestHandleVerack(t *testing.T) {
 	versionInfo := VersionInfo{
 		Version:           "1.5.0",
 		SupportedServices: services,
-		ListeningEndpoint: netip.MustParseAddrPort("10.0.0.1:8000"),
 	}
 
 	service.HandleVerack(peerID, versionInfo)
