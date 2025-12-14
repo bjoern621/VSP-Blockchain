@@ -2,6 +2,7 @@ package main
 
 import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
@@ -23,10 +24,13 @@ func main() {
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
+	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
 
 	logger.Infof("Starting App server...")
 
-	appServer := appcore.NewServer(handshakeAPI, networkInfoRegistry, peerStore)
+	connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
+	internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
+	appServer := appgrpc.NewServer(connService, internalViewService)
 
 	err := appServer.Start(common.AppPort())
 	if err != nil {

@@ -9,7 +9,7 @@ syntax="proto3";
 
 package app;
 
-import "netzwerkrouting.proto";
+import "google/protobuf/struct.proto";
 
 option go_package = "./internal/pb";
 
@@ -22,13 +22,14 @@ service AppService {
     //  - Returns success/failure status.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse);
 
-    // GetPeerRegistry returns the current peer registry for debugging purposes.
-    rpc GetPeerRegistry(GetPeerRegistryRequest) returns (GetPeerRegistryResponse);
+    // GetInternalPeerInfo returns the current internal state per peer for debugging purposes.
+    rpc GetInternalPeerInfo(GetInternalPeerInfoRequest) returns (GetInternalPeerInfoResponse);
 }
 
 message ConnectToRequest {
     // IP address of the peer to connect to (IPv4 or IPv6).
     bytes ip_address = 1;
+    // Domain layer: uint16
     uint32 port = 2;
 }
 
@@ -37,23 +38,22 @@ message ConnectToResponse {
     string error_message = 2;
 }
 
-message GetPeerRegistryRequest {}
+message GetInternalPeerInfoRequest {}
 
-message GetPeerRegistryResponse {
-    repeated PeerRegistryEntry entries = 1;
+message GetInternalPeerInfoResponse {
+    repeated InternalPeerInfoEntry entries = 1;
 }
 
-message PeerRegistryEntry {
+message InternalPeerInfoEntry {
     string peer_id = 1;
+
+    // Infrastructure data as a JSON object.
+    // Uses google.protobuf.Struct which automatically serializes to native JSON.
+    google.protobuf.Struct infrastructure_data = 2;
     
-    // Network-level info (from PeerRegistry)
-    netzwerkrouting.Endpoint listening_endpoint = 2;       // The reachable address (from VersionInfo)
-    repeated netzwerkrouting.Endpoint inbound_addresses = 3; // Ephemeral ports we've seen from this peer
-    bool has_outbound_connection = 4;      // Whether we have an outbound gRPC connection
-    
-    // Peer-level info (from PeerStore)
-    string version = 5;                    // Protocol version string
-    repeated string supported_services = 6; // List of supported services
-    string connection_state = 7;           // Current handshake state
-    string direction = 8;                  // "inbound" or "outbound"
+    // Domain-Peer information
+    string version = 3; // Protocol version string
+    repeated string supported_services = 4;
+    string connection_state = 5;
+    string direction = 6;
 }

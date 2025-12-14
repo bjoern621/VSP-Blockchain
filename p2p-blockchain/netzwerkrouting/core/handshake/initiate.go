@@ -1,7 +1,6 @@
 package handshake
 
 import (
-	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
@@ -43,7 +42,6 @@ func (h *handshakeService) InitiateHandshake(peerID peer.PeerID) {
 	versionInfo := VersionInfo{
 		Version:           common.VersionString,
 		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-		ListeningEndpoint: netip.AddrPortFrom(common.P2PListeningIpAddr(), common.P2PPort()),
 	}
 
 	p.State = peer.StateAwaitingVerack

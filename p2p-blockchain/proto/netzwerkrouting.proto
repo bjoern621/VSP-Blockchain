@@ -100,6 +100,8 @@ message VersionInfo {
 }
 
 message Endpoint {
+    // GRPC specific addr:port
+    // Domain uses a generic string peer_id for identification
     bytes ip_address = 1;
     uint32 listening_port = 2;
 }
