@@ -27,11 +27,17 @@ var (
 	appListenAddr      atomic.Value // string
 	p2pListenAddr      atomic.Value // string
 	additionalServices atomic.Value // []string
+	initialized        atomic.Bool
 )
 
-// init reads all environment variables at startup.
+// Init reads all environment variables at startup.
 // Read values are stored in package-level variables for easy access.
-func init() {
+// This function should be called once at application startup.
+func Init() {
+	if initialized.Swap(true) {
+		return
+	}
+
 	p2pPort.Store(uint32(readP2PPort()))
 	p2pListenAddr.Store(readListenAddr(p2pListenAddrEnvVar))
 
@@ -92,23 +98,32 @@ func validateAddionalServices(services []string) {
 }
 
 func getAdditionalServices() []string {
+	assertInitialized()
 	return additionalServices.Load().([]string)
 }
 
 func AppPort() uint16 {
+	assertInitialized()
 	return uint16(appPort.Load())
 }
 
 func P2PPort() uint16 {
+	assertInitialized()
 	return uint16(p2pPort.Load())
 }
 
 func AppListenAddr() string {
+	assertInitialized()
 	return appListenAddr.Load().(string)
 }
 
 func P2PListenAddr() string {
+	assertInitialized()
 	return p2pListenAddr.Load().(string)
+}
+
+func assertInitialized() {
+	assert.Assert(initialized.Load(), "common.Init() must be called before accessing environment variables")
 }
 
 // readAppPort reads the application port used by the app endpoint from the environment variable appPortEnvVar.

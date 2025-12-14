@@ -1,12 +1,23 @@
 package handshake
 
 import (
+	"os"
 	"sync"
 	"testing"
 	"time"
 
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
+
+// TestMain sets up the environment for the tests.
+// For example handshake_test.go depends on ADDITIONAL_SERVICES to have a value because NewHandshakeService.InitiateHandshake() calls NewLocalVersionInfo() which depends on this environment variable.
+// P2P_LISTEN_ADDR is always a required environment variable.
+func TestMain(m *testing.M) {
+	os.Setenv("P2P_LISTEN_ADDR", "does not matter")
+	common.Init()
+	os.Exit(m.Run())
+}
 
 type mockHandshakeMsgSender struct {
 	mu           sync.Mutex

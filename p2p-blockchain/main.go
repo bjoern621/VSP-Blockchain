@@ -16,6 +16,8 @@ import (
 )
 
 func main() {
+	common.Init()
+
 	logger.Infof("Running...")
 
 	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
