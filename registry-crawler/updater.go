@@ -134,23 +134,15 @@ func runSeedUpdaterLoop(cfg Config) {
 // updateSeedHostsOnce fetches seed targets from known peers and writes the DNS hosts file once.
 func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 	var seedIPs map[string]struct{}
-	seedPort := int32(cfg.P2PPort)
+	seedPort := int32(cfg.AcceptedP2PPort)
 
-	if len(cfg.OverrideIPs) > 0 {
-		logger.Debugf("using override IPs for seed targets")
-		seedIPs = make(map[string]struct{})
-		for _, ip := range cfg.OverrideIPs {
+	seedIPs = peerManager.GetRandomKnownPeerIPs(cfg.PeerRegistrySubsetSize)
+	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
+	if len(seedIPs) == 0 {
+		logger.Debugf("no known peers, falling back to bootstrap targets")
+		bootstrapIPs, _ := resolveBootstrapEndpoints(ctx, cfg)
+		for ip := range bootstrapIPs {
 			seedIPs[ip] = struct{}{}
-		}
-	} else {
-		seedIPs = peerManager.GetRandomKnownPeerIPs(cfg.PeerRegistrySubsetSize)
-		logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
-		if len(seedIPs) == 0 {
-			logger.Debugf("no known peers, falling back to bootstrap targets")
-			bootstrapIPs, _ := resolveBootstrapEndpoints(ctx, cfg)
-			for ip := range bootstrapIPs {
-				seedIPs[ip] = struct{}{}
-			}
 		}
 	}
 
@@ -190,10 +182,6 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 func determineSource(cfg Config, knownPeerCount int) string {
 	if cfg.SeedDNSDebug.Enabled {
 		return "debug-random"
-	}
-
-	if len(cfg.OverrideIPs) > 0 {
-		return "override"
 	}
 
 	if knownPeerCount > 0 {

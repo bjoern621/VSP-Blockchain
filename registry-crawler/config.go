@@ -9,8 +9,8 @@ import (
 type Config struct {
 	// AppAddr is the gRPC address of the app service to query for peer information.
 	AppAddr string
-	// P2PPort is the default P2P port used by miner nodes.
-	P2PPort uint16
+	// AcceptedP2PPort is the default P2P port used by nodes. Only peers using this port are accepted.
+	AcceptedP2PPort uint16
 	// SeedHostsFile is the path to write the DNS hosts file.
 	SeedHostsFile string
 	// SeedNamespace is the namespace identifier for DNS records.
@@ -31,10 +31,6 @@ type Config struct {
 	PeerKnownTTL time.Duration
 	// PeerRegistrySubsetSize is the number of random known peers to use for registry updates.
 	PeerRegistrySubsetSize int
-	// AllowedPeerID filters peers by ID when non-empty.
-	AllowedPeerID map[string]struct{}
-	// OverrideIPs bypasses peer discovery with static IPs when non-empty.
-	OverrideIPs []string
 }
 
 // BootstrapConfig holds bootstrap peer configuration.

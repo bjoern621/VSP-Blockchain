@@ -24,18 +24,9 @@ func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]stru
 
 	endpoints := make([]string, 0, len(cfg.Bootstrap.Endpoints))
 	endpoints = append(endpoints, cfg.Bootstrap.Endpoints...)
-	if len(endpoints) == 0 {
-		for _, ip := range cfg.OverrideIPs {
-			ip = strings.TrimSpace(ip)
-			if ip == "" {
-				continue
-			}
-			endpoints = append(endpoints, net.JoinHostPort(ip, strconv.Itoa(int(cfg.P2PPort))))
-		}
-	}
 
 	for _, token := range endpoints {
-		host, port, err := splitHostPortOrDefault(token, int(cfg.P2PPort))
+		host, port, err := splitHostPortOrDefault(token, int(cfg.AcceptedP2PPort))
 		if err != nil {
 			continue
 		}
@@ -66,20 +57,12 @@ func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]stru
 		}
 	}
 
-	return res, int32(cfg.P2PPort)
+	return res, int32(cfg.AcceptedP2PPort)
 }
 
 // fetchNetworkPeers queries the app service for connected peers from the P2P network.
 // Returns a set of IP addresses and the P2P port.
 func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
-	if len(cfg.OverrideIPs) > 0 {
-		ips := map[string]struct{}{}
-		for _, ipString := range cfg.OverrideIPs {
-			ips[ipString] = struct{}{}
-		}
-		return ips, int32(cfg.P2PPort), nil
-	}
-
 	conn, err := dialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
 		return nil, 0, err
@@ -89,28 +72,22 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 
 	resp, err := client.GetInternalPeerInfo(ctx, &pb.GetInternalPeerInfoRequest{})
 	if err != nil {
-		return nil, int32(cfg.P2PPort), nil
+		return nil, int32(cfg.AcceptedP2PPort), nil
 	}
 
 	ips := map[string]struct{}{}
-	port := int32(cfg.P2PPort)
+	port := int32(cfg.AcceptedP2PPort)
 
 	for _, entry := range resp.GetEntries() {
 		if entry == nil {
 			continue
 		}
 
-		if len(cfg.AllowedPeerID) > 0 {
-			if _, ok := cfg.AllowedPeerID[entry.PeerId]; !ok {
-				continue
-			}
-		} else {
-			if !slices.Contains(entry.SupportedServices, "miner") {
-				continue
-			}
-			if entry.ConnectionState != "connected" {
-				continue
-			}
+		if !slices.Contains(entry.SupportedServices, "miner") {
+			continue
+		}
+		if entry.ConnectionState != "connected" {
+			continue
 		}
 
 		infra := entry.GetInfrastructureData()

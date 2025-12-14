@@ -132,12 +132,12 @@ services:
             - 172.28.2.2
         environment:
             APP_GRPC_ADDR_PORT: "172.28.1.10:50050" # Pointing to minimal_node, should normally point to localhost but its easier this way in docker-compose
-            P2P_PORT: "50051"
             SEED_UPDATE_INTERVAL: "60s"
             SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
             SEED_HOSTS_FILE: "/seed/seed.hosts"
             LOG_LEVEL: "DEBUG"
             PEER_DISCOVERY_INTERVAL: "30s"
+            ACCEPTED_P2P_PORT: "50051"
         volumes:
             - registry-hosts:/seed
         networks:
