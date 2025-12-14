@@ -13,38 +13,56 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
+// Environment variable names for configuration.
 const (
-	appGrpcAddrPortEnvVar        = "APP_GRPC_ADDR_PORT"
-	p2pPortEnvVar                = "P2P_PORT"
-	k8sDisabledEnvVar            = "K8S_DISABLED"
-	seedHostsFileEnvVar          = "SEED_HOSTS_FILE"
-	seedNamespaceEnvVar          = "SEED_NAMESPACE"
-	seedEndpointsNameEnvVar      = "SEED_ENDPOINTS_NAME"
-	seedDNSConfigMapEnvVar       = "SEED_DNS_CONFIGMAP_NAME"
-	seedDNSHostsKeyEnvVar        = "SEED_DNS_HOSTS_KEY"
-	seedDNSZoneEnvVar            = "SEED_DNS_ZONE"
-	seedUpdateIntervalEnvVar     = "SEED_UPDATE_INTERVAL"
-	seedAllowedPeerIDsEnvVar     = "SEED_ALLOWED_PEER_IDS"
-	seedOverrideIPsEnvVar        = "SEED_OVERRIDE_IPS"
+	// Required. string, gRPC address of the app service (host:port).
+	appGrpcAddrPortEnvVar = "APP_GRPC_ADDR_PORT"
+	// Required. uint16, P2P port used by miner nodes. Range: 1-65535.
+	p2pPortEnvVar = "P2P_PORT"
+
+	// Optional. string, path to write the DNS hosts file. Empty disables file output.
+	seedHostsFileEnvVar = "SEED_HOSTS_FILE"
+
+	// Optional. string, namespace identifier for DNS records. Default: "vsp-blockchain".
+	seedNamespaceEnvVar = "SEED_NAMESPACE"
+	// Optional. string, service name used in DNS records. Default: "miner-seed".
+	seedEndpointsNameEnvVar = "SEED_ENDPOINTS_NAME"
+	// Optional. string, DNS zone suffix for seed records. Default: "seed.local".
+	seedDNSZoneEnvVar = "SEED_DNS_ZONE"
+
+	// Required. duration, interval between seed updates. Format: Go duration (e.g. "30s", "1m").
+	seedUpdateIntervalEnvVar = "SEED_UPDATE_INTERVAL"
+	// Optional. string, comma-separated list of allowed peer IDs. Empty allows all miners.
+	seedAllowedPeerIDsEnvVar = "SEED_ALLOWED_PEER_IDS"
+	// Optional. string, comma-separated list of static override IPs. Bypasses peer discovery.
+	seedOverrideIPsEnvVar = "SEED_OVERRIDE_IPS"
+	// Optional. string, comma-separated list of bootstrap endpoints (host:port). This allows the crawler to connect to initial peers.
 	seedBootstrapEndpointsEnvVar = "SEED_BOOTSTRAP_ENDPOINTS"
-	appGrpcTLSEnvVar             = "APP_GRPC_TLS"
-	seedDNSDebugRandomIPsEnvVar  = "SEED_DNS_DEBUG_RANDOM_IPS"
-	seedDNSDebugCountEnvVar      = "SEED_DNS_DEBUG_COUNT"
-	seedDNSDebugCIDREnvVar       = "SEED_DNS_DEBUG_CIDR"
+
+	// Optional. boolean, enables random IP generation for testing. Values: "true" or "false". Default: false.
+	seedDNSDebugRandomIPsEnvVar = "SEED_DNS_DEBUG_RANDOM_IPS"
+	// Optional. int, number of random IPs to generate. Range: 1-20. Default: 2.
+	seedDNSDebugCountEnvVar = "SEED_DNS_DEBUG_COUNT"
+	// Optional. string, IPv4 CIDR range for random IP generation. Default: defaultDebugCIDR.
+	seedDNSDebugCIDREnvVar = "SEED_DNS_DEBUG_CIDR"
 )
 
-var (
-	appGrpcAddr atomic.Value // string
-	p2pPort     atomic.Uint32
+// Default configuration values.
+const (
+	defaultSeedNamespace     = "vsp-blockchain"
+	defaultSeedEndpointsName = "miner-seed"
+	defaultSeedDNSZone       = "seed.local"
+	defaultDebugCIDR         = "203.0.113.0/24" // TEST-NET-3
+)
 
-	k8sDisabled   atomic.Bool
+// Atomic configuration storage.
+var (
+	appGrpcAddr   atomic.Value // string
+	p2pPort       atomic.Uint32
 	appGrpcTLS    atomic.Bool
 	seedHostsFile atomic.Value // string
-
 	seedNamespace atomic.Value // string
 	seedName      atomic.Value // string
-	seedDNSConfig atomic.Value // string
-	seedDNSKey    atomic.Value // string
 	seedDNSZone   atomic.Value // string
 
 	seedUpdateIntervalNs atomic.Int64
@@ -52,7 +70,7 @@ var (
 	seedAllowedPeerIDs atomic.Value // map[string]struct{}
 	seedOverrideIPs    atomic.Value // []string
 	seedBootstrapEPs   atomic.Value // []string
-	seedDNSDebug       atomic.Value // dnsDebugConfig
+	seedDNSDebug       atomic.Value // DNSDebugConfig
 )
 
 func init() {
@@ -60,19 +78,11 @@ func init() {
 
 	appGrpcAddr.Store(cfg.appAddr)
 	p2pPort.Store(uint32(cfg.p2pPort))
-
-	k8sDisabled.Store(cfg.k8sDisabled)
-	appGrpcTLS.Store(cfg.appGrpcTLS)
 	seedHostsFile.Store(cfg.seedHostsFile)
-
 	seedNamespace.Store(cfg.seedNamespace)
 	seedName.Store(cfg.seedName)
-	seedDNSConfig.Store(cfg.seedDNSConfig)
-	seedDNSKey.Store(cfg.seedDNSKey)
 	seedDNSZone.Store(cfg.seedDNSZone)
-
 	seedUpdateIntervalNs.Store(cfg.seedUpdateEvery.Nanoseconds())
-
 	seedAllowedPeerIDs.Store(cfg.allowedPeerIDs)
 	seedOverrideIPs.Store(cfg.overrideIPs)
 	seedBootstrapEPs.Store(cfg.bootstrapEndpoints)
@@ -80,102 +90,46 @@ func init() {
 }
 
 type envSnapshot struct {
-	appAddr string
-	p2pPort uint16
-
-	k8sDisabled   bool
-	appGrpcTLS    bool
-	seedHostsFile string
-
-	seedNamespace string
-	seedName      string
-	seedDNSConfig string
-	seedDNSKey    string
-	seedDNSZone   string
-
-	seedUpdateEvery time.Duration
-
+	appAddr            string
+	p2pPort            uint16
+	seedHostsFile      string
+	seedNamespace      string
+	seedName           string
+	seedDNSZone        string
+	seedUpdateEvery    time.Duration
 	allowedPeerIDs     map[string]struct{}
 	overrideIPs        []string
 	bootstrapEndpoints []string
-	seedDNSDebug       dnsDebugConfig
+	seedDNSDebug       DNSDebugConfig
 }
 
+// readAndValidateEnvironment reads and validates all environment variables.
 func readAndValidateEnvironment() envSnapshot {
 	appAddr := env.ReadNonEmptyRequiredEnv(appGrpcAddrPortEnvVar)
 	p2p := mustReadRequiredPort(p2pPortEnvVar)
 	interval := mustReadRequiredDuration(seedUpdateIntervalEnvVar)
 
-	k8sOff := readOptionalBool(k8sDisabledEnvVar)
-	tlsEnabled := readOptionalBool(appGrpcTLSEnvVar)
-
-	seedHostsFile := ""
+	seedHostsFileVal := ""
 	if raw, ok := env.ReadOptionalEnv(seedHostsFileEnvVar); ok {
-		seedHostsFile = strings.TrimSpace(raw)
+		seedHostsFileVal = strings.TrimSpace(raw)
 	}
 
-	seedNS := defaultSeedNamespace
-	seedName := defaultSeedEndpointsName
-	seedDNSConfig := defaultSeedDNSConfigMap
-	seedDNSKey := defaultSeedDNSHostsKey
-	seedDNSZone := defaultSeedDNSZone
-	if !k8sOff {
-		seedNS = env.ReadNonEmptyRequiredEnv(seedNamespaceEnvVar)
-		seedName = env.ReadNonEmptyRequiredEnv(seedEndpointsNameEnvVar)
-		seedDNSConfig = env.ReadNonEmptyRequiredEnv(seedDNSConfigMapEnvVar)
-		seedDNSKey = env.ReadNonEmptyRequiredEnv(seedDNSHostsKeyEnvVar)
-		seedDNSZone = env.ReadNonEmptyRequiredEnv(seedDNSZoneEnvVar)
-	}
+	seedNS := readOptionalStringWithDefault(seedNamespaceEnvVar, defaultSeedNamespace)
+	seedNameVal := readOptionalStringWithDefault(seedEndpointsNameEnvVar, defaultSeedEndpointsName)
+	seedDNSZoneVal := readOptionalStringWithDefault(seedDNSZoneEnvVar, defaultSeedDNSZone)
 
-	allowedPeerIDs := map[string]struct{}{}
-	if raw, ok := env.ReadOptionalEnv(seedAllowedPeerIDsEnvVar); ok {
-		raw = strings.TrimSpace(raw)
-		for token := range strings.SplitSeq(raw, ",") {
-			peerID := strings.TrimSpace(token)
-			if peerID == "" {
-				continue
-			}
-			allowedPeerIDs[peerID] = struct{}{}
-		}
-	}
-
-	overrideIPs := []string{}
-	if raw, ok := env.ReadOptionalEnv(seedOverrideIPsEnvVar); ok {
-		raw = strings.TrimSpace(raw)
-		for token := range strings.SplitSeq(raw, ",") {
-			ipString := strings.TrimSpace(token)
-			if ipString == "" {
-				continue
-			}
-			overrideIPs = append(overrideIPs, ipString)
-		}
-	}
-
-	bootstrapEPs := []string{}
-	if raw, ok := env.ReadOptionalEnv(seedBootstrapEndpointsEnvVar); ok {
-		raw = strings.TrimSpace(raw)
-		for token := range strings.SplitSeq(raw, ",") {
-			ep := strings.TrimSpace(token)
-			if ep == "" {
-				continue
-			}
-			bootstrapEPs = append(bootstrapEPs, ep)
-		}
-	}
-
+	allowedPeerIDs := parseCommaSeparatedSet(seedAllowedPeerIDsEnvVar)
+	overrideIPs := parseCommaSeparatedList(seedOverrideIPsEnvVar)
+	bootstrapEPs := parseCommaSeparatedList(seedBootstrapEndpointsEnvVar)
 	dnsDebug := readDNSDebugConfigOrDie()
 
 	return envSnapshot{
 		appAddr:            appAddr,
 		p2pPort:            p2p,
-		k8sDisabled:        k8sOff,
-		appGrpcTLS:         tlsEnabled,
-		seedHostsFile:      seedHostsFile,
+		seedHostsFile:      seedHostsFileVal,
 		seedNamespace:      seedNS,
-		seedName:           seedName,
-		seedDNSConfig:      seedDNSConfig,
-		seedDNSKey:         seedDNSKey,
-		seedDNSZone:        seedDNSZone,
+		seedName:           seedNameVal,
+		seedDNSZone:        seedDNSZoneVal,
 		seedUpdateEvery:    interval,
 		allowedPeerIDs:     allowedPeerIDs,
 		overrideIPs:        overrideIPs,
@@ -184,29 +138,33 @@ func readAndValidateEnvironment() envSnapshot {
 	}
 }
 
-// mustReadRequiredPort reads an environment variable as uint16 port.
+// mustReadRequiredPort reads an environment variable as uint16 port and panics on error.
 func mustReadRequiredPort(key string) uint16 {
 	raw := env.ReadNonEmptyRequiredEnv(key)
 	v, err := strconv.ParseUint(raw, 10, 16)
 	if err != nil {
 		logger.Errorf("%s: %v", key, err)
+		panic(fmt.Sprintf("%s: %v", key, err))
 	}
 	if v < 1 || v > math.MaxUint16 {
 		logger.Errorf("%s out of range: %d", key, v)
+		panic(fmt.Sprintf("%s out of range: %d", key, v))
 	}
 	return uint16(v)
 }
 
-// mustReadRequiredDuration reads an environment variable as time.Duration.
+// mustReadRequiredDuration reads an environment variable as time.Duration and panics on error.
 func mustReadRequiredDuration(key string) time.Duration {
 	raw := env.ReadNonEmptyRequiredEnv(key)
 	d, err := time.ParseDuration(raw)
 	if err != nil {
 		logger.Errorf("%s: %v", key, err)
+		panic(fmt.Sprintf("%s: %v", key, err))
 	}
 	return d
 }
 
+// readOptionalBool reads an optional boolean environment variable.
 func readOptionalBool(key string) bool {
 	raw, ok := env.ReadOptionalEnv(key)
 	if !ok {
@@ -224,7 +182,50 @@ func readOptionalBool(key string) bool {
 	}
 }
 
-func readDNSDebugConfigOrDie() dnsDebugConfig {
+// readOptionalStringWithDefault reads an optional string environment variable with a default.
+func readOptionalStringWithDefault(key, defaultValue string) string {
+	if raw, ok := env.ReadOptionalEnv(key); ok {
+		if trimmed := strings.TrimSpace(raw); trimmed != "" {
+			return trimmed
+		}
+	}
+	return defaultValue
+}
+
+// parseCommaSeparatedList parses a comma-separated environment variable into a slice.
+func parseCommaSeparatedList(key string) []string {
+	result := []string{}
+	if raw, ok := env.ReadOptionalEnv(key); ok {
+		raw = strings.TrimSpace(raw)
+		for token := range strings.SplitSeq(raw, ",") {
+			val := strings.TrimSpace(token)
+			if val == "" {
+				continue
+			}
+			result = append(result, val)
+		}
+	}
+	return result
+}
+
+// parseCommaSeparatedSet parses a comma-separated environment variable into a set.
+func parseCommaSeparatedSet(key string) map[string]struct{} {
+	result := map[string]struct{}{}
+	if raw, ok := env.ReadOptionalEnv(key); ok {
+		raw = strings.TrimSpace(raw)
+		for token := range strings.SplitSeq(raw, ",") {
+			val := strings.TrimSpace(token)
+			if val == "" {
+				continue
+			}
+			result[val] = struct{}{}
+		}
+	}
+	return result
+}
+
+// readDNSDebugConfigOrDie reads DNS debug configuration and panics on error.
+func readDNSDebugConfigOrDie() DNSDebugConfig {
 	enabled := readOptionalBool(seedDNSDebugRandomIPsEnvVar)
 
 	count := 2
@@ -244,7 +245,7 @@ func readDNSDebugConfigOrDie() dnsDebugConfig {
 		count = 20
 	}
 
-	cidr := "203.0.113.0/24" // TEST-NET-3
+	cidr := defaultDebugCIDR
 	if raw, ok := env.ReadOptionalEnv(seedDNSDebugCIDREnvVar); ok {
 		raw = strings.TrimSpace(raw)
 		if raw != "" {
@@ -257,89 +258,27 @@ func readDNSDebugConfigOrDie() dnsDebugConfig {
 		panic(fmt.Sprintf("%s: %v", seedDNSDebugCIDREnvVar, err))
 	}
 	if !prefix.Addr().Is4() {
-		err := fmt.Sprintf("%s must be IPv4, got %s", seedDNSDebugCIDREnvVar, prefix.String())
-		logger.Errorf("%s", err)
-		panic(err)
+		errMsg := fmt.Sprintf("%s must be IPv4, got %s", seedDNSDebugCIDREnvVar, prefix.String())
+		logger.Errorf("%s", errMsg)
+		panic(errMsg)
 	}
 
-	return dnsDebugConfig{enabled: enabled, count: count, cidr: prefix}
+	return DNSDebugConfig{Enabled: enabled, Count: count, CIDR: prefix}
 }
 
-func AppGRPCAddr() string {
-	return appGrpcAddr.Load().(string)
-}
-
-func P2PPort() uint16 {
-	return uint16(p2pPort.Load())
-}
-
-func K8SDisabled() bool {
-	return k8sDisabled.Load()
-}
-
-func AppGRPCTLS() bool {
-	return appGrpcTLS.Load()
-}
-
-func SeedHostsFile() string {
-	return seedHostsFile.Load().(string)
-}
-
-func SeedNamespace() string {
-	return seedNamespace.Load().(string)
-}
-
-func SeedName() string {
-	return seedName.Load().(string)
-}
-
-func SeedDNSConfigMapName() string {
-	return seedDNSConfig.Load().(string)
-}
-
-func SeedDNSHostsKey() string {
-	return seedDNSKey.Load().(string)
-}
-
-func SeedDNSZone() string {
-	return seedDNSZone.Load().(string)
-}
-
-func SeedUpdateInterval() time.Duration {
-	return time.Duration(seedUpdateIntervalNs.Load())
-}
-
-func SeedAllowedPeerIDs() map[string]struct{} {
-	return seedAllowedPeerIDs.Load().(map[string]struct{})
-}
-
-func SeedOverrideIPs() []string {
-	return seedOverrideIPs.Load().([]string)
-}
-
-func SeedBootstrapEndpoints() []string {
-	return seedBootstrapEPs.Load().([]string)
-}
-
-func SeedDNSDebug() dnsDebugConfig {
-	return seedDNSDebug.Load().(dnsDebugConfig)
-}
-
-func CurrentConfig() config {
-	return config{
-		appAddr:       AppGRPCAddr(),
-		p2pPort:       P2PPort(),
-		seedHostsFile: SeedHostsFile(),
-		seedNamespace: SeedNamespace(),
-		seedName:      SeedName(),
-		seedDNSConfig: SeedDNSConfigMapName(),
-		seedDNSKey:    SeedDNSHostsKey(),
-		seedDNSZone:   SeedDNSZone(),
-		seedDNSDebug:  SeedDNSDebug(),
-		bootstrap:     bootstrapConfig{endpoints: SeedBootstrapEndpoints()},
-		updateEvery:   SeedUpdateInterval(),
-		allowedPeerID: SeedAllowedPeerIDs(),
-		overrideIPs:   SeedOverrideIPs(),
-		useTLS:        AppGRPCTLS(),
+// CurrentConfig returns the current runtime configuration.
+func CurrentConfig() Config {
+	return Config{
+		AppAddr:       appGrpcAddr.Load().(string),
+		P2PPort:       uint16(p2pPort.Load()),
+		SeedHostsFile: seedHostsFile.Load().(string),
+		SeedNamespace: seedNamespace.Load().(string),
+		SeedName:      seedName.Load().(string),
+		SeedDNSZone:   seedDNSZone.Load().(string),
+		SeedDNSDebug:  seedDNSDebug.Load().(DNSDebugConfig),
+		Bootstrap:     BootstrapConfig{Endpoints: seedBootstrapEPs.Load().([]string)},
+		UpdateEvery:   time.Duration(seedUpdateIntervalNs.Load()),
+		AllowedPeerID: seedAllowedPeerIDs.Load().(map[string]struct{}),
+		OverrideIPs:   seedOverrideIPs.Load().([]string),
 	}
 }
