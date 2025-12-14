@@ -1,14 +1,12 @@
 package handshake
 
 import (
-	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
 type VersionInfo struct {
 	Version           string
 	SupportedServices []peer.ServiceType
-	ListeningEndpoint netip.AddrPort
 }
 
 // HandshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
