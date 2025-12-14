@@ -30,7 +30,9 @@ func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]stru
 		if err != nil {
 			continue
 		}
-		_ = port
+		if uint16(port) != cfg.AcceptedP2PPort {
+			continue
+		}
 
 		if parsed, err := netip.ParseAddr(host); err == nil {
 			if parsed.Is4() {
@@ -76,7 +78,7 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 	}
 
 	ips := map[string]struct{}{}
-	port := int32(cfg.AcceptedP2PPort)
+	acceptedPort := uint16(cfg.AcceptedP2PPort)
 
 	for _, entry := range resp.GetEntries() {
 		if entry == nil {
@@ -103,18 +105,18 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 		if err != nil {
 			continue
 		}
+		if ap.Port() != acceptedPort {
+			continue
+		}
 
 		addr := ap.Addr()
 		if !addr.Is4() {
 			continue
 		}
-		if p := int32(ap.Port()); p > 0 {
-			port = p
-		}
 		ips[addr.String()] = struct{}{}
 	}
 
-	return ips, port, nil
+	return ips, int32(cfg.AcceptedP2PPort), nil
 }
 
 // connectToPeer attempts to connect to a single peer via the app service.

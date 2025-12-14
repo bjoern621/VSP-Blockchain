@@ -111,7 +111,6 @@ func (pm *PeerManager) GetNextNewPeer() *PeerInfo {
 	for _, peer := range pm.peers {
 		if peer.State == StateNew {
 			peer.State = StateConnecting
-			logger.Debugf("transitioning peer %s from new to connecting", peer.IP)
 			return &PeerInfo{
 				IP:           peer.IP,
 				Port:         peer.Port,
@@ -196,35 +195,26 @@ func (pm *PeerManager) GetKnownPeers() []*PeerInfo {
 	return result
 }
 
-// GetRandomKnownPeers returns a random subset of known peers.
-func (pm *PeerManager) GetRandomKnownPeers(count int) []*PeerInfo {
+// GetRandomKnownPeerIPsFilteredByPort returns IP addresses of a random subset of known peers
+// that use the given port.
+func (pm *PeerManager) GetRandomKnownPeerIPsFilteredByPort(port int32, count int) map[string]struct{} {
 	known := pm.GetKnownPeers()
-	if len(known) <= count {
-		return known
+	filtered := make([]*PeerInfo, 0, len(known))
+	for _, p := range known {
+		if p.Port == port {
+			filtered = append(filtered, p)
+		}
 	}
 
-	rand.Shuffle(len(known), func(i, j int) {
-		known[i], known[j] = known[j], known[i]
-	})
-
-	return known[:count]
-}
-
-// GetKnownPeerIPs returns the IP addresses of all known peers within TTL.
-func (pm *PeerManager) GetKnownPeerIPs() map[string]struct{} {
-	peers := pm.GetKnownPeers()
-	result := make(map[string]struct{}, len(peers))
-	for _, p := range peers {
-		result[p.IP] = struct{}{}
+	if len(filtered) > count {
+		rand.Shuffle(len(filtered), func(i, j int) {
+			filtered[i], filtered[j] = filtered[j], filtered[i]
+		})
+		filtered = filtered[:count]
 	}
-	return result
-}
 
-// GetRandomKnownPeerIPs returns IP addresses of a random subset of known peers.
-func (pm *PeerManager) GetRandomKnownPeerIPs(count int) map[string]struct{} {
-	peers := pm.GetRandomKnownPeers(count)
-	result := make(map[string]struct{}, len(peers))
-	for _, p := range peers {
+	result := make(map[string]struct{}, len(filtered))
+	for _, p := range filtered {
 		result[p.IP] = struct{}{}
 	}
 	return result

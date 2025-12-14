@@ -135,7 +135,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 	var seedIPs map[string]struct{}
 	seedPort := int32(cfg.AcceptedP2PPort)
 
-	seedIPs = peerManager.GetRandomKnownPeerIPs(cfg.PeerRegistrySubsetSize)
+	seedIPs = peerManager.GetRandomKnownPeerIPsFilteredByPort(seedPort, cfg.PeerRegistrySubsetSize)
 	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
 	if len(seedIPs) == 0 {
 		logger.Debugf("no known peers, falling back to bootstrap targets")
