@@ -76,12 +76,12 @@ func discoverOnePeer(ctx context.Context, cfg Config) {
 		return
 	}
 
-	logger.Infof("attempting to verify peer %s:%d", peer.IP, peer.Port)
+	logger.Tracef("attempting to verify peer %s:%d", peer.IP, peer.Port)
 
 	success := verifyPeer(ctx, cfg, peer.IP, peer.Port)
 	if success {
 		peerManager.MarkConnected(peer.IP)
-		logger.Infof("peer verified and marked as known: %s", peer.IP)
+		logger.Debugf("peer verified and marked as known: %s", peer.IP)
 	} else {
 		peerManager.MarkFailed(peer.IP)
 		logger.Warnf("peer verification failed, removed: %s", peer.IP)
