@@ -9,6 +9,11 @@
 
 # - seed-dns: Ein CoreDNS-Dienst, der zur Auflösung der IPs genutzt wird
 
+# IP-Adressbereiche:
+# - 172.28.1.x: P2P-Knoten (minimal_node, miner2-4, spv)
+# - 172.28.2.x: Infrastruktur (registry-crawler, seed-dns)
+# - 172.28.3.x: API(s) (rest-api)
+
 services:
     minimal_node:
         build:
@@ -18,12 +23,15 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "0.0.0.0"
-            P2P_LISTEN_ADDR: "0.0.0.0"
+            APP_LISTEN_ADDR: "172.28.1.10"
+            P2P_LISTEN_ADDR: "172.28.1.10"
             ADDITIONAL_SERVICES: "app"
         ports:
             - "20001:50050"
             - "50051:50051"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.10
 
     miner2:
         build:
@@ -33,11 +41,14 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "0.0.0.0"
-            P2P_LISTEN_ADDR: "0.0.0.0"
+            APP_LISTEN_ADDR: "172.28.1.12"
+            P2P_LISTEN_ADDR: "172.28.1.12"
             ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20002:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.12
 
     miner3:
         build:
@@ -47,11 +58,14 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "0.0.0.0"
-            P2P_LISTEN_ADDR: "0.0.0.0"
+            APP_LISTEN_ADDR: "172.28.1.13"
+            P2P_LISTEN_ADDR: "172.28.1.13"
             ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20003:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.13
 
     miner4:
         build:
@@ -60,12 +74,15 @@ services:
         image: vsp-blockchain/miner:local
         environment:
             APP_PORT: "50050"
-            P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "0.0.0.0"
-            P2P_LISTEN_ADDR: "0.0.0.0"
+            P2P_PORT: "50052" # Non default P2P port for testing
+            APP_LISTEN_ADDR: "172.28.1.14"
+            P2P_LISTEN_ADDR: "172.28.1.14"
             ADDITIONAL_SERVICES: "miner, blockchain_full, app"
         ports:
             - "20004:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.14
 
     spv:
         build:
@@ -75,11 +92,14 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "0.0.0.0"
-            P2P_LISTEN_ADDR: "0.0.0.0"
+            APP_LISTEN_ADDR: "172.28.1.20"
+            P2P_LISTEN_ADDR: "172.28.1.20"
             ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
         ports:
             - "20005:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.20
 
     registry-crawler:
         build:
@@ -94,14 +114,16 @@ services:
             - spv
             - seed-dns
         environment:
-            APP_GRPC_ADDR_PORT: "minimal_node:50050"
+            APP_GRPC_ADDR_PORT: "172.28.1.10:50050" # Pointing to minimal_node, should normally point to localhost but its easier this way in docker-compose
             P2P_PORT: "50051"
-            K8S_DISABLED: "true"
-            SEED_UPDATE_INTERVAL: "30s"
-            SEED_BOOTSTRAP_ENDPOINTS: "miner2:50051,miner3:50051"
+            SEED_UPDATE_INTERVAL: "60s"
+            SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
             SEED_HOSTS_FILE: "/seed/seed.hosts"
         volumes:
             - seed-dns-hosts:/seed
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.2.1
 
     seed-dns:
         image: coredns/coredns:1.11.3
@@ -112,6 +134,9 @@ services:
         volumes:
             - ./local/seed-dns/Corefile:/etc/coredns/Corefile:ro
             - seed-dns-hosts:/seed:ro
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.2.2
 
     rest-api:
         build:
@@ -121,9 +146,20 @@ services:
         depends_on:
             - spv
         environment:
-            GRPC_ADDR_PORT: "spv:50051"
+            GRPC_ADDR_PORT: "172.28.1.20:50051"
         ports:
             - "8080:8080"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.3.1
+
+networks:
+    vsp-net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.28.0.0/16
+                  gateway: 172.28.0.1
 
 volumes:
     seed-dns-hosts: {}
