@@ -1,3 +1,14 @@
+# Netzwerk besteht aus:
+# - miner2, miner3, miner4: Drei Miner-Knoten mit vollständiger Blockchain, Miner und App-Komponente
+
+# - minimal_node: Ein Knoten mit nur der App-Komponente
+# - registry-crawler: Aktualisiert DNS-Seed, nutzt minimal_node als gRPC-App-Endpunkt
+
+# - spv: Ein SPV-Knoten mit einfacher Blockchain, Wallet und App-Komponente
+# - rest-api: REST-Schnittstelle, nutzt spv als gRPC-App-Endpunkt
+
+# - seed-dns: Ein CoreDNS-Dienst, der zur Auflösung der IPs genutzt wird
+
 services:
     minimal_node:
         build:
