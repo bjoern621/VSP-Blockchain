@@ -9,7 +9,7 @@
 //	registry-crawler → queries → minimal_node (gRPC)
 //	                 → writes  → /seed/seed.hosts (shared volume)
 //	                                    ↓
-//	seed-dns (CoreDNS) ← reads ← /seed/seed.hosts
+//	seed-dns (CoreDNS) ← reads (5s) ← /seed/seed.hosts
 package main
 
 import (
