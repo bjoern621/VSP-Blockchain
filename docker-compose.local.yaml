@@ -10,7 +10,7 @@ services:
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
         ports:
-            - "50050:50050"
+            - "20001:50050"
             - "50051:50051"
 
     miner2:
@@ -23,6 +23,8 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+        ports:
+            - "20002:50050"
 
     miner3:
         build:
@@ -34,6 +36,8 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+        ports:
+            - "20003:50050"
 
     miner4:
         build:
@@ -45,6 +49,8 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+        ports:
+            - "20004:50050"
 
     miner5:
         build:
@@ -56,6 +62,8 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0"
             P2P_LISTEN_ADDR: "0.0.0.0"
+        ports:
+            - "20005:50050"
 
     registry-crawler:
         build:
@@ -72,8 +80,8 @@ services:
             APP_GRPC_ADDR_PORT: "miner1:50050"
             P2P_PORT: "50051"
             K8S_DISABLED: "true"
-            SEED_UPDATE_INTERVAL: "10s"
-            SEED_BOOTSTRAP_ENDPOINTS: "miner2:50051,miner3:50051,miner4:50051,miner5:50051"
+            SEED_UPDATE_INTERVAL: "30s"
+            SEED_BOOTSTRAP_ENDPOINTS: "miner2:50051,miner3:50051"
             SEED_HOSTS_FILE: "/seed/seed.hosts"
         volumes:
             - seed-dns-hosts:/seed
