@@ -29,7 +29,7 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50050",
+                "APP_PORT": "20001",
                 "P2P_PORT": "50051"
             },
             "presentation": { "hidden": true }
@@ -42,7 +42,7 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50058",
+                "APP_PORT": "20002",
                 "P2P_PORT": "50052"
             },
             "presentation": { "hidden": true }
@@ -55,7 +55,7 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50059",
+                "APP_PORT": "20003",
                 "P2P_PORT": "50053"
             },
             "presentation": { "hidden": true }
