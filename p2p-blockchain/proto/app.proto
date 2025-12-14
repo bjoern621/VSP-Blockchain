@@ -76,7 +76,7 @@ message QueryRegistryResponse {
 
 message RegistryEntry {
     // IP address of the peer.
-    bytes ip_address = 1;
+    string ip_address = 1;
     // Peer ID assigned to this discovered peer.
     string peer_id = 2;
 }

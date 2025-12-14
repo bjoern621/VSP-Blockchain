@@ -143,9 +143,8 @@ func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest
 	}
 
 	for _, entry := range entries {
-		ipBytes := entry.IPAddress.AsSlice()
 		response.Entries = append(response.Entries, &pb.RegistryEntry{
-			IpAddress: ipBytes,
+			IpAddress: entry.IPAddress.String(),
 			PeerId:    string(entry.PeerID),
 		})
 	}
