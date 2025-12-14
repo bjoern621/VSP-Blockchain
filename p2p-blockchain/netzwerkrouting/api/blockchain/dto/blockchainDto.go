@@ -8,7 +8,7 @@ import (
 
 const (
 	PublicKeyHashSize = 20
-	PublicKeySize     = 33
+	PublicKeySize     = 33 // TODO: Das wird doch bestimmt irgendwo verwendet? WO???
 	HashSize          = 32
 )
 

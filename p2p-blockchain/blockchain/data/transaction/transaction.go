@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"fmt"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 )
 
 type Transaction struct {
@@ -33,6 +34,22 @@ func NewTransaction(
 	}
 
 	return tx, nil
+}
+
+func NewTransactionFromDTO(t dto.TransactionDTO) Transaction {
+	ins := make([]Input, 0, len(t.Inputs))
+	for i := range t.Inputs {
+		ins = append(ins, NewInputFromDTO(t.Inputs[i]))
+	}
+	outs := make([]Output, 0, len(t.Outputs))
+	for i := range t.Outputs {
+		outs = append(outs, NewOutputFromDTO(t.Outputs[i]))
+	}
+	return Transaction{
+		Inputs:   ins,
+		Outputs:  outs,
+		LockTime: t.LockTime,
+	}
 }
 
 func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHash, privateKey *ecdsa.PrivateKey, change uint64) *Transaction {
