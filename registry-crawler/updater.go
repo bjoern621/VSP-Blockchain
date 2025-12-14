@@ -97,7 +97,7 @@ func discoverOnePeer(ctx context.Context, cfg Config) {
 }
 
 // verifyPeer attempts to connect to a peer to verify it is reachable.
-// Returns true if the peer responds correctly.
+// Returns true if the peer responds correctly or is already connected.
 func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
 	conn, err := dialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
@@ -122,17 +122,25 @@ func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
 		return false
 	}
 
-	success := resp != nil && resp.Success
-	if success {
+	if resp != nil && resp.Success {
 		logger.Debugf("ConnectTo %s:%d result: success=true", ip, port)
-	} else {
-		errorMsg := ""
-		if resp != nil {
-			errorMsg = resp.ErrorMessage
-		}
-		logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
+		return true
 	}
-	return success
+
+	// Check if the error indicates the peer is already connected
+	// This is a success case for verification purposes
+	errorMsg := ""
+	if resp != nil {
+		errorMsg = resp.ErrorMessage
+	}
+
+	if isAlreadyConnectedError(errorMsg) {
+		logger.Debugf("ConnectTo %s:%d result: peer already connected (treating as success)", ip, port)
+		return true
+	}
+
+	logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
+	return false
 }
 
 // runSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.

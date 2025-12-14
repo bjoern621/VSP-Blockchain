@@ -207,12 +207,23 @@ func bootstrapConnect(ctx context.Context, client pb.AppServiceClient, cfg Confi
 				return nil
 			}
 			if resp != nil && !resp.Success {
-				lastErr = fmt.Errorf("connect_to failed: %s", strings.TrimSpace(resp.ErrorMessage))
+				errorMsg := strings.TrimSpace(resp.ErrorMessage)
+				// Treat "already connected" as success
+				if isAlreadyConnectedError(errorMsg) {
+					return nil
+				}
+				lastErr = fmt.Errorf("connect_to failed: %s", errorMsg)
 			}
 		}
 	}
 
 	return lastErr
+}
+
+// isAlreadyConnectedError checks if the error message indicates the peer is already connected.
+func isAlreadyConnectedError(errorMsg string) bool {
+	return strings.Contains(errorMsg, "state connected") ||
+		strings.Contains(errorMsg, "already connected")
 }
 
 // splitHostPortOrDefault splits a host:port string or uses the default port.
