@@ -17,11 +17,56 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// fetchBootstrapPeers resolves bootstrap endpoints to IP addresses.
+// resolveBootstrapEndpoints resolves bootstrap endpoints to IP addresses.
 // Returns a set of IP addresses and the P2P port.
-func fetchBootstrapPeers(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
-	bootstrapTargets := parseBootstrapTargets(ctx, cfg)
-	return bootstrapTargets, int32(cfg.P2PPort), nil
+func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]struct{}, int32) {
+	res := map[string]struct{}{}
+
+	endpoints := make([]string, 0, len(cfg.Bootstrap.Endpoints))
+	endpoints = append(endpoints, cfg.Bootstrap.Endpoints...)
+	if len(endpoints) == 0 {
+		for _, ip := range cfg.OverrideIPs {
+			ip = strings.TrimSpace(ip)
+			if ip == "" {
+				continue
+			}
+			endpoints = append(endpoints, net.JoinHostPort(ip, strconv.Itoa(int(cfg.P2PPort))))
+		}
+	}
+
+	for _, token := range endpoints {
+		host, port, err := splitHostPortOrDefault(token, int(cfg.P2PPort))
+		if err != nil {
+			continue
+		}
+		_ = port
+
+		if parsed, err := netip.ParseAddr(host); err == nil {
+			if parsed.Is4() {
+				res[parsed.String()] = struct{}{}
+			}
+			continue
+		}
+
+		resolved, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			continue
+		}
+		for _, r := range resolved {
+			if r.IP == nil {
+				continue
+			}
+			addr, ok := netip.AddrFromSlice(r.IP)
+			if !ok {
+				continue
+			}
+			if addr.Is4() {
+				res[addr.String()] = struct{}{}
+			}
+		}
+	}
+
+	return res, int32(cfg.P2PPort)
 }
 
 // fetchNetworkPeers queries the app service for connected peers from the P2P network.
@@ -41,11 +86,6 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 	}
 
 	client := pb.NewAppServiceClient(conn)
-
-	bootstrapErr := bootstrapConnect(ctx, client, cfg)
-	if bootstrapErr != nil {
-		logger.Warnf("bootstrap connect failed: %v", bootstrapErr)
-	}
 
 	resp, err := client.GetInternalPeerInfo(ctx, &pb.GetInternalPeerInfoRequest{})
 	if err != nil {
@@ -100,124 +140,40 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 	return ips, port, nil
 }
 
-// parseBootstrapTargets resolves bootstrap endpoints to IP addresses.
-func parseBootstrapTargets(ctx context.Context, cfg Config) map[string]struct{} {
-	res := map[string]struct{}{}
-
-	endpoints := make([]string, 0, len(cfg.Bootstrap.Endpoints))
-	endpoints = append(endpoints, cfg.Bootstrap.Endpoints...)
-	if len(endpoints) == 0 {
-		for _, ip := range cfg.OverrideIPs {
-			ip = strings.TrimSpace(ip)
-			if ip == "" {
-				continue
-			}
-			endpoints = append(endpoints, net.JoinHostPort(ip, strconv.Itoa(int(cfg.P2PPort))))
-		}
+// connectToPeer attempts to connect to a single peer via the app service.
+// Returns true if the connection succeeded or the peer is already connected.
+func connectToPeer(ctx context.Context, client pb.AppServiceClient, ip string, port int32) (success bool, err error) {
+	parsed, parseErr := netip.ParseAddr(ip)
+	if parseErr != nil {
+		return false, fmt.Errorf("invalid peer IP %s: %w", ip, parseErr)
 	}
 
-	for _, token := range endpoints {
-		host, port, err := splitHostPortOrDefault(token, int(cfg.P2PPort))
-		if err != nil {
-			continue
-		}
-		_ = port
-
-		if parsed, err := netip.ParseAddr(host); err == nil {
-			if parsed.Is4() {
-				res[parsed.String()] = struct{}{}
-			}
-			continue
-		}
-
-		resolved, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-		if err != nil {
-			continue
-		}
-		for _, r := range resolved {
-			if r.IP == nil {
-				continue
-			}
-			addr, ok := netip.AddrFromSlice(r.IP)
-			if !ok {
-				continue
-			}
-			if addr.Is4() {
-				res[addr.String()] = struct{}{}
-			}
-		}
+	resp, connectErr := client.ConnectTo(ctx, &pb.ConnectToRequest{
+		IpAddress: parsed.AsSlice(),
+		Port:      uint32(port),
+	})
+	if connectErr != nil {
+		logger.Debugf("ConnectTo %s:%d failed: %v", ip, port, connectErr)
+		return false, connectErr
 	}
 
-	return res
-}
-
-// bootstrapConnect attempts to connect to bootstrap endpoints via the app service.
-func bootstrapConnect(ctx context.Context, client pb.AppServiceClient, cfg Config) error {
-	endpoints := make([]string, 0, len(cfg.Bootstrap.Endpoints))
-	endpoints = append(endpoints, cfg.Bootstrap.Endpoints...)
-	if len(endpoints) == 0 {
-		for _, ip := range cfg.OverrideIPs {
-			ip = strings.TrimSpace(ip)
-			if ip == "" {
-				continue
-			}
-			endpoints = append(endpoints, net.JoinHostPort(ip, strconv.Itoa(int(cfg.P2PPort))))
-		}
+	if resp != nil && resp.Success {
+		logger.Debugf("ConnectTo %s:%d result: success=true", ip, port)
+		return true, nil
 	}
 
-	var lastErr error
-	for _, token := range endpoints {
-		host, port, err := splitHostPortOrDefault(token, int(cfg.P2PPort))
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		ips := []netip.Addr{}
-		if parsed, err := netip.ParseAddr(host); err == nil {
-			ips = append(ips, parsed)
-		} else {
-			resolved, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-			if err != nil {
-				lastErr = err
-				continue
-			}
-			for _, r := range resolved {
-				if r.IP == nil {
-					continue
-				}
-				addr, ok := netip.AddrFromSlice(r.IP)
-				if !ok {
-					continue
-				}
-				ips = append(ips, addr)
-			}
-		}
-
-		for _, ip := range ips {
-			if !ip.Is4() && !ip.Is6() {
-				continue
-			}
-			resp, err := client.ConnectTo(ctx, &pb.ConnectToRequest{IpAddress: ip.AsSlice(), Port: uint32(port)})
-			if err != nil {
-				lastErr = err
-				continue
-			}
-			if resp != nil && resp.Success {
-				return nil
-			}
-			if resp != nil && !resp.Success {
-				errorMsg := strings.TrimSpace(resp.ErrorMessage)
-				// Treat "already connected" as success
-				if isAlreadyConnectedError(errorMsg) {
-					return nil
-				}
-				lastErr = fmt.Errorf("connect_to failed: %s", errorMsg)
-			}
-		}
+	errorMsg := ""
+	if resp != nil {
+		errorMsg = strings.TrimSpace(resp.ErrorMessage)
 	}
 
-	return lastErr
+	if isAlreadyConnectedError(errorMsg) {
+		logger.Debugf("ConnectTo %s:%d result: peer already connected (treating as success)", ip, port)
+		return true, nil
+	}
+
+	logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
+	return false, fmt.Errorf("connect_to failed: %s", errorMsg)
 }
 
 // isAlreadyConnectedError checks if the error message indicates the peer is already connected.

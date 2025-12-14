@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net/netip"
 	"sort"
 	"strings"
 	"time"
@@ -48,11 +47,7 @@ func discoverOnePeer(ctx context.Context, cfg Config) {
 
 	peerManager.CleanupExpired()
 
-	bootstrapPeers, port, err := fetchBootstrapPeers(ctx, cfg)
-	if err != nil {
-		logger.Warnf("failed to fetch bootstrap peers: %v", err)
-	}
-
+	bootstrapPeers, port := resolveBootstrapEndpoints(ctx, cfg)
 	if len(bootstrapPeers) > 0 {
 		added := peerManager.AddPeers(bootstrapPeers, port)
 		if added > 0 {
@@ -107,40 +102,11 @@ func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
 
 	client := pb.NewAppServiceClient(conn)
 
-	parsed, err := netip.ParseAddr(ip)
+	success, err := connectToPeer(ctx, client, ip, port)
 	if err != nil {
-		logger.Warnf("invalid peer IP %s: %v", ip, err)
-		return false
+		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
 	}
-
-	resp, err := client.ConnectTo(ctx, &pb.ConnectToRequest{
-		IpAddress: parsed.AsSlice(),
-		Port:      uint32(port),
-	})
-	if err != nil {
-		logger.Debugf("ConnectTo %s:%d failed: %v", ip, port, err)
-		return false
-	}
-
-	if resp != nil && resp.Success {
-		logger.Debugf("ConnectTo %s:%d result: success=true", ip, port)
-		return true
-	}
-
-	// Check if the error indicates the peer is already connected
-	// This is a success case for verification purposes
-	errorMsg := ""
-	if resp != nil {
-		errorMsg = resp.ErrorMessage
-	}
-
-	if isAlreadyConnectedError(errorMsg) {
-		logger.Debugf("ConnectTo %s:%d result: peer already connected (treating as success)", ip, port)
-		return true
-	}
-
-	logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
-	return false
+	return success
 }
 
 // runSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.
@@ -181,7 +147,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 		logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
 		if len(seedIPs) == 0 {
 			logger.Debugf("no known peers, falling back to bootstrap targets")
-			bootstrapIPs := parseBootstrapTargets(ctx, cfg)
+			bootstrapIPs, _ := resolveBootstrapEndpoints(ctx, cfg)
 			for ip := range bootstrapIPs {
 				seedIPs[ip] = struct{}{}
 			}
