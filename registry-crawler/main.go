@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"net"
 	"net/netip"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,6 +38,7 @@ const (
 type config struct {
 	appAddr       string
 	p2pPort       uint16
+	seedHostsFile string
 	seedNamespace string
 	seedName      string
 	seedDNSConfig string
@@ -96,10 +99,55 @@ func runSeedLoggerLoop(cfg config) {
 			}
 			sort.Strings(addresses)
 			logger.Infof("seed targets: port=%d addrs=%s", seedPort, strings.Join(addresses, ","))
+
+			source := "registry"
+			if len(cfg.overrideIPs) > 0 {
+				source = "override"
+			}
+			if len(cfg.bootstrap.endpoints) > 0 {
+				source = source + "+bootstrap"
+			}
+			if cfg.seedDNSDebug.enabled {
+				source = "debug-random"
+			}
+
+			if strings.TrimSpace(cfg.seedHostsFile) != "" {
+				dnsAddresses := addresses
+				if cfg.seedDNSDebug.enabled {
+					dnsAddresses = generateRandomIPv4s(cfg.seedDNSDebug.cidr, cfg.seedDNSDebug.count)
+				}
+
+				hostsBody, err := buildSeedHostsFile(cfg.seedName, cfg.seedNamespace, cfg.seedDNSZone, dnsAddresses, source)
+				if err != nil {
+					logger.Warnf("seed hosts build failed: %v", err)
+				} else if err := writeFileAtomically(cfg.seedHostsFile, []byte(hostsBody)); err != nil {
+					logger.Warnf("seed hosts write failed: %v", err)
+				} else {
+					logger.Infof("seed hosts written: %s", cfg.seedHostsFile)
+				}
+			}
 		}
 
 		<-ticker.C
 	}
+}
+
+func writeFileAtomically(path string, data []byte) error {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return fmt.Errorf("empty path")
+	}
+
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }
 
 // runSeedUpdaterLoop periodically fetches seed targets and updates the Kubernetes Endpoints and ConfigMap.
@@ -257,7 +305,7 @@ func generateRandomIPv4s(prefix netip.Prefix, count int) []string {
 }
 
 func fetchSeedTargets(ctx context.Context, cfg config) (map[string]struct{}, int32, error) {
-	bootstrapTargets := parseBootstrapTargets(cfg)
+	bootstrapTargets := parseBootstrapTargets(ctx, cfg)
 
 	if len(cfg.overrideIPs) > 0 {
 		ips := map[string]struct{}{}
@@ -327,7 +375,7 @@ func fetchSeedTargets(ctx context.Context, cfg config) (map[string]struct{}, int
 	return ips, port, nil
 }
 
-func parseBootstrapTargets(cfg config) map[string]struct{} {
+func parseBootstrapTargets(ctx context.Context, cfg config) map[string]struct{} {
 	res := map[string]struct{}{}
 
 	endpoints := make([]string, 0, len(cfg.bootstrap.endpoints))
@@ -349,13 +397,28 @@ func parseBootstrapTargets(cfg config) map[string]struct{} {
 		}
 		_ = port
 
-		ip := netip.Addr{}
 		if parsed, err := netip.ParseAddr(host); err == nil {
-			ip = parsed
-			if ip.Is4() {
-				res[ip.String()] = struct{}{}
+			if parsed.Is4() {
+				res[parsed.String()] = struct{}{}
 			}
 			continue
+		}
+
+		resolved, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			continue
+		}
+		for _, r := range resolved {
+			if r.IP == nil {
+				continue
+			}
+			addr, ok := netip.AddrFromSlice(r.IP)
+			if !ok {
+				continue
+			}
+			if addr.Is4() {
+				res[addr.String()] = struct{}{}
+			}
 		}
 	}
 

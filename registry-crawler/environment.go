@@ -17,6 +17,7 @@ const (
 	appGrpcAddrPortEnvVar        = "APP_GRPC_ADDR_PORT"
 	p2pPortEnvVar                = "P2P_PORT"
 	k8sDisabledEnvVar            = "K8S_DISABLED"
+	seedHostsFileEnvVar          = "SEED_HOSTS_FILE"
 	seedNamespaceEnvVar          = "SEED_NAMESPACE"
 	seedEndpointsNameEnvVar      = "SEED_ENDPOINTS_NAME"
 	seedDNSConfigMapEnvVar       = "SEED_DNS_CONFIGMAP_NAME"
@@ -36,8 +37,9 @@ var (
 	appGrpcAddr atomic.Value // string
 	p2pPort     atomic.Uint32
 
-	k8sDisabled atomic.Bool
-	appGrpcTLS  atomic.Bool
+	k8sDisabled   atomic.Bool
+	appGrpcTLS    atomic.Bool
+	seedHostsFile atomic.Value // string
 
 	seedNamespace atomic.Value // string
 	seedName      atomic.Value // string
@@ -61,6 +63,7 @@ func init() {
 
 	k8sDisabled.Store(cfg.k8sDisabled)
 	appGrpcTLS.Store(cfg.appGrpcTLS)
+	seedHostsFile.Store(cfg.seedHostsFile)
 
 	seedNamespace.Store(cfg.seedNamespace)
 	seedName.Store(cfg.seedName)
@@ -80,8 +83,9 @@ type envSnapshot struct {
 	appAddr string
 	p2pPort uint16
 
-	k8sDisabled bool
-	appGrpcTLS  bool
+	k8sDisabled   bool
+	appGrpcTLS    bool
+	seedHostsFile string
 
 	seedNamespace string
 	seedName      string
@@ -104,6 +108,11 @@ func readAndValidateEnvironment() envSnapshot {
 
 	k8sOff := readOptionalBool(k8sDisabledEnvVar)
 	tlsEnabled := readOptionalBool(appGrpcTLSEnvVar)
+
+	seedHostsFile := ""
+	if raw, ok := env.ReadOptionalEnv(seedHostsFileEnvVar); ok {
+		seedHostsFile = strings.TrimSpace(raw)
+	}
 
 	seedNS := defaultSeedNamespace
 	seedName := defaultSeedEndpointsName
@@ -161,6 +170,7 @@ func readAndValidateEnvironment() envSnapshot {
 		p2pPort:            p2p,
 		k8sDisabled:        k8sOff,
 		appGrpcTLS:         tlsEnabled,
+		seedHostsFile:      seedHostsFile,
 		seedNamespace:      seedNS,
 		seedName:           seedName,
 		seedDNSConfig:      seedDNSConfig,
@@ -271,6 +281,10 @@ func AppGRPCTLS() bool {
 	return appGrpcTLS.Load()
 }
 
+func SeedHostsFile() string {
+	return seedHostsFile.Load().(string)
+}
+
 func SeedNamespace() string {
 	return seedNamespace.Load().(string)
 }
@@ -315,6 +329,7 @@ func CurrentConfig() config {
 	return config{
 		appAddr:       AppGRPCAddr(),
 		p2pPort:       P2PPort(),
+		seedHostsFile: SeedHostsFile(),
 		seedNamespace: SeedNamespace(),
 		seedName:      SeedName(),
 		seedDNSConfig: SeedDNSConfigMapName(),

@@ -30,3 +30,13 @@ tasks:
         internal: true
         cmds:
             - kubectl apply -f kubernetes-deployment-local.yaml
+
+    local-up:
+        desc: Start local docker-compose stack (miners, seed-dns registry, crawler, rest-api)
+        cmds:
+            - docker compose -f docker-compose.local.yaml up --build -d
+
+    local-down:
+        desc: Stop local docker-compose stack
+        cmds:
+            - docker compose -f docker-compose.local.yaml down -v

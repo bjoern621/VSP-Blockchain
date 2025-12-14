@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"strings"
 
 	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
 	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
@@ -16,7 +18,12 @@ func main() {
 
 	// gRPC Client Setup
 
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcAddrPort := strings.TrimSpace(os.Getenv("GRPC_ADDR_PORT"))
+	if grpcAddrPort == "" {
+		grpcAddrPort = "localhost:50051"
+	}
+
+	conn, err := grpc.NewClient(grpcAddrPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Errorf("failed to create connection to gRPC server: %v", err)
 	}

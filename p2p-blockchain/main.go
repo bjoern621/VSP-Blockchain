@@ -49,7 +49,7 @@ func main() {
 		addrPort, err := grpcServer.ListeningEndpoint()
 		assert.IsNil(err)
 		common.SetP2PPort(addrPort.Port())
-		common.SetP2PListeningIpAddr(addrPort.Addr())
+		common.SetP2PListeningIpAddr(common.P2PAdvertiseIP(addrPort.Addr()))
 		logger.Infof("P2P server started on port %d", common.P2PPort())
 	}
 

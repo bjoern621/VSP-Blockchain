@@ -1,0 +1,106 @@
+services:
+    miner1:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0"
+            P2P_LISTEN_ADDR: "0.0.0.0"
+        ports:
+            - "50050:50050"
+            - "50051:50051"
+
+    miner2:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0"
+            P2P_LISTEN_ADDR: "0.0.0.0"
+
+    miner3:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0"
+            P2P_LISTEN_ADDR: "0.0.0.0"
+
+    miner4:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0"
+            P2P_LISTEN_ADDR: "0.0.0.0"
+
+    miner5:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/miner:local
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0"
+            P2P_LISTEN_ADDR: "0.0.0.0"
+
+    registry-crawler:
+        build:
+            context: ./registry-crawler
+            dockerfile: Dockerfile
+        image: vsp-blockchain/registry-crawler:local
+        depends_on:
+            - miner1
+            - miner2
+            - miner3
+            - miner4
+            - miner5
+        environment:
+            APP_GRPC_ADDR_PORT: "miner1:50050"
+            P2P_PORT: "50051"
+            K8S_DISABLED: "true"
+            SEED_UPDATE_INTERVAL: "10s"
+            SEED_BOOTSTRAP_ENDPOINTS: "miner2:50051,miner3:50051,miner4:50051,miner5:50051"
+            SEED_HOSTS_FILE: "/seed/seed.hosts"
+        volumes:
+            - seed-dns-hosts:/seed
+
+    seed-dns:
+        image: coredns/coredns:1.11.3
+        command: ["-conf", "/etc/coredns/Corefile"]
+        depends_on:
+            - registry-crawler
+        ports:
+            - "1053:53/udp"
+            - "1053:53/tcp"
+        volumes:
+            - ./local/seed-dns/Corefile:/etc/coredns/Corefile:ro
+            - seed-dns-hosts:/seed:ro
+
+    rest-api:
+        build:
+            context: ./rest-schnittstelle
+            dockerfile: Dockerfile
+        image: vsp-blockchain/rest-api:local
+        depends_on:
+            - miner1
+        environment:
+            GRPC_ADDR_PORT: "miner1:50051"
+        ports:
+            - "8080:8080"
+
+volumes:
+    seed-dns-hosts: {}
