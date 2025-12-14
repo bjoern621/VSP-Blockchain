@@ -11,7 +11,7 @@ import (
 )
 
 // TestMain sets up the environment for the tests.
-// For example handshake_test.go depends on ADDITIONAL_SERVICES to have a value because NewHandshakeService.InitiateHandshake() calls NewLocalVersionInfo() which depends on this environment variable.
+// For example handshake_test.go depends on ADDITIONAL_SERVICES to have a value because NewHandshakeService.InitiateHandshake() calls NewLocalVersionInfo() which depends on this environment variable. Note that ADDITIONAL_SERVICES is optional and not relevant for the tests here.
 // P2P_LISTEN_ADDR is always a required environment variable.
 func TestMain(m *testing.M) {
 	os.Setenv("P2P_LISTEN_ADDR", "does not matter")
