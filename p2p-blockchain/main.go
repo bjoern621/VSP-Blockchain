@@ -9,6 +9,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -25,13 +26,16 @@ func main() {
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
+	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
+	queryRegistryAPI := api.NewQueryRegistryService(registryQuerier)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService)
+		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

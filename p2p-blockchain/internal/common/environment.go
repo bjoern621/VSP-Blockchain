@@ -122,7 +122,7 @@ func readAppPort() uint16 {
 
 // readP2PPort is similar to readAppPort but for the P2P port.
 func readP2PPort() uint16 {
-	return readUint16EnvOrDefault(p2pPortEnvVar, defaultP2PPort)
+	return readUint16EnvOrDefault(p2pPortEnvVar, DefaultP2PPort)
 }
 
 func readUint16EnvOrDefault(key string, fallback uint16) uint16 {

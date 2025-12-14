@@ -24,6 +24,12 @@ service AppService {
 
     // GetInternalPeerInfo returns the current internal state per peer for debugging purposes.
     rpc GetInternalPeerInfo(GetInternalPeerInfoRequest) returns (GetInternalPeerInfoResponse);
+
+    // QueryRegistry queries the DNS seed registry for available peer addresses.
+    //
+    // Post-conditions:
+    //  - Returns a list of peer addresses from the DNS seed.
+    rpc QueryRegistry(QueryRegistryRequest) returns (QueryRegistryResponse);
 }
 
 message ConnectToRequest {
@@ -56,4 +62,21 @@ message InternalPeerInfoEntry {
     repeated string supported_services = 4;
     string connection_state = 5;
     string direction = 6;
+}
+
+message QueryRegistryRequest {
+    // The DNS hostname to query for peer addresses.
+    string hostname = 1;
+}
+
+message QueryRegistryResponse {
+    // List of peer addresses returned from the DNS query.
+    repeated RegistryEntry entries = 1;
+}
+
+message RegistryEntry {
+    // IP address of the peer.
+    bytes ip_address = 1;
+    // Peer ID assigned to this discovered peer.
+    string peer_id = 2;
 }
