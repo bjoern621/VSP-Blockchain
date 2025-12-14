@@ -132,7 +132,7 @@ services:
             - "1053:53/udp"
             - "1053:53/tcp"
         volumes:
-            - ./local/seed-dns/Corefile:/etc/coredns/Corefile:ro
+            - ./registry/Corefile:/etc/coredns/Corefile:ro
             - seed-dns-hosts:/seed:ro
         networks:
             vsp-net:

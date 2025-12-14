@@ -1,8 +1,8 @@
 // Package main implements the registry-crawler service.
 //
 // The registry-crawler periodically queries the P2P network for active miner nodes
-// and maintains a DNS hosts file consumed by CoreDNS. This enables seed DNS resolution
-// for new nodes joining the network.
+// and maintains a DNS hosts file consumed by CoreDNS (reloaded every 5 seconds).
+// This enables seed DNS resolution for new nodes joining the network.
 //
 // Architecture:
 //

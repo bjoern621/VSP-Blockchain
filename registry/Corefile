@@ -1,0 +1,25 @@
+# CoreDNS configuration for the local DNS seed domain (seed.local).
+#
+# Purpose:
+# - Serves DNS answers for seed.local from /seed/seed.hosts.
+# - The /seed/seed.hosts file is maintained by the registry-crawler via a shared volume.
+
+seed.local:53 {
+  errors
+  health
+  ready
+  hosts /seed/seed.hosts {
+    ttl 1
+    reload 5s # reload the hosts file every 5 seconds
+  }
+  log
+}
+
+.:53 {
+  errors
+  health
+  ready
+  forward . /etc/resolv.conf
+  cache 30
+  reload
+}
