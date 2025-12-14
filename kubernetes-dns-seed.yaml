@@ -42,7 +42,7 @@ data:
           errors
           health
           ready
-          hosts /etc/coredns/seed/seed.hosts {
+          hosts /seed/seed.hosts {
             ttl 1
             reload 5s
           }
@@ -76,6 +76,36 @@ spec:
         spec:
             serviceAccountName: seed-dns
             containers:
+                - name: registry-crawler
+                  image: ghcr.io/bjoern621/vsp-blockchain-registry-crawler:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_GRPC_ADDR_PORT
+                        value: "minimal-node:50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: SEED_UPDATE_INTERVAL
+                        value: "5m"
+                      - name: SEED_BOOTSTRAP_ENDPOINTS
+                        value: "miner-0.miner-headless:50051,miner-1.miner-headless:50051"
+                      - name: SEED_HOSTS_FILE
+                        value: "/seed/seed.hosts"
+                      - name: SEED_NAMESPACE
+                        value: vsp-blockchain
+                      - name: SEED_ENDPOINTS_NAME
+                        value: miner-seed
+                      - name: SEED_DNS_ZONE
+                        value: seed.local
+                  volumeMounts:
+                      - name: seed
+                        mountPath: /seed
+                  resources:
+                      requests:
+                          cpu: "100m"
+                          memory: "128Mi"
+                      limits:
+                          cpu: "500m"
+                          memory: "512Mi"
                 - name: coredns
                   image: coredns/coredns:1.11.3
                   args: ["-conf", "/etc/coredns/Corefile"]
@@ -90,9 +120,16 @@ spec:
                       - name: config
                         mountPath: /etc/coredns
                         readOnly: true
-                      - name: hosts
-                        mountPath: /etc/coredns/seed
+                      - name: seed
+                        mountPath: /seed
                         readOnly: true
+                  resources:
+                      requests:
+                          cpu: "100m"
+                          memory: "128Mi"
+                      limits:
+                          cpu: "500m"
+                          memory: "512Mi"
                   livenessProbe:
                       httpGet:
                           path: /health
@@ -112,25 +149,8 @@ spec:
                       items:
                           - key: Corefile
                             path: Corefile
-                - name: hosts
-                  configMap:
-                      name: seed-dns-hosts
-                      items:
-                          - key: seed.hosts
-                            path: seed.hosts
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-    name: seed-dns-hosts
-    namespace: vsp-blockchain
-data:
-    seed.hosts: |
-        # Managed by registry-crawler. One line per IP.
-        # Static test list (safe to delete once dynamic updates are verified).
-        10.233.111.83 miner-seed.seed.local. miner-seed.vsp-blockchain.seed.local.
-        10.233.116.166 miner-seed.seed.local. miner-seed.vsp-blockchain.seed.local.
+                - name: seed
+                  emptyDir: {}
 
 ---
 apiVersion: v1

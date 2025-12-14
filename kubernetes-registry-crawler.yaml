@@ -40,7 +40,7 @@ metadata:
     name: registry-crawler
     namespace: vsp-blockchain
 spec:
-    replicas: 1
+    replicas: 0
     selector:
         matchLabels:
             app: registry-crawler
@@ -55,25 +55,30 @@ spec:
                   image: ghcr.io/bjoern621/vsp-blockchain-registry-crawler:latest
                   imagePullPolicy: Always
                   env:
+                      - name: APP_GRPC_ADDR_PORT
+                        value: "minimal-node:50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: SEED_UPDATE_INTERVAL
+                        value: "60s"
+                      - name: SEED_BOOTSTRAP_ENDPOINTS
+                        value: "miner-0.miner-headless:50051,miner-1.miner-headless:50051"
+                      - name: SEED_HOSTS_FILE
+                        value: "/seed/seed.hosts"
                       - name: SEED_NAMESPACE
                         value: vsp-blockchain
                       - name: SEED_ENDPOINTS_NAME
                         value: miner-seed
-                      - name: SEED_UPDATE_INTERVAL
-                        value: 10s
-                      - name: SEED_OVERRIDE_IPS
-                        value: "10.233.116.166,10.233.111.83"
-                      - name: SEED_BOOTSTRAP_ENDPOINTS
-                        value: ""
-                      - name: SEED_DNS_CONFIGMAP_NAME
-                        value: seed-dns-hosts
-                      - name: SEED_DNS_HOSTS_KEY
-                        value: seed.hosts
                       - name: SEED_DNS_ZONE
                         value: seed.local
-                      - name: SEED_DNS_DEBUG_RANDOM_IPS
-                        value: "false"
                   ports:
                       - name: p2p
                         containerPort: 50051
                         protocol: TCP
+                  resources:
+                      requests:
+                          cpu: "100m"
+                          memory: "128Mi"
+                      limits:
+                          cpu: "500m"
+                          memory: "512Mi"

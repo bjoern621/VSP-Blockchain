@@ -7,11 +7,11 @@
 # - spv: Ein SPV-Knoten mit einfacher Blockchain, Wallet und App-Komponente
 # - rest-api: REST-Schnittstelle, nutzt spv als gRPC-App-Endpunkt
 
-# - seed-dns: Ein CoreDNS-Dienst, der zur Auflösung der IPs genutzt wird
+# - registry: Ein CoreDNS-Dienst, der zur Auflösung der IPs genutzt wird
 
 # IP-Adressbereiche:
 # - 172.28.1.x: P2P-Knoten (minimal_node, miner2-4, spv)
-# - 172.28.2.x: Infrastruktur (registry-crawler, seed-dns)
+# - 172.28.2.x: Infrastruktur (registry-crawler, registry)
 # - 172.28.3.x: API(s) (rest-api)
 
 services:
@@ -112,7 +112,7 @@ services:
             - miner3
             - miner4
             - spv
-            - seed-dns
+            - registry
         environment:
             APP_GRPC_ADDR_PORT: "172.28.1.10:50050" # Pointing to minimal_node, should normally point to localhost but its easier this way in docker-compose
             P2P_PORT: "50051"
@@ -120,12 +120,12 @@ services:
             SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
             SEED_HOSTS_FILE: "/seed/seed.hosts"
         volumes:
-            - seed-dns-hosts:/seed
+            - registry-hosts:/seed
         networks:
             vsp-net:
                 ipv4_address: 172.28.2.1
 
-    seed-dns:
+    registry:
         image: coredns/coredns:1.11.3
         command: ["-conf", "/etc/coredns/Corefile"]
         ports:
@@ -133,7 +133,7 @@ services:
             - "1053:53/tcp"
         volumes:
             - ./registry/Corefile:/etc/coredns/Corefile:ro
-            - seed-dns-hosts:/seed:ro
+            - registry-hosts:/seed:ro
         networks:
             vsp-net:
                 ipv4_address: 172.28.2.2
@@ -146,7 +146,7 @@ services:
         depends_on:
             - spv
         environment:
-            GRPC_ADDR_PORT: "172.28.1.20:50051"
+            APP_GRPC_ADDR_PORT: "172.28.1.20:50050"
         ports:
             - "8080:8080"
         networks:
@@ -162,4 +162,4 @@ networks:
                   gateway: 172.28.0.1
 
 volumes:
-    seed-dns-hosts: {}
+    registry-hosts: {}
