@@ -20,10 +20,11 @@ func newMockHandshakeInitiator() *mockHandshakeInitiator {
 	}
 }
 
-func (m *mockHandshakeInitiator) InitiateHandshake(peerID peer.PeerID) {
+func (m *mockHandshakeInitiator) InitiateHandshake(peerID peer.PeerID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.initiateHandshakeCalls = append(m.initiateHandshakeCalls, peerID)
+	return nil
 }
 
 func (m *mockHandshakeInitiator) getInitiateHandshakeCallCount() int {

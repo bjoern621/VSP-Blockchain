@@ -32,6 +32,12 @@ const (
 
 	// Required. duration, interval between seed updates. Format: Go duration (e.g. "30s", "1m").
 	seedUpdateIntervalEnvVar = "SEED_UPDATE_INTERVAL"
+	// Optional. duration, interval between peer discovery attempts. Default: 10s. Should be lower than SEED_UPDATE_INTERVAL.
+	peerDiscoveryIntervalEnvVar = "PEER_DISCOVERY_INTERVAL"
+	// Optional. duration, TTL for known peers before re-verification. Default: 15m.
+	peerKnownTTLEnvVar = "PEER_KNOWN_TTL"
+	// Optional. int, number of random known peers to use for registry updates. Default: 5.
+	peerRegistrySubsetSizeEnvVar = "PEER_REGISTRY_SUBSET_SIZE"
 	// Optional. string, comma-separated list of allowed peer IDs. Empty allows all miners.
 	seedAllowedPeerIDsEnvVar = "SEED_ALLOWED_PEER_IDS"
 	// Optional. string, comma-separated list of static override IPs. Bypasses peer discovery.
@@ -49,10 +55,13 @@ const (
 
 // Default configuration values.
 const (
-	defaultSeedNamespace     = "vsp-blockchain"
-	defaultSeedEndpointsName = "miner-seed"
-	defaultSeedDNSZone       = "seed.local"
-	defaultDebugCIDR         = "203.0.113.0/24" // TEST-NET-3
+	defaultSeedNamespace          = "vsp-blockchain"
+	defaultSeedEndpointsName      = "miner-seed"
+	defaultSeedDNSZone            = "seed.local"
+	defaultDebugCIDR              = "203.0.113.0/24" // TEST-NET-3
+	defaultPeerDiscoveryInterval  = 10 * time.Second
+	defaultPeerKnownTTL           = 15 * time.Minute
+	defaultPeerRegistrySubsetSize = 5
 )
 
 // Atomic configuration storage.
@@ -65,7 +74,10 @@ var (
 	seedName      atomic.Value // string
 	seedDNSZone   atomic.Value // string
 
-	seedUpdateIntervalNs atomic.Int64
+	seedUpdateIntervalNs    atomic.Int64
+	peerDiscoveryIntervalNs atomic.Int64
+	peerKnownTTLNs          atomic.Int64
+	peerRegistrySubsetSize  atomic.Int32
 
 	seedAllowedPeerIDs atomic.Value // map[string]struct{}
 	seedOverrideIPs    atomic.Value // []string
@@ -83,6 +95,9 @@ func init() {
 	seedName.Store(cfg.seedName)
 	seedDNSZone.Store(cfg.seedDNSZone)
 	seedUpdateIntervalNs.Store(cfg.seedUpdateEvery.Nanoseconds())
+	peerDiscoveryIntervalNs.Store(cfg.peerDiscoveryInterval.Nanoseconds())
+	peerKnownTTLNs.Store(cfg.peerKnownTTL.Nanoseconds())
+	peerRegistrySubsetSize.Store(int32(cfg.peerRegistrySubsetSize))
 	seedAllowedPeerIDs.Store(cfg.allowedPeerIDs)
 	seedOverrideIPs.Store(cfg.overrideIPs)
 	seedBootstrapEPs.Store(cfg.bootstrapEndpoints)
@@ -90,17 +105,20 @@ func init() {
 }
 
 type envSnapshot struct {
-	appAddr            string
-	p2pPort            uint16
-	seedHostsFile      string
-	seedNamespace      string
-	seedName           string
-	seedDNSZone        string
-	seedUpdateEvery    time.Duration
-	allowedPeerIDs     map[string]struct{}
-	overrideIPs        []string
-	bootstrapEndpoints []string
-	seedDNSDebug       DNSDebugConfig
+	appAddr                string
+	p2pPort                uint16
+	seedHostsFile          string
+	seedNamespace          string
+	seedName               string
+	seedDNSZone            string
+	seedUpdateEvery        time.Duration
+	peerDiscoveryInterval  time.Duration
+	peerKnownTTL           time.Duration
+	peerRegistrySubsetSize int
+	allowedPeerIDs         map[string]struct{}
+	overrideIPs            []string
+	bootstrapEndpoints     []string
+	seedDNSDebug           DNSDebugConfig
 }
 
 // readAndValidateEnvironment reads and validates all environment variables.
@@ -108,6 +126,10 @@ func readAndValidateEnvironment() envSnapshot {
 	appAddr := env.ReadNonEmptyRequiredEnv(appGrpcAddrPortEnvVar)
 	p2p := mustReadRequiredPort(p2pPortEnvVar)
 	interval := mustReadRequiredDuration(seedUpdateIntervalEnvVar)
+
+	peerDiscovery := readOptionalDurationWithDefault(peerDiscoveryIntervalEnvVar, defaultPeerDiscoveryInterval)
+	peerTTL := readOptionalDurationWithDefault(peerKnownTTLEnvVar, defaultPeerKnownTTL)
+	subsetSize := readOptionalIntWithDefault(peerRegistrySubsetSizeEnvVar, defaultPeerRegistrySubsetSize)
 
 	seedHostsFileVal := ""
 	if raw, ok := env.ReadOptionalEnv(seedHostsFileEnvVar); ok {
@@ -124,17 +146,20 @@ func readAndValidateEnvironment() envSnapshot {
 	dnsDebug := readDNSDebugConfigOrDie()
 
 	return envSnapshot{
-		appAddr:            appAddr,
-		p2pPort:            p2p,
-		seedHostsFile:      seedHostsFileVal,
-		seedNamespace:      seedNS,
-		seedName:           seedNameVal,
-		seedDNSZone:        seedDNSZoneVal,
-		seedUpdateEvery:    interval,
-		allowedPeerIDs:     allowedPeerIDs,
-		overrideIPs:        overrideIPs,
-		bootstrapEndpoints: bootstrapEPs,
-		seedDNSDebug:       dnsDebug,
+		appAddr:                appAddr,
+		p2pPort:                p2p,
+		seedHostsFile:          seedHostsFileVal,
+		seedNamespace:          seedNS,
+		seedName:               seedNameVal,
+		seedDNSZone:            seedDNSZoneVal,
+		seedUpdateEvery:        interval,
+		peerDiscoveryInterval:  peerDiscovery,
+		peerKnownTTL:           peerTTL,
+		peerRegistrySubsetSize: subsetSize,
+		allowedPeerIDs:         allowedPeerIDs,
+		overrideIPs:            overrideIPs,
+		bootstrapEndpoints:     bootstrapEPs,
+		seedDNSDebug:           dnsDebug,
 	}
 }
 
@@ -162,6 +187,42 @@ func mustReadRequiredDuration(key string) time.Duration {
 		panic(fmt.Sprintf("%s: %v", key, err))
 	}
 	return d
+}
+
+// readOptionalDurationWithDefault reads an optional duration environment variable with a default.
+func readOptionalDurationWithDefault(key string, defaultValue time.Duration) time.Duration {
+	raw, ok := env.ReadOptionalEnv(key)
+	if !ok {
+		return defaultValue
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return defaultValue
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		logger.Warnf("%s: invalid duration %q, using default %s: %v", key, raw, defaultValue, err)
+		return defaultValue
+	}
+	return d
+}
+
+// readOptionalIntWithDefault reads an optional int environment variable with a default.
+func readOptionalIntWithDefault(key string, defaultValue int) int {
+	raw, ok := env.ReadOptionalEnv(key)
+	if !ok {
+		return defaultValue
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return defaultValue
+	}
+	v, err := strconv.Atoi(raw)
+	if err != nil {
+		logger.Warnf("%s: invalid int %q, using default %d: %v", key, raw, defaultValue, err)
+		return defaultValue
+	}
+	return v
 }
 
 // readOptionalBool reads an optional boolean environment variable.
@@ -269,16 +330,19 @@ func readDNSDebugConfigOrDie() DNSDebugConfig {
 // CurrentConfig returns the current runtime configuration.
 func CurrentConfig() Config {
 	return Config{
-		AppAddr:       appGrpcAddr.Load().(string),
-		P2PPort:       uint16(p2pPort.Load()),
-		SeedHostsFile: seedHostsFile.Load().(string),
-		SeedNamespace: seedNamespace.Load().(string),
-		SeedName:      seedName.Load().(string),
-		SeedDNSZone:   seedDNSZone.Load().(string),
-		SeedDNSDebug:  seedDNSDebug.Load().(DNSDebugConfig),
-		Bootstrap:     BootstrapConfig{Endpoints: seedBootstrapEPs.Load().([]string)},
-		UpdateEvery:   time.Duration(seedUpdateIntervalNs.Load()),
-		AllowedPeerID: seedAllowedPeerIDs.Load().(map[string]struct{}),
-		OverrideIPs:   seedOverrideIPs.Load().([]string),
+		AppAddr:                appGrpcAddr.Load().(string),
+		P2PPort:                uint16(p2pPort.Load()),
+		SeedHostsFile:          seedHostsFile.Load().(string),
+		SeedNamespace:          seedNamespace.Load().(string),
+		SeedName:               seedName.Load().(string),
+		SeedDNSZone:            seedDNSZone.Load().(string),
+		SeedDNSDebug:           seedDNSDebug.Load().(DNSDebugConfig),
+		Bootstrap:              BootstrapConfig{Endpoints: seedBootstrapEPs.Load().([]string)},
+		UpdateEvery:            time.Duration(seedUpdateIntervalNs.Load()),
+		PeerDiscoveryInterval:  time.Duration(peerDiscoveryIntervalNs.Load()),
+		PeerKnownTTL:           time.Duration(peerKnownTTLNs.Load()),
+		PeerRegistrySubsetSize: int(peerRegistrySubsetSize.Load()),
+		AllowedPeerID:          seedAllowedPeerIDs.Load().(map[string]struct{}),
+		OverrideIPs:            seedOverrideIPs.Load().([]string),
 	}
 }

@@ -21,6 +21,10 @@ func main() {
 
 	cfg := CurrentConfig()
 
+	logger.Infof("peer discovery interval: %s, known TTL: %s, registry subset size: %d",
+		cfg.PeerDiscoveryInterval, cfg.PeerKnownTTL, cfg.PeerRegistrySubsetSize)
+
+	go runPeerDiscoveryLoop(cfg)
 	go runSeedUpdaterLoop(cfg)
 
 	select {}

@@ -45,6 +45,10 @@ func (s *handshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
 		s.outboundPeerResolver.RegisterPeer(peerID, addrPort)
 	}
 
-	s.handshakeInitiator.InitiateHandshake(peerID)
+	err := s.handshakeInitiator.InitiateHandshake(peerID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

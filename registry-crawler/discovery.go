@@ -17,19 +17,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// fetchSeedTargets discovers node IPs that have blockchain_full subsystem from the P2P network.
+// fetchBootstrapPeers resolves bootstrap endpoints to IP addresses.
 // Returns a set of IP addresses and the P2P port.
-// Uses bootstrap endpoints for initial connectivity, then queries the app service for connected peers.
-func fetchSeedTargets(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
+func fetchBootstrapPeers(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
 	bootstrapTargets := parseBootstrapTargets(ctx, cfg)
+	return bootstrapTargets, int32(cfg.P2PPort), nil
+}
 
+// fetchNetworkPeers queries the app service for connected peers from the P2P network.
+// Returns a set of IP addresses and the P2P port.
+func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
 	if len(cfg.OverrideIPs) > 0 {
 		ips := map[string]struct{}{}
 		for _, ipString := range cfg.OverrideIPs {
 			ips[ipString] = struct{}{}
-		}
-		for ip := range bootstrapTargets {
-			ips[ip] = struct{}{}
 		}
 		return ips, int32(cfg.P2PPort), nil
 	}
@@ -48,14 +49,11 @@ func fetchSeedTargets(ctx context.Context, cfg Config) (map[string]struct{}, int
 
 	resp, err := client.GetInternalPeerInfo(ctx, &pb.GetInternalPeerInfoRequest{})
 	if err != nil {
-		return bootstrapTargets, int32(cfg.P2PPort), nil
+		return nil, int32(cfg.P2PPort), nil
 	}
 
 	ips := map[string]struct{}{}
 	port := int32(cfg.P2PPort)
-	for ip := range bootstrapTargets {
-		ips[ip] = struct{}{}
-	}
 
 	for _, entry := range resp.GetEntries() {
 		if entry == nil {

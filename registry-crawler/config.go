@@ -23,8 +23,14 @@ type Config struct {
 	SeedDNSDebug DNSDebugConfig
 	// Bootstrap contains bootstrap peer endpoints.
 	Bootstrap BootstrapConfig
-	// UpdateEvery is the interval between seed updates.
+	// UpdateEvery is the interval between seed registry updates.
 	UpdateEvery time.Duration
+	// PeerDiscoveryInterval is the interval between peer discovery attempts.
+	PeerDiscoveryInterval time.Duration
+	// PeerKnownTTL is the TTL for known peers before re-verification.
+	PeerKnownTTL time.Duration
+	// PeerRegistrySubsetSize is the number of random known peers to use for registry updates.
+	PeerRegistrySubsetSize int
 	// AllowedPeerID filters peers by ID when non-empty.
 	AllowedPeerID map[string]struct{}
 	// OverrideIPs bypasses peer discovery with static IPs when non-empty.
