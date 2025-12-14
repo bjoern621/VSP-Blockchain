@@ -2,14 +2,14 @@ package block
 
 import (
 	"fmt"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/constants"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 )
 
-type PublicKeyHash [constants.PublicKeyHashSize]byte
+type PublicKeyHash [common.PublicKeyHashSize]byte
 
 func NewPublicKeyHash(bytes []byte) (PublicKeyHash, error) {
-	if (len(bytes)) != constants.PublicKeyHashSize {
+	if (len(bytes)) != common.PublicKeyHashSize {
 		return PublicKeyHash{}, fmt.Errorf("invalid public key hash length")
 	}
 	var hash PublicKeyHash

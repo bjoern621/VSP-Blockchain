@@ -2,12 +2,12 @@ package transaction
 
 import (
 	"crypto/sha256"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/constants"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
 
-type PubKeyHash [constants.PublicKeyHashSize]byte
+type PubKeyHash [common.PublicKeyHashSize]byte
 
-type PubKey [constants.PublicKeySize]byte
+type PubKey [common.PublicKeySize]byte
 
 // Hash160 Uses SHA256 to double Hash the 33 Byte public key to a 20 Byte public key hash also known as Address
 func Hash160(pub PubKey) PubKeyHash {

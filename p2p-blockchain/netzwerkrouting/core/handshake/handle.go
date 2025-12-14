@@ -10,16 +10,16 @@ import (
 // HandshakeMsgHandler defines the interface for handling incoming connection messages.
 // This interface is implemented in the core/domain layer and used by the infrastructure layer.
 type HandshakeMsgHandler interface {
-	HandleVersion(peerID peer.PeerID, info VersionInfo)
-	HandleVerack(peerID peer.PeerID, info VersionInfo)
-	HandleAck(peerID peer.PeerID)
+	HandleVersion(peerID common.PeerId, info VersionInfo)
+	HandleVerack(peerID common.PeerId, info VersionInfo)
+	HandleAck(peerID common.PeerId)
 }
 
 func checkVersionCompatibility(string) bool {
 	return true
 }
 
-func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
+func (h *HandshakeService) HandleVersion(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Version message", peerID)
@@ -54,7 +54,7 @@ func (h *HandshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	go h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
 
-func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
+func (h *HandshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
@@ -83,7 +83,7 @@ func (h *HandshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 	go h.handshakeMsgSender.SendAck(peerID)
 }
 
-func (h *HandshakeService) HandleAck(peerID peer.PeerID) {
+func (h *HandshakeService) HandleAck(peerID common.PeerId) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)

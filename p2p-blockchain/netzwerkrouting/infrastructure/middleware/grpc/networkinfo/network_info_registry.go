@@ -4,6 +4,7 @@ package networkinfo
 
 import (
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
@@ -29,24 +30,24 @@ type NetworkInfoEntry struct {
 // One PeerID represents one real remote node.
 type NetworkInfoRegistry struct {
 	mu                      sync.RWMutex
-	listeningEndpointToPeer map[netip.AddrPort]peer.PeerID
-	inboundAddrToPeer       map[netip.AddrPort]peer.PeerID
-	networkInfoEntries      map[peer.PeerID]*NetworkInfoEntry
+	listeningEndpointToPeer map[netip.AddrPort]common.PeerId
+	inboundAddrToPeer       map[netip.AddrPort]common.PeerId
+	networkInfoEntries      map[common.PeerId]*NetworkInfoEntry
 	peerCreator             peer.PeerCreator
 }
 
 func NewNetworkInfoRegistry(peerCreator peer.PeerCreator) *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{
-		listeningEndpointToPeer: make(map[netip.AddrPort]peer.PeerID),
-		inboundAddrToPeer:       make(map[netip.AddrPort]peer.PeerID),
-		networkInfoEntries:      make(map[peer.PeerID]*NetworkInfoEntry),
+		listeningEndpointToPeer: make(map[netip.AddrPort]common.PeerId),
+		inboundAddrToPeer:       make(map[netip.AddrPort]common.PeerId),
+		networkInfoEntries:      make(map[common.PeerId]*NetworkInfoEntry),
 		peerCreator:             peerCreator,
 	}
 }
 
 // GetPeerIDByAddr looks up a peer by address and port.
 // Searches both listening endpoints and inbound addresses.
-func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID, bool) {
+func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (common.PeerId, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -62,7 +63,7 @@ func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (peer.PeerID,
 }
 
 // RegisterPeer registers an existing peerID and a listening endpoint.
-func (r *NetworkInfoRegistry) RegisterPeer(peerID peer.PeerID, listeningEndpoint netip.AddrPort) {
+func (r *NetworkInfoRegistry) RegisterPeer(peerID common.PeerId, listeningEndpoint netip.AddrPort) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -82,7 +83,7 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID peer.PeerID, listeningEndpoint
 
 // GetOrRegisterPeer atomically looks up a peer by addresses, or registers a new one if not found.
 // Returns the peerID and true if the peer already existed, or the new peerID and false if created.
-func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) peer.PeerID {
+func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) common.PeerId {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -120,7 +121,7 @@ func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, list
 
 // AddInboundAddress adds an inbound address to a peer's list if not already present.
 // The peer must already exist.
-func (r *NetworkInfoRegistry) AddInboundAddress(peerID peer.PeerID, addr netip.AddrPort) {
+func (r *NetworkInfoRegistry) AddInboundAddress(peerID common.PeerId, addr netip.AddrPort) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -136,7 +137,7 @@ func (r *NetworkInfoRegistry) AddInboundAddress(peerID peer.PeerID, addr netip.A
 }
 
 // SetListeningEndpoint sets the listening endpoint for an existing peer.
-func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID peer.PeerID, listeningEndpoint netip.AddrPort) {
+func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID common.PeerId, listeningEndpoint netip.AddrPort) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -159,7 +160,7 @@ func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID peer.PeerID, listening
 }
 
 // SetConnection sets the outbound gRPC connection for an existing peer.
-func (r *NetworkInfoRegistry) SetConnection(peerID peer.PeerID, conn *grpc.ClientConn) {
+func (r *NetworkInfoRegistry) SetConnection(peerID common.PeerId, conn *grpc.ClientConn) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -172,7 +173,7 @@ func (r *NetworkInfoRegistry) SetConnection(peerID peer.PeerID, conn *grpc.Clien
 }
 
 // GetConnection returns the outbound gRPC connection for a peer.
-func (r *NetworkInfoRegistry) GetConnection(peerID peer.PeerID) (*grpc.ClientConn, bool) {
+func (r *NetworkInfoRegistry) GetConnection(peerID common.PeerId) (*grpc.ClientConn, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -184,7 +185,7 @@ func (r *NetworkInfoRegistry) GetConnection(peerID peer.PeerID) (*grpc.ClientCon
 }
 
 // GetListeningEndpoint returns the listening endpoint for a peer.
-func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID peer.PeerID) (netip.AddrPort, bool) {
+func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID common.PeerId) (netip.AddrPort, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -197,7 +198,7 @@ func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID peer.PeerID) (netip.Ad
 
 // GetOutboundPeer looks up a peer by address for outbound connections.
 // Returns the PeerID and true if found, empty string and false otherwise.
-func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.PeerID, bool) {
+func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (common.PeerId, bool) {
 	return r.GetPeerIDByAddr(addrPort)
 }
 

@@ -11,20 +11,20 @@ import (
 // It is implemented by the infrastructure layer.
 type HandshakeMsgSender interface {
 	// SendVersion sends a Version message to the specified peer.
-	SendVersion(peerID peer.PeerID, info VersionInfo)
+	SendVersion(peerID common.PeerId, info VersionInfo)
 	// SendVerack sends a Verack message to the specified peer.
-	SendVerack(peerID peer.PeerID, info VersionInfo)
+	SendVerack(peerID common.PeerId, info VersionInfo)
 	// SendAck sends an Ack message to the specified peer.
-	SendAck(peerID peer.PeerID)
+	SendAck(peerID common.PeerId)
 }
 
 // HandshakeInitiator defines the interface for initiating handshakes with peers.
 type HandshakeInitiator interface {
 	// InitiateHandshake starts the handshake process with the given peer.
-	InitiateHandshake(peerID peer.PeerID)
+	InitiateHandshake(peerID common.PeerId)
 }
 
-func (h *HandshakeService) InitiateHandshake(peerID peer.PeerID) {
+func (h *HandshakeService) InitiateHandshake(peerID common.PeerId) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("peer %s not found in store", peerID)

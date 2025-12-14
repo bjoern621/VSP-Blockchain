@@ -2,12 +2,12 @@ package grpc
 
 import (
 	"reflect"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"testing"
 	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
 // MockObserver struct used to verify that the Server correctly notifies observers.
@@ -40,39 +40,39 @@ func NewMockObserver() *MockObserver {
 
 // Implement the BlockchainObserverAPI interface
 
-func (m *MockObserver) Inv(invMsg dto.InvMsgDTO, _ peer.PeerID) {
+func (m *MockObserver) Inv(invMsg dto.InvMsgDTO, _ common.PeerId) {
 	m.InvCh <- invMsg
 }
 
-func (m *MockObserver) GetData(getDataMsg dto.GetDataMsgDTO, _ peer.PeerID) {
+func (m *MockObserver) GetData(getDataMsg dto.GetDataMsgDTO, _ common.PeerId) {
 	m.GetDataCh <- getDataMsg
 }
 
-func (m *MockObserver) Block(blockMsg dto.BlockMsgDTO, _ peer.PeerID) {
+func (m *MockObserver) Block(blockMsg dto.BlockMsgDTO, _ common.PeerId) {
 	m.BlockCh <- blockMsg
 }
 
-func (m *MockObserver) MerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, _ peer.PeerID) {
+func (m *MockObserver) MerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, _ common.PeerId) {
 	m.MerkleBlockCh <- merkleBlockMsg
 }
 
-func (m *MockObserver) Tx(txMsg dto.TxMsgDTO, _ peer.PeerID) {
+func (m *MockObserver) Tx(txMsg dto.TxMsgDTO, _ common.PeerId) {
 	m.TxCh <- txMsg
 }
 
-func (m *MockObserver) GetHeaders(locator dto.BlockLocatorDTO, _ peer.PeerID) {
+func (m *MockObserver) GetHeaders(locator dto.BlockLocatorDTO, _ common.PeerId) {
 	m.GetHeadersCh <- locator
 }
 
-func (m *MockObserver) Headers(headers dto.BlockHeadersDTO, _ peer.PeerID) {
+func (m *MockObserver) Headers(headers dto.BlockHeadersDTO, _ common.PeerId) {
 	m.HeadersCh <- headers
 }
 
-func (m *MockObserver) SetFilter(setFilterRequest dto.SetFilterRequestDTO, _ peer.PeerID) {
+func (m *MockObserver) SetFilter(setFilterRequest dto.SetFilterRequestDTO, _ common.PeerId) {
 	m.SetFilterCh <- setFilterRequest
 }
 
-func (m *MockObserver) Mempool(_ peer.PeerID) {
+func (m *MockObserver) Mempool(_ common.PeerId) {
 	m.MempoolCh <- struct{}{}
 }
 
@@ -110,7 +110,7 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 	server.observers[mockObs] = struct{}{}
 
 	// Shared test data
-	testPeerID := peer.PeerID("test-peer-123")
+	testPeerID := common.PeerId("test-peer-123")
 	timeout := time.Millisecond * 100
 
 	t.Run("NotifyInv", func(t *testing.T) {

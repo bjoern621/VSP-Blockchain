@@ -102,7 +102,7 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+func (c *Client) SendVersion(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
 		logger.Warnf("failed to send Version: no listening endpoint for peer %s", peerID)
@@ -129,7 +129,7 @@ func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo
 	}
 }
 
-func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+func (c *Client) SendVerack(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
 		logger.Warnf("failed to send Verack: no listening endpoint for peer %s", peerID)
@@ -156,7 +156,7 @@ func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo)
 	}
 }
 
-func (c *Client) SendAck(peerID peer.PeerID) {
+func (c *Client) SendAck(peerID common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
 	if !ok {
 		logger.Warnf("failed to send Ack: no connection for peer %s", peerID)

@@ -1,8 +1,8 @@
 package observer
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
 // ObservableBlockchainServerAPI defines the interface for an observable blockchain server.
@@ -14,13 +14,13 @@ type ObservableBlockchainServerAPI interface {
 	// Detach is called by the observer to detach itself from the server.
 	Detach(o BlockchainObserverAPI)
 
-	NotifyInv(invMsg dto.InvMsgDTO, peerID peer.PeerID)
-	NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID peer.PeerID)
-	NotifyBlock(blockMsg dto.BlockMsgDTO, peerID peer.PeerID)
-	NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID peer.PeerID)
-	NotifyTx(txMsg dto.TxMsgDTO, peerID peer.PeerID)
-	NotifyGetHeaders(blockLocator dto.BlockLocatorDTO, peerID peer.PeerID)
-	NotifyHeaders(headers dto.BlockHeadersDTO, peerID peer.PeerID)
-	NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID peer.PeerID)
-	NotifyMempool(peerID peer.PeerID)
+	NotifyInv(invMsg dto.InvMsgDTO, peerID common.PeerId)
+	NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId)
+	NotifyBlock(blockMsg dto.BlockMsgDTO, peerID common.PeerId)
+	NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID common.PeerId)
+	NotifyTx(txMsg dto.TxMsgDTO, peerID common.PeerId)
+	NotifyGetHeaders(blockLocator dto.BlockLocatorDTO, peerID common.PeerId)
+	NotifyHeaders(headers dto.BlockHeadersDTO, peerID common.PeerId)
+	NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID common.PeerId)
+	NotifyMempool(peerID common.PeerId)
 }

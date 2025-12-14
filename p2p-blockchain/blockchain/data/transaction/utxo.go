@@ -1,7 +1,7 @@
 package transaction
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/constants"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"sort"
 )
@@ -11,7 +11,7 @@ type UTXO struct {
 	OutputIndex uint32
 	Output      Output
 }
-type TransactionID [constants.HashSize]byte
+type TransactionID [common.HashSize]byte
 
 func NewTransactionIDFromDTO(h dto.Hash) TransactionID {
 	var id TransactionID

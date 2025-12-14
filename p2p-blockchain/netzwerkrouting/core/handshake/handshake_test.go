@@ -1,6 +1,7 @@
 package handshake
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"sync"
 	"testing"
 	"time"
@@ -10,32 +11,32 @@ import (
 
 type mockHandshakeMsgSender struct {
 	mu           sync.Mutex
-	versionCalls []peer.PeerID
-	verackCalls  []peer.PeerID
-	ackCalls     []peer.PeerID
+	versionCalls []common.PeerId
+	verackCalls  []common.PeerId
+	ackCalls     []common.PeerId
 }
 
 func newMockHandshakeMsgSender() *mockHandshakeMsgSender {
 	return &mockHandshakeMsgSender{
-		versionCalls: make([]peer.PeerID, 0),
-		verackCalls:  make([]peer.PeerID, 0),
-		ackCalls:     make([]peer.PeerID, 0),
+		versionCalls: make([]common.PeerId, 0),
+		verackCalls:  make([]common.PeerId, 0),
+		ackCalls:     make([]common.PeerId, 0),
 	}
 }
 
-func (m *mockHandshakeMsgSender) SendVersion(peerID peer.PeerID, info VersionInfo) {
+func (m *mockHandshakeMsgSender) SendVersion(peerID common.PeerId, info VersionInfo) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.versionCalls = append(m.versionCalls, peerID)
 }
 
-func (m *mockHandshakeMsgSender) SendVerack(peerID peer.PeerID, info VersionInfo) {
+func (m *mockHandshakeMsgSender) SendVerack(peerID common.PeerId, info VersionInfo) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.verackCalls = append(m.verackCalls, peerID)
 }
 
-func (m *mockHandshakeMsgSender) SendAck(peerID peer.PeerID) {
+func (m *mockHandshakeMsgSender) SendAck(peerID common.PeerId) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.ackCalls = append(m.ackCalls, peerID)
