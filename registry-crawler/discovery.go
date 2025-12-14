@@ -2,24 +2,24 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"net/netip"
+	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"s3b/vsp-blockchain/registry-crawler/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 // fetchSeedTargets discovers node IPs that have blockchain_full subsystem from the P2P network.
-// Returns a set of IP addresses and the P2P port. Uses bootstrap endpoints
-// for initial connectivity, then queries the app service for connected peers.
+// Returns a set of IP addresses and the P2P port.
+// Uses bootstrap endpoints for initial connectivity, then queries the app service for connected peers.
 func fetchSeedTargets(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
 	bootstrapTargets := parseBootstrapTargets(ctx, cfg)
 
@@ -34,11 +34,10 @@ func fetchSeedTargets(ctx context.Context, cfg Config) (map[string]struct{}, int
 		return ips, int32(cfg.P2PPort), nil
 	}
 
-	conn, err := dialAppGRPC(ctx, cfg.AppAddr, false)
+	conn, err := dialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer conn.Close()
 
 	client := pb.NewAppServiceClient(conn)
 
@@ -68,7 +67,7 @@ func fetchSeedTargets(ctx context.Context, cfg Config) (map[string]struct{}, int
 				continue
 			}
 		} else {
-			if !contains(entry.SupportedServices, "miner") {
+			if !slices.Contains(entry.SupportedServices, "miner") {
 				continue
 			}
 			if entry.ConnectionState != "connected" {
@@ -239,22 +238,31 @@ func splitHostPortOrDefault(token string, defaultPort int) (string, int, error) 
 	return host, port, nil
 }
 
+var (
+	appGRPCConnMu   sync.Mutex
+	appGRPCConn     *grpc.ClientConn
+	appGRPCConnAddr string
+)
+
 // dialAppGRPC establishes a gRPC connection to the app service.
-func dialAppGRPC(ctx context.Context, addr string, useTLS bool) (*grpc.ClientConn, error) {
-	if useTLS {
-		creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
-		return grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(creds))
-	}
+func dialAppGRPC(ctx context.Context, addr string) (*grpc.ClientConn, error) {
+	_ = ctx
 
-	return grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-}
+	appGRPCConnMu.Lock()
+	defer appGRPCConnMu.Unlock()
 
-// contains checks whether needle exists in items.
-func contains(items []string, needle string) bool {
-	for _, item := range items {
-		if item == needle {
-			return true
+	if appGRPCConn != nil {
+		if appGRPCConnAddr != addr {
+			return nil, fmt.Errorf("app grpc connection already initialized for %q; cannot reuse for %q", appGRPCConnAddr, addr)
 		}
+		return appGRPCConn, nil
 	}
-	return false
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+	appGRPCConn = conn
+	appGRPCConnAddr = addr
+	return appGRPCConn, nil
 }
