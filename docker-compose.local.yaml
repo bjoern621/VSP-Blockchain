@@ -25,7 +25,7 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "127.0.0.1"
+            APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, registry-crawler technically only needs 127.0.0.1
             P2P_LISTEN_ADDR: "172.28.1.10"
             ADDITIONAL_SERVICES: "app"
             LOG_LEVEL: "DEBUG"
@@ -131,7 +131,7 @@ services:
         environment:
             APP_PORT: "50050"
             P2P_PORT: "50051"
-            APP_LISTEN_ADDR: "127.0.0.1"
+            APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, rest-api technically only needs 127.0.0.1
             P2P_LISTEN_ADDR: "172.28.1.20"
             ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
             LOG_LEVEL: "DEBUG"
