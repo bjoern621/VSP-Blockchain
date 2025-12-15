@@ -8,10 +8,9 @@ import (
 )
 
 const (
-	DefaultP2PPort       = 50051
-	defaultAppPort       = 50050
-	VersionNumber        = 1
-	RegistrySeedHostname = "miner-seed.seed.local." // or "miner-seed.vsp-blockchain.seed.local.""
+	DefaultP2PPort = 50051
+	defaultAppPort = 50050
+	VersionNumber  = 1
 )
 
 var (

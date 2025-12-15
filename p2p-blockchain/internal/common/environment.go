@@ -14,20 +14,22 @@ import (
 )
 
 const (
-	appPortEnvVar            = "APP_PORT"
-	p2pPortEnvVar            = "P2P_PORT"
-	appListenAddrEnvVar      = "APP_LISTEN_ADDR" // a IP address the app server binds to, can be 127.0.0.1
-	p2pListenAddrEnvVar      = "P2P_LISTEN_ADDR" // a routable IP address the P2P server binds to
-	additionalServicesEnvVar = "ADDITIONAL_SERVICES"
+	appPortEnvVar              = "APP_PORT"
+	p2pPortEnvVar              = "P2P_PORT"
+	appListenAddrEnvVar        = "APP_LISTEN_ADDR" // a IP address the app server binds to, can be 127.0.0.1
+	p2pListenAddrEnvVar        = "P2P_LISTEN_ADDR" // a routable IP address the P2P server binds to
+	additionalServicesEnvVar   = "ADDITIONAL_SERVICES"
+	registrySeedHostnameEnvVar = "REGISTRY_SEED_HOSTNAME" // default: "miner-seed.seed.local."
 )
 
 var (
-	appPort            atomic.Uint32
-	p2pPort            atomic.Uint32
-	appListenAddr      atomic.Value // string
-	p2pListenAddr      atomic.Value // string
-	additionalServices atomic.Value // []string
-	initialized        atomic.Bool
+	appPort              atomic.Uint32
+	p2pPort              atomic.Uint32
+	appListenAddr        atomic.Value // string
+	p2pListenAddr        atomic.Value // string
+	additionalServices   atomic.Value // []string
+	initialized          atomic.Bool
+	registrySeedHostname atomic.Value // string
 )
 
 // Init reads all environment variables at startup.
@@ -49,6 +51,8 @@ func Init() {
 		appPort.Store(uint32(readAppPort()))
 		appListenAddr.Store(readListenAddr(appListenAddrEnvVar))
 	}
+
+	registrySeedHostname.Store(readRegistrySeedHostname())
 }
 
 func readAdditionalServices() []string {
@@ -71,6 +75,20 @@ func readAdditionalServices() []string {
 	}
 
 	return services
+}
+
+func readRegistrySeedHostname() string {
+	raw, found := env.ReadOptionalEnv(registrySeedHostnameEnvVar)
+	if !found {
+		return "miner-seed.seed.local."
+	}
+
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		logger.Errorf("%s cannot be empty", registrySeedHostnameEnvVar)
+	}
+
+	return raw
 }
 
 func validateAddionalServices(services []string) {
@@ -120,6 +138,11 @@ func AppListenAddr() string {
 func P2PListenAddr() string {
 	assertInitialized()
 	return p2pListenAddr.Load().(string)
+}
+
+func RegistrySeedHostnameEnv() string {
+	assertInitialized()
+	return registrySeedHostname.Load().(string)
 }
 
 func assertInitialized() {

@@ -52,7 +52,7 @@ func (r *dnsRegistryQuerier) QueryFullRegistry() ([]api.RegistryEntry, error) {
 
 // queryRegistry queries the DNS seed registry for available peer addresses.
 func (r *dnsRegistryQuerier) queryRegistry() ([]api.RegistryEntry, error) {
-	addrs, err := net.DefaultResolver.LookupNetIP(context.Background(), "ip4", common.RegistrySeedHostname)
+	addrs, err := net.DefaultResolver.LookupNetIP(context.Background(), "ip4", common.RegistrySeedHostnameEnv())
 	if err != nil {
 		return nil, err
 	}
