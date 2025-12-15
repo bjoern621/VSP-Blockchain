@@ -32,74 +32,6 @@ subjects:
       namespace: vsp-blockchain
 
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-    name: minimal-node
-    namespace: vsp-blockchain
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: minimal-node
-    template:
-        metadata:
-            labels:
-                app: minimal-node
-        spec:
-            dnsPolicy: None
-            dnsConfig:
-                nameservers:
-                    - 10.233.1.72
-            containers:
-                - name: node
-                  image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
-                  imagePullPolicy: Always
-                  env:
-                      - name: APP_PORT
-                        value: "50050"
-                      - name: P2P_PORT
-                        value: "50051"
-                      - name: APP_LISTEN_ADDR
-                        valueFrom:
-                            fieldRef:
-                                fieldPath: status.podIP
-                      - name: P2P_LISTEN_ADDR
-                        valueFrom:
-                            fieldRef:
-                                fieldPath: status.podIP
-                      - name: ADDITIONAL_SERVICES
-                        value: "app"
-                  ports:
-                      - name: app
-                        containerPort: 50050
-                        protocol: TCP
-                      - name: p2p
-                        containerPort: 50051
-                        protocol: TCP
-                  resources:
-                      requests:
-                          cpu: "100m"
-                          memory: "128Mi"
-                      limits:
-                          cpu: "500m"
-                          memory: "512Mi"
-
----
-apiVersion: v1
-kind: Service
-metadata:
-    name: minimal-node
-    namespace: vsp-blockchain
-spec:
-    selector:
-        app: minimal-node
-    ports:
-        - name: app
-          port: 50050
-          targetPort: 50050
-
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -135,6 +67,11 @@ metadata:
     namespace: vsp-blockchain
 spec:
     replicas: 1
+    strategy:
+        type: RollingUpdate
+        rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
     selector:
         matchLabels:
             app: registry
@@ -144,13 +81,49 @@ spec:
                 app: registry
         spec:
             serviceAccountName: registry
+            dnsPolicy: None
+            dnsConfig:
+                nameservers:
+                    - 10.233.1.72
             containers:
+                - name: minimal-node
+                  image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_PORT
+                        value: "50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: APP_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: P2P_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: ADDITIONAL_SERVICES
+                        value: "app"
+                  ports:
+                      - name: app
+                        containerPort: 50050
+                        protocol: TCP
+                      - name: p2p
+                        containerPort: 50051
+                        protocol: TCP
+                  resources:
+                      requests:
+                          cpu: "50m"
+                          memory: "64Mi"
+                      limits:
+                          cpu: "200m"
+                          memory: "128Mi"
                 - name: registry-crawler
                   image: ghcr.io/bjoern621/vsp-blockchain-registry-crawler:latest
                   imagePullPolicy: Always
                   env:
                       - name: APP_GRPC_ADDR_PORT
-                        value: "minimal-node:50050"
+                        value: "127.0.0.1:50050"
                       - name: ACCEPTED_P2P_PORT
                         value: "50051"
                       - name: SEED_UPDATE_INTERVAL
@@ -170,11 +143,11 @@ spec:
                         mountPath: /seed
                   resources:
                       requests:
-                          cpu: "100m"
-                          memory: "128Mi"
+                          cpu: "50m"
+                          memory: "64Mi"
                       limits:
-                          cpu: "500m"
-                          memory: "512Mi"
+                          cpu: "200m"
+                          memory: "128Mi"
                 - name: coredns
                   image: coredns/coredns:1.11.3
                   args: ["-conf", "/etc/coredns/Corefile"]
@@ -194,11 +167,11 @@ spec:
                         readOnly: true
                   resources:
                       requests:
+                          cpu: "25m"
+                          memory: "64Mi"
+                      limits:
                           cpu: "100m"
                           memory: "128Mi"
-                      limits:
-                          cpu: "500m"
-                          memory: "512Mi"
                   livenessProbe:
                       httpGet:
                           path: /health
