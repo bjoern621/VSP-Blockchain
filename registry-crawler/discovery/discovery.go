@@ -66,7 +66,7 @@ func ResolveBootstrapEndpoints(ctx context.Context, cfg common.Config) (map[stri
 // FetchNetworkPeers queries the app service for connected peers from the P2P network.
 // Returns a set of IP addresses and the P2P port.
 // Filters out:
-// - peers that do not support "blockchain-full" service
+// - peers that do not support "blockchain_full" service
 // - peers that do not use the accepted P2P port (standard port)
 func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struct{}, int32, error) {
 	conn, err := DialAppGRPC(ctx, cfg.AppAddr)
@@ -81,6 +81,8 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 		return nil, int32(cfg.AcceptedP2PPort), nil
 	}
 
+	logger.Tracef("fetched %d peers from app service total", len(resp.GetEntries()))
+
 	ips := map[string]struct{}{}
 	acceptedPort := uint16(cfg.AcceptedP2PPort)
 
@@ -89,7 +91,7 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 			continue
 		}
 
-		if !slices.Contains(entry.SupportedServices, "blockchain-full") {
+		if !slices.Contains(entry.SupportedServices, "blockchain_full") {
 			continue
 		}
 
