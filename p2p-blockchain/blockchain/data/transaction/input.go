@@ -1,4 +1,4 @@
-package Transaction
+package transaction
 
 type Input struct {
 	PrevTxID    TransactionID

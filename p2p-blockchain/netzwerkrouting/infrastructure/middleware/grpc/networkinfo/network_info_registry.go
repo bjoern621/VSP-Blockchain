@@ -4,6 +4,7 @@ package networkinfo
 
 import (
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 	"sync"
@@ -200,30 +201,28 @@ func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (peer.Pee
 	return r.GetPeerIDByAddr(addrPort)
 }
 
-// DEBUG:
-
-// FullNetworkInfo contains all available information about a peer.
-type FullNetworkInfo struct {
-	PeerID            peer.PeerID
-	ListeningEndpoint netip.AddrPort
-	InboundAddresses  []netip.AddrPort
-	HasOutboundConn   bool
-}
-
-// GetAllNetworkInfo returns all available information for all peers.
-func (r *NetworkInfoRegistry) GetAllNetworkInfo() []FullNetworkInfo {
+// GetAllInfrastructureInfo implements the InfrastructureInfoProvider interface from api.
+func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]FullNetworkInfo, 0, len(r.networkInfoEntries))
+	result := make(api.FullInfrastructureInfo, len(r.networkInfoEntries))
 	for peerID, entry := range r.networkInfoEntries {
-		info := FullNetworkInfo{
-			PeerID:            peerID,
-			ListeningEndpoint: entry.ListeningEndpoint,
-			InboundAddresses:  entry.InboundAddresses,
-			HasOutboundConn:   entry.OutboundConn != nil,
+		result[peerID] = map[string]any{
+			"peerID":            string(peerID),
+			"listeningEndpoint": entry.ListeningEndpoint.String(),
+			"inboundAddresses":  formatAddrPortsAsAny(entry.InboundAddresses),
+			"hasOutboundConn":   entry.OutboundConn != nil,
 		}
-		result = append(result, info)
+	}
+	return result
+}
+
+// formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.
+func formatAddrPortsAsAny(addrs []netip.AddrPort) []any {
+	result := make([]any, len(addrs))
+	for i, addr := range addrs {
+		result[i] = addr.String()
 	}
 	return result
 }

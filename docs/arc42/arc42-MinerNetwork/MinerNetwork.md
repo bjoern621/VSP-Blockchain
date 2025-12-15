@@ -882,7 +882,7 @@ Signaturprüfung:
 #### 3. PubKey-Bindung
 
 Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
-HASH160(PubKey) == UTXO.PubKeyHash <br>
+HASH160(Input.PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.
 
 ## AppAPI RPC vs. P2P Protkoll RPC

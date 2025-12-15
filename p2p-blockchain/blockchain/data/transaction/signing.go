@@ -1,4 +1,4 @@
-package Transaction
+package transaction
 
 import (
 	"crypto/ecdsa"
@@ -39,7 +39,7 @@ func (tx *Transaction) signInput(privateKey *ecdsa.PrivateKey, utxos []UTXO, inp
 	}
 
 	// DER-encode signature
-	sig, err := asn1.Marshal(ecdsaSignature{R: r, S: s})
+	sig, err := asn1.Marshal(EcdsaSignature{R: r, S: s})
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (tx *Transaction) signInput(privateKey *ecdsa.PrivateKey, utxos []UTXO, inp
 	return nil
 }
 
-type ecdsaSignature struct {
+type EcdsaSignature struct {
 	R, S *big.Int
 }
 
