@@ -14,7 +14,7 @@ import (
 // For example handshake_test.go depends on ADDITIONAL_SERVICES to have a value because NewHandshakeService.InitiateHandshake() calls NewLocalVersionInfo() which depends on this environment variable. Note that ADDITIONAL_SERVICES is optional and not relevant for the tests here.
 // P2P_LISTEN_ADDR is always a required environment variable.
 func TestMain(m *testing.M) {
-	os.Setenv("P2P_LISTEN_ADDR", "does not matter")
+	_ = os.Setenv("P2P_LISTEN_ADDR", "does not matter")
 	common.Init()
 	os.Exit(m.Run())
 }
@@ -77,7 +77,10 @@ func TestInitiateHandshake(t *testing.T) {
 
 	peerID := peerStore.NewOutboundPeer()
 
-	service.InitiateHandshake(peerID)
+	err := service.InitiateHandshake(peerID)
+	if err != nil {
+		t.Fatalf("unexpected error initiating handshake: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if sender.getVersionCallCount() != 1 {
@@ -106,7 +109,10 @@ func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 	p.State = peer.StateConnected
 	p.Unlock()
 
-	service.InitiateHandshake(peerID)
+	err := service.InitiateHandshake(peerID)
+	if err == nil {
+		t.Fatal("expected error initiating handshake for already connected peer, got nil")
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if sender.getVersionCallCount() != 0 {
