@@ -225,7 +225,7 @@ func (pm *PeerManager) CleanupExpired() int {
 		}
 	}
 	if removed > 0 {
-		logger.Debugf("cleaned up %d expired peers", removed)
+		logger.Infof("cleaned up %d expired peers", removed)
 	}
 	return removed
 }
