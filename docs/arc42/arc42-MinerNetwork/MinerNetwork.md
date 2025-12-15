@@ -266,6 +266,8 @@ Schnittstellen
         -   `InitiateHandshake(addrPort netip.AddrPort) error`
     -   `NetworkInfoAPI`
         -   `GetInternalPeerInfo() []PeerInfo`
+    -   `QueryRegistryAPI`
+        -   `QueryRegistry() ([]RegistryEntry, error)`
 -   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist die Blockchain Node nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
 
     | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                   |
@@ -275,7 +277,7 @@ Schnittstellen
     | Keepalive         | heartbeat            | Eng verbunden mit den Peer Discovery Funktionen. Ein Heartbeat wird in regelmäßigen Abständen an direkte Nachbarn gesendet, um inaktive Verbindungen zu erkennen.                                                              |
     | Error Handling    | reject               | Funktionen, die sich um Error Handling bemühen. Wirkt sich direkt auf die Fehlertransparenz (Distribution Transparency) aus.                                                                                                   |
 
-Die Schnittstellen sind in der `api/`-Schicht zu finden.
+Die meisten Schnittstellen sind in der `api/`-Schicht zu finden. `P2P-Protokoll-API` in der `infrastructure/`-Schicht.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
@@ -339,6 +341,7 @@ Schnittstellen
 
 -   `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
     -   `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
+    -   `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
     -   (weitere aufschreiben TODO)
 -   `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
