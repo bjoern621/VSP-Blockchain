@@ -1,4 +1,4 @@
-package main
+package discovery
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"s3b/vsp-blockchain/registry-crawler/common"
 	"s3b/vsp-blockchain/registry-crawler/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -17,9 +18,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// resolveBootstrapEndpoints resolves bootstrap endpoints to IP addresses.
+// ResolveBootstrapEndpoints resolves bootstrap endpoints to IP addresses.
 // Returns a set of IP addresses and the P2P port.
-func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]struct{}, int32) {
+func ResolveBootstrapEndpoints(ctx context.Context, cfg common.Config) (map[string]struct{}, int32) {
 	res := map[string]struct{}{}
 
 	endpoints := make([]string, 0, len(cfg.Bootstrap.Endpoints))
@@ -62,10 +63,10 @@ func resolveBootstrapEndpoints(ctx context.Context, cfg Config) (map[string]stru
 	return res, int32(cfg.AcceptedP2PPort)
 }
 
-// fetchNetworkPeers queries the app service for connected peers from the P2P network.
+// FetchNetworkPeers queries the app service for connected peers from the P2P network.
 // Returns a set of IP addresses and the P2P port.
-func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, int32, error) {
-	conn, err := dialAppGRPC(ctx, cfg.AppAddr)
+func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struct{}, int32, error) {
+	conn, err := DialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -119,9 +120,9 @@ func fetchNetworkPeers(ctx context.Context, cfg Config) (map[string]struct{}, in
 	return ips, int32(cfg.AcceptedP2PPort), nil
 }
 
-// connectToPeer attempts to connect to a single peer via the app service.
+// ConnectToPeer attempts to connect to a single peer via the app service.
 // Returns true if the connection succeeded or the peer is already connected.
-func connectToPeer(ctx context.Context, client pb.AppServiceClient, ip string, port int32) (success bool, err error) {
+func ConnectToPeer(ctx context.Context, client pb.AppServiceClient, ip string, port int32) (success bool, err error) {
 	parsed, parseErr := netip.ParseAddr(ip)
 	if parseErr != nil {
 		return false, fmt.Errorf("invalid peer IP %s: %w", ip, parseErr)
@@ -188,8 +189,8 @@ var (
 	appGRPCConnAddr string
 )
 
-// dialAppGRPC establishes a gRPC connection to the app service.
-func dialAppGRPC(ctx context.Context, addr string) (*grpc.ClientConn, error) {
+// DialAppGRPC establishes a gRPC connection to the app service.
+func DialAppGRPC(ctx context.Context, addr string) (*grpc.ClientConn, error) {
 	_ = ctx
 
 	appGRPCConnMu.Lock()

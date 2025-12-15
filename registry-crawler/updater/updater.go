@@ -1,4 +1,4 @@
-package main
+package updater
 
 import (
 	"context"
@@ -6,32 +6,37 @@ import (
 	"strings"
 	"time"
 
+	"s3b/vsp-blockchain/registry-crawler/common"
+	"s3b/vsp-blockchain/registry-crawler/discovery"
 	"s3b/vsp-blockchain/registry-crawler/internal/pb"
+	"s3b/vsp-blockchain/registry-crawler/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // peerManager is the global peer manager instance.
-var peerManager *PeerManager
+var peerManager *peer.PeerManager
 
 // initPeerManager initializes the global peer manager with the configured TTL.
-func initPeerManager(cfg Config) {
+func initPeerManager(cfg common.Config) {
 	if peerManager == nil {
-		peerManager = NewPeerManager(cfg.PeerKnownTTL)
+		peerManager = peer.NewPeerManager(cfg.PeerKnownTTL)
 	}
 }
 
-// runPeerDiscoveryLoop runs the peer discovery loop in the background.
+// RunPeerDiscoveryLoop runs the peer discovery loop in the background.
 // Every PeerDiscoveryInterval, it attempts to connect to one new peer.
-func runPeerDiscoveryLoop(cfg Config) {
-	logger.Debugf("starting peer discovery loop with interval=%s", cfg.PeerDiscoveryInterval)
+func RunPeerDiscoveryLoop(cfg common.Config) {
+	logger.Infof("starting peer discovery loop interval: %s, known TTL: %s, registry subset size: %d",
+		cfg.PeerDiscoveryInterval, cfg.PeerKnownTTL, cfg.PeerRegistrySubsetSize)
+
 	initPeerManager(cfg)
 
 	ticker := time.NewTicker(cfg.PeerDiscoveryInterval)
 	defer ticker.Stop()
 
 	for {
-		logger.Tracef("peer discovery tick")
+		logger.Tracef("=== peer discovery tick ===")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		discoverOnePeer(ctx, cfg)
 		cancel()
@@ -42,12 +47,12 @@ func runPeerDiscoveryLoop(cfg Config) {
 
 // discoverOnePeer attempts to discover and verify one peer.
 // It first tries to connect to StateNew peers, then re-verifies expired known peers.
-func discoverOnePeer(ctx context.Context, cfg Config) {
+func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	initPeerManager(cfg)
 
 	peerManager.CleanupExpired()
 
-	bootstrapPeers, port := resolveBootstrapEndpoints(ctx, cfg)
+	bootstrapPeers, port := discovery.ResolveBootstrapEndpoints(ctx, cfg)
 	if len(bootstrapPeers) > 0 {
 		added := peerManager.AddPeers(bootstrapPeers, port)
 		if added > 0 {
@@ -55,7 +60,7 @@ func discoverOnePeer(ctx context.Context, cfg Config) {
 		}
 	}
 
-	networkPeers, port, err := fetchNetworkPeers(ctx, cfg)
+	networkPeers, port, err := discovery.FetchNetworkPeers(ctx, cfg)
 	if err != nil {
 		logger.Warnf("failed to fetch network peers: %v", err)
 	}
@@ -93,8 +98,8 @@ func discoverOnePeer(ctx context.Context, cfg Config) {
 
 // verifyPeer attempts to connect to a peer to verify it is reachable.
 // Returns true if the peer responds correctly or is already connected.
-func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
-	conn, err := dialAppGRPC(ctx, cfg.AppAddr)
+func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) bool {
+	conn, err := discovery.DialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
 		logger.Warnf("failed to dial app service: %v", err)
 		return false
@@ -102,23 +107,25 @@ func verifyPeer(ctx context.Context, cfg Config, ip string, port int32) bool {
 
 	client := pb.NewAppServiceClient(conn)
 
-	success, err := connectToPeer(ctx, client, ip, port)
+	success, err := discovery.ConnectToPeer(ctx, client, ip, port)
 	if err != nil {
 		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
 	}
 	return success
 }
 
-// runSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.
+// RunSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.
 // This loop runs indefinitely, updating the hosts file at the configured interval.
-func runSeedUpdaterLoop(cfg Config) {
-	logger.Debugf("starting seed updater loop with interval=%s", cfg.UpdateEvery)
+func RunSeedUpdaterLoop(cfg common.Config) {
+	logger.Infof("starting seed updater loop with interval=%s", cfg.UpdateEvery)
 	initPeerManager(cfg)
 
 	ticker := time.NewTicker(cfg.UpdateEvery)
 	defer ticker.Stop()
 
 	for {
+
+		logger.Tracef("=== seed updater tick ===")
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		err := updateSeedHostsOnce(ctx, cfg)
 		cancel()
@@ -131,7 +138,7 @@ func runSeedUpdaterLoop(cfg Config) {
 }
 
 // updateSeedHostsOnce fetches seed targets from known peers and writes the DNS hosts file once.
-func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
+func updateSeedHostsOnce(ctx context.Context, cfg common.Config) error {
 	var seedIPs map[string]struct{}
 	seedPort := int32(cfg.AcceptedP2PPort)
 
@@ -139,7 +146,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
 	if len(seedIPs) == 0 {
 		logger.Debugf("no known peers, falling back to bootstrap targets")
-		bootstrapIPs, _ := resolveBootstrapEndpoints(ctx, cfg)
+		bootstrapIPs, _ := discovery.ResolveBootstrapEndpoints(ctx, cfg)
 		for ip := range bootstrapIPs {
 			seedIPs[ip] = struct{}{}
 		}
@@ -178,7 +185,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg Config) error {
 }
 
 // determineSource returns a string describing the source of seed targets.
-func determineSource(cfg Config, knownPeerCount int) string {
+func determineSource(cfg common.Config, knownPeerCount int) string {
 	if cfg.SeedDNSDebug.Enabled {
 		return "debug-random"
 	}

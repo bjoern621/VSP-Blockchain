@@ -13,19 +13,19 @@
 package main
 
 import (
+	"s3b/vsp-blockchain/registry-crawler/common"
+	"s3b/vsp-blockchain/registry-crawler/updater"
+
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
 func main() {
 	logger.Infof("Running registry crawler...")
 
-	cfg := CurrentConfig()
+	cfg := common.CurrentConfig()
 
-	logger.Infof("peer discovery interval: %s, known TTL: %s, registry subset size: %d",
-		cfg.PeerDiscoveryInterval, cfg.PeerKnownTTL, cfg.PeerRegistrySubsetSize)
-
-	go runPeerDiscoveryLoop(cfg)
-	go runSeedUpdaterLoop(cfg)
+	go updater.RunPeerDiscoveryLoop(cfg)
+	go updater.RunSeedUpdaterLoop(cfg)
 
 	select {}
 }

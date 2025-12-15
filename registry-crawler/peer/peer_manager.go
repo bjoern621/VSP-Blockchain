@@ -1,4 +1,4 @@
-package main
+package peer
 
 import (
 	"math/rand"
@@ -58,9 +58,9 @@ func NewPeerManager(knownTTL time.Duration) *PeerManager {
 	}
 }
 
-// AddPeer adds a new peer if it does not exist or is expired.
+// addPeer adds a new peer if it does not exist or is expired.
 // Returns true if the peer was added as new.
-func (pm *PeerManager) AddPeer(ip string, port int32) bool {
+func (pm *PeerManager) addPeer(ip string, port int32) bool {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
 
@@ -95,7 +95,7 @@ func (pm *PeerManager) AddPeer(ip string, port int32) bool {
 func (pm *PeerManager) AddPeers(ips map[string]struct{}, port int32) int {
 	added := 0
 	for ip := range ips {
-		if pm.AddPeer(ip, port) {
+		if pm.addPeer(ip, port) {
 			added++
 		}
 	}
@@ -163,16 +163,6 @@ func (pm *PeerManager) MarkFailed(ip string) {
 
 	logger.Debugf("peer %s failed verification, removing", ip)
 	delete(pm.peers, ip)
-}
-
-// ResetToNew resets a connecting peer back to new state (for retries).
-func (pm *PeerManager) ResetToNew(ip string) {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-
-	if peer, ok := pm.peers[ip]; ok && peer.State == StateConnecting {
-		peer.State = StateNew
-	}
 }
 
 // GetKnownPeers returns all peers in StateKnown that are within the TTL.
