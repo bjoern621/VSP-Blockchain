@@ -1,4 +1,4 @@
-package Transaction
+package transaction
 
 import "sort"
 
