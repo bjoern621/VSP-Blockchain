@@ -102,9 +102,9 @@ func (pm *PeerManager) AddPeers(ips map[string]struct{}, port int32) int {
 	return added
 }
 
-// GetNextNewPeer returns a peer in StateNew and transitions it to StateConnecting.
+// GetNextUnverifiedPeer returns a peer in StateNew and transitions it to StateConnecting.
 // Returns nil if no StateNew peers are available.
-func (pm *PeerManager) GetNextNewPeer() *PeerInfo {
+func (pm *PeerManager) GetNextUnverifiedPeer() *PeerInfo {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
 

@@ -72,12 +72,12 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 		}
 	}
 
-	peer := peerManager.GetNextNewPeer()
+	peer := peerManager.GetNextUnverifiedPeer()
 	if peer == nil {
 		peer = peerManager.GetExpiredKnownPeer()
 	}
 	if peer == nil {
-		logger.Tracef("no peers to verify this cycle")
+		logger.Tracef("no peers to (re-)verify this cycle")
 		return
 	}
 

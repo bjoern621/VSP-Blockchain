@@ -65,6 +65,9 @@ func ResolveBootstrapEndpoints(ctx context.Context, cfg common.Config) (map[stri
 
 // FetchNetworkPeers queries the app service for connected peers from the P2P network.
 // Returns a set of IP addresses and the P2P port.
+// Filters out:
+// - peers that do not support "blockchain-full" service
+// - peers that do not use the accepted P2P port (standard port)
 func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struct{}, int32, error) {
 	conn, err := DialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
@@ -86,10 +89,7 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 			continue
 		}
 
-		if !slices.Contains(entry.SupportedServices, "miner") {
-			continue
-		}
-		if entry.ConnectionState != "connected" {
+		if !slices.Contains(entry.SupportedServices, "blockchain-full") {
 			continue
 		}
 
@@ -106,16 +106,16 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 		if err != nil {
 			continue
 		}
+
 		if ap.Port() != acceptedPort {
 			continue
 		}
-
 		addr := ap.Addr()
-		if !addr.Is4() {
-			continue
-		}
+
 		ips[addr.String()] = struct{}{}
 	}
+
+	logger.Tracef("fetched %d usable network peers from app service: %v", len(ips), ips)
 
 	return ips, int32(cfg.AcceptedP2PPort), nil
 }
@@ -190,6 +190,7 @@ var (
 )
 
 // DialAppGRPC establishes a gRPC connection to the app service.
+// Repeated calls with the same address will reuse the existing cached connection.
 func DialAppGRPC(ctx context.Context, addr string) (*grpc.ClientConn, error) {
 	_ = ctx
 

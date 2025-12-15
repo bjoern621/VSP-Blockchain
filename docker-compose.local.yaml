@@ -135,7 +135,7 @@ services:
             SEED_UPDATE_INTERVAL: "60s"
             SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
             SEED_HOSTS_FILE: "/seed/seed.hosts"
-            LOG_LEVEL: "DEBUG"
+            LOG_LEVEL: "TRACE"
             PEER_DISCOVERY_INTERVAL: "30s"
             ACCEPTED_P2P_PORT: "50051"
         volumes:

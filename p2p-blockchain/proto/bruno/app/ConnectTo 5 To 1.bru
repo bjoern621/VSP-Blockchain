@@ -1,0 +1,24 @@
+meta {
+  name: ConnectTo 5 To 1
+  type: grpc
+  seq: 12
+}
+
+grpc {
+  url: localhost:20005
+  method: /app.AppService/ConnectTo
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {
+      "ip_address": "rBwBCg==", 
+      "port": 50051
+    }
+  '''
+}
