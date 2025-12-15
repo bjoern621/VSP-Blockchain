@@ -1,0 +1,69 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: miner
+    namespace: vsp-blockchain
+spec:
+    serviceName: miner-headless
+    replicas: 10
+    selector:
+        matchLabels:
+            app: miner
+    template:
+        metadata:
+            labels:
+                app: miner
+        spec:
+            dnsPolicy: None
+            dnsConfig:
+                nameservers:
+                    - 10.233.1.72
+            containers:
+                - name: miner
+                  image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_PORT
+                        value: "50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: APP_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: P2P_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: ADDITIONAL_SERVICES
+                        value: "miner, blockchain_full, app"
+                  ports:
+                      - name: app
+                        containerPort: 50050
+                        protocol: TCP
+                      - name: p2p
+                        containerPort: 50051
+                        protocol: TCP
+                  resources:
+                      requests:
+                          cpu: "100m"
+                          memory: "128Mi"
+                      limits:
+                          cpu: "500m"
+                          memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: miner-headless
+    namespace: vsp-blockchain
+spec:
+    clusterIP: None
+    selector:
+        app: miner
+    ports:
+        - name: p2p
+          port: 50051
+          targetPort: 50051

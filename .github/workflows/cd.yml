@@ -115,7 +115,9 @@ jobs:
                   KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
-                  kubectl apply -f kubernetes-deployment-prod.yaml
+                  kubectl apply -f kubernetes-miner.yaml
+                  kubectl apply -f kubernetes-registry.yaml
+                  kubectl apply -f kubernetes-rest_api.yaml
 
             - name: Update images to newly published tag
               env:

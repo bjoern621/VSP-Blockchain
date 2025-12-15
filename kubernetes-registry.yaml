@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -29,6 +30,74 @@ subjects:
     - kind: ServiceAccount
       name: registry
       namespace: vsp-blockchain
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: minimal-node
+    namespace: vsp-blockchain
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: minimal-node
+    template:
+        metadata:
+            labels:
+                app: minimal-node
+        spec:
+            dnsPolicy: None
+            dnsConfig:
+                nameservers:
+                    - 10.233.1.72
+            containers:
+                - name: node
+                  image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_PORT
+                        value: "50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: APP_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: P2P_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: ADDITIONAL_SERVICES
+                        value: "app"
+                  ports:
+                      - name: app
+                        containerPort: 50050
+                        protocol: TCP
+                      - name: p2p
+                        containerPort: 50051
+                        protocol: TCP
+                  resources:
+                      requests:
+                          cpu: "100m"
+                          memory: "128Mi"
+                      limits:
+                          cpu: "500m"
+                          memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: minimal-node
+    namespace: vsp-blockchain
+spec:
+    selector:
+        app: minimal-node
+    ports:
+        - name: app
+          port: 50050
+          targetPort: 50050
 
 ---
 apiVersion: v1
