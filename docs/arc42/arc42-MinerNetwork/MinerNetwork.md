@@ -132,6 +132,8 @@ Qualitäts-/Leistungsmerkmale
 
 -   Distribution Transparency  
     Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z.&nbsp;B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
+-   Single Point of Failure  
+    Es existiert insgesamt nur eine zentrale Registry. Diese kann zum Bottleneck bzw. Single Point of Failure werden. Fällt die Registry aus, können neue Peers dem Netzwerk nicht mehr beitreten, da sie keine initialen IP-Adressen erhalten. Dies schränkt die [Resilience](#qualitätsanforderungen) des Gesamtsystems ein. Bereits verbundene Peers sind davon nicht betroffen, da sie über [Peer Discovery](#peer-discovery) weitere Verbindungen aufbauen können.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
