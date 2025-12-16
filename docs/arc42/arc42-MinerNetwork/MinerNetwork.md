@@ -885,18 +885,64 @@ Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
 HASH160(Input.PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.
 
-## AppAPI RPC vs. P2P Protkoll RPC
+## AppAPI RPC vs. P2P Protokoll RPC
 
--   AppService generell synchorn, vorgesehen, dass nur über localhost kommuniziert wird
--   dient der interaktion zur lokalen node für externe system (wie rest api)
--   verlinkung auf bitcoin referenz
+Das System unterscheidet zwei Arten von RPC-Schnittstellen, die sich in Zweck, Kommunikationsart und Einsatzbereich grundlegend unterscheiden.
 
--   P2p protkoll rpc ist dagegen netzwerkübergreifend
--   ist durch middleware abstreahierd
--   verlinkung zu protofiles
--   ist generell asynchron
+### AppAPI
 
--   falls nicht klar genug: udpatepeers und getpeers gehört weder zu AppService noch zu vsgoin p2p protkoll
+Die AppAPI ist eine synchrone RPC-Schnittstelle, die für die lokale Kommunikation über localhost vorgesehen ist. Sie dient externen Systemen (z.&nbsp;B. der [REST-API](https://github.com/bjoern621/VSP-Blockchain/tree/main/rest-schnittstelle), CLI-Tools) als Einstiegspunkt zur Interaktion mit der lokalen Node.
+
+Eigenschaften:
+
+| Eigenschaft              | Beschreibung                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| Kommunikationsart        | Synchron, Request-Response                                                                        |
+| Erreichbarkeit           | Vorrangig localhost                                                                               |
+| Zweck                    | Steuerung der lokalen Node durch externe Anwendungen                                              |
+| Schnittstellendefinition | [app.proto](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) |
+
+**Begründung für synchrone Kommunikation**
+
+Obwohl in verteilten Systemen generell asynchrone Kommunikation bevorzugt wird (siehe [ADR 2](#adr-2-entscheidung-für-asynchrone-transiente-und-zustandslose-kommunikation)), ist synchrone Kommunikation bei der AppAPI sinnvoll. Die Gründe für asynchrone Kommunikation in verteilten Systemen basieren auf den Pitfalls der Verteilten Systeme (Skript VS-Becke-V0.9-6, S. 39-41). Bei localhost-Kommunikation treffen diese Annahmen jedoch nicht zu (Auswahl von Pitfalls):
+
+| Pitfall                          | Situation bei localhost                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Das Netzwerk ist immer verfügbar | Localhost ist grundsätzlich immer erreichbar (solange der Computer nicht versagt)                      |
+| Die Latenzzeit ist 0             | Latenz deutlich schneller als über ein Netzwerk, vergleichbar zu IPC (keine Netzwerkübertragung nötig) |
+| Die Bandbreite ist unbegrenzt    | Bandbreite verglichen mit Netzwerk praktisch unbegrenzt                                                |
+| Das Netzwerk ist sicher          | Keine externen Angreifer (solange System selbst richtig konfiguriert ist)                              |
+| Topologie ändert sich nicht      | Topologie ist statisch                                                                                 |
+| Transportkosten sind null        | Keine Transportkosten                                                                                  |
+
+Da diese Pitfalls bei localhost zum Großteil nicht zutreffen, entfallen die Hauptargumente für asynchrone Kommunikation. Synchrone Kommunikation dagegen bietet in diesem Kontext Vorteile:
+
+-   **Leichteres Debuggen**: Request-Response ist leichter zu debuggen, weil der Programmfluss Schritt für Schritt nachvollzogen werden kann. Es wird nie an einer unbestimmten anderen Stelle, zu unbestimmter Zeit geantwortet.
+-   **Bessere Kontrolle**: Der Aufrufer erhält sofort eine Antwort und kann auf Fehler oder Bestätigungen direkt reagieren. Oft möchte der Benutzer (das externe System) eine direkte Antwort, ob die Operation geglückt ist.
+-   **Geringere Komplexität**: Keine Notwendigkeit für Callback-Mechanismen oder Event-Handling.
+
+Die AppAPI orientiert sich konzeptionell an der [Bitcoin Core JSON-RPC API](https://developer.bitcoin.org/reference/rpc/index.html), die ebenfalls eine synchrone lokale Schnittstelle zur Steuerung einer Node bereitstellt.
+
+### P2P Protokoll RPC
+
+Das P2P Protokoll RPC ist die netzwerkübergreifende Schnittstelle zur Kommunikation zwischen Nodes im verteilten Netzwerk. Im Gegensatz zur AppAPI ist diese Schnittstelle asynchron und für die Kommunikation über das Internet ausgelegt.
+
+Eigenschaften:
+
+| Eigenschaft              | Beschreibung                                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Kommunikationsart        | Asynchron (siehe [ADR 2](#adr-2-entscheidung-für-asynchrone-transiente-und-zustandslose-kommunikation))                                                                                                                                    |
+| Erreichbarkeit           | Netzwerkübergreifend (Internet)                                                                                                                                                                                                            |
+| Zweck                    | Kommunikation zwischen Peers im P2P-Netzwerk                                                                                                                                                                                               |
+| Middleware               | Durch [gRPC-Middleware](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) abstrahiert                                                                                                           |
+| Schnittstellendefinition | [netzwerkrouting.proto](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto), [blockchain.proto](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) |
+
+### Abgrenzung zur Registry-Schnittstelle
+
+Die Funktionen `updatepeers` und `getpeers` gehören weder zur AppAPI noch zum V$Goin P2P Protokoll, da sie nicht zur Kommunikation zwischen Peers verwendet werden. Beide sind Teil der [Registry-Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry):
+
+-   `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
+-   `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
 
 ## V$Goin P2P Protokoll
 
