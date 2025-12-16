@@ -152,7 +152,7 @@ Hinweise: Der Name _Node(s)_ wurde gewählt, um Namenskonflikte mit späteren Da
 
 Schnittstellen
 
--   `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle.
+-   `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle. Siehe auch [AppAPI vs. P2P Protokoll API](#appapi-rpc-vs-p2p-protokoll-rpc) zur Abgrenzung.
 
 ## Ebene 2
 
