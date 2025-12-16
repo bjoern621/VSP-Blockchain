@@ -399,7 +399,7 @@ stateDiagram-v2
     running --> merkleBlock_received: ReceiveMerkleBlock()
     merkleBlock_received --> running: HandleMerkleBlock()
 
-    running --> tx_received: ReceiveTx()
+    running --> transaction_received: ReceiveTx()
     tx_received --> running: HandleTx()
 
     running --> getHeaders_received: ReceiveGetHeaders()
