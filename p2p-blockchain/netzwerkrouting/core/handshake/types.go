@@ -49,6 +49,7 @@ func (v *VersionInfo) validateRequiresBlockchain() error {
 
 // TryAddService tries to add a service to supportedServices with domain rule validation.
 // Returns true if the service was added successfully, false otherwise.
+// See also AddService for the rules.
 func (v *VersionInfo) TryAddService(svc ...peer.ServiceType) error {
 	for _, s := range svc {
 		err := v.addService(s)
@@ -70,6 +71,8 @@ func (v *VersionInfo) TryAddService(svc ...peer.ServiceType) error {
 //   - blockchain_full and blockchain_simple are mutually exclusive.
 //   - wallet requires blockchain_full or blockchain_simple.
 //   - miner requires blockchain_full or blockchain_simple.
+//
+// If multiple services need to be added, consider adding them in a single call. This ensures order-independent addition.
 func (v *VersionInfo) AddService(svc ...peer.ServiceType) {
 	for _, s := range svc {
 		err := v.addService(s)
@@ -119,11 +122,13 @@ func NewLocalVersionInfo() VersionInfo {
 		Version: common.VersionString,
 	}
 
+	var services []peer.ServiceType
 	for _, svcString := range common.EnabledTeilsystemeNames() {
 		svc, ok := peer.ParseServiceType(svcString)
 		assert.Assert(ok, "enabled service is not a valid ServiceType:", svcString)
-		info.AddService(svc)
+		services = append(services, svc)
 	}
+	info.AddService(services...)
 
 	return info
 }
