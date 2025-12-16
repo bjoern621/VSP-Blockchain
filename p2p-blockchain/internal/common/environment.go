@@ -4,6 +4,7 @@ import (
 	"math"
 	"net/netip"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -117,7 +118,7 @@ func validateAddionalServices(services []string) {
 
 func getAdditionalServices() []string {
 	assertInitialized()
-	return additionalServices.Load().([]string)
+	return slices.Clone(additionalServices.Load().([]string))
 }
 
 func AppPort() uint16 {

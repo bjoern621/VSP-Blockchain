@@ -67,19 +67,20 @@ func VersionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.Ad
 		}
 	}
 
-	services := make([]peer.ServiceType, 0, len(info.SupportedServices))
+	versionInfo := handshake.VersionInfo{
+		Version: info.GetVersion(),
+	}
+
 	for _, pbService := range info.SupportedServices {
 		if svc, ok := serviceTypeFromProto(pbService); ok {
-			services = append(services, svc)
+			// todo verfiy order
+			versionInfo.AddService(svc)
 		} else {
 			logger.Warnf("unknown proto ServiceType: %v", pbService)
 		}
 	}
 
-	return handshake.VersionInfo{
-		Version:           info.GetVersion(),
-		SupportedServices: services,
-	}, endpoint
+	return versionInfo, endpoint
 }
 
 // VersionInfoToProto converts domain VersionInfo to protobuf VersionInfo.
@@ -91,7 +92,7 @@ func VersionInfoToProto(info handshake.VersionInfo, addrPort netip.AddrPort) *pb
 			ListeningPort: uint32(addrPort.Port()),
 		},
 	}
-	for _, service := range info.SupportedServices {
+	for _, service := range info.SupportedServices() {
 		pbInfo.SupportedServices = append(pbInfo.SupportedServices, serviceTypeToProto(service))
 	}
 	return pbInfo

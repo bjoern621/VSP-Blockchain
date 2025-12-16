@@ -41,7 +41,7 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// Valid
 
 	p.Version = info.Version
-	p.SupportedServices = info.SupportedServices
+	p.SupportedServices = info.SupportedServices()
 
 	versionInfo := NewLocalVersionInfo()
 
@@ -74,7 +74,7 @@ func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 
 	p.State = peer.StateConnected
 	p.Version = info.Version
-	p.SupportedServices = info.SupportedServices
+	p.SupportedServices = info.SupportedServices()
 
 	go h.handshakeMsgSender.SendAck(peerID)
 }

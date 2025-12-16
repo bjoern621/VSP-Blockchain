@@ -127,11 +127,10 @@ func TestHandleVersion(t *testing.T) {
 
 	peerID := peerStore.NewInboundPeer()
 
-	services := []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull}
 	versionInfo := VersionInfo{
-		Version:           "2.5.1",
-		SupportedServices: services,
+		Version: "2.5.1",
 	}
+	versionInfo.AddService(peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull)
 
 	service.HandleVersion(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -165,11 +164,10 @@ func TestHandleVerack(t *testing.T) {
 	p.State = peer.StateAwaitingVerack
 	p.Unlock()
 
-	services := []peer.ServiceType{peer.ServiceType_Miner}
 	versionInfo := VersionInfo{
-		Version:           "1.5.0",
-		SupportedServices: services,
+		Version: "1.5.0",
 	}
+	versionInfo.AddService(peer.ServiceType_Miner)
 
 	service.HandleVerack(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
