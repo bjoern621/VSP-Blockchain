@@ -20,10 +20,11 @@ func newMockHandshakeInitiator() *mockHandshakeInitiator {
 	}
 }
 
-func (m *mockHandshakeInitiator) InitiateHandshake(peerID peer.PeerID) {
+func (m *mockHandshakeInitiator) InitiateHandshake(peerID peer.PeerID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.initiateHandshakeCalls = append(m.initiateHandshakeCalls, peerID)
+	return nil
 }
 
 func (m *mockHandshakeInitiator) getInitiateHandshakeCallCount() int {
@@ -115,14 +116,33 @@ func TestInitiateHandshake_SameAddressAndPort(t *testing.T) {
 		t.Fatalf("first handshake failed: %v", err1)
 	}
 
-	// Try to initiate handshake with same address again
-	err2 := api.InitiateHandshake(addrPort)
-	if err2 == nil {
-		t.Error("expected error for duplicate peer, got nil")
+	peerID1, exists1 := resolver.GetOutboundPeer(addrPort)
+	if !exists1 {
+		t.Fatal("expected peer to be registered after first handshake")
 	}
 
-	if initiator.getInitiateHandshakeCallCount() != 1 {
-		t.Errorf("expected 1 InitiateHandshake call, got %d", initiator.getInitiateHandshakeCallCount())
+	// Try to initiate handshake with same address again.
+	// The API service is expected to reuse the already-registered peer and delegate
+	// success/failure to the handshake initiator.
+	err2 := api.InitiateHandshake(addrPort)
+	if err2 != nil {
+		t.Fatalf("second handshake failed unexpectedly: %v", err2)
+	}
+
+	peerID2, exists2 := resolver.GetOutboundPeer(addrPort)
+	if !exists2 {
+		t.Fatal("expected peer to still be registered after second handshake")
+	}
+	if peerID1 != peerID2 {
+		t.Fatalf("expected same peerID to be reused, got %s then %s", peerID1, peerID2)
+	}
+
+	if initiator.getInitiateHandshakeCallCount() != 2 {
+		t.Errorf("expected 2 InitiateHandshake calls, got %d", initiator.getInitiateHandshakeCallCount())
+	}
+
+	if resolver.getRegisteredPeerCount() != 1 {
+		t.Errorf("expected 1 registered peer, got %d", resolver.getRegisteredPeerCount())
 	}
 }
 

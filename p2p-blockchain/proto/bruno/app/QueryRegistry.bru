@@ -1,0 +1,21 @@
+meta {
+  name: QueryRegistry
+  type: grpc
+  seq: 8
+}
+
+grpc {
+  url: localhost:20001
+  method: /app.AppService/QueryRegistry
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}

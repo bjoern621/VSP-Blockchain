@@ -8,6 +8,7 @@ import (
 	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -18,23 +19,25 @@ import (
 // Server represents the app gRPC server for external local systems.
 type Server struct {
 	pb.UnimplementedAppServiceServer
-	grpcServer  *grpc.Server
-	listener    net.Listener
-	connService *core.ConnectionEstablishmentService
-	regService  *core.InternalViewService
+	grpcServer           *grpc.Server
+	listener             net.Listener
+	connService          *core.ConnectionEstablishmentService
+	regService           *core.InternalViewService
+	queryRegistryService *core.QueryRegistryService
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService) *Server {
 	return &Server{
-		connService: connService,
-		regService:  regService,
+		connService:          connService,
+		regService:           regService,
+		queryRegistryService: queryRegistryService,
 	}
 }
 
 // Start starts the external API gRPC server on the given port in a goroutine.
 func (s *Server) Start(port uint16) error {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	addr := fmt.Sprintf("%s:%d", common.AppListenAddr(), port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", addr, err)
@@ -123,6 +126,27 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 		}
 
 		response.Entries = append(response.Entries, entry)
+	}
+
+	return response, nil
+}
+
+// QueryRegistry queries the DNS seed registry for available peer addresses.
+func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest) (*pb.QueryRegistryResponse, error) {
+	entries, err := s.queryRegistryService.QueryRegistry()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &pb.QueryRegistryResponse{
+		Entries: make([]*pb.RegistryEntry, 0, len(entries)),
+	}
+
+	for _, entry := range entries {
+		response.Entries = append(response.Entries, &pb.RegistryEntry{
+			IpAddress: entry.IPAddress.String(),
+			PeerId:    string(entry.PeerID),
+		})
 	}
 
 	return response, nil
