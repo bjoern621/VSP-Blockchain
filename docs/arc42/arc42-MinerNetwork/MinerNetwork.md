@@ -400,7 +400,7 @@ stateDiagram-v2
     merkleBlock_received --> running: HandleMerkleBlock()
 
     running --> transaction_received: ReceiveTx()
-    tx_received --> running: HandleTx()
+    transaction_received --> running: HandleTx()
 
     running --> getHeaders_received: ReceiveGetHeaders()
     getHeaders_received --> running: HandleGetHeaders()
@@ -428,7 +428,13 @@ Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dar
 
 ```mermaid
 stateDiagram-v2
-    [*] --> initiateHandshake: InitiateHandshake()
+    direction LR
+    state peer_check <<choice>>
+    [*] --> initiate
+    initiate --> peer_check
+    peer_check --> no_peers: if len(peers) == 0
+    peer_check --> initiateHandshake : if len(peers) > 0
+    no_peers --> initiateHandshake : getPeers()
     [*] --> handleHandshake: HandleHandshake()
     
     state initiateHandshake {
