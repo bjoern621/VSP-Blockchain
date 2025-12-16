@@ -1,0 +1,59 @@
+// External API for local system communication.
+// This service provides an interface for external software on the local device
+// to interact with the p2p-blockchain node.
+// 
+// Note: This is different from the netzwerkrouting RPC which handles
+// peer-to-peer communication between nodes in the network.
+
+syntax="proto3";
+
+package app;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "./internal/pb";
+
+// AppService provides an interface for external local systems to interact with the node.
+service AppService {
+    // ConnectTo instructs the node to establish a connection to a peer at the given address.
+    //
+    // Post-conditions:
+    //  - Node attempts to connect to the specified peer.
+    //  - Returns success/failure status.
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse);
+
+    // GetInternalPeerInfo returns the current internal state per peer for debugging purposes.
+    rpc GetInternalPeerInfo(GetInternalPeerInfoRequest) returns (GetInternalPeerInfoResponse);
+}
+
+message ConnectToRequest {
+    // IP address of the peer to connect to (IPv4 or IPv6).
+    bytes ip_address = 1;
+    // Domain layer: uint16
+    uint32 port = 2;
+}
+
+message ConnectToResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+message GetInternalPeerInfoRequest {}
+
+message GetInternalPeerInfoResponse {
+    repeated InternalPeerInfoEntry entries = 1;
+}
+
+message InternalPeerInfoEntry {
+    string peer_id = 1;
+
+    // Infrastructure data as a JSON object.
+    // Uses google.protobuf.Struct which automatically serializes to native JSON.
+    google.protobuf.Struct infrastructure_data = 2;
+    
+    // Domain-Peer information
+    string version = 3; // Protocol version string
+    repeated string supported_services = 4;
+    string connection_state = 5;
+    string direction = 6;
+}

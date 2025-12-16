@@ -12,16 +12,20 @@ tasks:
 
     proto:
         desc: Generate gRPC code from shared and local .proto files
+        dir: ..
         cmds:
-            - protoc --proto_path=../proto --go_out=. --go-grpc_out=. ../proto/*.proto
-            - protoc --proto_path=./proto --go_out=. --go-grpc_out=. ./proto/*.proto
+            - buf generate
 
     prepare:
-        internal: true
         desc: Prepare the module for build
         cmds:
             - task: proto
             - task: tidy
+
+    test:
+        desc: Run tests with race detector
+        cmds:
+            - go test ./...
 
     build:
         desc: Build the docker image for p2p-miner
