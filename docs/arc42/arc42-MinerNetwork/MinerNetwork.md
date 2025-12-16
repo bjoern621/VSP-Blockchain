@@ -819,7 +819,7 @@ Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur de
 
 -   `PrevTxID` — 32-Byte ID der vorherigen Transaktion
 -   `Index` — Output-Index innerhalb der referenzierten Transaktion
--   `Signature` — Byte-Slice
+-   `Signature` — Byte-Array
 -   `PubKey` — PubKey
 
 **Zweck:**  
