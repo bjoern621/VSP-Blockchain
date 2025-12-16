@@ -167,7 +167,7 @@ func TestHandleVerack(t *testing.T) {
 	versionInfo := VersionInfo{
 		Version: "1.5.0",
 	}
-	versionInfo.AddService(peer.ServiceType_Miner)
+	versionInfo.AddService(peer.ServiceType_BlockchainFull, peer.ServiceType_Netzwerkrouting, peer.ServiceType_Miner)
 
 	service.HandleVerack(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -182,8 +182,8 @@ func TestHandleVerack(t *testing.T) {
 	if p.Version != "1.5.0" {
 		t.Errorf("expected version 1.5.0, got %s", p.Version)
 	}
-	if len(p.SupportedServices) != 1 {
-		t.Errorf("expected 1 supported service, got %d", len(p.SupportedServices))
+	if len(p.SupportedServices) != 3 {
+		t.Errorf("expected 3 supported service, got %d", len(p.SupportedServices))
 	}
 }
 
