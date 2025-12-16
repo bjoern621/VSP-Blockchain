@@ -102,6 +102,10 @@ jobs:
                   KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
+                  # Full redeploy: delete+apply ensures Kubernetes picks up all manifest changes.
+                  kubectl delete -f kubernetes-miner.yaml --ignore-not-found=true --wait=true
+                  kubectl delete -f kubernetes-registry.yaml --ignore-not-found=true --wait=true
+                  kubectl delete -f kubernetes-rest_api.yaml --ignore-not-found=true --wait=true
                   kubectl apply -f kubernetes-miner.yaml
                   kubectl apply -f kubernetes-registry.yaml
                   kubectl apply -f kubernetes-rest_api.yaml
@@ -121,6 +125,6 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
-                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
-                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=1200s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=300s
+                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=300s
