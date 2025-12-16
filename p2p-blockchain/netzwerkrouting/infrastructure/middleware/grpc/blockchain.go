@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
-	inboundAddr := GetPeerAddr(ctx)
+	inboundAddr := getPeerAddr(ctx)
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, netip.AddrPort{})
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 

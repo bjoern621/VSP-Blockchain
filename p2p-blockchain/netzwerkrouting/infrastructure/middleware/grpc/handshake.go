@@ -15,8 +15,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// GetPeerAddr extracts the remote peer address from the gRPC context.
-func GetPeerAddr(ctx context.Context) netip.AddrPort {
+// getPeerAddr extracts the remote peer address from the gRPC context.
+func getPeerAddr(ctx context.Context) netip.AddrPort {
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
 		logger.Errorf("could not get peer from context")
@@ -72,7 +72,7 @@ func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
 }
 
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	inboundAddr := GetPeerAddr(ctx)
+	inboundAddr := getPeerAddr(ctx)
 	info, addrPort := versionInfoFromProto(req)
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
@@ -84,7 +84,7 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 }
 
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
-	inboundAddr := GetPeerAddr(ctx)
+	inboundAddr := getPeerAddr(ctx)
 	info, addrPort := versionInfoFromProto(req)
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
