@@ -45,9 +45,9 @@ func NewNetworkInfoRegistry(peerCreator peer.PeerCreator) *NetworkInfoRegistry {
 	}
 }
 
-// GetPeerIDByAddr looks up a peer by address and port.
+// getPeerIDByAddr looks up a peer by address and port.
 // Searches both listening endpoints and inbound addresses.
-func (r *NetworkInfoRegistry) GetPeerIDByAddr(addr netip.AddrPort) (common.PeerId, bool) {
+func (r *NetworkInfoRegistry) getPeerIDByAddr(addr netip.AddrPort) (common.PeerId, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -199,7 +199,7 @@ func (r *NetworkInfoRegistry) GetListeningEndpoint(peerID common.PeerId) (netip.
 // GetOutboundPeer looks up a peer by address for outbound connections.
 // Returns the PeerID and true if found, empty string and false otherwise.
 func (r *NetworkInfoRegistry) GetOutboundPeer(addrPort netip.AddrPort) (common.PeerId, bool) {
-	return r.GetPeerIDByAddr(addrPort)
+	return r.getPeerIDByAddr(addrPort)
 }
 
 // GetAllInfrastructureInfo implements the InfrastructureInfoProvider interface from api.
