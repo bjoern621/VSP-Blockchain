@@ -10,6 +10,13 @@ on:
         branches:
             - "main"
 
+permissions:
+    contents: read
+
+concurrency:
+    group: miner-ci-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     PROJECT_FOLDER_NAME: p2p-blockchain
 
@@ -45,3 +52,5 @@ jobs:
                   context: ./p2p-blockchain/
                   push: false
                   tags: miner-vsp-blockchain:latest
+                  cache-from: type=gha,scope=miner
+                  cache-to: type=gha,mode=max,scope=miner

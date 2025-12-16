@@ -10,6 +10,13 @@ on:
         branches:
             - "main"
 
+permissions:
+    contents: read
+
+concurrency:
+    group: rest-ci-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     PROJECT_FOLDER_NAME: rest-schnittstelle
 
@@ -45,3 +52,5 @@ jobs:
                   context: ./rest-schnittstelle/
                   push: false
                   tags: rest-vsp-blockchain:latest
+                  cache-from: type=gha,scope=rest
+                  cache-to: type=gha,mode=max,scope=rest
