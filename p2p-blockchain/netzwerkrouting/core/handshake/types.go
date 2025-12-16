@@ -1,10 +1,19 @@
 package handshake
 
 import (
+	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"slices"
 
 	"bjoernblessin.de/go-utils/util/assert"
+)
+
+var (
+	ErrDuplicateService            = errors.New("duplicate service")
+	ErrMutuallyExclusiveBlockchain = errors.New("blockchain_full and blockchain_simple are mutually exclusive")
+	ErrWalletRequiresBlockchain    = errors.New("wallet requires blockchain_full or blockchain_simple")
+	ErrMinerRequiresBlockchain     = errors.New("miner requires blockchain_full or blockchain_simple")
 )
 
 type VersionInfo struct {
@@ -19,7 +28,43 @@ func (v *VersionInfo) SupportedServices() []peer.ServiceType {
 	return append([]peer.ServiceType(nil), v.supportedServices...)
 }
 
+// validateRequiresBlockchain checks that all domain rules are satisfied.
+// Rules:
+//   - wallet requires blockchain_full or blockchain_simple.
+//   - miner requires blockchain_full or blockchain_simple.
+func (v *VersionInfo) validateRequiresBlockchain() error {
+	hasBlockchain := slices.Contains(v.supportedServices, peer.ServiceType_BlockchainFull) ||
+		slices.Contains(v.supportedServices, peer.ServiceType_BlockchainSimple)
+
+	if slices.Contains(v.supportedServices, peer.ServiceType_Wallet) && !hasBlockchain {
+		return ErrWalletRequiresBlockchain
+	}
+
+	if slices.Contains(v.supportedServices, peer.ServiceType_Miner) && !hasBlockchain {
+		return ErrMinerRequiresBlockchain
+	}
+
+	return nil
+}
+
+// TryAddService tries to add a service to supportedServices with domain rule validation.
+// Returns true if the service was added successfully, false otherwise.
+func (v *VersionInfo) TryAddService(svc ...peer.ServiceType) error {
+	for _, s := range svc {
+		err := v.addService(s)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := v.validateRequiresBlockchain(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // AddService adds a service to supportedServices with domain rule validation.
+// Panics on validation errors.
 // Rules:
 //   - No duplicate services allowed.
 //   - blockchain_full and blockchain_simple are mutually exclusive.
@@ -27,30 +72,32 @@ func (v *VersionInfo) SupportedServices() []peer.ServiceType {
 //   - miner requires blockchain_full or blockchain_simple.
 func (v *VersionInfo) AddService(svc ...peer.ServiceType) {
 	for _, s := range svc {
-		v.addService(s)
+		err := v.addService(s)
+		assert.Assert(err == nil, err)
 	}
+	err := v.validateRequiresBlockchain()
+	assert.Assert(err == nil, err)
 }
 
-func (v *VersionInfo) addService(svc peer.ServiceType) {
-	for _, existing := range v.supportedServices {
-		assert.Assert(existing != svc, "duplicate service:", svc)
+func (v *VersionInfo) addService(svc peer.ServiceType) error {
+	if slices.Contains(v.supportedServices, svc) {
+		return ErrDuplicateService
 	}
 
 	if svc == peer.ServiceType_BlockchainFull {
-		for _, existing := range v.supportedServices {
-			assert.Assert(existing != peer.ServiceType_BlockchainSimple,
-				"blockchain_full and blockchain_simple are mutually exclusive")
+		if slices.Contains(v.supportedServices, peer.ServiceType_BlockchainSimple) {
+			return ErrMutuallyExclusiveBlockchain
 		}
 	}
 
 	if svc == peer.ServiceType_BlockchainSimple {
-		for _, existing := range v.supportedServices {
-			assert.Assert(existing != peer.ServiceType_BlockchainFull,
-				"blockchain_full and blockchain_simple are mutually exclusive")
+		if slices.Contains(v.supportedServices, peer.ServiceType_BlockchainFull) {
+			return ErrMutuallyExclusiveBlockchain
 		}
 	}
 
 	v.supportedServices = append(v.supportedServices, svc)
+	return nil
 }
 
 // handshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.

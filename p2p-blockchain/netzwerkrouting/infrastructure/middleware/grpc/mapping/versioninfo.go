@@ -1,13 +1,13 @@
 package mapping
 
 import (
+	"fmt"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/assert"
-	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // Mapping between proto ServiceType enum and domain ServiceType enum.
@@ -59,7 +59,8 @@ func serviceTypeToProto(service peer.ServiceType) pb.ServiceType {
 }
 
 // VersionInfoFromProto converts protobuf VersionInfo to domain VersionInfo.
-func VersionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.AddrPort) {
+// Returns an error if the service types are invalid or fail validation.
+func VersionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.AddrPort, error) {
 	var endpoint netip.AddrPort
 	if info.ListeningEndpoint != nil {
 		if ip, ok := netip.AddrFromSlice(info.ListeningEndpoint.IpAddress); ok {
@@ -67,20 +68,32 @@ func VersionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.Ad
 		}
 	}
 
+	services, err := serviceTypesFromProtoServiceTypes(info.SupportedServices)
+	if err != nil {
+		return handshake.VersionInfo{}, netip.AddrPort{}, fmt.Errorf("service type conversion failed: %w", err)
+	}
+
 	versionInfo := handshake.VersionInfo{
 		Version: info.GetVersion(),
 	}
 
-	for _, pbService := range info.SupportedServices {
-		if svc, ok := serviceTypeFromProto(pbService); ok {
-			// todo verfiy order
-			versionInfo.AddService(svc)
-		} else {
-			logger.Warnf("unknown proto ServiceType: %v", pbService)
-		}
+	if err := versionInfo.TryAddService(services...); err != nil {
+		return handshake.VersionInfo{}, netip.AddrPort{}, fmt.Errorf("version info construction failed: %w", err)
 	}
 
-	return versionInfo, endpoint
+	return versionInfo, endpoint, nil
+}
+
+func serviceTypesFromProtoServiceTypes(pbServices []pb.ServiceType) ([]peer.ServiceType, error) {
+	services := make([]peer.ServiceType, 0, len(pbServices))
+	for _, pbService := range pbServices {
+		svc, ok := serviceTypeFromProto(pbService)
+		if !ok {
+			return nil, fmt.Errorf("unknown proto ServiceType: %v", pbService)
+		}
+		services = append(services, svc)
+	}
+	return services, nil
 }
 
 // VersionInfoToProto converts domain VersionInfo to protobuf VersionInfo.

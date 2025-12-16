@@ -40,7 +40,10 @@ func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
 
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
-	info, addrPort := mapping.VersionInfoFromProto(req)
+	info, addrPort, err := mapping.VersionInfoFromProto(req)
+	if err != nil {
+		return &emptypb.Empty{}, nil
+	}
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
@@ -52,7 +55,10 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 
 func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
-	info, addrPort := mapping.VersionInfoFromProto(req)
+	info, addrPort, err := mapping.VersionInfoFromProto(req)
+	if err != nil {
+		return &emptypb.Empty{}, nil
+	}
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
