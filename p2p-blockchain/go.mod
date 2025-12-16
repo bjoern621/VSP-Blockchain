@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	bjoernblessin.de/go-utils v1.0.1
+	github.com/akamensky/base58 v0.0.0-20210829145138-ce8bf8802e8f
 	github.com/arch-go/arch-go v1.7.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.76.0

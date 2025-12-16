@@ -26,6 +26,12 @@ func main() {
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
 
+	/* For key generation
+	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
+	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
+	keyGeneratorApiImpl := api_wallet.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+	*/
+
 	logger.Infof("Starting App server...")
 
 	connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
