@@ -1,8 +1,6 @@
-name: CD
+name: CD (Disruptive)
 
 on:
-    push:
-        branches: ["main"]
     workflow_dispatch:
 
 permissions:
@@ -10,7 +8,7 @@ permissions:
     packages: write
 
 concurrency:
-    group: cd-${{ github.ref }}
+    group: cd-disruptive-${{ github.ref }}
     cancel-in-progress: true
 
 env:
@@ -65,7 +63,7 @@ jobs:
                   cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
     deploy:
-        name: Deploy to Kubernetes
+        name: Deploy to Kubernetes (Disruptive)
         needs: build-and-push
         runs-on: ubuntu-latest
         steps:
@@ -97,11 +95,14 @@ jobs:
                   echo_config: "false"
                   config_file: vpn.ovpn
 
-            - name: Deploy to Kubernetes
+            - name: Deploy to Kubernetes (delete + apply)
               env:
                   KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
+                  kubectl delete -f kubernetes-miner.yaml --ignore-not-found=true --wait=true
+                  kubectl delete -f kubernetes-registry.yaml --ignore-not-found=true --wait=true
+                  kubectl delete -f kubernetes-rest_api.yaml --ignore-not-found=true --wait=true
                   kubectl apply -f kubernetes-miner.yaml
                   kubectl apply -f kubernetes-registry.yaml
                   kubectl apply -f kubernetes-rest_api.yaml
@@ -121,6 +122,6 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
-                kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
-                kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=1200s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=300s
+                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=300s
