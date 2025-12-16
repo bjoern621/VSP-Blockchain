@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
-	"slices"
 	"strconv"
 	"strings"
 
 	"s3b/vsp-blockchain/registry-crawler/common"
-	"s3b/vsp-blockchain/registry-crawler/internal/pb"
-
-	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // ResolveBootstrapEndpoints resolves bootstrap endpoints to IP addresses.
@@ -79,65 +75,6 @@ func addIPv4ToSet(ip net.IP, result map[string]struct{}) {
 	if addr.Is4() {
 		result[addr.String()] = struct{}{}
 	}
-}
-
-// FetchNetworkPeers queries the app service for connected peers from the P2P network.
-// Returns a set of IP addresses and the P2P port.
-// Filters out:
-// - peers that do not support "blockchain_full" service
-// - peers that do not use the accepted P2P port (standard port)
-func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struct{}, int32, error) {
-	conn, err := DialAppGRPC(ctx, cfg.AppAddr)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	client := pb.NewAppServiceClient(conn)
-
-	resp, err := client.GetInternalPeerInfo(ctx, &pb.GetInternalPeerInfoRequest{})
-	if err != nil {
-		return nil, int32(cfg.AcceptedP2PPort), nil
-	}
-
-	logger.Tracef("fetched %d peers from app service total", len(resp.GetEntries()))
-
-	ips := map[string]struct{}{}
-	acceptedPort := uint16(cfg.AcceptedP2PPort)
-
-	for _, entry := range resp.GetEntries() {
-		if entry == nil {
-			continue
-		}
-
-		if !slices.Contains(entry.SupportedServices, "blockchain_full") {
-			continue
-		}
-
-		infra := entry.GetInfrastructureData()
-		if infra == nil {
-			continue
-		}
-		infraMap := infra.AsMap()
-		listeningEndpoint, ok := infraMap["listeningEndpoint"].(string)
-		if !ok {
-			continue
-		}
-		ap, err := netip.ParseAddrPort(strings.TrimSpace(listeningEndpoint))
-		if err != nil {
-			continue
-		}
-
-		if ap.Port() != acceptedPort {
-			continue
-		}
-		addr := ap.Addr()
-
-		ips[addr.String()] = struct{}{}
-	}
-
-	logger.Tracef("fetched %d usable network peers from app service: %v", len(ips), ips)
-
-	return ips, int32(cfg.AcceptedP2PPort), nil
 }
 
 // splitHostPortOrDefault splits a host:port string or uses the default port.
