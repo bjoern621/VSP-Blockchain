@@ -4,7 +4,7 @@ import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 
 // BlockHeader represents the header of a block in the blockchain.
 type BlockHeader struct {
-	Hash             Hash
+	PrevHash         Hash
 	MerkleRoot       Hash
 	Timestamp        int64
 	DifficultyTarget uint32
@@ -13,7 +13,7 @@ type BlockHeader struct {
 
 func NewBlockHeaderFromDTO(h dto.BlockHeaderDTO) BlockHeader {
 	return BlockHeader{
-		Hash:             NewHashFromDTO(h.PrevBlockHash),
+		PrevHash:         NewHashFromDTO(h.PrevBlockHash),
 		MerkleRoot:       NewHashFromDTO(h.MerkleRoot),
 		Timestamp:        h.Timestamp,
 		DifficultyTarget: h.DifficultyTarget,

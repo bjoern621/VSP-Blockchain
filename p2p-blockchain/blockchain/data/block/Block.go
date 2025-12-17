@@ -1,3 +1,4 @@
+// Package block provides data structures and functions for managing blocks in the blockchain.
 package block
 
 import (
@@ -8,7 +9,10 @@ import (
 // Block represents a block in the blockchain.
 // It consists of a BlockHeader and a list of Transactions.
 type Block struct {
-	Header       BlockHeader
+	Header BlockHeader
+	// Transactions holds all transactions included in the block.
+	// The first transaction is always the coinbase transaction.
+	// This slice should never be empty.
 	Transactions []transaction.Transaction
 }
 

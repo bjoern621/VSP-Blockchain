@@ -1,3 +1,4 @@
+// Package transaction provides data structures and functions for managing transactions in the blockchain.
 package transaction
 
 import (
