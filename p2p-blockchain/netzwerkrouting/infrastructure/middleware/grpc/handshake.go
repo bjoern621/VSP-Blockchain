@@ -6,7 +6,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/mapping"
 
 	"bjoernblessin.de/go-utils/util/logger"

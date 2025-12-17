@@ -47,12 +47,12 @@ func (s *PeerStore) RemovePeer(id common.PeerId) {
 
 // NewInboundPeer creates a new peer for an inbound connection.
 func (s *PeerStore) NewInboundPeer() common.PeerId {
-	return s.NewPeer(DirectionInbound)
+	return s.newPeer(DirectionInbound)
 }
 
 // NewOutboundPeer creates a new peer for an outbound connection.
 func (s *PeerStore) NewOutboundPeer() common.PeerId {
-	return s.NewPeer(DirectionOutbound)
+	return s.newPeer(DirectionOutbound)
 }
 
 func (s *PeerStore) NewPeer() common.PeerId {

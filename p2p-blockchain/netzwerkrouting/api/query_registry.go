@@ -2,13 +2,13 @@ package api
 
 import (
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
 
 // RegistryEntry represents a single peer address entry from the DNS registry.
 type RegistryEntry struct {
 	IPAddress netip.Addr
-	PeerID    peer.PeerID
+	PeerID    common.PeerId
 }
 
 // QueryRegistryAPI provides access to the registry for (manual) peer discovery or plain reading.

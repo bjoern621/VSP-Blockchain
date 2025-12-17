@@ -103,14 +103,14 @@ func (v *VersionInfo) addService(svc peer.ServiceType) error {
 	return nil
 }
 
-// HandshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
-type HandshakeService struct {
+// handshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
+type handshakeService struct {
 	handshakeMsgSender HandshakeMsgSender
 	peerStore          *peer.PeerStore
 }
 
-func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerStore *peer.PeerStore) *HandshakeService {
-	return &HandshakeService{
+func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerStore *peer.PeerStore) *handshakeService {
+	return &handshakeService{
 		handshakeMsgSender: handshakeMsgSender,
 		peerStore:          peerStore,
 	}

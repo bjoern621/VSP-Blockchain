@@ -1,6 +1,7 @@
 package handshake
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -18,7 +19,7 @@ func checkVersionCompatibility(string) bool {
 	return true
 }
 
-func (h *HandshakeService) HandleVersion(peerID common.PeerId, info VersionInfo) {
+func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Version message", peerID)
@@ -50,7 +51,7 @@ func (h *HandshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 	go h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
 
-func (h *HandshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) {
+func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
@@ -79,7 +80,7 @@ func (h *HandshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	go h.handshakeMsgSender.SendAck(peerID)
 }
 
-func (h *HandshakeService) HandleAck(peerID common.PeerId) {
+func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)
