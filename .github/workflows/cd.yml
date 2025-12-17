@@ -121,6 +121,6 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
-                kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
-                kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=600s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
