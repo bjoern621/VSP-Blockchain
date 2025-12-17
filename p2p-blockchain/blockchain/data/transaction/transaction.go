@@ -1,8 +1,10 @@
 package transaction
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/sha256"
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 )
@@ -119,7 +121,50 @@ func (tx *Transaction) Clone() *Transaction {
 	return clone
 }
 
+// Hash computes the TransactionID similar to the bitcoin wtxid with transaction data including witness
 func (tx *Transaction) Hash() TransactionID {
-	//TODO
-	return TransactionID{}
+	buf := serializeTransaction(tx)
+	hash := doubleSHA256(buf.Bytes())
+
+	var txID TransactionID
+	copy(txID[:], hash)
+	return txID
+}
+
+func serializeTransaction(tx *Transaction) *bytes.Buffer {
+	buf := new(bytes.Buffer)
+	serializeInputs(tx, buf)
+	serializeOutputs(tx, buf)
+	writeUint64(buf, tx.LockTime)
+	return buf
+}
+
+func serializeOutputs(tx *Transaction, buf *bytes.Buffer) {
+	writeUint32(buf, uint32(len(tx.Outputs)))
+	for _, out := range tx.Outputs {
+		writeUint64(buf, out.Value)
+		buf.Write(out.PubKeyHash[:])
+	}
+}
+
+func serializeInputs(tx *Transaction, buf *bytes.Buffer) {
+	writeUint32(buf, uint32(len(tx.Inputs)))
+	for _, in := range tx.Inputs {
+		serializeInput(buf, in)
+	}
+}
+
+func serializeInput(buf *bytes.Buffer, in Input) {
+	buf.Write(in.PrevTxID[:])
+	writeUint32(buf, in.OutputIndex)
+	writeUint32(buf, uint32(len(in.Signature)))
+	writeBytes(buf, in.Signature)
+	buf.Write(in.PubKey[:])
+	writeUint32(buf, in.Sequence)
+}
+
+func doubleSHA256(data []byte) []byte {
+	first := sha256.Sum256(data)
+	second := sha256.Sum256(first[:])
+	return second[:]
 }
