@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
 
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
@@ -42,7 +43,7 @@ func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoReg
 
 // Start starts the P2P gRPC server on the given port in a goroutine.
 func (s *Server) Start(port uint16) error {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	addr := fmt.Sprintf("%s:%d", common.P2PListenAddr(), port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", addr, err)

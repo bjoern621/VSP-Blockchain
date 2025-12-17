@@ -5,7 +5,6 @@ on:
         branches: ["main"]
     workflow_dispatch:
 
-# Needed to push to GHCR
 permissions:
     contents: read
     packages: write
@@ -18,13 +17,24 @@ env:
     REGISTRY: ghcr.io
     IMAGE_OWNER: ${{ github.repository_owner }}
     NAMESPACE: vsp-blockchain
-    MINER_IMAGE: ghcr.io/${{ github.repository_owner }}/vsp-blockchain-miner
-    REST_IMAGE: ghcr.io/${{ github.repository_owner }}/vsp-blockchain-rest-api
 
 jobs:
     build-and-push:
         name: Build and push Docker images
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - component: miner
+                      context: ./p2p-blockchain
+                      dockerfile: ./p2p-blockchain/Dockerfile
+                    - component: rest-api
+                      context: ./rest-schnittstelle
+                      dockerfile: ./rest-schnittstelle/Dockerfile
+                    - component: registry-crawler
+                      context: ./registry-crawler
+                      dockerfile: ./registry-crawler/Dockerfile
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -42,41 +52,17 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            - name: Build and push miner image
-              id: build_miner
+            - name: Build and push image
               uses: docker/build-push-action@v6
               with:
-                  context: ./p2p-blockchain
-                  file: ./p2p-blockchain/Dockerfile
+                  context: ${{ matrix.context }}
+                  file: ${{ matrix.dockerfile }}
                   push: true
                   tags: |
-                      ${{ env.MINER_IMAGE }}:${{ github.sha }}
-                      ${{ env.MINER_IMAGE }}:latest
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
-
-            - name: Build and push rest-api image
-              id: build_rest
-              uses: docker/build-push-action@v6
-              with:
-                  context: ./rest-schnittstelle
-                  file: ./rest-schnittstelle/Dockerfile
-                  push: true
-                  tags: |
-                      ${{ env.REST_IMAGE }}:${{ github.sha }}
-                      ${{ env.REST_IMAGE }}:latest
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
-
-            - name: Set outputs
-              id: meta
-              run: |
-                  echo "miner_tag=${MINER_IMAGE}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
-                  echo "rest_tag=${REST_IMAGE}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
-
-        outputs:
-            miner_tag: ${{ steps.meta.outputs.miner_tag }}
-            rest_tag: ${{ steps.meta.outputs.rest_tag }}
+                      ${{ format('{0}/{1}/{2}-{3}:{4}', env.REGISTRY, env.IMAGE_OWNER, env.NAMESPACE, matrix.component, github.sha) }}
+                      ${{ format('{0}/{1}/{2}-{3}:latest', env.REGISTRY, env.IMAGE_OWNER, env.NAMESPACE, matrix.component) }}
+                  cache-from: type=gha,scope=${{ matrix.component }}
+                  cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
     deploy:
         name: Deploy to Kubernetes
@@ -92,43 +78,49 @@ jobs:
             - name: Configure kubeconfig
               uses: ./.github/actions/fetch_current_cube_config
               with:
-                ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
+                  ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
 
             - name: Get OpenVPN Config from Secrets
               run: |
-                echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
+                  echo "$OPENVPN_CONFIG" | base64 --decode > vpn.ovpn
               env:
-                OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+                  OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
 
             - name: Install OpenVPN
               run: |
-                sudo apt update
-                sudo apt install -y openvpn openvpn-systemd-resolved
+                  sudo apt update
+                  sudo apt install -y openvpn openvpn-systemd-resolved
+
             - name: Connect to VPN
-              uses: "kota65535/github-openvpn-connect-action@v3.1.0"
+              uses: kota65535/github-openvpn-connect-action@v3.1.0
               with:
-                echo_config: 'false'
-                config_file: vpn.ovpn
+                  echo_config: "false"
+                  config_file: vpn.ovpn
 
             - name: Deploy to Kubernetes
               env:
-                KUBECONFIG: "~/.kube/config"
+                  KUBECONFIG: "~/.kube/config"
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
-                  kubectl apply -f kubernetes-deployment-prod.yaml
+                  kubectl apply -f kubernetes-miner.yaml
+                  kubectl apply -f kubernetes-registry.yaml
+                  kubectl apply -f kubernetes-rest_api.yaml
 
             - name: Update images to newly published tag
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
-                  MINER_TAG: ${{ needs.build-and-push.outputs.miner_tag }}
-                  REST_TAG: ${{ needs.build-and-push.outputs.rest_tag }}
+                  MINER_TAG: ${{ format('{0}/{1}/{2}-miner:{3}', env.REGISTRY, env.IMAGE_OWNER, env.NAMESPACE, github.sha) }}
+                  REST_TAG: ${{ format('{0}/{1}/{2}-rest-api:{3}', env.REGISTRY, env.IMAGE_OWNER, env.NAMESPACE, github.sha) }}
+                  REGISTRY_CRAWLER_TAG: ${{ format('{0}/{1}/{2}-registry-crawler:{3}', env.REGISTRY, env.IMAGE_OWNER, env.NAMESPACE, github.sha) }}
               run: |
                   kubectl -n "$NAMESPACE" set image statefulset/miner miner="$MINER_TAG"
                   kubectl -n "$NAMESPACE" set image deployment/rest-api rest-api="$REST_TAG"
+                  kubectl -n "$NAMESPACE" set image deployment/registry registry-crawler="$REGISTRY_CRAWLER_TAG"
 
             - name: Wait for rollout
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s || true
-                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s || true
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=600s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s

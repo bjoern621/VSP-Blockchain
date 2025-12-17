@@ -1,0 +1,228 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: registry
+    namespace: vsp-blockchain
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: registry-read
+    namespace: vsp-blockchain
+rules:
+    - apiGroups: [""]
+      resources: ["endpoints", "services", "pods"]
+      verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    name: registry-read
+    namespace: vsp-blockchain
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: registry-read
+subjects:
+    - kind: ServiceAccount
+      name: registry
+      namespace: vsp-blockchain
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: registry-config
+    namespace: vsp-blockchain
+data:
+    Corefile: |
+        seed.local:53 {
+          errors
+          health
+          ready
+          hosts /seed/seed.hosts {
+            ttl 1
+            reload 5s
+          }
+          log
+        }
+
+        .:53 {
+          errors
+          health
+          ready
+          forward . /etc/resolv.conf
+          cache 30
+          reload
+        }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: registry
+    namespace: vsp-blockchain
+spec:
+    replicas: 1
+    strategy:
+        type: RollingUpdate
+        rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
+    selector:
+        matchLabels:
+            app: registry
+    template:
+        metadata:
+            labels:
+                app: registry
+        spec:
+            serviceAccountName: registry
+            dnsPolicy: None
+            dnsConfig:
+                nameservers:
+                    - 10.233.1.72
+            containers:
+                - name: minimal-node
+                  image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_PORT
+                        value: "50050"
+                      - name: P2P_PORT
+                        value: "50051"
+                      - name: APP_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: P2P_LISTEN_ADDR
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: ADDITIONAL_SERVICES
+                        value: "app"
+                  ports:
+                      - name: app
+                        containerPort: 50050
+                        protocol: TCP
+                      - name: p2p
+                        containerPort: 50051
+                        protocol: TCP
+                  resources:
+                      requests:
+                          cpu: "50m"
+                          memory: "64Mi"
+                      limits:
+                          cpu: "200m"
+                          memory: "128Mi"
+                - name: registry-crawler
+                  image: ghcr.io/bjoern621/vsp-blockchain-registry-crawler:latest
+                  imagePullPolicy: Always
+                  env:
+                      - name: APP_GRPC_ADDR_PORT
+                        value: "127.0.0.1:50050"
+                      - name: ACCEPTED_P2P_PORT
+                        value: "50051"
+                      - name: SEED_UPDATE_INTERVAL
+                        value: "5m"
+                      - name: SEED_BOOTSTRAP_ENDPOINTS
+                        value: "miner-0.miner-headless:50051,miner-1.miner-headless:50051"
+                      - name: SEED_HOSTS_FILE
+                        value: "/seed/seed.hosts"
+                      - name: SEED_NAMESPACE
+                        value: vsp-blockchain
+                      - name: SEED_ENDPOINTS_NAME
+                        value: miner-seed
+                      - name: SEED_DNS_ZONE
+                        value: seed.local
+                  volumeMounts:
+                      - name: seed
+                        mountPath: /seed
+                  resources:
+                      requests:
+                          cpu: "50m"
+                          memory: "64Mi"
+                      limits:
+                          cpu: "200m"
+                          memory: "128Mi"
+                - name: coredns
+                  image: coredns/coredns:1.11.3
+                  args: ["-conf", "/etc/coredns/Corefile"]
+                  ports:
+                      - name: dns-udp
+                        containerPort: 53
+                        protocol: UDP
+                      - name: dns-tcp
+                        containerPort: 53
+                        protocol: TCP
+                  volumeMounts:
+                      - name: config
+                        mountPath: /etc/coredns
+                        readOnly: true
+                      - name: seed
+                        mountPath: /seed
+                        readOnly: true
+                  resources:
+                      requests:
+                          cpu: "25m"
+                          memory: "64Mi"
+                      limits:
+                          cpu: "100m"
+                          memory: "128Mi"
+                  livenessProbe:
+                      httpGet:
+                          path: /health
+                          port: 8080
+                      initialDelaySeconds: 10
+                      periodSeconds: 10
+                  readinessProbe:
+                      httpGet:
+                          path: /ready
+                          port: 8181
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+            volumes:
+                - name: config
+                  configMap:
+                      name: registry-config
+                      items:
+                          - key: Corefile
+                            path: Corefile
+                - name: seed
+                  emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: registry
+    namespace: vsp-blockchain
+spec:
+    clusterIP: 10.233.1.72
+    selector:
+        app: registry
+    ports:
+        - name: dns-udp
+          port: 53
+          protocol: UDP
+          targetPort: 53
+        - name: dns-tcp
+          port: 53
+          protocol: TCP
+          targetPort: 53
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: miner-seed
+    namespace: vsp-blockchain
+spec:
+    clusterIP: None
+    ports:
+        - name: grpc
+          port: 50051
+          targetPort: 50051
