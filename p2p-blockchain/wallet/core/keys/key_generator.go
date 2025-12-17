@@ -32,12 +32,14 @@ func NewKeyGeneratorImpl(encoder KeyEncoder, decoder KeyDecoder) *KeyGeneratorIm
 }
 
 // public functions
+// Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 	//private Key generieren
 	privateKey := generator.createPrivateKey()
 	return generator.GetKeyset(privateKey)
 }
 
+// Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset {
 	return common.Keyset{
 		PrivateKey:    privateKey,
@@ -45,8 +47,12 @@ func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset 
 	}
 }
 
+// Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) common.Keyset {
-	return common.Keyset{}
+	return common.Keyset{
+		PrivateKey:    generator.decoder.WifToPrivateKey(privateKeyWIF),
+		PrivateKeyWif: privateKeyWIF,
+	}
 }
 
 //private functions
