@@ -965,6 +965,9 @@ Ein Transaktions besteht aus folgendem:
 
 -   **Inputs**
 -   **Outputs**
+- **Inputs**
+- **Outputs**
+- LockTime (ulong 64 Bit vorzeichenlos)
 
 Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eventueller Gebühren).
 

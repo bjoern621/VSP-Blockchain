@@ -6,7 +6,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/mapping"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -69,16 +68,13 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 }
 
 func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
-	inboundAddr := getPeerAddr(ctx)
+	peerId := s.GetPeerId(ctx)
 
-	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, netip.AddrPort{})
-	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
-
-	s.handshakeMsgHandler.HandleAck(peerID)
+	s.handshakeMsgHandler.HandleAck(peerId)
 	return &emptypb.Empty{}, nil
 }
 
-func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+func (c *Client) SendVersion(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
 		logger.Warnf("failed to send Version: no listening endpoint for peer %s", peerID)
@@ -105,7 +101,7 @@ func (c *Client) SendVersion(peerID peer.PeerID, localInfo handshake.VersionInfo
 	}
 }
 
-func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo) {
+func (c *Client) SendVerack(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
 		logger.Warnf("failed to send Verack: no listening endpoint for peer %s", peerID)
@@ -132,7 +128,7 @@ func (c *Client) SendVerack(peerID peer.PeerID, localInfo handshake.VersionInfo)
 	}
 }
 
-func (c *Client) SendAck(peerID peer.PeerID) {
+func (c *Client) SendAck(peerID common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
 	if !ok {
 		logger.Warnf("failed to send Ack: no connection for peer %s", peerID)

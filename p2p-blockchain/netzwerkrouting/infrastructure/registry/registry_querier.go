@@ -31,13 +31,13 @@ func newDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry)
 }
 
 // QueryPeers queries the DNS seed registry and returns a list of peer IDs.
-func (r *dnsRegistryQuerier) QueryPeers() ([]peer.PeerID, error) {
+func (r *dnsRegistryQuerier) QueryPeers() ([]common.PeerId, error) {
 	entries, err := r.queryRegistry()
 	if err != nil {
 		return nil, err
 	}
 
-	peers := make([]peer.PeerID, 0, len(entries))
+	peers := make([]common.PeerId, 0, len(entries))
 	for _, entry := range entries {
 		peers = append(peers, entry.PeerID)
 	}

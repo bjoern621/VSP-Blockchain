@@ -120,7 +120,7 @@ func addCommonDependencies(currentSubsystem string) []string {
 	return commonDeps
 }
 
-// addCommonInfrastructureDependencies adds common dependencies for the  infrastructure layer.
+// addCommonInfrastructureDependencies adds common dependencies for the infrastructure layer.
 // This includes dependencies on protobuf generated packages.
 func addCommonInfrastructureDependencies() []string {
 	return []string{

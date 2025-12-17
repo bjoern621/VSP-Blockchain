@@ -1,10 +1,12 @@
 package peer
 
+import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
+
 // RegistryQuerier abstracts registry lookups for the core layer.
 // This interface is implemented by the infrastructure layer which handles network details.
 type RegistryQuerier interface {
 	// QueryPeers queries the registry and returns discovered peers.
-	QueryPeers() ([]PeerID, error)
+	QueryPeers() ([]common.PeerId, error)
 }
 
 // DiscoveryService provides peer discovery functionality.
@@ -23,6 +25,6 @@ func NewDiscoveryService(querier RegistryQuerier, peerCreator PeerCreator) *Disc
 
 // GetPeers queries the registry and creates peers for each discovered address.
 // Returns the peer IDs of the discovered peers.
-func (s *DiscoveryService) GetPeers(hostname string) ([]PeerID, error) {
+func (s *DiscoveryService) GetPeers(hostname string) ([]common.PeerId, error) {
 	return s.querier.QueryPeers()
 }

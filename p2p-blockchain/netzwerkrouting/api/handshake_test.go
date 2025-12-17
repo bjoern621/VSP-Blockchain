@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"sync"
 	"testing"
 
@@ -11,16 +12,16 @@ import (
 
 type mockHandshakeInitiator struct {
 	mu                     sync.Mutex
-	initiateHandshakeCalls []peer.PeerID
+	initiateHandshakeCalls []common.PeerId
 }
 
 func newMockHandshakeInitiator() *mockHandshakeInitiator {
 	return &mockHandshakeInitiator{
-		initiateHandshakeCalls: make([]peer.PeerID, 0),
+		initiateHandshakeCalls: make([]common.PeerId, 0),
 	}
 }
 
-func (m *mockHandshakeInitiator) InitiateHandshake(peerID peer.PeerID) error {
+func (m *mockHandshakeInitiator) InitiateHandshake(peerID common.PeerId) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.initiateHandshakeCalls = append(m.initiateHandshakeCalls, peerID)
@@ -35,25 +36,25 @@ func (m *mockHandshakeInitiator) getInitiateHandshakeCallCount() int {
 
 type mockOutboundPeerResolver struct {
 	mu              sync.Mutex
-	registeredPeers map[string]peer.PeerID
-	peerAddresses   map[peer.PeerID]netip.AddrPort
+	registeredPeers map[string]common.PeerId
+	peerAddresses   map[common.PeerId]netip.AddrPort
 }
 
 func newMockOutboundPeerResolver() *mockOutboundPeerResolver {
 	return &mockOutboundPeerResolver{
-		registeredPeers: make(map[string]peer.PeerID),
-		peerAddresses:   make(map[peer.PeerID]netip.AddrPort),
+		registeredPeers: make(map[string]common.PeerId),
+		peerAddresses:   make(map[common.PeerId]netip.AddrPort),
 	}
 }
 
-func (m *mockOutboundPeerResolver) GetOutboundPeer(addrPort netip.AddrPort) (peer.PeerID, bool) {
+func (m *mockOutboundPeerResolver) GetOutboundPeer(addrPort netip.AddrPort) (common.PeerId, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	peerID, exists := m.registeredPeers[addrPort.String()]
 	return peerID, exists
 }
 
-func (m *mockOutboundPeerResolver) RegisterPeer(peerID peer.PeerID, listeningEndpoint netip.AddrPort) {
+func (m *mockOutboundPeerResolver) RegisterPeer(peerID common.PeerId, listeningEndpoint netip.AddrPort) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.registeredPeers[listeningEndpoint.String()] = peerID
