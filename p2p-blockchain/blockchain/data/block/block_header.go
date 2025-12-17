@@ -1,11 +1,15 @@
 package block
 
-import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+import (
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+)
 
 // BlockHeader represents the header of a block in the blockchain.
 type BlockHeader struct {
-	PrevHash         Hash
-	MerkleRoot       Hash
+	// The hash of the previous block header in the chain.
+	PrevHash   Hash
+	MerkleRoot Hash
+	// The timestamp of the block. In Unix epoch format.
 	Timestamp        int64
 	DifficultyTarget uint32
 	Nonce            uint32
