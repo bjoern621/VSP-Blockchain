@@ -6,7 +6,9 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/mapping"
 
+	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -181,4 +183,25 @@ func (s *Server) NotifyMempool(peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Mempool(peerID)
 	}
+}
+
+func (c *Client) SendGetData(dto dto.GetDataMsgDTO, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send GetDataMsg: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbMsg, err := mapping.NewGetDataMessageFromDTO(dto)
+	if err != nil {
+		logger.Warnf("failed to create GetDataMessage from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.GetData(context.Background(), pbMsg)
+		if err != nil {
+			logger.Warnf("failed to send GetDataMsg to peer %s: %v", peerId, err)
+		}
+	}()
 }

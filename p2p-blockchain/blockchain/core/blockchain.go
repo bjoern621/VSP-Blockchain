@@ -4,21 +4,44 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type Blockchain struct {
+	mempool *Mempool
+	sender  api.BlockchainService
 }
 
-func NewBlockchain() *Blockchain {
-	return &Blockchain{}
+func NewBlockchain(sender api.BlockchainService) *Blockchain {
+	return &Blockchain{
+		mempool: NewMempool(),
+		sender:  sender,
+	}
 }
 
 func (b *Blockchain) Inv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
 	invVectors := block.InvVectorsFromInvMsgDTO(invMsg)
 	logger.Infof("Inv Message received: %v from %v", invVectors, peerID)
+
+	unknownData := make([]block.InvVector, 0)
+
+	for _, v := range invVectors {
+		switch v.InvType {
+		case block.InvTypeMsgBlock:
+			panic("not implemented")
+		case block.InvTypeMsgTx:
+			if !b.mempool.IsKnownTransaction(v.Hash) {
+				unknownData = append(unknownData, v)
+			}
+		case block.InvTypeMsgFilteredBlock:
+			panic("not implemented")
+		}
+	}
+
+	b.requestData(unknownData, peerID)
 }
 
 func (b *Blockchain) GetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId) {
@@ -57,4 +80,9 @@ func (b *Blockchain) SetFilter(setFilterRequest dto.SetFilterRequestDTO, peerID 
 }
 func (b *Blockchain) Mempool(peerID common.PeerId) {
 	logger.Infof("Mempool Message received from %v", peerID)
+}
+
+func (b *Blockchain) requestData(missingData []block.InvVector, id common.PeerId) {
+	dtoInvVectors := block.ToDtoInvVectors(missingData)
+	b.sender.SendGetData(dto.GetDataMsgDTO{Inventory: dtoInvVectors}, id)
 }

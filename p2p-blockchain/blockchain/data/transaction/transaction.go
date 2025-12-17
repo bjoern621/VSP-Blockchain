@@ -118,3 +118,8 @@ func (tx *Transaction) Clone() *Transaction {
 
 	return clone
 }
+
+func (tx *Transaction) Hash() TransactionID {
+	//TODO
+	return TransactionID{}
+}

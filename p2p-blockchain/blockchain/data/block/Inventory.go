@@ -3,6 +3,8 @@ package block
 import (
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 type InvType int
@@ -23,6 +25,19 @@ func invTypeDTOFromPB(t dto.InvTypeDTO) (InvType, error) {
 		return InvTypeMsgFilteredBlock, nil
 	default:
 		return 0, fmt.Errorf("unknown dto.InvType: %v", t)
+	}
+}
+
+func invTypeToDto(invType InvType) (dto.InvTypeDTO, error) {
+	switch invType {
+	case InvTypeMsgTx:
+		return dto.InvTypeDTO_MSG_TX, nil
+	case InvTypeMsgBlock:
+		return dto.InvTypeDTO_MSG_BLOCK, nil
+	case InvTypeMsgFilteredBlock:
+		return dto.InvTypeDTO_MSG_FILTERED_BLOCK, nil
+	default:
+		return 0, fmt.Errorf("unknown InvType: %v", invType)
 	}
 }
 
@@ -60,4 +75,26 @@ func InvVectorsFromInvMsgDTO(invMsgDto dto.InvMsgDTO) []InvVector {
 
 func InvVectorFromGetDataDTO(invMsgDto dto.GetDataMsgDTO) []InvVector {
 	return newInvVectors(invMsgDto.Inventory)
+}
+
+func (i *InvVector) ToDtoInvVector() dto.InvVectorDTO {
+	out, err := invTypeToDto(i.InvType)
+	assert.IsNotNil(err)
+
+	var hash dto.Hash
+
+	copy(hash[:], i.Hash[:])
+
+	return dto.InvVectorDTO{
+		Type: out,
+		Hash: hash,
+	}
+}
+
+func ToDtoInvVectors(invVectors []InvVector) []dto.InvVectorDTO {
+	out := make([]dto.InvVectorDTO, 0, len(invVectors))
+	for i := range invVectors {
+		out = append(out, invVectors[i].ToDtoInvVector())
+	}
+	return out
 }
