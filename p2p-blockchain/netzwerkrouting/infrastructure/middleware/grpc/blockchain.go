@@ -130,55 +130,55 @@ func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 }
 
 func (s *Server) NotifyInv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Inv(invMsg, peerID)
 	}
 }
 
 func (s *Server) NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.GetData(getDataMsg, peerID)
 	}
 }
 
 func (s *Server) NotifyBlock(blockMsg dto.BlockMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Block(blockMsg, peerID)
 	}
 }
 
 func (s *Server) NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.MerkleBlock(merkleBlockMsg, peerID)
 	}
 }
 
 func (s *Server) NotifyTx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Tx(txMsg, peerID)
 	}
 }
 
 func (s *Server) NotifyGetHeaders(locator dto.BlockLocatorDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.GetHeaders(locator, peerID)
 	}
 }
 
 func (s *Server) NotifyHeaders(headers dto.BlockHeadersDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Headers(headers, peerID)
 	}
 }
 
 func (s *Server) NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.SetFilter(setFilterRequest, peerID)
 	}
 }
 
 func (s *Server) NotifyMempool(peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Mempool(peerID)
 	}
 }
