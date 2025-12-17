@@ -20,9 +20,9 @@ type Peer struct {
 	Direction         Direction
 }
 
-// NewPeer creates a new peer with a unique ID and adds it to the peer store.
+// newPeer creates a new peer with a unique ID and adds it to the peer store.
 // PeerConnectionState is initialized to StateNew.
-func (s *PeerStore) NewPeer(direction Direction) PeerID {
+func (s *PeerStore) newPeer(direction Direction) PeerID {
 	peerID := PeerID(uuid.NewString())
 	peer := &Peer{
 		id:        peerID,
@@ -31,6 +31,19 @@ func (s *PeerStore) NewPeer(direction Direction) PeerID {
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created (direction: %v)", peerID, direction)
+	return peerID
+}
+
+// newGenericPeer creates a new peer without a specified direction.
+// Otherwise similar to newPeer.
+func (s *PeerStore) newGenericPeer() PeerID {
+	peerID := PeerID(uuid.NewString())
+	peer := &Peer{
+		id:    peerID,
+		State: StateNew,
+	}
+	s.addPeer(peer)
+	logger.Debugf("new peer %v created", peerID)
 	return peerID
 }
 

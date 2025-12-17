@@ -1,0 +1,30 @@
+version: "3"
+
+vars:
+    DOCKER_TAG: latest
+
+tasks:
+    tidy:
+        internal: true
+        desc: Run go mod tidy
+        cmds:
+            - go mod tidy
+
+    proto:
+        desc: Generate gRPC code from shared .proto files
+        dir: ..
+        cmds:
+            - buf generate
+
+    prepare:
+        internal: true
+        desc: Prepare the module for build
+        cmds:
+            - task: proto
+            - task: tidy
+
+    build:
+        desc: Build the docker image for the registry crawler
+        cmds:
+            - task: prepare
+            - docker build -t vsp-blockchain/registry-crawler:{{.DOCKER_TAG}} .
