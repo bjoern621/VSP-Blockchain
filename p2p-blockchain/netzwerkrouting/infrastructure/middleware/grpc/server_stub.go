@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
-	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
+	mapset "github.com/deckarep/golang-set/v2"
 	"google.golang.org/grpc"
 )
 
@@ -28,16 +28,14 @@ type Server struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 
 	pb.UnimplementedBlockchainServiceServer
-	// Warum hat go kein Set??? https://stackoverflow.com/questions/34018908/golang-why-dont-we-have-a-set-datastructure
-	lock      sync.RWMutex
-	observers map[observer.BlockchainObserverAPI]struct{}
+	observers mapset.Set[observer.BlockchainObserverAPI]
 }
 
 func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
-		observers:           make(map[observer.BlockchainObserverAPI]struct{}),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 }
 
@@ -74,13 +72,9 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 }
 
 func (s *Server) Attach(o observer.BlockchainObserverAPI) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.observers[o] = struct{}{}
+	s.observers.Add(o)
 }
 
 func (s *Server) Detach(o observer.BlockchainObserverAPI) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	delete(s.observers, o)
+	s.observers.Remove(o)
 }
