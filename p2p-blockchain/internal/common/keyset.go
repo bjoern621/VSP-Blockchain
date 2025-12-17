@@ -1,4 +1,4 @@
-package keys
+package common
 
 type Keyset struct {
 	PrivateKey    [32]byte

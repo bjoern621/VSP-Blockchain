@@ -29,9 +29,8 @@ func main() {
 	/* For key generation
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
-	keyGeneratorApiImpl := api_wallet.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+	keyGeneratorApiImpl := api.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 	*/
-
 	logger.Infof("Starting App server...")
 
 	connService := appcore.NewConnectionEstablishmentService(handshakeAPI)

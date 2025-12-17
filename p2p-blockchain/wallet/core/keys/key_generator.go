@@ -4,18 +4,19 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"math/big"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
 
 // KeyGenerator Interface for API for creating / getting keysets
 type KeyGenerator interface {
 	// GenerateKeyset Generates a completely new Keyset with a new random private Key
-	GenerateKeyset() Keyset
+	GenerateKeyset() common.Keyset
 
 	// GetKeyset Gets the complete keyset from the raw private key
-	GetKeyset(privateKey [32]byte) Keyset
+	GetKeyset(privateKey [32]byte) common.Keyset
 
 	// GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
-	GetKeysetFromWIF(privateKeyWIF string) Keyset
+	GetKeysetFromWIF(privateKeyWIF string) common.Keyset
 }
 
 type KeyGeneratorImpl struct {
@@ -31,21 +32,21 @@ func NewKeyGeneratorImpl(encoder KeyEncoder, decoder KeyDecoder) *KeyGeneratorIm
 }
 
 // public functions
-func (generator *KeyGeneratorImpl) GenerateKeyset() Keyset {
+func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 	//private Key generieren
 	privateKey := generator.createPrivateKey()
 	return generator.GetKeyset(privateKey)
 }
 
-func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) Keyset {
-	return Keyset{
+func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset {
+	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: generator.encoder.PrivateKeyToWif(privateKey),
 	}
 }
 
-func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) Keyset {
-	return Keyset{}
+func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) common.Keyset {
+	return common.Keyset{}
 }
 
 //private functions
