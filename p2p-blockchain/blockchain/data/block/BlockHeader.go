@@ -2,6 +2,7 @@ package block
 
 import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 
+// BlockHeader represents the header of a block in the blockchain.
 type BlockHeader struct {
 	Hash             Hash
 	MerkleRoot       Hash
