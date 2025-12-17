@@ -58,7 +58,7 @@ func (generator *KeyGeneratorImpl) createPrivateKey() [32]byte {
 	for {
 		//1. create random 256 bits
 		var randomBytes [32]byte
-		rand.Read(randomBytes[:])
+		rand.Read(randomBytes[:]) //nolint:errcheck
 
 		//2. create hash of random bits
 		key := sha256.Sum256(randomBytes[:])

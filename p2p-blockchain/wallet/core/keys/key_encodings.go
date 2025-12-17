@@ -2,6 +2,7 @@ package keys
 
 import (
 	"crypto/sha256"
+
 	"github.com/akamensky/base58"
 )
 
@@ -35,7 +36,7 @@ func (keyEncodings *KeyEncodingsImpl) BytesToBase58Check(bytes []byte, version b
 	together = append(together, version)
 
 	//2. part: payload
-	together = append([]byte{version}, bytes...)
+	together = append(together, bytes...)
 
 	//3. part: checksum
 	together = append(together, keyEncodings.getFirstFourChecksumBytes([]byte{version}, bytes)...)
