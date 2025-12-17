@@ -367,8 +367,119 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 # Laufzeitsicht
 
-## Verbindungsaufbau
 
+## State machine Miner: Allgemein
+Da unser System zustandslos- und asynchron arbeitet, sind die Sequenzen (Remote Procedure Calls) trivial. Diese werden
+hier nicht separat dargestellt. Ein Receive{Methoden Name} wird immer dann ausgeführt, wenn ein Remote Procedure Call empfangen wird.
+Ein Send{Methoden Name} bedeutet, dass ein Remote Procedure Call gesendet wird. In dem Diagramm wird dies nicht explizit dargestellt, 
+da es sich um eine triviale Sequenz handelt.
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> running
+    state "Running" as running
+
+    running --> connection_establishment
+    connection_establishment --> running: HandleConnectionEstablishment()
+    connection_establishment: Connection Establishment
+
+
+    running --> inv_received: ReceiveInv()
+    inv_received --> running: HandleInv()
+
+    running --> getData_received: ReceiveGetData()
+    getData_received --> running: HandleGetData()
+
+    running --> block_received: ReceiveBlock()
+    block_received --> running: HandleBlock()
+
+    running --> merkleBlock_received: ReceiveMerkleBlock()
+    merkleBlock_received --> running: HandleMerkleBlock()
+
+    running --> transaction_received: ReceiveTx()
+    transaction_received --> running: HandleTx()
+
+    running --> getHeaders_received: ReceiveGetHeaders()
+    getHeaders_received --> running: HandleGetHeaders()
+
+    running --> headers_received: ReceiveHeaders()
+    headers_received --> running: HandleHeaders()
+
+    running --> setFilter_received: ReceiveSetFilter()
+    setFilter_received --> running: HandleSetFilter()
+
+    running --> mempool_received: ReceiveMempool()
+    mempool_received --> running: HandleMempool()
+```
+<p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
+</div>
+
+## State machine Miner: Handshake
+
+Unser allgemeines System ist zustandslos. Dargestellt ist also nicht der Zustand des Gesamtsystems, sondern der Zustand,
+in welchem sich der aktuell verbindende Peer befindet. Für jeden neu verbindenden Peer wird der Zustand separat gespeichert.
+
+Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dargestellt sind, so werden diese ignoriert.
+
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state peer_check <<choice>>
+    [*] --> initiate
+    initiate --> peer_check
+    peer_check --> no_peers: if len(peers) == 0
+    peer_check --> initiateHandshake : if len(peers) > 0
+    no_peers --> initiateHandshake : getPeers()
+    [*] --> handleHandshake: HandleHandshake()
+    
+    state initiateHandshake {
+        [*] --> new
+        new --> awaiting_verack: SendVersion()
+        awaiting_verack --> connected: ReceiveVerack()
+        connected --> [*]: SendAck()
+    }
+    
+    state handleHandshake {
+        [*] --> new_: ReceiveVersion()
+        new_ --> awaiting_ack: SendVerack()
+        awaiting_ack --> connected_: ReceiveAck()
+        connected_ --> [*]
+        
+    }
+    
+    connected_: connected
+    new_: new
+    
+```
+<p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Verbindungsaufbau
 <div align="center">
 
 ```mermaid
