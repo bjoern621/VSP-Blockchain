@@ -79,7 +79,7 @@ func InvVectorFromGetDataDTO(invMsgDto dto.GetDataMsgDTO) []InvVector {
 
 func (i *InvVector) ToDtoInvVector() dto.InvVectorDTO {
 	out, err := invTypeToDto(i.InvType)
-	assert.IsNotNil(err)
+	assert.IsNil(err)
 
 	var hash dto.Hash
 
