@@ -7,4 +7,5 @@ import (
 
 type BlockchainService interface {
 	SendGetData(dto dto.GetDataMsgDTO, peerId common.PeerId)
+	SendInv(dto dto.InvMsgDTO, peerId common.PeerId)
 }

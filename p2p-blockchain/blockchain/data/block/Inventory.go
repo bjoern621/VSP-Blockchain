@@ -2,6 +2,7 @@ package block
 
 import (
 	"fmt"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -97,4 +98,16 @@ func ToDtoInvVectors(invVectors []InvVector) []dto.InvVectorDTO {
 		out = append(out, invVectors[i].ToDtoInvVector())
 	}
 	return out
+}
+
+func FromTxToDtoInvVector(tx transaction.Transaction) dto.InvVectorDTO {
+	txId := tx.Hash()
+	var hash dto.Hash
+
+	copy(hash[:], txId[:])
+
+	return dto.InvVectorDTO{
+		Type: dto.InvTypeDTO_MSG_TX,
+		Hash: hash,
+	}
 }

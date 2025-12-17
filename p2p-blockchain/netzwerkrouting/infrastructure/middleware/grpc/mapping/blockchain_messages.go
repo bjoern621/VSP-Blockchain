@@ -41,3 +41,17 @@ func NewGetDataMessageFromDTO(m dto.GetDataMsgDTO) (*pb.GetDataMsg, error) {
 	}
 	return &pb.GetDataMsg{Inventory: inv}, nil
 }
+
+func NewInvMessageFromDTO(m dto.InvMsgDTO) (*pb.InvMsg, error) {
+	inv := make([]*pb.InvVector, 0, len(m.Inventory))
+	for i := range m.Inventory {
+		v, err := NewInvVectorPBFromDTO(m.Inventory[i])
+		if err != nil {
+			return nil, fmt.Errorf("inventory[%d]: %w", i, err)
+		}
+
+		inv = append(inv, v)
+	}
+
+	return &pb.InvMsg{Inventory: inv}, nil
+}

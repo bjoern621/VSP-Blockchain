@@ -54,25 +54,25 @@ func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 		t.Fatalf("expected different transactions to have different hashes; got equal hashes %v", h1)
 	}
 
-	if m.IsKnownTransaction(h1) {
+	if m.IsKnownTransactionHash(h1) {
 		t.Fatalf("expected tx1 to be unknown before adding it")
 	}
-	if m.IsKnownTransaction(h2) {
+	if m.IsKnownTransactionHash(h2) {
 		t.Fatalf("expected tx2 to be unknown before adding it")
 	}
 
 	m.AddTransaction(tx1)
 
-	if !m.IsKnownTransaction(h1) {
+	if !m.IsKnownTransactionHash(h1) {
 		t.Fatalf("expected tx1 to be known after adding it")
 	}
-	if m.IsKnownTransaction(h2) {
+	if m.IsKnownTransactionHash(h2) {
 		t.Fatalf("expected tx2 to remain unknown when only tx1 was added")
 	}
 
 	m.AddTransaction(tx2)
 
-	if !m.IsKnownTransaction(h2) {
+	if !m.IsKnownTransactionHash(h2) {
 		t.Fatalf("expected tx2 to be known after adding it")
 	}
 }
@@ -92,7 +92,7 @@ func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) 
 	if got := len(m.transactions); got != 1 {
 		t.Fatalf("expected mempool size 1 after first add, got %d", got)
 	}
-	if !m.IsKnownTransaction(h) {
+	if !m.IsKnownTransactionHash(h) {
 		t.Fatalf("expected tx to be known after first add")
 	}
 
@@ -111,7 +111,7 @@ func TestMempool_IsKnownTransaction_UnknownHashReturnsFalse(t *testing.T) {
 	unknown[0] = 0x42
 	unknown[31] = 0x99
 
-	if m.IsKnownTransaction(unknown) {
+	if m.IsKnownTransactionHash(unknown) {
 		t.Fatalf("expected unknown hash to be reported as not known")
 	}
 }

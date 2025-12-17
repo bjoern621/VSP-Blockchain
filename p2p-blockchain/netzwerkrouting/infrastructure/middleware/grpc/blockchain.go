@@ -205,3 +205,24 @@ func (c *Client) SendGetData(dto dto.GetDataMsgDTO, peerId common.PeerId) {
 		}
 	}()
 }
+
+func (c *Client) SendInv(dto dto.InvMsgDTO, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send InvMsg: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbInvMsg, err := mapping.NewInvMessageFromDTO(dto)
+	if err != nil {
+		logger.Warnf("failed to create InvMessage from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.Inv(context.Background(), pbInvMsg)
+		if err != nil {
+			logger.Warnf("failed to send InvMsg to peer %s: %v", peerId, err)
+		}
+	}()
+}
