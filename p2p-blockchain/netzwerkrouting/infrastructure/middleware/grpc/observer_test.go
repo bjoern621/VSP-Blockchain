@@ -8,6 +8,8 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
+
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // MockObserver struct used to verify that the Server correctly notifies observers.
@@ -102,12 +104,12 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 	// We avoid NewServer() or gRPC logic because we only want to test the observer pattern logic.
 	// We manually initialize the 'observers' map since we are in the same package (grpc).
 	server := &Server{
-		observers: make(map[observer.BlockchainObserverAPI]struct{}),
+		observers: mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	// 3. Attach the mock observer
 	// We can use server.Attach(mockObs) if available, or inject directly:
-	server.observers[mockObs] = struct{}{}
+	server.observers.Add(mockObs)
 
 	// Shared test data
 	testPeerID := common.PeerId("test-peer-123")
