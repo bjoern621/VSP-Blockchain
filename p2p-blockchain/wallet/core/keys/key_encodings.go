@@ -16,8 +16,8 @@ type KeyEncoder interface {
 
 // KeyDecoder Decodes keys from the most common formats
 type KeyDecoder interface {
-	WifToPrivateKey(wif string) [32]byte
-	Base58CheckToBytes(input string) ([]byte, byte)
+	WifToPrivateKey(wif string) ([32]byte, error)
+	Base58CheckToBytes(input string) ([]byte, byte, error)
 }
 
 // KeyEncodingsImpl Implements KeyEncoder and KeyDecoder
@@ -59,31 +59,31 @@ func (keyEncodings *KeyEncodingsImpl) getFirstFourChecksumBytes(bytes ...[]byte)
 	return secondHash[:4]
 }
 
-func (keyEncodings *KeyEncodingsImpl) WifToPrivateKey(wif string) [32]byte {
-	bytes, version := keyEncodings.Base58CheckToBytes(wif)
+func (keyEncodings *KeyEncodingsImpl) WifToPrivateKey(wif string) ([32]byte, error) {
+	bytes, version, err := keyEncodings.Base58CheckToBytes(wif)
 
-	if version != 0x80 || len(bytes) != 32 {
-		//TODO fehlerbehandlung
-		fmt.Println("Ist kein WIF!")
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("the wif could not be decoded: %w", err)
 	}
 
-	return [32]byte(bytes)
+	if version != 0x80 || len(bytes) != 32 {
+		return [32]byte{}, fmt.Errorf("the Base58Check version byte %x dosent match the required version 0x80 for a WIF", version)
+	}
+
+	return [32]byte(bytes), nil
 }
 
-func (keyEncodings *KeyEncodingsImpl) Base58CheckToBytes(input string) ([]byte, byte) {
+func (keyEncodings *KeyEncodingsImpl) Base58CheckToBytes(input string) ([]byte, byte, error) {
 	bytes, err := base58.Decode(input)
 	if err != nil {
-		//TODO Fehlerbehandlung
-		//logigng fehler werfen
-		fmt.Println("Error decoding base58")
+		return []byte{}, 0, fmt.Errorf("error decoding the base58 input (%s): %w", input, err)
 	}
 	version := bytes[0]
 	payload := bytes[1 : len(bytes)-4]
 	checksumBytes := bytes[len(bytes)-4:]
 
 	if !bt.Equal(checksumBytes, keyEncodings.getFirstFourChecksumBytes([]byte{version}, payload)) {
-		//TODO Fehlerbehandlung
-		fmt.Println("base58 check failed")
+		return []byte{}, 0, fmt.Errorf("failed to validate the base58 checksum (from %s) ", input)
 	}
-	return payload, version
+	return payload, version, nil
 }

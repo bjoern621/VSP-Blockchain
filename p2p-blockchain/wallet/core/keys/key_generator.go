@@ -3,6 +3,7 @@ package keys
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
@@ -16,7 +17,7 @@ type KeyGenerator interface {
 	GetKeyset(privateKey [32]byte) common.Keyset
 
 	// GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
-	GetKeysetFromWIF(privateKeyWIF string) common.Keyset
+	GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error)
 }
 
 type KeyGeneratorImpl struct {
@@ -48,11 +49,15 @@ func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset 
 }
 
 // Not fully implemented yet!
-func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) common.Keyset {
-	return common.Keyset{
-		PrivateKey:    generator.decoder.WifToPrivateKey(privateKeyWIF),
-		PrivateKeyWif: privateKeyWIF,
+func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error) {
+	privateKey, err := generator.decoder.WifToPrivateKey(privateKeyWIF)
+	if err != nil {
+		return common.Keyset{}, fmt.Errorf("error decoding WIF: %w", err)
 	}
+	return common.Keyset{
+		PrivateKey:    privateKey,
+		PrivateKeyWif: privateKeyWIF,
+	}, nil
 }
 
 //private functions

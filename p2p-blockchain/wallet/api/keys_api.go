@@ -14,7 +14,7 @@ type KeyGeneratorApi interface {
 	GetKeyset(privateKey [32]byte) common.Keyset
 
 	// GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
-	GetKeysetFromWIF(privateKeyWIF string) common.Keyset
+	GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error)
 }
 
 type KeyGeneratorApiImpl struct {
@@ -35,6 +35,6 @@ func (k KeyGeneratorApiImpl) GetKeyset(privateKey [32]byte) common.Keyset {
 	return k.keyGenerator.GetKeyset(privateKey)
 }
 
-func (k KeyGeneratorApiImpl) GetKeysetFromWIF(privateKeyWIF string) common.Keyset {
+func (k KeyGeneratorApiImpl) GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error) {
 	return k.keyGenerator.GetKeysetFromWIF(privateKeyWIF)
 }
