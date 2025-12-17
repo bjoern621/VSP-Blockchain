@@ -10,6 +10,13 @@ on:
         branches:
             - "main"
 
+permissions:
+    contents: read
+
+concurrency:
+    group: rest-ci-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     PROJECT_FOLDER_NAME: rest-schnittstelle
 
@@ -20,6 +27,13 @@ jobs:
         steps:
             - name: Check out code
               uses: actions/checkout@v5
+
+            - name: Set up Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v3
+              with:
+                  driver: docker-container
+                  install: true
 
             - name: Setup
               uses: ./.github/actions/setup
@@ -42,6 +56,9 @@ jobs:
             - name: Build Docker image
               uses: docker/build-push-action@v6
               with:
+                  builder: ${{ steps.buildx.outputs.name }}
                   context: ./rest-schnittstelle/
                   push: false
                   tags: rest-vsp-blockchain:latest
+                  cache-from: type=gha,scope=rest
+                  cache-to: type=gha,mode=max,scope=rest

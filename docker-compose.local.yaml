@@ -1,0 +1,178 @@
+# Netzwerk besteht aus:
+# - miner2, miner3, miner4: Drei Miner-Knoten mit vollständiger Blockchain, Miner und App-Komponente
+
+# - minimal_node: Ein Knoten mit nur der App-Komponente
+# - registry-crawler: Aktualisiert DNS-Seed, nutzt minimal_node als gRPC-App-Endpunkt
+
+# - spv: Ein SPV-Knoten mit einfacher Blockchain, Wallet und App-Komponente
+# - rest-api: REST-Schnittstelle, nutzt spv als gRPC-App-Endpunkt
+
+# - registry: Ein CoreDNS-Dienst, der zur Auflösung der IPs genutzt wird
+
+# IP-Adressbereiche:
+# - 172.28.1.x: P2P-Knoten (minimal_node (registry-crawler), miner2-4, spv (rest-api))
+# - 172.28.2.x: Infrastruktur (registry)
+
+services:
+    minimal_node:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/node:local
+        network_mode: "service:registry-crawler"
+        depends_on:
+            - registry-crawler
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, registry-crawler technically only needs 127.0.0.1
+            P2P_LISTEN_ADDR: "172.28.1.10"
+            ADDITIONAL_SERVICES: "app"
+            LOG_LEVEL: "DEBUG"
+
+    registry-crawler:
+        build:
+            context: ./registry-crawler
+            dockerfile: Dockerfile
+        image: vsp-blockchain/registry-crawler:local
+        depends_on:
+            - miner2
+            - miner3
+            - miner4
+            - spv
+            - registry
+        dns:
+            - 172.28.2.2
+        environment:
+            APP_GRPC_ADDR_PORT: "127.0.0.1:50050"
+            SEED_UPDATE_INTERVAL: "60s"
+            SEED_BOOTSTRAP_ENDPOINTS: "172.28.1.12:50051,172.28.1.13:50051" # miner2 and miner3
+            SEED_HOSTS_FILE: "/seed/seed.hosts"
+            LOG_LEVEL: "TRACE"
+            PEER_DISCOVERY_INTERVAL: "30s"
+            ACCEPTED_P2P_PORT: "50051"
+        ports:
+            - "20001:50050"
+            - "50051:50051"
+        volumes:
+            - registry-hosts:/seed
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.10
+
+    miner2:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "172.28.1.12"
+            P2P_LISTEN_ADDR: "172.28.1.12"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
+            LOG_LEVEL: "DEBUG"
+        ports:
+            - "20002:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.12
+
+    miner3:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "172.28.1.13"
+            P2P_LISTEN_ADDR: "172.28.1.13"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
+            LOG_LEVEL: "DEBUG"
+        ports:
+            - "20003:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.13
+
+    miner4:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/node:local
+        dns:
+            - 172.28.2.2
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50052" # Non default P2P port for testing
+            APP_LISTEN_ADDR: "172.28.1.14"
+            P2P_LISTEN_ADDR: "172.28.1.14"
+            ADDITIONAL_SERVICES: "miner, blockchain_full, app"
+            LOG_LEVEL: "DEBUG"
+        ports:
+            - "20004:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.14
+
+    spv:
+        build:
+            context: ./p2p-blockchain
+            dockerfile: Dockerfile
+        image: vsp-blockchain/node:local
+        network_mode: "service:rest-api"
+        depends_on:
+            - rest-api
+        environment:
+            APP_PORT: "50050"
+            P2P_PORT: "50051"
+            APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, rest-api technically only needs 127.0.0.1
+            P2P_LISTEN_ADDR: "172.28.1.20"
+            ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
+            LOG_LEVEL: "DEBUG"
+
+    rest-api:
+        build:
+            context: ./rest-schnittstelle
+            dockerfile: Dockerfile
+        image: vsp-blockchain/rest-api:local
+        dns:
+            - 172.28.2.2
+        environment:
+            APP_GRPC_ADDR_PORT: "127.0.0.1:50050"
+            LOG_LEVEL: "DEBUG"
+        ports:
+            - "8080:8080"
+            - "20005:50050"
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.1.20
+
+    registry:
+        image: coredns/coredns:1.11.3
+        command: ["-conf", "/etc/coredns/Corefile"]
+        ports:
+            - "1053:53/udp"
+            - "1053:53/tcp"
+        volumes:
+            - ./registry/Corefile:/etc/coredns/Corefile:ro
+            - registry-hosts:/seed:ro
+        networks:
+            vsp-net:
+                ipv4_address: 172.28.2.2
+
+networks:
+    vsp-net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.28.0.0/16
+                  gateway: 172.28.0.1
+
+volumes:
+    registry-hosts: {}

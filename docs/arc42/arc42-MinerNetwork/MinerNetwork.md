@@ -367,8 +367,119 @@ Vllt. ist diese Anschauung auch unnötig? (Weil vllt. die gleichen Komponenten e
 
 # Laufzeitsicht
 
-## Verbindungsaufbau
 
+## State machine Miner: Allgemein
+Da unser System zustandslos- und asynchron arbeitet, sind die Sequenzen (Remote Procedure Calls) trivial. Diese werden
+hier nicht separat dargestellt. Ein Receive{Methoden Name} wird immer dann ausgeführt, wenn ein Remote Procedure Call empfangen wird.
+Ein Send{Methoden Name} bedeutet, dass ein Remote Procedure Call gesendet wird. In dem Diagramm wird dies nicht explizit dargestellt, 
+da es sich um eine triviale Sequenz handelt.
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> running
+    state "Running" as running
+
+    running --> connection_establishment
+    connection_establishment --> running: HandleConnectionEstablishment()
+    connection_establishment: Connection Establishment
+
+
+    running --> inv_received: ReceiveInv()
+    inv_received --> running: HandleInv()
+
+    running --> getData_received: ReceiveGetData()
+    getData_received --> running: HandleGetData()
+
+    running --> block_received: ReceiveBlock()
+    block_received --> running: HandleBlock()
+
+    running --> merkleBlock_received: ReceiveMerkleBlock()
+    merkleBlock_received --> running: HandleMerkleBlock()
+
+    running --> transaction_received: ReceiveTx()
+    transaction_received --> running: HandleTx()
+
+    running --> getHeaders_received: ReceiveGetHeaders()
+    getHeaders_received --> running: HandleGetHeaders()
+
+    running --> headers_received: ReceiveHeaders()
+    headers_received --> running: HandleHeaders()
+
+    running --> setFilter_received: ReceiveSetFilter()
+    setFilter_received --> running: HandleSetFilter()
+
+    running --> mempool_received: ReceiveMempool()
+    mempool_received --> running: HandleMempool()
+```
+<p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
+</div>
+
+## State machine Miner: Handshake
+
+Unser allgemeines System ist zustandslos. Dargestellt ist also nicht der Zustand des Gesamtsystems, sondern der Zustand,
+in welchem sich der aktuell verbindende Peer befindet. Für jeden neu verbindenden Peer wird der Zustand separat gespeichert.
+
+Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dargestellt sind, so werden diese ignoriert.
+
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state peer_check <<choice>>
+    [*] --> initiate
+    initiate --> peer_check
+    peer_check --> no_peers: if len(peers) == 0
+    peer_check --> initiateHandshake : if len(peers) > 0
+    no_peers --> initiateHandshake : getPeers()
+    [*] --> handleHandshake: HandleHandshake()
+    
+    state initiateHandshake {
+        [*] --> new
+        new --> awaiting_verack: SendVersion()
+        awaiting_verack --> connected: ReceiveVerack()
+        connected --> [*]: SendAck()
+    }
+    
+    state handleHandshake {
+        [*] --> new_: ReceiveVersion()
+        new_ --> awaiting_ack: SendVerack()
+        awaiting_ack --> connected_: ReceiveAck()
+        connected_ --> [*]
+        
+    }
+    
+    connected_: connected
+    new_: new
+    
+```
+<p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Verbindungsaufbau
 <div align="center">
 
 ```mermaid
@@ -577,6 +688,8 @@ Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-
 
 ## Orphan Block Handling
 
+<div align="center">
+
 ```mermaid
 
 sequenceDiagram
@@ -596,6 +709,10 @@ sequenceDiagram
     end
     node->>node: versuche Waisen-Blöcke anzuschließen
 ```
+
+<p><em>Abbildung: Sequenzdiagramm - Behandlung eines Waisenblocks</em></p>
+
+</div>
 
 Szenario:
 Node empfängt über `inv`, `getData` und `block` einen Block `C`. Dieser hat als Vorgängerblock einen Block `A`, welcher dem Node unbekannt ist.
@@ -779,41 +896,47 @@ Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenb
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 #### PubKey (öffentlicher Schlüssel)
-- Länge: **33 Byte**
-- Format: **komprimierter secp256k1-Public Key**
-- Verwendung:
-    - Bestandteil der Signaturprüfung eines Inputs
-    - Basis für die Adressgenerierung
+
+-   Länge: **33 Byte**
+-   Format: **komprimierter secp256k1-Public Key**
+-   Verwendung:
+    -   Bestandteil der Signaturprüfung eines Inputs
+    -   Basis für die Adressgenerierung
 
 #### PubKeyHash / Adresse
-- Länge: **20 Byte**
-- Bildung:
+
+-   Länge: **20 Byte**
+-   Bildung:
     1. SHA-256 über den 33-Byte-PubKey
     2. SHA-256 über den 33-Byte-Hash
     3. ersten 20 Byte als Adresse nehmen
-- Verwendung:
-    - Identifiziert die Empfänger eines Outputs
-    - Dient als vereinfachter `scriptPubKey`
+-   Verwendung:
+    -   Identifiziert die Empfänger eines Outputs
+    -   Dient als vereinfachter `scriptPubKey`
 
 #### UTXO (Unspent Transaction Output)
+
 Ein UTXO beschreibt einen nicht ausgegebenen Output einer früheren Transaktion.
 
 Bestandteile:
-- `TransactionID` (32 Byte)
-- `OutputIndex` (uint32)
-- `Value` (uint64)
-- `PubKeyHash` (PubKeyHash)
+
+-   `TransactionID` (32 Byte)
+-   `OutputIndex` (uint32)
+-   `Value` (uint64)
+-   `PubKeyHash` (PubKeyHash)
 
 UTXOs repräsentieren das Guthaben einer Adresse innerhalb des Systems.
 
 #### `Input`
+
 Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur den Besitz des dazugehörigen Private Keys.
 
 **Bestandteile:**
-- `PrevTxID` — 32-Byte ID der vorherigen Transaktion
-- `Index` — Output-Index innerhalb der referenzierten Transaktion
-- `Signature` — Byte-Slice
-- `PubKey` — PubKey
+
+-   `PrevTxID` — 32-Byte ID der vorherigen Transaktion
+-   `Index` — Output-Index innerhalb der referenzierten Transaktion
+-   `Signature` — Byte-Slice
+-   `PubKey` — PubKey
 
 **Zweck:**  
 Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszugeben.
@@ -821,11 +944,13 @@ Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszu
 ---
 
 #### `Output`
+
 Ein Output definiert einen neuen UTXO.
 
 **Bestandteile:**
-- `Value` — uint64, Wert des Outputs
-- `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
+
+-   `Value` — uint64, Wert des Outputs
+-   `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
 
 **Zweck:**  
 Legt fest, wohin der Wert übertragen wird.
@@ -833,9 +958,13 @@ Legt fest, wohin der Wert übertragen wird.
 ---
 
 #### Transaktion
+
 Eine Transaktion besteht aus mehreren Ein- und Ausgaben.
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions besteht aus folgendem:
+
+-   **Inputs**
+-   **Outputs**
 - **Inputs**
 - **Outputs**
 - LockTime (ulong 64 Bit vorzeichenlos)
@@ -849,23 +978,28 @@ Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eve
 Die Validierung stellt sicher, dass Transaktionen korrekt, sicher und konsistent mit dem UTXO-Modell verarbeitet werden. Die Regeln orientieren sich teilweise an Bitcoin, sind jedoch für V$Goin vereinfacht.
 
 #### 1. Input-Referenzierung
-- Jeder Input muss einen existierenden UTXO referenzieren.
-- Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
-- Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
+
+-   Jeder Input muss einen existierenden UTXO referenzieren.
+-   Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
+-   Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
 
 #### 2. Signatur und SIGHASH
+
 Für jeden Input wird ein SIGHASH berechnet:
-- Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
-- Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
-- Alle Outputs werden vollständig serialisiert.
-- Der Hash wird als **double-SHA-256** berechnet.
+
+-   Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
+-   Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
+-   Alle Outputs werden vollständig serialisiert.
+-   Der Hash wird als **double-SHA-256** berechnet.
 
 Signaturprüfung:
+
 1. DER-decodieren der Signatur → `(r, s)`
 2. Komprimierter Public Key wird dekomprimiert
 3. Prüfung mittels: ecdsa
 
 #### 3. PubKey-Bindung
+
 Zum Schutz vor Key-Substitution und Replay-Angriffen muss gelten: <br>
 HASH160(Input.PubKey) == UTXO.PubKeyHash <br>
 Falls nicht erfüllt → Input ist ungültig.

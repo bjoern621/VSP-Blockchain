@@ -12,8 +12,12 @@ type PeerStore struct {
 
 // PeerCreator is an interface for creating new peers.
 type PeerCreator interface {
+	// NewOutboundPeer creates a new peer for an outbound connection.
 	NewOutboundPeer() common.PeerId
+	// NewInboundPeer creates a new peer for an inbound connection.
 	NewInboundPeer() common.PeerId
+	// NewPeer creates a new peer without a specified direction.
+	NewPeer() common.PeerId
 }
 
 func NewPeerStore() *PeerStore {
@@ -49,4 +53,8 @@ func (s *PeerStore) NewInboundPeer() common.PeerId {
 // NewOutboundPeer creates a new peer for an outbound connection.
 func (s *PeerStore) NewOutboundPeer() common.PeerId {
 	return s.NewPeer(DirectionOutbound)
+}
+
+func (s *PeerStore) NewPeer() common.PeerId {
+	return s.newGenericPeer()
 }

@@ -18,7 +18,13 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/p2p-blockchain",
-            "env": { "LOG_LEVEL": "DEBUG", "P2P_PORT": "${input:port}" },
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "P2P_PORT": "${input:port}",
+                "APP_LISTEN_ADDR": "127.0.0.1",
+                "P2P_LISTEN_ADDR": "127.0.0.1",
+                "ADDITIONAL_SERVICES": "app,miner,blockchain_full"
+            },
             "preLaunchTask": "p2p-blockchain: prepare"
         },
         {
@@ -29,8 +35,11 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50050",
-                "P2P_PORT": "50051"
+                "APP_PORT": "20001",
+                "P2P_PORT": "50051",
+                "APP_LISTEN_ADDR": "127.0.0.1",
+                "P2P_LISTEN_ADDR": "127.0.0.1",
+                "ADDITIONAL_SERVICES": "app,miner,blockchain_full"
             },
             "presentation": { "hidden": true }
         },
@@ -42,8 +51,11 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50058",
-                "P2P_PORT": "50052"
+                "APP_PORT": "20002",
+                "P2P_PORT": "50052",
+                "APP_LISTEN_ADDR": "127.0.0.1",
+                "P2P_LISTEN_ADDR": "127.0.0.1",
+                "ADDITIONAL_SERVICES": "app,miner,blockchain_full"
             },
             "presentation": { "hidden": true }
         },
@@ -55,8 +67,11 @@
             "program": "${workspaceFolder}/p2p-blockchain",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "APP_PORT": "50059",
-                "P2P_PORT": "50053"
+                "APP_PORT": "20003",
+                "P2P_PORT": "50053",
+                "APP_LISTEN_ADDR": "127.0.0.1",
+                "P2P_LISTEN_ADDR": "127.0.0.1",
+                "ADDITIONAL_SERVICES": "app,miner,blockchain_full"
             },
             "presentation": { "hidden": true }
         },

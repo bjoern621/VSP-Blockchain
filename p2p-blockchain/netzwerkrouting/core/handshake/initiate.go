@@ -1,10 +1,9 @@
 package handshake
 
 import (
+	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
-
-	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // HandshakeMsgSender defines the interface for initiating a handshake with a peer.
@@ -21,30 +20,27 @@ type HandshakeMsgSender interface {
 // HandshakeInitiator defines the interface for initiating handshakes with peers.
 type HandshakeInitiator interface {
 	// InitiateHandshake starts the handshake process with the given peer.
-	InitiateHandshake(peerID common.PeerId)
+	InitiateHandshake(peerID common.PeerId) error
 }
 
-func (h *HandshakeService) InitiateHandshake(peerID common.PeerId) {
+func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
-		logger.Warnf("peer %s not found in store", peerID)
-		return
+		return fmt.Errorf("peer %s not found in store", peerID)
 	}
 
 	p.Lock()
 	defer p.Unlock()
 
 	if p.State != peer.StateNew {
-		logger.Warnf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
-		return
+		return fmt.Errorf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
 	}
 
-	versionInfo := VersionInfo{
-		Version:           common.VersionString,
-		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-	}
+	versionInfo := NewLocalVersionInfo()
 
 	p.State = peer.StateAwaitingVerack
 
 	go h.handshakeMsgSender.SendVersion(peerID, versionInfo)
+
+	return nil
 }

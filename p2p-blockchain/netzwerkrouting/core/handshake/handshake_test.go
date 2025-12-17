@@ -1,13 +1,23 @@
 package handshake
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
+
+// TestMain sets up the environment for the tests.
+// For example handshake_test.go depends on ADDITIONAL_SERVICES to have a value because NewHandshakeService.InitiateHandshake() calls NewLocalVersionInfo() which depends on this environment variable. Note that ADDITIONAL_SERVICES is optional and not relevant for the tests here.
+// P2P_LISTEN_ADDR is always a required environment variable.
+func TestMain(m *testing.M) {
+	_ = os.Setenv("P2P_LISTEN_ADDR", "does not matter")
+	common.Init()
+	os.Exit(m.Run())
+}
 
 type mockHandshakeMsgSender struct {
 	mu           sync.Mutex
@@ -67,7 +77,10 @@ func TestInitiateHandshake(t *testing.T) {
 
 	peerID := peerStore.NewOutboundPeer()
 
-	service.InitiateHandshake(peerID)
+	err := service.InitiateHandshake(peerID)
+	if err != nil {
+		t.Fatalf("unexpected error initiating handshake: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if sender.getVersionCallCount() != 1 {
@@ -96,7 +109,10 @@ func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 	p.State = peer.StateConnected
 	p.Unlock()
 
-	service.InitiateHandshake(peerID)
+	err := service.InitiateHandshake(peerID)
+	if err == nil {
+		t.Fatal("expected error initiating handshake for already connected peer, got nil")
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if sender.getVersionCallCount() != 0 {
@@ -111,11 +127,10 @@ func TestHandleVersion(t *testing.T) {
 
 	peerID := peerStore.NewInboundPeer()
 
-	services := []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull}
 	versionInfo := VersionInfo{
-		Version:           "2.5.1",
-		SupportedServices: services,
+		Version: "2.5.1",
 	}
+	versionInfo.AddService(peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull)
 
 	service.HandleVersion(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -149,11 +164,10 @@ func TestHandleVerack(t *testing.T) {
 	p.State = peer.StateAwaitingVerack
 	p.Unlock()
 
-	services := []peer.ServiceType{peer.ServiceType_Miner}
 	versionInfo := VersionInfo{
-		Version:           "1.5.0",
-		SupportedServices: services,
+		Version: "1.5.0",
 	}
+	versionInfo.AddService(peer.ServiceType_BlockchainFull, peer.ServiceType_Netzwerkrouting, peer.ServiceType_Miner)
 
 	service.HandleVerack(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -168,8 +182,8 @@ func TestHandleVerack(t *testing.T) {
 	if p.Version != "1.5.0" {
 		t.Errorf("expected version 1.5.0, got %s", p.Version)
 	}
-	if len(p.SupportedServices) != 1 {
-		t.Errorf("expected 1 supported service, got %d", len(p.SupportedServices))
+	if len(p.SupportedServices) != 3 {
+		t.Errorf("expected 3 supported service, got %d", len(p.SupportedServices))
 	}
 }
 
