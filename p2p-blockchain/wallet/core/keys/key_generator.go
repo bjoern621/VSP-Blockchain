@@ -33,14 +33,15 @@ func NewKeyGeneratorImpl(encoder KeyEncoder, decoder KeyDecoder) *KeyGeneratorIm
 }
 
 // public functions
-// Not fully implemented yet!
+
+// GenerateKeyset Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 	//private Key generieren
 	privateKey := generator.createPrivateKey()
 	return generator.GetKeyset(privateKey)
 }
 
-// Not fully implemented yet!
+// GetKeyset Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset {
 	return common.Keyset{
 		PrivateKey:    privateKey,
@@ -48,7 +49,7 @@ func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset 
 	}
 }
 
-// Not fully implemented yet!
+// GetKeysetFromWIF Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error) {
 	privateKey, err := generator.decoder.WifToPrivateKey(privateKeyWIF)
 	if err != nil {
@@ -66,6 +67,7 @@ func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) (commo
 var nMinusOneBytes = [32]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B, 0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40}
 var nMinusOne = new(big.Int).SetBytes(nMinusOneBytes[:])
 
+// createPrivateKey generates a new random private key
 func (generator *KeyGeneratorImpl) createPrivateKey() [32]byte {
 	for {
 		//1. create random 256 bits
