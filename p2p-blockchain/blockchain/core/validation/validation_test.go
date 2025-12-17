@@ -1,4 +1,4 @@
-package transaction
+package validation
 
 import (
 	"crypto/ecdsa"
@@ -49,7 +49,7 @@ func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transact
 
 	utxos := []transaction.UTXO{utxo}
 
-	// Create signed transaction
+	// Create signed validation
 	tx, err := transaction.NewTransaction(utxos, pubKeyHash, 500, 10, privKey)
 	if err != nil {
 		t.Fatal(err)
@@ -72,8 +72,8 @@ func TestValidateTransaction_Success(t *testing.T) {
 		UTXOService: mockUTXO,
 	}
 
-	if err := validator.ValidateTransaction(&tx); err != nil {
-		t.Fatal("expected transaction to validate:", err)
+	if _, err := validator.ValidateTransaction(&tx); err != nil {
+		t.Fatal("expected validation to validate:", err)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	brokenUTXO := &MockUTXOService{utxos: map[string]transaction.Output{}}
 	brokenValidator := ValidationService{UTXOService: brokenUTXO}
 
-	if err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
+	if _, err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
 		t.Fatal("expected validation to fail due to missing UTXO")
 	}
 }
@@ -101,7 +101,7 @@ func TestValidateTransaction_PubKeyMismatch(t *testing.T) {
 	}
 	badValidator := ValidationService{UTXOService: badUTXO}
 
-	if err := badValidator.ValidateTransaction(&tx); !errors.Is(err, ErrPubKeyMismatch) {
+	if _, err := badValidator.ValidateTransaction(&tx); !errors.Is(err, ErrPubKeyMismatch) {
 		t.Fatal("expected validation to fail due to pubkey mismatch")
 	}
 }
@@ -151,8 +151,8 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	// Use the original UTXO service (which expects original pubkey)
 	validator := ValidationService{UTXOService: mockUTXO}
 
-	// Validate transaction - should fail due to signature mismatch
-	if err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
+	// Validate validation - should fail due to signature mismatch
+	if _, err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to invalid signature")
 	}
 }
@@ -165,7 +165,7 @@ func TestValidateTransaction_FeeManipulated(t *testing.T) {
 	txTampered.Outputs[0].Value += 1000
 
 	validator := ValidationService{UTXOService: mockUTXO}
-	err := validator.ValidateTransaction(&txTampered)
+	_, err := validator.ValidateTransaction(&txTampered)
 	if !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to fee manipulation")
 	}

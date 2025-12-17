@@ -1,11 +1,11 @@
-package transaction
+package validation
 
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/asn1"
 	"errors"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 )
 
@@ -19,17 +19,17 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	UTXOService core.UTXOLookupService
+	UTXOService utxo.UTXOLookupService
 }
 
 // ValidateTransaction validates all inputs in a transaction by checking if each of the given inputs exists and all signatures are valid.
-func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) error {
+func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
 	for i := range tx.Inputs {
 		if err := v.validateInput(tx, i); err != nil {
-			return err
+			return false, err
 		}
 	}
-	return nil
+	return false, nil
 }
 
 // validateInput validates a single input

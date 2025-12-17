@@ -4,6 +4,8 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	blockchain2 "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
@@ -34,7 +36,10 @@ func main() {
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
 	blockchainService := blockchain2.NewBlockchainService(grpcClient, peerStore)
-	blockchain := core.NewBlockchain(blockchainService)
+
+	utxoLookup := utxo.UTXOLookupImpl{}
+	transactionValidator := validation.ValidationService{UTXOService: &utxoLookup}
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
