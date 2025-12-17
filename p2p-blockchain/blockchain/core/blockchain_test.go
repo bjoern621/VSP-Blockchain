@@ -1,6 +1,7 @@
 package core
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"testing"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -24,7 +25,7 @@ func (m *mockBlockchainSender) SendGetData(msg dto.GetDataMsgDTO, peerId common.
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
-	bc := NewBlockchain(sender)
+	bc := NewBlockchain(sender, validation.ValidationService{})
 
 	peerID := common.PeerId("peer-1")
 
