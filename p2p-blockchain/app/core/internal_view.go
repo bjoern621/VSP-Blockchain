@@ -5,15 +5,15 @@ import (
 )
 
 type InternalViewService struct {
-	networkRegistryAPI api.NetworkInfoAPI
+	networkInfoAPI api.NetworkInfoAPI
 }
 
-func NewInternsalViewService(networkRegistryAPI api.NetworkInfoAPI) *InternalViewService {
+func NewInternsalViewService(networkInfoAPI api.NetworkInfoAPI) *InternalViewService {
 	return &InternalViewService{
-		networkRegistryAPI: networkRegistryAPI,
+		networkInfoAPI: networkInfoAPI,
 	}
 }
 
 func (svc *InternalViewService) GetInternalPeerInfo() []api.PeerInfo {
-	return svc.networkRegistryAPI.GetInternalPeerInfo()
+	return svc.networkInfoAPI.GetInternalPeerInfo()
 }

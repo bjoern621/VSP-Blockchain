@@ -1,8 +1,8 @@
 package api
 
 import (
-	"fmt"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
@@ -17,11 +17,11 @@ type HandshakeAPI interface {
 // and register peers for outbound connections.
 type OutboundPeerResolver interface {
 	// GetOutboundPeer checks if a peer with the given listening address already exists.
-	// Used before initiating a handshake to avoid duplicate connections.
-	GetOutboundPeer(addrPort netip.AddrPort) (peerID peer.PeerID, exists bool)
+	// Used before initiating a handshake to resolve the peer ID.
+	GetOutboundPeer(addrPort netip.AddrPort) (peerID common.PeerId, exists bool)
 	// RegisterPeer registers a new peer with its listening endpoint in the NetworkInfoRegistry.
 	// This allows the gRPC middleware to route subsequent requests to the correct peer.
-	RegisterPeer(peerID peer.PeerID, listeningEndpoint netip.AddrPort)
+	RegisterPeer(peerID common.PeerId, listeningEndpoint netip.AddrPort)
 }
 
 // handshakeAPIService implements HandshakeAPI.
@@ -40,13 +40,16 @@ func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreat
 }
 
 func (s *handshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
-	if peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort); exists {
-		return fmt.Errorf("peer %s already exists for address %s", peerID, addrPort)
+	peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort)
+	if !exists {
+		peerID = s.peerCreator.NewOutboundPeer()
+		s.outboundPeerResolver.RegisterPeer(peerID, addrPort)
 	}
 
-	peerID := s.peerCreator.NewOutboundPeer()
-	s.outboundPeerResolver.RegisterPeer(peerID, addrPort)
+	err := s.handshakeInitiator.InitiateHandshake(peerID)
+	if err != nil {
+		return err
+	}
 
-	s.handshakeInitiator.InitiateHandshake(peerID)
 	return nil
 }

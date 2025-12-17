@@ -1,6 +1,7 @@
 package api
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 )
@@ -8,7 +9,7 @@ import (
 // FullInfrastructureInfo is a map from PeerID to arbitrary infrastructure data.
 // The infrastructure layer is free to fill this with any data it wants.
 // Callers can serialize the data to JSON or string for display.
-type FullInfrastructureInfo map[peer.PeerID]map[string]any
+type FullInfrastructureInfo map[common.PeerId]map[string]any
 
 // InfrastructureInfoProvider provides access to network-level (infrastructure / grpc) information about peers.
 type InfrastructureInfoProvider interface {
@@ -19,7 +20,7 @@ type InfrastructureInfoProvider interface {
 
 // PeerInfo contains information about a peer from the network registry and peer store.
 type PeerInfo struct {
-	PeerID peer.PeerID
+	PeerID common.PeerId
 
 	// PeerInfrastructureData contains arbitrary data from the infrastructure layer.
 	// This can be serialized to JSON for display.

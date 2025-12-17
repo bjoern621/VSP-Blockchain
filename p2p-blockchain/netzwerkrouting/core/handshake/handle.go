@@ -10,16 +10,16 @@ import (
 // HandshakeMsgHandler defines the interface for handling incoming connection messages.
 // This interface is implemented in the core/domain layer and used by the infrastructure layer.
 type HandshakeMsgHandler interface {
-	HandleVersion(peerID peer.PeerID, info VersionInfo)
-	HandleVerack(peerID peer.PeerID, info VersionInfo)
-	HandleAck(peerID peer.PeerID)
+	HandleVersion(peerID common.PeerId, info VersionInfo)
+	HandleVerack(peerID common.PeerId, info VersionInfo)
+	HandleAck(peerID common.PeerId)
 }
 
 func checkVersionCompatibility(string) bool {
 	return true
 }
 
-func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
+func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Version message", peerID)
@@ -42,19 +42,16 @@ func (h *handshakeService) HandleVersion(peerID peer.PeerID, info VersionInfo) {
 	// Valid
 
 	p.Version = info.Version
-	p.SupportedServices = info.SupportedServices
+	p.SupportedServices = info.SupportedServices()
 
-	versionInfo := VersionInfo{
-		Version:           common.VersionString,
-		SupportedServices: []peer.ServiceType{peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull, peer.ServiceType_Wallet, peer.ServiceType_Miner},
-	}
+	versionInfo := NewLocalVersionInfo()
 
 	p.State = peer.StateAwaitingAck
 
 	go h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
 
-func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
+func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Verack message", peerID)
@@ -78,12 +75,12 @@ func (h *handshakeService) HandleVerack(peerID peer.PeerID, info VersionInfo) {
 
 	p.State = peer.StateConnected
 	p.Version = info.Version
-	p.SupportedServices = info.SupportedServices
+	p.SupportedServices = info.SupportedServices()
 
 	go h.handshakeMsgSender.SendAck(peerID)
 }
 
-func (h *handshakeService) HandleAck(peerID peer.PeerID) {
+func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	p, ok := h.peerStore.GetPeer(peerID)
 	if !ok {
 		logger.Warnf("unknown peer %s sent Ack message", peerID)
