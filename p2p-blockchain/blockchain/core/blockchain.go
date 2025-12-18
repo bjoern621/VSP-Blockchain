@@ -77,7 +77,7 @@ func (b *Blockchain) Tx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
 
 	isNew := b.mempool.AddTransaction(tx)
 	if isNew {
-		b.sender.SendInv(dto.InvMsgDTO{
+		b.sender.BroadcastInv(dto.InvMsgDTO{
 			Inventory: []dto.InvVectorDTO{
 				block.FromTxToDtoInvVector(tx),
 			},
