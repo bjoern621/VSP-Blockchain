@@ -5,13 +5,13 @@ go 1.25.3
 require (
 	bjoernblessin.de/go-utils v1.0.1
 	github.com/arch-go/arch-go v1.7.0
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.6
 )
 
 require (
-	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

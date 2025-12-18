@@ -36,7 +36,7 @@ func (b *Blockchain) Inv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
 		case block.InvTypeMsgBlock:
 			panic("not implemented")
 		case block.InvTypeMsgTx:
-			if !b.mempool.IsKnownTransactionHash(v.Hash) {
+			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
 				unknownData = append(unknownData, v)
 			}
 		case block.InvTypeMsgFilteredBlock:
@@ -70,7 +70,7 @@ func (b *Blockchain) Tx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
 		logger.Errorf("Tx Message received from %v is invalid: %v", peerID, err)
 		return
 	}
-	if b.mempool.IsKnownTransactionId(tx.Hash()) {
+	if b.mempool.IsKnownTransactionId(tx.Hash()) || b.IsTransactionKnownById(tx.Hash()) {
 		logger.Infof("Tx Message already known: %v from %v", tx, peerID)
 		return
 	}
