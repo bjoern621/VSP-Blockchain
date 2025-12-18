@@ -49,9 +49,7 @@ type InvVector struct {
 
 func newInvTypeFromDTO(t dto.InvTypeDTO) InvType {
 	out, err := invTypeDTOFromPB(t)
-	if err != nil {
-		panic(err)
-	}
+	assert.IsNotNil(err)
 	return out
 }
 
