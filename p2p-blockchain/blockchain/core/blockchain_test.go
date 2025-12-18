@@ -22,6 +22,8 @@ func (m *mockBlockchainSender) SendGetData(msg dto.GetDataMsgDTO, peerId common.
 	m.lastPeerID = peerId
 }
 
+func (m *mockBlockchainSender) BroadcastInv(msg dto.InvMsgDTO, peerId common.PeerId) {}
+
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
