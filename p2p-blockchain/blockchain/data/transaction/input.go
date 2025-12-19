@@ -14,9 +14,9 @@ func NewInputFromDTO(in dto.TxInputDTO) Input {
 	return Input{
 		PrevTxID:    NewTransactionIDFromDTO(in.PrevTxHash),
 		OutputIndex: in.OutputIndex,
-		Signature:   in.SignatureScript,
-		//TODO: PubKey: ...
-		Sequence: in.Sequence,
+		Signature:   in.Signature,
+		PubKey:      PubKey(in.PublicKey),
+		Sequence:    in.Sequence,
 	}
 }
 

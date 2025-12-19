@@ -9,8 +9,8 @@ type Output struct {
 
 func NewOutputFromDTO(o dto.TxOutputDTO) Output {
 	return Output{
-		Value: o.Value,
-		//TODO: Was passiert hier? TxOutput hat im Proto nur PublicKeyScript, braucht hier aber PubKeyHash??? PubKeyHash: o.PublicKeyScript
+		Value:      o.Value,
+		PubKeyHash: PubKeyHash(o.PublicKeyHash),
 	}
 }
 
