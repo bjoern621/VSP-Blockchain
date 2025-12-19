@@ -213,18 +213,24 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 		}
 	})
 
+	var pkh dto.PublicKeyHash
+	copy(pkh[:], make([]byte, 20))
+	var pk dto.PublicKey
+	copy(pk[:], make([]byte, 33))
+
 	t.Run("NotifyTx", func(t *testing.T) {
 		msg := dto.TxMsgDTO{
 			Transaction: dto.TransactionDTO{
 				Inputs: []dto.TxInputDTO{{
-					PrevTxHash:      mustHash(0x22),
-					OutputIndex:     0,
-					SignatureScript: []byte{0x30, 0x01},
-					Sequence:        0xffffffff,
+					PrevTxHash:  mustHash(0x22),
+					OutputIndex: 0,
+					Signature:   []byte{0x30, 0x01},
+					PublicKey:   pk,
+					Sequence:    0xffffffff,
 				}},
 				Outputs: []dto.TxOutputDTO{{
-					Value:           500,
-					PublicKeyScript: []byte{0x76, 0xa9},
+					Value:         500,
+					PublicKeyHash: pkh,
 				}},
 				LockTime: 500,
 			},

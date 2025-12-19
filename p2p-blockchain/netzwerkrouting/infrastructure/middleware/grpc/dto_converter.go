@@ -197,15 +197,23 @@ func NewTxInputDTOFromPB(m *pb.TxInput) (dto.TxInputDTO, error) {
 	if m == nil {
 		return dto.TxInputDTO{}, fmt.Errorf("TxInput is nil")
 	}
+
+	var pk dto.PublicKey
+	if len(m.PublicKey) != len(pk) {
+		return dto.TxInputDTO{}, fmt.Errorf("invalid PublicKey length")
+	}
+	copy(pk[:], m.PublicKey)
+
 	prevTxHash, err := NewHash(m.PrevTxHash)
 	if err != nil {
 		return dto.TxInputDTO{}, err
 	}
 	return dto.TxInputDTO{
-		PrevTxHash:      prevTxHash,
-		OutputIndex:     m.OutputIndex,
-		SignatureScript: append([]byte(nil), m.SignatureScript...),
-		Sequence:        m.Sequence,
+		PrevTxHash:  prevTxHash,
+		OutputIndex: m.OutputIndex,
+		Signature:   append([]byte(nil), m.Signature...),
+		PublicKey:   pk,
+		Sequence:    m.Sequence,
 	}, nil
 }
 
@@ -213,9 +221,16 @@ func NewTxOutputDTOFromPB(m *pb.TxOutput) (dto.TxOutputDTO, error) {
 	if m == nil {
 		return dto.TxOutputDTO{}, fmt.Errorf("TxOutput is nil")
 	}
+
+	var pkh dto.PublicKeyHash
+	if len(m.PublicKeyHash) != len(pkh) {
+		return dto.TxOutputDTO{}, fmt.Errorf("invalid PublicKeyHash length")
+	}
+	copy(pkh[:], m.PublicKeyHash)
+
 	return dto.TxOutputDTO{
-		Value:           m.Value,
-		PublicKeyScript: append([]byte(nil), m.PublicKeyScript...),
+		Value:         m.Value,
+		PublicKeyHash: pkh,
 	}, nil
 }
 
