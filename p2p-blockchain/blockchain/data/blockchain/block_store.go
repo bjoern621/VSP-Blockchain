@@ -28,6 +28,6 @@ func NewBlockStore() *BlockStore {
 	}
 }
 
-func (hs *BlockStore) AddHeaderNode(node *BlockNode) {
+func (hs *BlockStore) AddBlock(block *block.Block) {
 
 }
