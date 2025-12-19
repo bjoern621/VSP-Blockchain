@@ -22,6 +22,6 @@ type ObservableBlockchainServerAPI interface {
 	NotifyTx(tx transaction.Transaction, peerID common.PeerId)
 	NotifyGetHeaders(locator block.BlockLocator, peerID common.PeerId)
 	NotifyHeaders(headers []*block.BlockHeader, peerID common.PeerId)
-	NotifySetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId)
+	NotifySetFilterRequest(setFilterRequest block.SetFilterRequest, peerID common.PeerId)
 	NotifyMempool(peerID common.PeerId)
 }

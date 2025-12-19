@@ -7,7 +7,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/adapter"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/mapping"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -25,7 +25,7 @@ func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	invMsgDTO, err := NewInvMsgDTOFromPB(msg)
+	invMsgDTO, err := adapter.ToInvVectorsFromInvMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error
 func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	getDataMsgDTO, err := NewGetDataMsgDTOFromPB(msg)
+	getDataMsgDTO, err := adapter.ToInvVectorsFromGetDataMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empt
 func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	blockMsgDTO, err := NewBlockMsgDTOFromPB(msg)
+	blockMsgDTO, err := adapter.ToBlockFromBlockMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	merkleBlockMsgDTO, err := NewMerkleBlockMsgDTOFromPB(msg.MerkleBlock)
+	merkleBlockMsgDTO, err := adapter.ToMerkleBlockFromMerkleBlockMsg(msg.MerkleBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*empt
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	txMsgDTO, err := NewTxMsgDTOFromPB(msg)
+	txMsgDTO, err := adapter.ToTxFromTxMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) 
 func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	blockLocator, err := NewBlockLocatorDTOFromPB(locator)
+	blockLocator, err := adapter.ToBlockLocator(locator)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emp
 func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	headers, err := NewBlockHeadersDTOFromPB(pbHeaders)
+	headers, err := adapter.ToHeadersFromHeadersMsg(pbHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*empt
 func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	filterRequest, err := NewSetFilterRequestDTOFromPB(request)
+	filterRequest, err := adapter.ToSetFilterRequestFromSetFilterRequest(request)
 	if err != nil {
 		return nil, err
 	}
@@ -135,31 +135,31 @@ func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 
 func (s *Server) NotifyInv(inventory []*block.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
-		observer.Inv(invMsg, peerID)
+		observer.Inv(inventory, peerID)
 	}
 }
 
 func (s *Server) NotifyGetData(inventory []*block.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
-		observer.GetData(getDataMsg, peerID)
+		observer.GetData(inventory, peerID)
 	}
 }
 
 func (s *Server) NotifyBlock(block block.Block, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
-		observer.Block(blockMsg, peerID)
+		observer.Block(block, peerID)
 	}
 }
 
 func (s *Server) NotifyMerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
-		observer.MerkleBlock(merkleBlockMsg, peerID)
+		observer.MerkleBlock(merkleBlock, peerID)
 	}
 }
 
 func (s *Server) NotifyTx(tx transaction.Transaction, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
-		observer.Tx(txMsg, peerID)
+		observer.Tx(tx, peerID)
 	}
 }
 
@@ -175,7 +175,7 @@ func (s *Server) NotifyHeaders(headers []*block.BlockHeader, peerID common.PeerI
 	}
 }
 
-func (s *Server) NotifySetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
+func (s *Server) NotifySetFilterRequest(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.SetFilter(setFilterRequest, peerID)
 	}
