@@ -7,6 +7,9 @@ includes:
     miner:
         taskfile: ./p2p-blockchain/Taskfile.yml
         dir: ./p2p-blockchain
+    registry-crawler:
+        taskfile: ./registry-crawler/Taskfile.yml
+        dir: ./registry-crawler
 
 vars:
     NAMESPACE: vsp-blockchain
@@ -30,3 +33,16 @@ tasks:
         internal: true
         cmds:
             - kubectl apply -f kubernetes-deployment-local.yaml
+
+    up:
+        desc: Start local docker-compose stack (miners, seed-dns registry, crawler, rest-api)
+        cmds:
+            - task: rest:prepare
+            - task: miner:prepare
+            - task: registry-crawler:prepare
+            - docker compose -f docker-compose.local.yaml up --build -d
+
+    down:
+        desc: Stop local docker-compose stack
+        cmds:
+            - docker compose -f docker-compose.local.yaml down -v
