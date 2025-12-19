@@ -2,10 +2,10 @@ package api
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 )
 
 type BlockchainService interface {
-	SendGetData(dto dto.GetDataMsgDTO, peerId common.PeerId)
-	BroadcastInv(dto dto.InvMsgDTO, peerId common.PeerId)
+	SendGetData(inventory []*block.InvVector, peerId common.PeerId)
+	BroadcastInv(inventory []*block.InvVector, peerId common.PeerId)
 }
