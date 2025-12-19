@@ -1,11 +1,11 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
-func (b *Blockchain) IsTransactionKnown(hash block.Hash) bool {
+func (b *Blockchain) IsTransactionKnown(hash common.Hash) bool {
 	//TODO: Implement
 	panic("not implemented")
 	return true

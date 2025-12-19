@@ -64,7 +64,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		logger.Errorf("Tx Message received from %v is invalid: %v", peerID, err)
 		return
 	}
-	if b.mempool.IsKnownTransactionId(tx.Hash()) || b.IsTransactionKnownById(tx.Hash()) {
+	if b.mempool.IsKnownTransactionId(tx.TransactionId()) || b.IsTransactionKnownById(tx.TransactionId()) {
 		logger.Infof("Tx Message already known: %v from %v", tx, peerID)
 		return
 	}

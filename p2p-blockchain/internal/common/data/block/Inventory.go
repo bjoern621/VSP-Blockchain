@@ -1,5 +1,7 @@
 package block
 
+import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
+
 type InvType int
 
 const (
@@ -10,5 +12,5 @@ const (
 
 type InvVector struct {
 	InvType InvType
-	Hash    Hash
+	Hash    common.Hash
 }

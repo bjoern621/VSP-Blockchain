@@ -1,15 +1,15 @@
 package core
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"testing"
 
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // txIDToBlockHash converts a TransactionID (32 bytes) into the block.Hash type used by Mempool.IsKnownTransaction.
-func txIDToBlockHash(id transaction.TransactionID) block.Hash {
-	var h block.Hash
+func txIDToBlockHash(id transaction.TransactionID) common.Hash {
+	var h common.Hash
 	copy(h[:], id[:])
 	return h
 }
@@ -45,8 +45,8 @@ func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 		},
 	}
 
-	h1 := txIDToBlockHash(tx1.Hash())
-	h2 := txIDToBlockHash(tx2.Hash())
+	h1 := txIDToBlockHash(tx1.TransactionId())
+	h2 := txIDToBlockHash(tx2.TransactionId())
 
 	// Sanity check for a "reasonable" Hash(): different tx -> different hash.
 	// If this fails later, your hashing function likely doesn't include all relevant fields.
@@ -86,7 +86,7 @@ func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) 
 			{Value: 99},
 		},
 	}
-	h := txIDToBlockHash(tx.Hash())
+	h := txIDToBlockHash(tx.TransactionId())
 
 	m.AddTransaction(tx)
 	if got := len(m.transactions); got != 1 {
@@ -107,7 +107,7 @@ func TestMempool_IsKnownTransaction_UnknownHashReturnsFalse(t *testing.T) {
 	m := NewMempool()
 
 	// Some arbitrary hash that (with overwhelming probability) doesn't match any tx hash in an empty mempool.
-	var unknown block.Hash
+	var unknown common.Hash
 	unknown[0] = 0x42
 	unknown[31] = 0x99
 

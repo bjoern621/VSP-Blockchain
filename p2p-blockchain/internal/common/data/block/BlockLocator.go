@@ -1,6 +1,8 @@
 package block
 
+import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
+
 type BlockLocator struct {
-	BlockLocatorHashes []Hash
-	StopHash           Hash
+	BlockLocatorHashes []common.Hash
+	StopHash           common.Hash
 }

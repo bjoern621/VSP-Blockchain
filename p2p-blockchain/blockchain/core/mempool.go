@@ -1,8 +1,8 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
 	"sync"
 )
@@ -18,7 +18,7 @@ func NewMempool() *Mempool {
 	}
 }
 
-func (m *Mempool) IsKnownTransactionHash(hash block.Hash) bool {
+func (m *Mempool) IsKnownTransactionHash(hash common.Hash) bool {
 	txId := getTransactionIdFromHash(hash)
 	_, ok := m.transactions[txId]
 	return ok
@@ -33,7 +33,7 @@ func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	txId := tx.Hash()
+	txId := tx.TransactionId()
 	_, ok := m.transactions[txId]
 	if !ok {
 		m.transactions[txId] = tx
@@ -42,7 +42,7 @@ func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
 	return !ok
 }
 
-func getTransactionIdFromHash(hash block.Hash) transaction.TransactionID {
+func getTransactionIdFromHash(hash common.Hash) transaction.TransactionID {
 	var transactionId transaction.TransactionID
 	copy(transactionId[:], hash[:])
 	return transactionId

@@ -6,7 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/sha256"
 	"fmt"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
 
 type Transaction struct {
@@ -106,9 +106,9 @@ func (tx *Transaction) Clone() *Transaction {
 }
 
 // Hash computes the block.Hash similar to the bitcoin wtxid with transaction data including witness
-func (tx *Transaction) Hash() block.Hash {
+func (tx *Transaction) Hash() common.Hash {
 	txId := tx.TransactionId()
-	var hash block.Hash
+	var hash common.Hash
 	copy(hash[:], txId[:])
 	return hash
 }
