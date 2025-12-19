@@ -25,12 +25,11 @@ func NewBlockchain(sender api.BlockchainService, transactionValidator validation
 }
 
 func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
-	invVectors := block.InvVectorsFromInvMsgDTO(invMsg)
-	logger.Infof("Inv Message received: %v from %v", invVectors, peerID)
+	logger.Infof("Inv Message received: %v from %v", inventory, peerID)
 
-	unknownData := make([]block.InvVector, 0)
+	unknownData := make([]*block.InvVector, 0)
 
-	for _, v := range invVectors {
+	for _, v := range inventory {
 		switch v.InvType {
 		case block.InvTypeMsgBlock:
 			panic("not implemented")
@@ -47,15 +46,14 @@ func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
 }
 
 func (b *Blockchain) GetData(inventory []*block.InvVector, peerID common.PeerId) {
-	logger.Infof("GetData Message received: %v from %v", invVectors, peerID)
+	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
 }
 
 func (b *Blockchain) Block(block block.Block, peerID common.PeerId) {
-	logger.Infof("Block Message received: %v from %v", blockConverted, peerID)
+	logger.Infof("Block Message received: %v from %v", block, peerID)
 }
 
 func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
-	merkleBlock := block.NewMerkleBlockFromDTO(merkleBlockMsg.MerkleBlock)
 	logger.Infof("MerkleBlock Message received: %v from %v", merkleBlock, peerID)
 }
 
@@ -73,32 +71,33 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
 	isNew := b.mempool.AddTransaction(tx)
 	if isNew {
-		b.sender.BroadcastInv(dto.InvMsgDTO{
-			Inventory: []dto.InvVectorDTO{
-				block.FromTxToDtoInvVector(tx),
-			},
-		}, peerID)
+		invVectors := make([]*block.InvVector, 0)
+		invVector := block.InvVector{
+			Hash:    tx.Hash(),
+			InvType: block.InvTypeMsgTx,
+		}
+		invVectors = append(invVectors, &invVector)
+		b.sender.BroadcastInv(invVectors, peerID)
 	}
 
 	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 }
 
 func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
-	logger.Infof("GetHeaders Message received: %v from %v", blockLocator, peerID)
+	logger.Infof("GetHeaders Message received: %v from %v", locator, peerID)
 }
 
 func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
-	logger.Infof("Headers Message received: %v from %v", headers, peerID)
+	logger.Infof("Headers Message received: %v from %v", blockHeaders, peerID)
 }
 
 func (b *Blockchain) SetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
-	logger.Infof("setFilerRequest Message received: %v from %v", request, peerID)
+	logger.Infof("setFilerRequest Message received: %v from %v", setFilterRequest, peerID)
 }
 func (b *Blockchain) Mempool(peerID common.PeerId) {
 	logger.Infof("Mempool Message received from %v", peerID)
 }
 
-func (b *Blockchain) requestData(missingData []block.InvVector, id common.PeerId) {
-	dtoInvVectors := block.ToDtoInvVectors(missingData)
-	b.sender.SendGetData(dto.GetDataMsgDTO{Inventory: dtoInvVectors}, id)
+func (b *Blockchain) requestData(missingData []*block.InvVector, id common.PeerId) {
+	b.sender.SendGetData(missingData, id)
 }
