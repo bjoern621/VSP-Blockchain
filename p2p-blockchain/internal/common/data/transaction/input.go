@@ -1,23 +1,11 @@
 package transaction
 
-import "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
-
 type Input struct {
 	PrevTxID    TransactionID
 	OutputIndex uint32
 	Signature   []byte
 	PubKey      PubKey
 	Sequence    uint32
-}
-
-func NewInputFromDTO(in dto.TxInputDTO) Input {
-	return Input{
-		PrevTxID:    NewTransactionIDFromDTO(in.PrevTxHash),
-		OutputIndex: in.OutputIndex,
-		Signature:   in.SignatureScript,
-		//TODO: PubKey: ...
-		Sequence: in.Sequence,
-	}
 }
 
 func (in *Input) Clone() Input {
