@@ -18,6 +18,8 @@ type Hash [common.HashSize]byte
 
 type PublicKeyHash [common.PublicKeyHashSize]byte
 
+type PublicKey [common.PublicKeySize]byte
+
 type InvVectorDTO struct {
 	Type InvTypeDTO
 	Hash Hash
@@ -59,15 +61,16 @@ type TransactionDTO struct {
 }
 
 type TxInputDTO struct {
-	PrevTxHash      Hash
-	OutputIndex     uint32
-	SignatureScript []byte // Wie groß ist?
-	Sequence        uint32
+	PrevTxHash  Hash
+	OutputIndex uint32
+	Signature   []byte // around 68-72 bytes, not fixed
+	PublicKey   PublicKey
+	Sequence    uint32
 }
 
 type TxOutputDTO struct {
-	Value           uint64
-	PublicKeyScript []byte // Wie groß ist?
+	Value         uint64
+	PublicKeyHash PublicKeyHash
 }
 
 type BlockHeaderDTO struct {
