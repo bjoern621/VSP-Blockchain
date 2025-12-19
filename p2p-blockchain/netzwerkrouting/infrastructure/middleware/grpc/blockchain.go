@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/mapping"
@@ -131,49 +133,49 @@ func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) NotifyInv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
+func (s *Server) NotifyInv(inventory []*block.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Inv(invMsg, peerID)
 	}
 }
 
-func (s *Server) NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId) {
+func (s *Server) NotifyGetData(inventory []*block.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.GetData(getDataMsg, peerID)
 	}
 }
 
-func (s *Server) NotifyBlock(blockMsg dto.BlockMsgDTO, peerID common.PeerId) {
+func (s *Server) NotifyBlock(block block.Block, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Block(blockMsg, peerID)
 	}
 }
 
-func (s *Server) NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID common.PeerId) {
+func (s *Server) NotifyMerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.MerkleBlock(merkleBlockMsg, peerID)
 	}
 }
 
-func (s *Server) NotifyTx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
+func (s *Server) NotifyTx(tx transaction.Transaction, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Tx(txMsg, peerID)
 	}
 }
 
-func (s *Server) NotifyGetHeaders(locator dto.BlockLocatorDTO, peerID common.PeerId) {
+func (s *Server) NotifyGetHeaders(locator block.BlockLocator, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.GetHeaders(locator, peerID)
 	}
 }
 
-func (s *Server) NotifyHeaders(headers dto.BlockHeadersDTO, peerID common.PeerId) {
+func (s *Server) NotifyHeaders(headers []*block.BlockHeader, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Headers(headers, peerID)
 	}
 }
 
-func (s *Server) NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID common.PeerId) {
+func (s *Server) NotifySetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.SetFilter(setFilterRequest, peerID)
 	}

@@ -3,8 +3,9 @@ package core
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
@@ -23,7 +24,7 @@ func NewBlockchain(sender api.BlockchainService, transactionValidator validation
 	}
 }
 
-func (b *Blockchain) Inv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
+func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
 	invVectors := block.InvVectorsFromInvMsgDTO(invMsg)
 	logger.Infof("Inv Message received: %v from %v", invVectors, peerID)
 
@@ -45,23 +46,20 @@ func (b *Blockchain) Inv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
 	b.requestData(unknownData, peerID)
 }
 
-func (b *Blockchain) GetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId) {
-	invVectors := block.InvVectorFromGetDataDTO(getDataMsg)
+func (b *Blockchain) GetData(inventory []*block.InvVector, peerID common.PeerId) {
 	logger.Infof("GetData Message received: %v from %v", invVectors, peerID)
 }
 
-func (b *Blockchain) Block(blockMsg dto.BlockMsgDTO, peerID common.PeerId) {
-	blockConverted := block.NewBlockFromDTO(blockMsg.Block)
+func (b *Blockchain) Block(block block.Block, peerID common.PeerId) {
 	logger.Infof("Block Message received: %v from %v", blockConverted, peerID)
 }
 
-func (b *Blockchain) MerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID common.PeerId) {
+func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
 	merkleBlock := block.NewMerkleBlockFromDTO(merkleBlockMsg.MerkleBlock)
 	logger.Infof("MerkleBlock Message received: %v from %v", merkleBlock, peerID)
 }
 
-func (b *Blockchain) Tx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
-	tx := transaction.NewTransactionFromDTO(txMsg.Transaction)
+func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
 	if !isValid {
@@ -85,18 +83,15 @@ func (b *Blockchain) Tx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
 	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 }
 
-func (b *Blockchain) GetHeaders(locator dto.BlockLocatorDTO, peerID common.PeerId) {
-	blockLocator := block.NewBlockLocatorFromDTO(locator)
+func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
 	logger.Infof("GetHeaders Message received: %v from %v", blockLocator, peerID)
 }
 
-func (b *Blockchain) Headers(blockHeaders dto.BlockHeadersDTO, peerID common.PeerId) {
-	headers := block.NewBlockHeadersFromDTO(blockHeaders)
+func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
 	logger.Infof("Headers Message received: %v from %v", headers, peerID)
 }
 
-func (b *Blockchain) SetFilter(setFilterRequest dto.SetFilterRequestDTO, peerID common.PeerId) {
-	request := block.NewSetFilterRequestFromDTO(setFilterRequest)
+func (b *Blockchain) SetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
 	logger.Infof("setFilerRequest Message received: %v from %v", request, peerID)
 }
 func (b *Blockchain) Mempool(peerID common.PeerId) {
