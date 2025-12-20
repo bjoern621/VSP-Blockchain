@@ -2,34 +2,34 @@ name: generate_grpc
 author: bennet
 description: "Installs protoc and the go packages to generate stubs and generates stubs"
 runs:
-  using: composite
-  steps:
-    - name: Install taskfiles
-      shell: bash
-      run: |
-        curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | sudo -E bash
-        sudo apt update
-        sudo apt --fix-missing install task
+    using: composite
+    steps:
+        - name: Install task
+          shell: bash
+          run: |
+              go install github.com/go-task/task/v3/cmd/task@v3.45.5
+              echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+              task --version
 
-    - name: Install protoc
-      shell: bash
-      run: |
-        BIN="/usr/local/bin" && \
-        VERSION="1.61.0" && \
-        curl -sSL \
-        "https://github.com/bufbuild/buf/releases/download/v${VERSION}/buf-$(uname -s)-$(uname -m)" \
-        -o "${BIN}/buf" && \
-        chmod +x "${BIN}/buf"
+        - name: Install protoc
+          shell: bash
+          run: |
+              BIN="/usr/local/bin" && \
+              VERSION="1.61.0" && \
+              curl -sSL \
+              "https://github.com/bufbuild/buf/releases/download/v${VERSION}/buf-$(uname -s)-$(uname -m)" \
+              -o "${BIN}/buf" && \
+              chmod +x "${BIN}/buf"
 
-    - name: Install protoc Go plugins
-      shell: bash
-      run: |
-        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        - name: Install protoc Go plugins
+          shell: bash
+          run: |
+              go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+              go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+              echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
-    - name: Generate Go protobuf stubs
-      shell: bash
-      run: |
-        task miner:proto
-        task rest:proto
+        - name: Generate Go protobuf stubs
+          shell: bash
+          run: |
+              task miner:proto
+              task rest:proto
