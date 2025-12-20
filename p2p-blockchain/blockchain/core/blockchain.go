@@ -1,6 +1,7 @@
 package core
 
 import (
+	api2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
@@ -14,6 +15,8 @@ type Blockchain struct {
 	mempool              *Mempool
 	sender               api.BlockchainService
 	transactionValidator validation.ValidationService
+	//TODO: use from https://github.com/bjoern621/VSP-Blockchain/tree/166-task-blockchain-und-header-datenstruktur-erstellen
+	blockStore api2.BlockStore
 }
 
 func NewBlockchain(sender api.BlockchainService, transactionValidator validation.ValidationService) *Blockchain {
@@ -27,22 +30,24 @@ func NewBlockchain(sender api.BlockchainService, transactionValidator validation
 func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
 	logger.Infof("Inv Message received: %v from %v", inventory, peerID)
 
-	unknownData := make([]*block.InvVector, 0)
+	dataToRequest := make([]*block.InvVector, 0)
 
 	for _, v := range inventory {
 		switch v.InvType {
 		case block.InvTypeMsgBlock:
-			panic("not implemented")
+			if !b.blockStore.IsKnownBlockHash(v.Hash) {
+				dataToRequest = append(dataToRequest, v)
+			}
 		case block.InvTypeMsgTx:
 			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
-				unknownData = append(unknownData, v)
+				dataToRequest = append(dataToRequest, v)
 			}
 		case block.InvTypeMsgFilteredBlock:
 			panic("not implemented")
 		}
 	}
 
-	b.requestData(unknownData, peerID)
+	b.requestData(dataToRequest, peerID)
 }
 
 func (b *Blockchain) GetData(inventory []*block.InvVector, peerID common.PeerId) {
@@ -50,6 +55,8 @@ func (b *Blockchain) GetData(inventory []*block.InvVector, peerID common.PeerId)
 }
 
 func (b *Blockchain) Block(block block.Block, peerID common.PeerId) {
+	//if !b.blockStore.IsKnownBlockHash(block.Header)
+
 	logger.Infof("Block Message received: %v from %v", block, peerID)
 }
 
@@ -58,6 +65,7 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 }
 
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
+	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
 	if !isValid {
@@ -79,8 +87,6 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		invVectors = append(invVectors, &invVector)
 		b.sender.BroadcastInv(invVectors, peerID)
 	}
-
-	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 }
 
 func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
