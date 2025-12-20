@@ -31,12 +31,6 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	/* For key generation
-	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
-	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
-	keyGeneratorApiImpl := api.NewKeyGeneratorApiImpl(keyGeneratorImpl)
-	*/
-
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 
