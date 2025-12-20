@@ -39,7 +39,7 @@ type ChainStateConfig struct {
 // NewChainState creates a new ChainStateService with BadgerDB storage
 func NewChainState(config ChainStateConfig) (*ChainStateService, error) {
 	daoConfig := infrastructure.NewUTXOEntryDAOConfig(config.DBPath, config.InMemory)
-	dao, err := infrastructure.GetUTXOEntryDAO(daoConfig)
+	dao, err := infrastructure.NewUTXOEntryDAO(daoConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (c *ChainStateService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry,
 	entry, err := c.dao.Find(outpoint)
 
 	if err != nil {
-		return utxopool.UTXOEntry{}, err
+		return utxopool.UTXOEntry{}, ErrUTXONotFound
 	}
 
 	c.addToCache(key, entry)

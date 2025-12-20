@@ -5,15 +5,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"sync"
 
 	"github.com/dgraph-io/badger/v4"
-)
-
-var (
-	instance *UTXOEntryDAO
-	once     sync.Once
-	initErr  error
 )
 
 const (
@@ -27,22 +20,19 @@ type UTXOEntryDAO struct {
 	db *badger.DB
 }
 
-// GetUTXOEntryDAO returns the singleton instance of UTXOEntryDAO
-func GetUTXOEntryDAO(config UTXOEntryDAOConfig) (*UTXOEntryDAO, error) {
-	once.Do(func() {
-		opts := badger.DefaultOptions(config.DBPath)
-		if config.InMemory {
-			opts = opts.WithInMemory(true)
-		}
-		opts = opts.WithLogger(nil)
-		var db *badger.DB
-		db, initErr = badger.Open(opts)
-		if initErr != nil {
-			return
-		}
-		instance = &UTXOEntryDAO{db: db}
-	})
-	return instance, initErr
+// NewUTXOEntryDAO returns the singleton instance of UTXOEntryDAO
+func NewUTXOEntryDAO(config UTXOEntryDAOConfig) (*UTXOEntryDAO, error) {
+	opts := badger.DefaultOptions(config.DBPath)
+	if config.InMemory {
+		opts = opts.WithInMemory(true)
+	}
+	opts = opts.WithLogger(nil)
+
+	db, err := badger.Open(opts)
+	if err != nil {
+		return nil, err
+	}
+	return &UTXOEntryDAO{db: db}, nil
 }
 
 func (c *UTXOEntryDAO) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
