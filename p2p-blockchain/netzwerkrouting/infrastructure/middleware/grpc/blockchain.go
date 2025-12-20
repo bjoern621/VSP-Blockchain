@@ -63,7 +63,7 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	merkleBlockMsgDTO, err := adapter.ToMerkleBlockFromMerkleBlockMsg(msg.MerkleBlock)
+	merkleBlockMsgDTO, err := adapter.ToMerkleBlockFromMerkleBlockMsg(msg)
 	if err != nil {
 		return nil, err
 	}
