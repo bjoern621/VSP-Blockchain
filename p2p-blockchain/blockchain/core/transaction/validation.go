@@ -5,7 +5,7 @@ import (
 	"crypto/elliptic"
 	"encoding/asn1"
 	"errors"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 )
 
@@ -19,7 +19,7 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	UTXOService core.UTXOLookupService
+	UTXOService utxo.LookupService
 }
 
 // ValidateTransaction validates all inputs in a transaction by checking if each of the given inputs exists and all signatures are valid.
@@ -78,9 +78,8 @@ func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte
 }
 
 func (v *ValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
-	// Lookup UTXO
-	referenced, ok := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
-	if !ok {
+	referenced, err := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
+	if err != nil {
 		return transaction.Output{}, ErrUTXONotFound
 	}
 	if transaction.Hash160(in.PubKey) != referenced.PubKeyHash {

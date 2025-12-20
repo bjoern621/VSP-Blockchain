@@ -15,10 +15,10 @@ type MockUTXOService struct {
 	utxos map[string]transaction.Output
 }
 
-func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, index uint32) (transaction.Output, bool) {
-	key := string(txID[:]) + ":" + strconv.Itoa(int(index))
-	out, ok := m.utxos[key]
-	return out, ok
+func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+	key := string(txID[:]) + ":" + strconv.Itoa(int(outputIndex))
+	out, _ := m.utxos[key]
+	return out, nil
 }
 
 func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transaction, transaction.UTXO, *MockUTXOService) {
