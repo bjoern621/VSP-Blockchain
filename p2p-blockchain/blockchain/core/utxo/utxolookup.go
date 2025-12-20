@@ -11,8 +11,7 @@ type UTXOLookupService interface {
 
 type UTXOLookupImpl struct{}
 
-// TODO
 func (u *UTXOLookupImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, bool) {
-	panic("implement me")
+	// TODO
 	return transaction.Output{}, false
 }

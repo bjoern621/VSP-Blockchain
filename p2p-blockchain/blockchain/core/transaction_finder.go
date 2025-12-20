@@ -7,11 +7,9 @@ import (
 
 func (b *Blockchain) IsTransactionKnown(hash common.Hash) bool {
 	//TODO: Implement
-	panic("not implemented")
 	return true
 }
 
 func (b *Blockchain) IsTransactionKnownById(hash transaction.TransactionID) bool {
-	panic("not implemented")
 	return true
 }
