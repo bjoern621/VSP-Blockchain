@@ -26,7 +26,10 @@ func (m *MockUTXOService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
 
 func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
 	key := string(txID[:]) + ":" + strconv.Itoa(int(outputIndex))
-	out, _ := m.utxos[key]
+	out, ok := m.utxos[key]
+	if !ok {
+		return transaction.Output{}, ErrUTXONotFound
+	}
 	return out, nil
 }
 
@@ -93,7 +96,7 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	brokenValidator := ValidationService{UTXOService: brokenUTXO}
 
 	if err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
-		t.Fatal("expected validation to fail due to missing UTXO")
+		t.Fatalf("expected validation to fail due to missing UTXO, was %v", err)
 	}
 }
 
