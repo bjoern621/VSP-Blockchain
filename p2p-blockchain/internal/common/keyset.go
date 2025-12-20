@@ -1,8 +1,8 @@
 package common
 
 type Keyset struct {
-	PrivateKey    [32]byte
+	PrivateKey    [PrivateKeySize]byte
 	PrivateKeyWif string
-	PublicKey     [65]byte
+	PublicKey     [PublicKeySize]byte
 	VSAddress     string
 }

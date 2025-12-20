@@ -3,20 +3,22 @@ package keys
 import (
 	"crypto/sha256"
 	"fmt"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 
 	bt "bytes"
+
 	"github.com/akamensky/base58"
 )
 
 // KeyEncoder Encodes keys to the most common formats
 type KeyEncoder interface {
-	PrivateKeyToWif(privateKey [32]byte) string
+	PrivateKeyToWif(privateKey [common.PrivateKeySize]byte) string
 	BytesToBase58Check(bytes []byte, version byte) string
 }
 
 // KeyDecoder Decodes keys from the most common formats
 type KeyDecoder interface {
-	WifToPrivateKey(wif string) ([32]byte, error)
+	WifToPrivateKey(wif string) ([common.PrivateKeySize]byte, error)
 	Base58CheckToBytes(input string) ([]byte, byte, error)
 }
 
@@ -28,7 +30,7 @@ func NewKeyEncodingsImpl() *KeyEncodingsImpl {
 	return &KeyEncodingsImpl{}
 }
 
-func (keyEncodings *KeyEncodingsImpl) PrivateKeyToWif(privateKey [32]byte) string {
+func (keyEncodings *KeyEncodingsImpl) PrivateKeyToWif(privateKey [common.PrivateKeySize]byte) string {
 	return keyEncodings.BytesToBase58Check(privateKey[:], 0x80)
 }
 
@@ -59,18 +61,18 @@ func (keyEncodings *KeyEncodingsImpl) getFirstFourChecksumBytes(bytes ...[]byte)
 	return secondHash[:4]
 }
 
-func (keyEncodings *KeyEncodingsImpl) WifToPrivateKey(wif string) ([32]byte, error) {
+func (keyEncodings *KeyEncodingsImpl) WifToPrivateKey(wif string) ([common.PrivateKeySize]byte, error) {
 	bytes, version, err := keyEncodings.Base58CheckToBytes(wif)
 
 	if err != nil {
-		return [32]byte{}, fmt.Errorf("the wif could not be decoded: %w", err)
+		return [common.PrivateKeySize]byte{}, fmt.Errorf("the wif could not be decoded: %w", err)
 	}
 
-	if version != 0x80 || len(bytes) != 32 {
-		return [32]byte{}, fmt.Errorf("the Base58Check version byte %x dosent match the required version 0x80 for a WIF", version)
+	if version != 0x80 || len(bytes) != common.PrivateKeySize {
+		return [common.PrivateKeySize]byte{}, fmt.Errorf("the Base58Check version byte %x dosent match the required version 0x80 for a WIF", version)
 	}
 
-	return [32]byte(bytes), nil
+	return [common.PrivateKeySize]byte(bytes), nil
 }
 
 func (keyEncodings *KeyEncodingsImpl) Base58CheckToBytes(input string) ([]byte, byte, error) {

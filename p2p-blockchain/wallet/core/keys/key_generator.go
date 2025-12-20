@@ -14,7 +14,7 @@ type KeyGenerator interface {
 	GenerateKeyset() common.Keyset
 
 	// GetKeyset Gets the complete keyset from the raw private key
-	GetKeyset(privateKey [32]byte) common.Keyset
+	GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset
 
 	// GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
 	GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error)
@@ -42,7 +42,7 @@ func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 }
 
 // GetKeyset Not fully implemented yet!
-func (generator *KeyGeneratorImpl) GetKeyset(privateKey [32]byte) common.Keyset {
+func (generator *KeyGeneratorImpl) GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset {
 	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: generator.encoder.PrivateKeyToWif(privateKey),
@@ -68,7 +68,7 @@ var nMinusOneBytes = [32]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x
 var nMinusOne = new(big.Int).SetBytes(nMinusOneBytes[:])
 
 // createPrivateKey generates a new random private key
-func (generator *KeyGeneratorImpl) createPrivateKey() [32]byte {
+func (generator *KeyGeneratorImpl) createPrivateKey() [common.PrivateKeySize]byte {
 	for {
 		//1. create random 256 bits
 		var randomBytes [32]byte
