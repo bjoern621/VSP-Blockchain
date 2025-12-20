@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"strconv"
 	"testing"
 
@@ -13,6 +14,14 @@ import (
 
 type MockUTXOService struct {
 	utxos map[string]transaction.Output
+}
+
+func (m *MockUTXOService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+	panic("implement me")
+}
+
+func (m *MockUTXOService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+	panic("implement me")
 }
 
 func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
