@@ -4,7 +4,6 @@ import (
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"sync"
 
 	"github.com/dgraph-io/badger/v4"
@@ -18,7 +17,7 @@ const (
 // It uses BadgerDB for on-disk storage and an LRU cache for frequently accessed UTXOs
 type ChainStateService struct {
 	mu  sync.RWMutex
-	dao *infrastructure.UTXOEntryDAO
+	dao EntryDAO
 	// cache is an LRU cache for recently accessed UTXOs
 	cache     map[string]utxopool.UTXOEntry
 	cacheKeys []string // keys in order of access
@@ -27,22 +26,11 @@ type ChainStateService struct {
 
 // ChainStateConfig holds configuration for the ChainStateService
 type ChainStateConfig struct {
-	// DBPath is the path to the BadgerDB database directory
-	DBPath string
-
 	CacheSize int
-
-	// InMemory used for testing
-	InMemory bool
 }
 
 // NewChainState creates a new ChainStateService with BadgerDB storage
-func NewChainState(config ChainStateConfig) (*ChainStateService, error) {
-	daoConfig := infrastructure.NewUTXOEntryDAOConfig(config.DBPath, config.InMemory)
-	dao, err := infrastructure.NewUTXOEntryDAO(daoConfig)
-	if err != nil {
-		return nil, err
-	}
+func NewChainState(config ChainStateConfig, dao EntryDAO) (*ChainStateService, error) {
 	cacheSize := config.CacheSize
 	if cacheSize <= 0 {
 		cacheSize = DefaultCacheSize

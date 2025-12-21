@@ -1,24 +1,24 @@
-package utxo
+package utxo_tests
 
 import (
 	"errors"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"testing"
 )
 
 func TestFullNode_LookupOrder(t *testing.T) {
-	mempool := NewMemUTXOPool()
-	chainstate, err := NewChainState(ChainStateConfig{
-		InMemory:  true,
-		CacheSize: 100,
-	})
+	mempool := utxo.NewMemUTXOPool()
+	dao, err := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
+	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
 	defer chainstate.Close()
 
-	pool := NewCombinedUTXOPool(mempool, chainstate)
+	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
 
 	var txID1 transaction.TransactionID
 	txID1[0] = 1
@@ -72,23 +72,21 @@ func TestFullNode_LookupOrder(t *testing.T) {
 
 	// Now the chainstate UTXO should not be available
 	_, err = pool.GetUTXO(txID1, 0)
-	if !errors.Is(err, ErrUTXOAlreadySpent) {
+	if !errors.Is(err, utxo.ErrUTXOAlreadySpent) {
 		t.Error("Should not get spent chainstate UTXO")
 	}
 }
 
 func TestFullNode_ApplyTransaction(t *testing.T) {
-	mempool := NewMemUTXOPool()
-	chainstate, err := NewChainState(ChainStateConfig{
-		InMemory:  true,
-		CacheSize: 100,
-	})
+	mempool := utxo.NewMemUTXOPool()
+	dao, err := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
+	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
 	defer chainstate.Close()
 
-	pool := NewCombinedUTXOPool(mempool, chainstate)
+	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
 
 	// Create a previous UTXO in chainstate
 	var prevTxID transaction.TransactionID
@@ -125,7 +123,7 @@ func TestFullNode_ApplyTransaction(t *testing.T) {
 
 	// The previous UTXO should now be marked as spent
 	_, err = pool.GetUTXO(prevTxID, 0)
-	if !errors.Is(err, ErrUTXOAlreadySpent) {
+	if !errors.Is(err, utxo.ErrUTXOAlreadySpent) {
 		t.Error("Previous UTXO should be marked as spent")
 	}
 

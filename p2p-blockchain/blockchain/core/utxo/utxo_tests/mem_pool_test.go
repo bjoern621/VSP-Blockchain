@@ -1,13 +1,14 @@
-package utxo
+package utxo_tests
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"testing"
 )
 
 func TestMemPool_AddAndGet(t *testing.T) {
-	pool := NewMemUTXOPool()
+	pool := utxo.NewMemUTXOPool()
 
 	var txID transaction.TransactionID
 	txID[0] = 1
@@ -44,7 +45,7 @@ func TestMemPool_AddAndGet(t *testing.T) {
 }
 
 func TestMemPool_MarkSpent(t *testing.T) {
-	pool := NewMemUTXOPool()
+	pool := utxo.NewMemUTXOPool()
 
 	var txID transaction.TransactionID
 	txID[0] = 1

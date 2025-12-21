@@ -16,12 +16,12 @@ const (
 	entryEncodedSize = ValueSize + common.PublicKeyHashSize + BlockHeightSize + IsCoinbaseSize
 )
 
-type UTXOEntryDAO struct {
+type UTXOEntryDAOImpl struct {
 	db *badger.DB
 }
 
-// NewUTXOEntryDAO returns the singleton instance of UTXOEntryDAO
-func NewUTXOEntryDAO(config UTXOEntryDAOConfig) (*UTXOEntryDAO, error) {
+// NewUTXOEntryDAO returns the singleton instance of UTXOEntryDAOImpl
+func NewUTXOEntryDAO(config UTXOEntryDAOConfig) (*UTXOEntryDAOImpl, error) {
 	opts := badger.DefaultOptions(config.DBPath)
 	if config.InMemory {
 		opts = opts.WithInMemory(true)
@@ -32,10 +32,10 @@ func NewUTXOEntryDAO(config UTXOEntryDAOConfig) (*UTXOEntryDAO, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &UTXOEntryDAO{db: db}, nil
+	return &UTXOEntryDAOImpl{db: db}, nil
 }
 
-func (c *UTXOEntryDAO) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
+func (c *UTXOEntryDAOImpl) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
 	key := outpoint.Key()
 
 	return c.db.Update(func(txn *badger.Txn) error {
@@ -43,14 +43,14 @@ func (c *UTXOEntryDAO) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEnt
 	})
 }
 
-func (c *UTXOEntryDAO) Delete(outpoint utxopool.Outpoint) error {
+func (c *UTXOEntryDAOImpl) Delete(outpoint utxopool.Outpoint) error {
 	key := outpoint.Key()
 	return c.db.Update(func(txn *badger.Txn) error {
 		return txn.Delete(key)
 	})
 }
 
-func (c *UTXOEntryDAO) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (c *UTXOEntryDAOImpl) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	var entry utxopool.UTXOEntry
 	err := c.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(outpoint.Key())
@@ -65,11 +65,11 @@ func (c *UTXOEntryDAO) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, err
 	return entry, err
 }
 
-func (c *UTXOEntryDAO) Close() error {
+func (c *UTXOEntryDAOImpl) Close() error {
 	return c.db.Close()
 }
 
-func (c *UTXOEntryDAO) Persist() error {
+func (c *UTXOEntryDAOImpl) Persist() error {
 	return c.db.Sync()
 }
 
