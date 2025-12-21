@@ -190,7 +190,7 @@ func TestFullNode_GetUTXOsByPubKeyHash(t *testing.T) {
 	defer func(fullNode *utxo.FullNodeUTXOService) {
 		err = fullNode.Close()
 		if err != nil {
-
+			t.Fatalf("Failed to close fullnode: %v", err)
 		}
 	}(fullNode)
 
@@ -254,7 +254,7 @@ func TestDAO_SecondaryIndex(t *testing.T) {
 	defer func(dao *infrastructure.UTXOEntryDAOImpl) {
 		err = dao.Close()
 		if err != nil {
-
+			t.Fatalf("Failed to close dao: %v", err)
 		}
 	}(dao)
 
