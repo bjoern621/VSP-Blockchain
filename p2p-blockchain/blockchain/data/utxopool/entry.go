@@ -22,7 +22,7 @@ func NewUTXOEntry(output transaction.Output, blockHeight uint64, isCoinbase bool
 
 // IsConfirmed returns true if this UTXO is from a confirmed block
 func (e UTXOEntry) IsConfirmed() bool {
-	return e.BlockHeight > 0
+	return e.BlockHeight > 5
 }
 
 // UTXOWithOutpoint pairs a UTXO entry with its outpoint for lookup results
