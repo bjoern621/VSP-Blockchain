@@ -17,7 +17,7 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 	defer func(dao *infrastructure.UTXOEntryDAOImpl) {
 		err = dao.Close()
 		if err != nil {
-
+			t.Fatalf("Failed to close dao: %v", err)
 		}
 	}(dao)
 
@@ -28,7 +28,7 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 	defer func(chainstate *utxo.ChainStateService) {
 		err = chainstate.Close()
 		if err != nil {
-
+			t.Fatalf("Failed to close dao: %v", err)
 		}
 	}(chainstate)
 
@@ -122,7 +122,7 @@ func TestMemPool_GetUTXOsByPubKeyHash(t *testing.T) {
 	defer func(mempool *utxo.MemPoolService) {
 		err := mempool.Close()
 		if err != nil {
-
+			t.Fatalf("Failed to close mempool: %v", err)
 		}
 	}(mempool)
 

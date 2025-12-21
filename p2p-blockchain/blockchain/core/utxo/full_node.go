@@ -235,9 +235,7 @@ func (c *FullNodeUTXOService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKey
 	if err != nil {
 		return nil, err
 	}
-	for _, entry := range mempoolEntries {
-		results = append(results, entry)
-	}
+	results = append(results, mempoolEntries...)
 
 	// 2. Get chainstate UTXOs
 	chainstateEntries, err := c.chainstate.GetUTXOsByPubKeyHash(pubKeyHash)
@@ -247,8 +245,7 @@ func (c *FullNodeUTXOService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKey
 
 	for _, uwp := range chainstateEntries {
 		// Check if this UTXO is spent in mempool
-		opKey := string(utxopool.NewOutpoint(uwp.TxID, uwp.OutputIndex).Key())
-		if _, spent := spentOutpoints[opKey]; spent {
+		if _, spent := spentOutpoints[string(utxopool.NewOutpoint(uwp.TxID, uwp.OutputIndex).Key())]; spent {
 			continue
 		}
 		results = append(results, uwp)
