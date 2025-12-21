@@ -151,3 +151,48 @@ func (m *MemPoolService) Close() error {
 	m.Clear()
 	return nil
 }
+
+// GetUTXOsByPubKeyHash returns all unconfirmed UTXO entries for a PubKeyHash.
+func (m *MemPoolService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]utxopool.UTXOEntry, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	results := make([]utxopool.UTXOEntry, 0)
+	for _, entry := range m.utxos {
+		if entry.Output.PubKeyHash == pubKeyHash {
+			results = append(results, entry)
+		}
+	}
+	return results, nil
+}
+
+// GetUTXOsWithOutpointByPubKeyHash returns all unconfirmed UTXOs with their outpoints for a PubKeyHash.
+func (m *MemPoolService) GetUTXOsWithOutpointByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	results := make([]transaction.UTXO, 0)
+	for key, entry := range m.utxos {
+		if entry.Output.PubKeyHash == pubKeyHash {
+			outpoint := utxopool.OutpointFromKey([]byte(key))
+			results = append(results, transaction.UTXO{
+				TxID:        outpoint.TxID,
+				OutputIndex: outpoint.OutputIndex,
+				Output:      entry.Output,
+			})
+		}
+	}
+	return results, nil
+}
+
+// GetSpentOutpoints returns a copy of all spent outpoint keys.
+func (m *MemPoolService) GetSpentOutpoints() map[string]struct{} {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	result := make(map[string]struct{}, len(m.spent))
+	for k, v := range m.spent {
+		result[k] = v
+	}
+	return result
+}

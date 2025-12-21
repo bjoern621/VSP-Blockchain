@@ -24,6 +24,10 @@ func (m *MockUTXOService) ContainsUTXO(_ utxopool.Outpoint) bool {
 	panic("implement me")
 }
 
+func (m *MockUTXOService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	panic("implement me")
+}
+
 func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
 	key := string(txID[:]) + ":" + strconv.Itoa(int(outputIndex))
 	out, ok := m.utxos[key]

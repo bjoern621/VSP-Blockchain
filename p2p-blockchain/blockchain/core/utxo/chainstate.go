@@ -221,3 +221,42 @@ func (c *ChainStateService) CacheStats() (size int, capacity int) {
 
 	return len(c.cache), c.cacheSize
 }
+
+// GetUTXOsByPubKeyHash returns all confirmed UTXO entries for a PubKeyHash.
+// Results are returned with their outpoints in no particular order.
+func (c *ChainStateService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	outpoints, err := c.dao.FindByPubKeyHash(pubKeyHash)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]transaction.UTXO, 0, len(outpoints))
+	for _, op := range outpoints {
+		key := string(op.Key())
+
+		// Try cache first
+		if entry, ok := c.getFromCache(key); ok {
+			results = append(results, transaction.UTXO{
+				TxID:        op.TxID,
+				OutputIndex: op.OutputIndex,
+				Output:      entry.Output,
+			})
+			continue
+		}
+
+		// Fallback to DAO Find
+		entry, err2 := c.dao.Find(op)
+		if err2 != nil {
+			// Skip missing entries (index might be stale)
+			continue
+		}
+		c.addToCache(key, entry)
+		results = append(results, transaction.UTXO{
+			TxID:        op.TxID,
+			OutputIndex: op.OutputIndex,
+			Output:      entry.Output,
+		})
+	}
+
+	return results, nil
+}

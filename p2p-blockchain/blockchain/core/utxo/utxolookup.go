@@ -15,4 +15,10 @@ type LookupService interface {
 
 	// ContainsUTXO checks if a UTXO exists
 	ContainsUTXO(outpoint utxopool.Outpoint) bool
+
+	// GetUTXOsByPubKeyHash returns all UTXOs belonging to the given PubKeyHash.
+	// Results include both confirmed (chainstate) and unconfirmed (mempool) UTXOs,
+	// excluding any that have been marked as spent in the mempool.
+	// Each result includes the outpoint for proper identification.
+	GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error)
 }

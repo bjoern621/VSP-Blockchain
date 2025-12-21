@@ -24,3 +24,9 @@ func NewUTXOEntry(output transaction.Output, blockHeight uint64, isCoinbase bool
 func (e UTXOEntry) IsConfirmed() bool {
 	return e.BlockHeight > 0
 }
+
+// UTXOWithOutpoint pairs a UTXO entry with its outpoint for lookup results
+type UTXOWithOutpoint struct {
+	Outpoint Outpoint
+	Entry    UTXOEntry
+}

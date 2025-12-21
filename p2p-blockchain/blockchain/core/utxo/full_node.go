@@ -220,3 +220,39 @@ func (c *FullNodeUTXOService) GetMempool() *MemPoolService {
 func (c *FullNodeUTXOService) GetChainState() *ChainStateService {
 	return c.chainstate
 }
+
+// GetUTXOsByPubKeyHash returns all UTXOs (mempool + chainstate) for a given PubKeyHash.
+// It excludes outpoints that are marked as spent in the mempool.
+// Results are returned in no particular order.
+func (c *FullNodeUTXOService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	// Get spent markers from mempool to exclude from chainstate results
+	spentOutpoints := c.mempool.GetSpentOutpoints()
+
+	results := make([]transaction.UTXO, 0)
+
+	// 1. Get unconfirmed UTXOs from mempool
+	mempoolEntries, err := c.mempool.GetUTXOsWithOutpointByPubKeyHash(pubKeyHash)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range mempoolEntries {
+		results = append(results, entry)
+	}
+
+	// 2. Get chainstate UTXOs
+	chainstateEntries, err := c.chainstate.GetUTXOsByPubKeyHash(pubKeyHash)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, uwp := range chainstateEntries {
+		// Check if this UTXO is spent in mempool
+		opKey := string(utxopool.NewOutpoint(uwp.TxID, uwp.OutputIndex).Key())
+		if _, spent := spentOutpoints[opKey]; spent {
+			continue
+		}
+		results = append(results, uwp)
+	}
+
+	return results, nil
+}
