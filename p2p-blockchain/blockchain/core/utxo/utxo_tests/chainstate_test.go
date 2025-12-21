@@ -16,7 +16,12 @@ func TestChainState_AddAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err2 := os.RemoveAll(path)
+		if err2 != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err2)
+		}
+	}(tmpDir)
 
 	daoConfig := infrastructure.NewUTXOEntryDAOConfig(tmpDir, false)
 	var dao *infrastructure.UTXOEntryDAOImpl
@@ -29,7 +34,12 @@ func TestChainState_AddAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer chainstate.Close()
+	defer func(chainstate *utxo.ChainStateService) {
+		err2 := chainstate.Close()
+		if err2 != nil {
+			t.Fatalf("Failed to close chainstate: %v", err2)
+		}
+	}(chainstate)
 
 	var txID transaction.TransactionID
 	txID[0] = 1
@@ -92,7 +102,12 @@ func TestChainState_InMemory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create in-memory chainstate: %v", err)
 	}
-	defer chainstate.Close()
+	defer func(chainstate *utxo.ChainStateService) {
+		err2 := chainstate.Close()
+		if err2 != nil {
+			t.Fatalf("Failed to close chainstate: %v", err2)
+		}
+	}(chainstate)
 
 	var txID transaction.TransactionID
 	txID[0] = 2

@@ -16,7 +16,12 @@ func TestFullNode_LookupOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer chainstate.Close()
+	defer func(chainstate *utxo.ChainStateService) {
+		err2 := chainstate.Close()
+		if err2 != nil {
+			t.Fatalf("Failed to close chainstate: %v", err2)
+		}
+	}(chainstate)
 
 	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
 
@@ -84,7 +89,12 @@ func TestFullNode_ApplyTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer chainstate.Close()
+	defer func(chainstate *utxo.ChainStateService) {
+		err2 := chainstate.Close()
+		if err2 != nil {
+			t.Fatalf("Failed to close chainstate: %v", err2)
+		}
+	}(chainstate)
 
 	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
 

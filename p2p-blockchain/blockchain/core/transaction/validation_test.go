@@ -16,11 +16,11 @@ type MockUTXOService struct {
 	utxos map[string]transaction.Output
 }
 
-func (m *MockUTXOService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (m *MockUTXOService) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	panic("implement me")
 }
 
-func (m *MockUTXOService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+func (m *MockUTXOService) ContainsUTXO(_ utxopool.Outpoint) bool {
 	panic("implement me")
 }
 
