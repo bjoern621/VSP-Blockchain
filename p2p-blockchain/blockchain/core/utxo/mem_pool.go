@@ -31,9 +31,7 @@ func NewMemUTXOPool() *MemPoolService {
 func (m *MemPoolService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-
-	key := string(outpoint.Key())
-	entry, ok := m.utxos[key]
+	entry, ok := m.utxos[string(outpoint.Key())]
 	if !ok {
 		return utxopool.UTXOEntry{}, ErrUTXONotFound
 	}
@@ -44,9 +42,7 @@ func (m *MemPoolService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, er
 func (m *MemPoolService) IsSpent(outpoint utxopool.Outpoint) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-
-	key := string(outpoint.Key())
-	_, spent := m.spent[key]
+	_, spent := m.spent[string(outpoint.Key())]
 	return spent
 }
 
@@ -101,9 +97,7 @@ func (m *MemPoolService) UnmarkSpent(outpoint utxopool.Outpoint) {
 func (m *MemPoolService) Contains(outpoint utxopool.Outpoint) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-
-	key := string(outpoint.Key())
-	_, ok := m.utxos[key]
+	_, ok := m.utxos[string(outpoint.Key())]
 	return ok
 }
 

@@ -11,7 +11,7 @@ import (
 
 func TestFullNode_LookupOrder(t *testing.T) {
 	mempool := utxo.NewMemUTXOPool()
-	dao, err := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
+	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
 	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
@@ -84,7 +84,7 @@ func TestFullNode_LookupOrder(t *testing.T) {
 
 func TestFullNode_ApplyTransaction(t *testing.T) {
 	mempool := utxo.NewMemUTXOPool()
-	dao, err := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
+	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
 	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
