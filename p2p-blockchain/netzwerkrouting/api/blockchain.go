@@ -7,5 +7,5 @@ import (
 
 type BlockchainAPI interface {
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
-	BroadcastInv(inventory []*inv.InvVector, peerId common.PeerId)
+	BroadcastInvExclusionary(inventory []*inv.InvVector, peerId common.PeerId)
 }

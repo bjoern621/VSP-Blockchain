@@ -80,7 +80,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 			InvType: inv.InvTypeMsgTx,
 		}
 		invVectors = append(invVectors, &invVector)
-		b.blockchainMsgSender.BroadcastInv(invVectors, peerID)
+		b.blockchainMsgSender.BroadcastInvExclusionary(invVectors, peerID)
 	}
 
 	logger.Infof("Tx Message received: %v from %v", tx, peerID)

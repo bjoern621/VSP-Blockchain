@@ -11,6 +11,7 @@ type BlockchainMsgSender interface {
 	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
 }
 
+// SendGetData sends a getdata message to the given peer
 func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId common.PeerId) {
 	_, ok := b.peerStore.GetPeer(peerId)
 	if !ok {
@@ -19,9 +20,10 @@ func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId commo
 	b.blockchainMsgSender.SendGetData(inventory, peerId)
 }
 
-func (b *BlockchainService) BroadcastInv(inventory []*inv.InvVector, peerId common.PeerId) {
+// BroadcastInvExclusionary propagates an inventory message to all outbound peers except the specified peer.
+func (b *BlockchainService) BroadcastInvExclusionary(inventory []*inv.InvVector, excludedPeerId common.PeerId) {
 	ids := b.peerStore.GetAllOutputPeers()
-	ownIndex := slices.Index(ids, peerId)
+	ownIndex := slices.Index(ids, excludedPeerId)
 	ids = slices.Delete(ids, ownIndex, ownIndex+1)
 	for _, id := range ids {
 		b.blockchainMsgSender.SendInv(inventory, id)
