@@ -1,17 +1,24 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
-	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
-
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	sw "s3b/vsp-blockchain/rest-api/api-adapter"
+
+	"github.com/gin-gonic/gin"
 )
+
+// api-adapter:embed swagger-ui
+var swaggerContent embed.FS
 
 func main() {
 	logger.Infof("Running...")
@@ -36,11 +43,19 @@ func main() {
 
 	// REST API Server
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /test", handlers.TestHandler)
+	routes := sw.ApiHandleFunctions{}
 
-	handler := middleware.Logging(mux)
+	log.Printf("Server started")
 
-	err = http.ListenAndServe(":8080", handler)
-	logger.Errorf("%v", err)
+	router := sw.NewRouter(routes)
+
+	fsys, _ := fs.Sub(swaggerContent, "swagger-ui")
+	router.StaticFS("/swagger-ui", http.FS(fsys))
+
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "./swagger-ui")
+	})
+
+	log.Fatal(router.Run(":8080"))
+
 }

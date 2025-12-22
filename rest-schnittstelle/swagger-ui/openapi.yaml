@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: V$-GOIN API
+  version: 1.0.0
+servers:
+- url: /
+paths:
+  /transaction:
+    post:
+      description: Transfers the given amount from the sender to the recipient as
+        long as sender can provide the amount and the private key can create a valid
+        signature
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_transaction_post_request'
+        required: true
+      responses:
+        "201":
+          description: Transaction successfully executed
+        "400":
+          description: Insufficient funds for the given transaction
+        "401":
+          description: Invalid private key
+      summary: Executes a transaction
+      tags:
+      - Payment
+  /balance:
+    get:
+      parameters:
+      - description: The VSAddress whose balance is requested.
+        explode: true
+        in: query
+        name: VSAddress
+        required: true
+        schema:
+          $ref: '#/components/schemas/VSAddress'
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/_balance_get_200_response'
+          description: Successful response with current balance.
+        "400":
+          description: No balance tied to the given key
+      summary: Returns the balance tied to the given public key hash
+      tags:
+      - Payment
+  /history:
+    get:
+      parameters:
+      - description: The VSAddress whose history is requested.
+        explode: true
+        in: query
+        name: VSAddress
+        required: true
+        schema:
+          $ref: '#/components/schemas/VSAddress'
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/_history_get_200_response'
+          description: Successful response with keys history.
+        "400":
+          description: Key hash was not involved in any transactions
+      summary: Returns the history of transactions involving the given key hash
+      tags:
+      - Payment
+  /address:
+    get:
+      parameters:
+      - explode: false
+        in: header
+        name: privateKey
+        required: true
+        schema:
+          $ref: '#/components/schemas/PrivateKeyWIF'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/_address_get_200_response'
+          description: Successful response with V$Address and the private key.
+        "400":
+          description: private Key is not Valid
+      summary: Returns the V$Address to a corresponding private key.
+      tags:
+      - KeyTools
+  /address/new:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/_address_new_get_200_response'
+          description: Successful response with V$Address and the private key.
+      summary: Returns a new V$Address with the corresponding private key.
+      tags:
+      - KeyTools
+components:
+  schemas:
+    PrivateKeyWIF:
+      description: Base58Check-encoded private key
+      example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+      pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+      type: string
+    VSAddress:
+      description: Base58Check-encoded public key hash.
+      example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+      type: string
+    _transaction_post_request:
+      properties:
+        recipientVSAddress:
+          description: Base58Check-encoded public key hash.
+          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+          type: string
+        amount:
+          description: The amount of V$-Goin the sender wants to transfer
+          example: 100
+          minimum: 1
+          type: integer
+        senderPrivateKey:
+          description: Base58Check-encoded private key
+          example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+          pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+          type: string
+      required:
+      - amount
+      - recipientVSAddress
+      - senderPrivateKey
+      type: object
+    _balance_get_200_response:
+      example:
+        balance: 1250
+      properties:
+        balance:
+          example: 1250
+          type: integer
+      type: object
+    _history_get_200_response:
+      example:
+        transactions:
+        - A sent B 100
+        - B sent A 50
+        - A sent C 10
+      properties:
+        transactions:
+          example:
+          - A sent B 100
+          - B sent A 50
+          - A sent C 10
+          items:
+            type: string
+          type: array
+      type: object
+    _address_get_200_response:
+      example:
+        VSAddress: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+      properties:
+        VSAddress:
+          description: Base58Check-encoded public key hash.
+          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+          type: string
+      required:
+      - VSAddress
+      type: object
+    _address_new_get_200_response:
+      example:
+        newVSAddress: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+        newPrivateKey: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+      properties:
+        newVSAddress:
+          description: Base58Check-encoded public key hash.
+          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+          type: string
+        newPrivateKey:
+          description: Base58Check-encoded private key
+          example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+          pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+          type: string
+      required:
+      - address
+      - privateKey
+      type: object

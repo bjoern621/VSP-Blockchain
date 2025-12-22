@@ -6,9 +6,9 @@ vars:
 tasks:
     tidy:
         internal: true
-        desc: Run go mod tidy
+        desc: Run api-adapter mod tidy
         cmds:
-            - go mod tidy
+            - api-adapter mod tidy
 
     proto:
         desc: Generate gRPC code from shared and local .proto files
@@ -25,7 +25,7 @@ tasks:
     test:
         desc: Run tests with race detector
         cmds:
-            - go test ./...
+            - api-adapter test ./...
 
     build:
         desc: Build the docker image for p2p-node

@@ -6,9 +6,9 @@ vars:
 tasks:
     tidy:
         internal: true
-        desc: Run go mod tidy
+        desc: Run api-adapter mod tidy
         cmds:
-            - go mod tidy
+            - api-adapter mod tidy
 
     proto:
         desc: Generate gRPC code from shared .proto files

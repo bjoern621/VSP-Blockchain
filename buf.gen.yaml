@@ -1,28 +1,28 @@
 version: v1
 plugins:
-    - name: go
+    - name: api-adapter
       out: p2p-blockchain/internal/pb
       opt:
           - paths=source_relative
-    - name: go-grpc
+    - name: api-adapter-grpc
       out: p2p-blockchain/internal/pb
       opt:
           - paths=source_relative
 
-    - name: go
+    - name: api-adapter
       out: rest-schnittstelle/internal/pb
       opt:
           - paths=source_relative
-    - name: go-grpc
+    - name: api-adapter-grpc
       out: rest-schnittstelle/internal/pb
       opt:
           - paths=source_relative
 
-    - name: go
+    - name: api-adapter
       out: registry-crawler/internal/pb
       opt:
           - paths=source_relative
-    - name: go-grpc
+    - name: api-adapter-grpc
       out: registry-crawler/internal/pb
       opt:
           - paths=source_relative

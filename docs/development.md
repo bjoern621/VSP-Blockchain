@@ -62,7 +62,7 @@ Nach erfolgreichem Deployment sind folgende Services verfügbar:
 Zum Debuggen in VS Code wird **Delve** benötigt. Falls noch nicht installiert:
 
 ```bash
-go install github.com/go-delve/delve/cmd/dlv@latest
+api-adapter install github.com/api-adapter-delve/delve/cmd/dlv@latest
 ```
 
 Das Projekt enthält bereits vorkonfigurierte Debug-Konfigurationen in `.vscode/launch.json`:
@@ -80,7 +80,7 @@ Alternativ können die Services auch nur gestartet werden. Dann sind aber keine 
 
 ```bash
 cd rest-schnittstelle
-go run main.go
+api-adapter run main.api-adapter
 ```
 
 REST-API läuft auf [`http://localhost:8080`](http://localhost:8080)
@@ -89,7 +89,7 @@ REST-API läuft auf [`http://localhost:8080`](http://localhost:8080)
 
 ```bash
 cd p2p-blockchain
-go run main.go
+api-adapter run main.api-adapter
 ```
 
 Miner läuft auf Port `50051` (gRPC)
