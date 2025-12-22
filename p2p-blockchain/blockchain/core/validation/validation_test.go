@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"testing"
 
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 type MockUTXOService struct {
@@ -117,7 +117,7 @@ func TestValidateTransaction_PubKeyMismatch(t *testing.T) {
 	}
 	badValidator := ValidationService{UTXOService: badUTXO}
 
-	if err := badValidator.ValidateTransaction(&tx); !errors.Is(err, ErrPubKeyMismatch) {
+	if _, err := badValidator.ValidateTransaction(&tx); !errors.Is(err, ErrPubKeyMismatch) {
 		t.Fatal("expected validation to fail due to pubkey mismatch")
 	}
 }
@@ -168,7 +168,7 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	validator := ValidationService{UTXOService: mockUTXO}
 
 	// Validate transaction - should fail due to signature mismatch
-	if err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
+	if _, err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to invalid signature")
 	}
 }
@@ -181,7 +181,7 @@ func TestValidateTransaction_FeeManipulated(t *testing.T) {
 	txTampered.Outputs[0].Value += 1000
 
 	validator := ValidationService{UTXOService: mockUTXO}
-	err := validator.ValidateTransaction(&txTampered)
+	_, err := validator.ValidateTransaction(&txTampered)
 	if !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to fee manipulation")
 	}

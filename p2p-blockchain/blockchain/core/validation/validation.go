@@ -7,6 +7,8 @@ import (
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 var (
@@ -22,14 +24,18 @@ type ValidationService struct {
 	UTXOService utxo.LookupService
 }
 
+type ValidationAPI interface {
+	ValidateTransaction(tx *transaction.Transaction) (bool, error)
+}
+
 // ValidateTransaction validates all inputs in a transaction by checking if each of the given inputs exists and all signatures are valid.
-func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) error {
+func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
 	for i := range tx.Inputs {
 		if err := v.validateInput(tx, i); err != nil {
-			return err
+			return false, err
 		}
 	}
-	return nil
+	return true, nil
 }
 
 // validateInput validates a single input
