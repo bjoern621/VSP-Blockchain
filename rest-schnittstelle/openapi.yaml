@@ -171,7 +171,7 @@ components:
       type: string
       example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
       description: |
-        Base58Check-encoded compressed PublicKeyHashy with 0x00 as prefix.
+        Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix.
         
         The VSAddress provides a point where VSGoins can be send to.
         It is public and can be freely shared with others.
