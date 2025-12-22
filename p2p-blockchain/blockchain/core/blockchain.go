@@ -19,7 +19,7 @@ type Blockchain struct {
 
 func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.ValidationService) *Blockchain {
 	return &Blockchain{
-		mempool:              NewMempool(transactionValidator),
+		mempool:              NewMempool(&transactionValidator),
 		blockchainMsgSender:  blockchainMsgSender,
 		transactionValidator: transactionValidator,
 	}

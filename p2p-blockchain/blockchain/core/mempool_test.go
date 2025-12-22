@@ -14,8 +14,14 @@ func txIDToBlockHash(id transaction.TransactionID) common.Hash {
 	return h
 }
 
+type mockValidator struct{}
+
+func (m *mockValidator) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
+	return true, nil
+}
+
 func TestNewMempool_StartsEmpty(t *testing.T) {
-	m := NewMempool()
+	m := NewMempool(&mockValidator{})
 
 	if m == nil {
 		t.Fatalf("expected mempool to be non-nil")
@@ -29,7 +35,7 @@ func TestNewMempool_StartsEmpty(t *testing.T) {
 }
 
 func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
-	m := NewMempool()
+	m := NewMempool(&mockValidator{})
 
 	// Two different transactions (Hash() is expected to reflect the content).
 	tx1 := transaction.Transaction{
@@ -78,7 +84,7 @@ func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 }
 
 func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) {
-	m := NewMempool()
+	m := NewMempool(&mockValidator{})
 
 	tx := transaction.Transaction{
 		LockTime: 123,
@@ -104,7 +110,7 @@ func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) 
 }
 
 func TestMempool_IsKnownTransaction_UnknownHashReturnsFalse(t *testing.T) {
-	m := NewMempool()
+	m := NewMempool(&mockValidator{})
 
 	// Some arbitrary hash that (with overwhelming probability) doesn't match any tx hash in an empty mempool.
 	var unknown common.Hash
