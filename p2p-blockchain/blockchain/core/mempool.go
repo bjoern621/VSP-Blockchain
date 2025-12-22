@@ -24,12 +24,14 @@ func NewMempool(validator validation.ValidationService) *Mempool {
 	}
 }
 
+// IsKnownTransactionHash returns true if the transaction with the given Hash is known to the mempool.
 func (m *Mempool) IsKnownTransactionHash(hash common.Hash) bool {
 	txId := getTransactionIdFromHash(hash)
 	_, ok := m.transactions[txId]
 	return ok
 }
 
+// IsKnownTransactionId returns true if the transaction with the given ID is known to the mempool.
 func (m *Mempool) IsKnownTransactionId(txId transaction.TransactionID) bool {
 	_, ok := m.transactions[txId]
 	return ok
