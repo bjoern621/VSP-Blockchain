@@ -12,14 +12,14 @@ import (
 
 type Blockchain struct {
 	mempool              *Mempool
-	sender               api.BlockchainService
+	blockchainMsgSender  api.BlockchainService
 	transactionValidator validation.ValidationService
 }
 
-func NewBlockchain(sender api.BlockchainService, transactionValidator validation.ValidationService) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainService, transactionValidator validation.ValidationService) *Blockchain {
 	return &Blockchain{
 		mempool:              NewMempool(transactionValidator),
-		sender:               sender,
+		blockchainMsgSender:  blockchainMsgSender,
 		transactionValidator: transactionValidator,
 	}
 }
@@ -77,7 +77,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 			InvType: block.InvTypeMsgTx,
 		}
 		invVectors = append(invVectors, &invVector)
-		b.sender.BroadcastInv(invVectors, peerID)
+		b.blockchainMsgSender.BroadcastInv(invVectors, peerID)
 	}
 
 	logger.Infof("Tx Message received: %v from %v", tx, peerID)
@@ -99,5 +99,5 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 }
 
 func (b *Blockchain) requestData(missingData []*block.InvVector, id common.PeerId) {
-	b.sender.SendGetData(missingData, id)
+	b.blockchainMsgSender.SendGetData(missingData, id)
 }
