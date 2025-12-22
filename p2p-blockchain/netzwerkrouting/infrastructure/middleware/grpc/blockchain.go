@@ -4,9 +4,13 @@ import (
 	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/adapter"
 
+	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -21,7 +25,7 @@ func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	invMsgDTO, err := NewInvMsgDTOFromPB(msg)
+	invMsgDTO, err := adapter.ToInvVectorsFromInvMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +38,7 @@ func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error
 func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	getDataMsgDTO, err := NewGetDataMsgDTOFromPB(msg)
+	getDataMsgDTO, err := adapter.ToInvVectorsFromGetDataMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +51,7 @@ func (s *Server) GetData(ctx context.Context, msg *pb.GetDataMsg) (*emptypb.Empt
 func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	blockMsgDTO, err := NewBlockMsgDTOFromPB(msg)
+	blockMsgDTO, err := adapter.ToBlockFromBlockMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +64,7 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	merkleBlockMsgDTO, err := NewMerkleBlockMsgDTOFromPB(msg.MerkleBlock)
+	merkleBlockMsgDTO, err := adapter.ToMerkleBlockFromMerkleBlockMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +77,7 @@ func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*empt
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	txMsgDTO, err := NewTxMsgDTOFromPB(msg)
+	txMsgDTO, err := adapter.ToTxFromTxMsg(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +90,7 @@ func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) 
 func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	blockLocator, err := NewBlockLocatorDTOFromPB(locator)
+	blockLocator, err := adapter.ToBlockLocator(locator)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +103,7 @@ func (s *Server) GetHeaders(ctx context.Context, locator *pb.BlockLocator) (*emp
 func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	headers, err := NewBlockHeadersDTOFromPB(pbHeaders)
+	headers, err := adapter.ToHeadersFromHeadersMsg(pbHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +116,7 @@ func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*empt
 func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
-	filterRequest, err := NewSetFilterRequestDTOFromPB(request)
+	filterRequest, err := adapter.ToSetFilterRequestFromSetFilterRequest(request)
 	if err != nil {
 		return nil, err
 	}
@@ -129,56 +133,98 @@ func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) NotifyInv(invMsg dto.InvMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
-		observer.Inv(invMsg, peerID)
+func (s *Server) NotifyInv(inventory []*inv.InvVector, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
+		observer.Inv(inventory, peerID)
 	}
 }
 
-func (s *Server) NotifyGetData(getDataMsg dto.GetDataMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
-		observer.GetData(getDataMsg, peerID)
+func (s *Server) NotifyGetData(inventory []*inv.InvVector, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
+		observer.GetData(inventory, peerID)
 	}
 }
 
-func (s *Server) NotifyBlock(blockMsg dto.BlockMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
-		observer.Block(blockMsg, peerID)
+func (s *Server) NotifyBlock(block block.Block, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
+		observer.Block(block, peerID)
 	}
 }
 
-func (s *Server) NotifyMerkleBlock(merkleBlockMsg dto.MerkleBlockMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
-		observer.MerkleBlock(merkleBlockMsg, peerID)
+func (s *Server) NotifyMerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
+		observer.MerkleBlock(merkleBlock, peerID)
 	}
 }
 
-func (s *Server) NotifyTx(txMsg dto.TxMsgDTO, peerID common.PeerId) {
-	for observer := range s.observers {
-		observer.Tx(txMsg, peerID)
+func (s *Server) NotifyTx(tx transaction.Transaction, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
+		observer.Tx(tx, peerID)
 	}
 }
 
-func (s *Server) NotifyGetHeaders(locator dto.BlockLocatorDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+func (s *Server) NotifyGetHeaders(locator block.BlockLocator, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
 		observer.GetHeaders(locator, peerID)
 	}
 }
 
-func (s *Server) NotifyHeaders(headers dto.BlockHeadersDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+func (s *Server) NotifyHeaders(headers []*block.BlockHeader, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
 		observer.Headers(headers, peerID)
 	}
 }
 
-func (s *Server) NotifySetFilterRequest(setFilterRequest dto.SetFilterRequestDTO, peerID common.PeerId) {
-	for observer := range s.observers {
+func (s *Server) NotifySetFilterRequest(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
+	for observer := range s.observers.Iter() {
 		observer.SetFilter(setFilterRequest, peerID)
 	}
 }
 
 func (s *Server) NotifyMempool(peerID common.PeerId) {
-	for observer := range s.observers {
+	for observer := range s.observers.Iter() {
 		observer.Mempool(peerID)
 	}
+}
+
+func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send GetDataMsg: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbMsg, err := adapter.ToGrpcGetDataMsg(inv)
+	if err != nil {
+		logger.Warnf("failed to create GetDataMessage from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.GetData(context.Background(), pbMsg)
+		if err != nil {
+			logger.Warnf("failed to send GetDataMsg to peer %s: %v", peerId, err)
+		}
+	}()
+}
+
+func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send InvMsg: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbInvMsg, err := adapter.ToGrpcGetInvMsg(inv)
+	if err != nil {
+		logger.Warnf("failed to create InvMessage from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.Inv(context.Background(), pbInvMsg)
+		if err != nil {
+			logger.Warnf("failed to send InvMsg to peer %s: %v", peerId, err)
+		}
+	}()
 }
