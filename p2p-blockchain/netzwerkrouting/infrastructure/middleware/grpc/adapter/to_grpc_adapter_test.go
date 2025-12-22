@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"testing"
 
@@ -12,8 +12,8 @@ import (
 func TestToGrpcGetDataMsg(t *testing.T) {
 	t.Run("Valid inventory", func(t *testing.T) {
 		hash := common.Hash{1, 2, 3}
-		inventory := []*block.InvVector{
-			{InvType: block.InvType(pb.InvType_MSG_TX), Hash: hash},
+		inventory := []*inv.InvVector{
+			{InvType: inv.InvType(pb.InvType_MSG_TX), Hash: hash},
 		}
 
 		msg, err := ToGrpcGetDataMsg(inventory)
@@ -34,8 +34,8 @@ func TestToGrpcGetDataMsg(t *testing.T) {
 
 func TestToGrpcGetInvMsg(t *testing.T) {
 	t.Run("Valid inventory", func(t *testing.T) {
-		inventory := []*block.InvVector{
-			{InvType: block.InvType(pb.InvType_MSG_BLOCK), Hash: common.Hash{4, 5, 6}},
+		inventory := []*inv.InvVector{
+			{InvType: inv.InvType(pb.InvType_MSG_BLOCK), Hash: common.Hash{4, 5, 6}},
 		}
 
 		msg, err := ToGrpcGetInvMsg(inventory)

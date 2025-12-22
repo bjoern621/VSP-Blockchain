@@ -4,6 +4,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
@@ -24,20 +25,20 @@ func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator v
 	}
 }
 
-func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
+func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 	logger.Infof("Inv Message received: %v from %v", inventory, peerID)
 
-	unknownData := make([]*block.InvVector, 0)
+	unknownData := make([]*inv.InvVector, 0)
 
 	for _, v := range inventory {
 		switch v.InvType {
-		case block.InvTypeMsgBlock:
+		case inv.InvTypeMsgBlock:
 			panic("not implemented")
-		case block.InvTypeMsgTx:
+		case inv.InvTypeMsgTx:
 			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
 				unknownData = append(unknownData, v)
 			}
-		case block.InvTypeMsgFilteredBlock:
+		case inv.InvTypeMsgFilteredBlock:
 			panic("not implemented")
 		}
 	}
@@ -45,7 +46,7 @@ func (b *Blockchain) Inv(inventory []*block.InvVector, peerID common.PeerId) {
 	b.requestData(unknownData, peerID)
 }
 
-func (b *Blockchain) GetData(inventory []*block.InvVector, peerID common.PeerId) {
+func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
 }
 
@@ -73,10 +74,10 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
 	isNew := b.mempool.AddTransaction(tx)
 	if isNew {
-		invVectors := make([]*block.InvVector, 0)
-		invVector := block.InvVector{
+		invVectors := make([]*inv.InvVector, 0)
+		invVector := inv.InvVector{
 			Hash:    tx.Hash(),
-			InvType: block.InvTypeMsgTx,
+			InvType: inv.InvTypeMsgTx,
 		}
 		invVectors = append(invVectors, &invVector)
 		b.blockchainMsgSender.BroadcastInv(invVectors, peerID)
@@ -100,6 +101,6 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 	logger.Infof("Mempool Message received from %v", peerID)
 }
 
-func (b *Blockchain) requestData(missingData []*block.InvVector, id common.PeerId) {
+func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
 	b.blockchainMsgSender.SendGetData(missingData, id)
 }

@@ -2,16 +2,16 @@ package blockchain
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"slices"
 )
 
 type BlockchainMsgSender interface {
-	SendGetData(inventory []*block.InvVector, peerId common.PeerId)
-	SendInv(inventory []*block.InvVector, peerId common.PeerId)
+	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
+	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
 }
 
-func (b *BlockchainService) SendGetData(inventory []*block.InvVector, peerId common.PeerId) {
+func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId common.PeerId) {
 	_, ok := b.peerStore.GetPeer(peerId)
 	if !ok {
 		panic("peer '" + peerId + "' not found")
@@ -19,7 +19,7 @@ func (b *BlockchainService) SendGetData(inventory []*block.InvVector, peerId com
 	b.blockchainMsgSender.SendGetData(inventory, peerId)
 }
 
-func (b *BlockchainService) BroadcastInv(inventory []*block.InvVector, peerId common.PeerId) {
+func (b *BlockchainService) BroadcastInv(inventory []*inv.InvVector, peerId common.PeerId) {
 	ids := b.peerStore.GetAllOutputPeers()
 	ownIndex := slices.Index(ids, peerId)
 	ids = slices.Delete(ids, ownIndex, ownIndex+1)

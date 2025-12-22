@@ -2,10 +2,10 @@ package api
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 )
 
 type BlockchainAPI interface {
-	SendGetData(inventory []*block.InvVector, peerId common.PeerId)
-	BroadcastInv(inventory []*block.InvVector, peerId common.PeerId)
+	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
+	BroadcastInv(inventory []*inv.InvVector, peerId common.PeerId)
 }
