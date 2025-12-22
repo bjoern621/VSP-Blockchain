@@ -57,6 +57,8 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 	logger.Infof("MerkleBlock Message received: %v from %v", merkleBlock, peerID)
 }
 
+// Tx processes a transaction message
+// If the transaction is valid and not yet known, it is added to the mempool and broadcasted to other peers
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
