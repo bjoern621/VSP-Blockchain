@@ -6,18 +6,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	sw "s3b/vsp-blockchain/rest-api/api_adapter"
 	"strings"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	sw "s3b/vsp-blockchain/rest-api/api-adapter"
-
 	"github.com/gin-gonic/gin"
 )
 
-// api-adapter:embed swagger-ui
+//go:embed swagger-ui/*
 var swaggerContent embed.FS
 
 func main() {
@@ -50,7 +49,7 @@ func main() {
 	router := sw.NewRouter(routes)
 
 	fsys, _ := fs.Sub(swaggerContent, "swagger-ui")
-	router.StaticFS("/swagger-ui", http.FS(fsys))
+	router.StaticFS("/swagger-ui/", http.FS(fsys))
 
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "./swagger-ui")
