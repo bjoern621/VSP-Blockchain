@@ -22,7 +22,7 @@ func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId commo
 
 // BroadcastInvExclusionary propagates an inventory message to all outbound peers except the specified peer.
 func (b *BlockchainService) BroadcastInvExclusionary(inventory []*inv.InvVector, excludedPeerId common.PeerId) {
-	ids := b.peerStore.GetAllOutputPeers()
+	ids := b.peerStore.GetAllOutboundPeers()
 	ownIndex := slices.Index(ids, excludedPeerId)
 	ids = slices.Delete(ids, ownIndex, ownIndex+1)
 	for _, id := range ids {
