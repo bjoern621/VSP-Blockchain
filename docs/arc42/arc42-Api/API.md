@@ -185,19 +185,20 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 # Bausteinsicht
 
 ## Whitebox Gesamtsystem
-![Diagramm](https://www.plantuml.com/plantuml/png/hLJBQW8n5DqN-WyNANGbxiMAKx0FMefqn5KtSUQgmPX84hLIkkq7z7kwwv_qItgJp4XyGBMQXIJZEPTpppr9orYcxMmYpi-0bbGvGkLQguL13JTQIOiohm0pq0yV0oxyNiBLhbN-2P0kZSK9NAkPp9bUxi7Ar6Ig94eBbUTsseMaSmyfwZdFqAjWKmvliOODKbSpQTZOSYKztlfpviv_uSqSjM2pWUSL-vsS1t95UTJOxNPYUXUtYilg4_bPJN8sjQY3_h0FdFU3p6o_4b4o0O-yh_TpCuopqK1FRJPVPD05QQS7JflN97WVOYNhggg7h99K9kZduxC8mH7bYkGHjHdF4-g0caeBWH2DSPjJp9Bm0ys65dh5cVMtiNwYXFGpPj8HK9x0aE8cSEa6SKIbk7-djyWJAHxI5ECqvuokBYoGh-9M-k3MEdUaoCCxRgpI70Cu6B4D9JkGG1eXpKRY-yiO550B5H8wM7C2jueRu-EpaVP_r2l5kqPSrkjKNoDfhKL-GR8sx4sE8_dkW9wobLKK8KygMuvRRz73IU_gBm00)
+![Diagramm](images/WhiteboxL1.svg)
 <details>
     <summary> Code </summary>
 
     ````plantuml
     @startuml
     node "Browser Frontend" as browser
-    
+
     ' =====================
     '   System Boundary
     ' =====================
     component "REST API Service" as api {
     
+        component "Api-Adapter" as api_adapter
         component "Transaktion" as transaction
         component "Transaktionsverlauf" as verlauf
         component "Konto" as konto
@@ -214,10 +215,18 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     ' ---------------------------------------------
     ' Browser → System
     ' ---------------------------------------------
-    browser --> transaction : erstelle Transaktion
-    browser --> verlauf : fragt Verlauf ab
-    browser --> konto : Kontoanfragen
+    browser --> api_adapter: erstelle Transaktion
+    browser --> api_adapter: fragt Verlauf ab
+    browser --> api_adapter: Kontoanfragen
     
+
+    ' ---------------------------------------------
+    ' Api Adapter → System
+    ' ---------------------------------------------
+    api_adapter --> transaction : erstelle Transaktion
+    api_adapter --> verlauf : fragt Verlauf ab
+    api_adapter --> konto : Kontoanfragen
+
     ' ---------------------------------------------
     ' System intern
     ' ---------------------------------------------
@@ -230,9 +239,6 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     ' ---------------------------------------------
     adapter --> lib : Adresse/Transaktion Anfragen
     adapter --> lib  : Assets und Historie abfrage
-    
-
-    
     @enduml
     ````
 </details>
@@ -240,22 +246,36 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ## Blackboxes Ebene 1
 ### Inhaltsverzeichnis
-1. [Transaktion](#transaktion-blackbox)
-2. [Transaktionsverlauf](#transaktionsverlauf-blackbox)
-3. [Konto](#konto-blackbox)
-4. [V$Goin-Node-Adapter](#vgoin-node-adapter-blackbox)
+1. [Api-Adapter](#api-adapter-blackbox)
+2. [Transaktion](#transaktion-blackbox)
+3. [Transaktionsverlauf](#transaktionsverlauf-blackbox)
+4. [Konto](#konto-blackbox)
+5. [V$Goin-Node-Adapter](#vgoin-node-adapter-blackbox)
 
 ---
+
+### Api-Adapter (Blackbox)
+
+#### Zweck / Verantwortung
+- Sammlung aller REST-Endpunkte der API
+- Übersetzung der API Aufrute zu internen Systemaufrufen
+- Entkopplung des Systems von Änderungen der Schnittstellen-Implementierung
+- Beinhaltet größtenteils generierten Code des OpenAPI Generators
+
+#### Schnittstellen
+- REST-Endpunkt post /transaction
+- REST-Endpunkt get /history
+- REST-Endpunkt get /balance
+- REST-Endpunkt get /address
+- REST-Endpunkt get /address/new
+- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
+
 
 ### Transaktion (Blackbox)
 
 #### Zweck / Verantwortung
 - Entgegennahme und Umwandlung von Transaktionsanfragen
 - Weitergabe der Signaturerstellung und verbreiten im Netzwerk durch den Adapter
-
-#### Schnittstelle
-- REST-Endpunkt post /transaction
-- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 #### Eingaben / Ausgaben
 - Eingaben: Transaktionsdaten vom Client
@@ -276,10 +296,6 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 #### Zweck / Verantwortung
 - Bereitstellung der Transaktionshistorie für einen bestimmte Wallet Adresse (Public Key Hash)
-
-#### Schnittstelle
-- REST-Endpunkt get /history
-- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 #### Eingaben / Ausgaben
 - Eingaben: Wallet Adresse (Public Key Hash) base58 encoded
@@ -302,10 +318,6 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 - Bereitstellung des Kontostands für eine Wallet Adresse (Public Key Hash)
 - Generierung privater Schlüssel
 - Ableitung der Public Key Adresse aus einem Private Key
-
-#### Schnittstelle
-- REST-Endpunkte /balance und /adress
-- [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 #### Eingaben / Ausgaben
 - Eingaben: Walled Adresse base58 encoded, Private Key base58 encoded oder Seed für key generierung 
