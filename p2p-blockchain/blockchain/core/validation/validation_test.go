@@ -1,4 +1,4 @@
-package transaction
+package validation
 
 import (
 	"crypto/ecdsa"
