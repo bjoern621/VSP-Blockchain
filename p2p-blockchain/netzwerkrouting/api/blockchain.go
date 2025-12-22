@@ -5,7 +5,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 )
 
-type BlockchainService interface {
+type BlockchainAPI interface {
 	SendGetData(inventory []*block.InvVector, peerId common.PeerId)
 	BroadcastInv(inventory []*block.InvVector, peerId common.PeerId)
 }
