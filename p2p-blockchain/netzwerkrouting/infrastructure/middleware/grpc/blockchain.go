@@ -5,6 +5,7 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/adapter"
@@ -132,13 +133,13 @@ func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) NotifyInv(inventory []*block.InvVector, peerID common.PeerId) {
+func (s *Server) NotifyInv(inventory []*inv.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Inv(inventory, peerID)
 	}
 }
 
-func (s *Server) NotifyGetData(inventory []*block.InvVector, peerID common.PeerId) {
+func (s *Server) NotifyGetData(inventory []*inv.InvVector, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.GetData(inventory, peerID)
 	}
@@ -186,7 +187,7 @@ func (s *Server) NotifyMempool(peerID common.PeerId) {
 	}
 }
 
-func (c *Client) SendGetData(inv []*block.InvVector, peerId common.PeerId) {
+func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
 		logger.Warnf("failed to send GetDataMsg: no connection for peer %s", peerId)
@@ -207,7 +208,7 @@ func (c *Client) SendGetData(inv []*block.InvVector, peerId common.PeerId) {
 	}()
 }
 
-func (c *Client) SendInv(inv []*block.InvVector, peerId common.PeerId) {
+func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
 		logger.Warnf("failed to send InvMsg: no connection for peer %s", peerId)

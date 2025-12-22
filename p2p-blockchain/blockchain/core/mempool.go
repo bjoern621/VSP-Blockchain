@@ -1,40 +1,51 @@
 package core
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
 	"sync"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 type Mempool struct {
+	validator validation.ValidationAPI
+
 	transactions map[transaction.TransactionID]transaction.Transaction
 	lock         sync.Mutex
 }
 
-func NewMempool() *Mempool {
+func NewMempool(validator validation.ValidationAPI) *Mempool {
 	return &Mempool{
+		validator:    validator,
 		transactions: make(map[transaction.TransactionID]transaction.Transaction),
 	}
 }
 
+// IsKnownTransactionHash returns true if the transaction with the given Hash is known to the mempool.
 func (m *Mempool) IsKnownTransactionHash(hash common.Hash) bool {
 	txId := getTransactionIdFromHash(hash)
 	_, ok := m.transactions[txId]
 	return ok
 }
 
+// IsKnownTransactionId returns true if the transaction with the given ID is known to the mempool.
 func (m *Mempool) IsKnownTransactionId(txId transaction.TransactionID) bool {
 	_, ok := m.transactions[txId]
 	return ok
 }
 
 func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
+	ok, err := m.validator.ValidateTransaction(&tx)
+	assert.Assert(ok && err == nil, "Transaction is invalid: %v", err)
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	txId := tx.TransactionId()
-	_, ok := m.transactions[txId]
+	_, ok = m.transactions[txId]
 	if !ok {
 		m.transactions[txId] = tx
 	}

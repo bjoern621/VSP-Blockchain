@@ -8,7 +8,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	blockchain2 "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
+	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
@@ -35,7 +35,7 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	blockchainService := blockchain2.NewBlockchainService(grpcClient, peerStore)
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	utxoLookup := utxo.UTXOLookupImpl{}
 	transactionValidator := validation.ValidationService{UTXOService: &utxoLookup}

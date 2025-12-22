@@ -2,7 +2,7 @@ package core
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"testing"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -10,19 +10,19 @@ import (
 
 type mockBlockchainSender struct {
 	called     bool
-	lastMsg    []*block.InvVector
+	lastMsg    []*inv.InvVector
 	lastPeerID common.PeerId
 	callsCount int
 }
 
-func (m *mockBlockchainSender) SendGetData(msg []*block.InvVector, peerId common.PeerId) {
+func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.PeerId) {
 	m.called = true
 	m.callsCount++
 	m.lastMsg = msg
 	m.lastPeerID = peerId
 }
 
-func (m *mockBlockchainSender) BroadcastInv(msg []*block.InvVector, peerId common.PeerId) {}
+func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
 
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
@@ -34,11 +34,11 @@ func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	var h common.Hash
 	h[0] = 0xAB // arbitrary non-zero hash to make assertions clearer
 
-	invVector := &block.InvVector{
-		InvType: block.InvTypeMsgTx,
+	invVector := &inv.InvVector{
+		InvType: inv.InvTypeMsgTx,
 		Hash:    h,
 	}
-	inventory := []*block.InvVector{
+	inventory := []*inv.InvVector{
 		invVector,
 	}
 	// Act: receive Inv message
@@ -57,8 +57,8 @@ func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	if len(sender.lastMsg) != 1 {
 		t.Fatalf("expected GetData inventory length 1, got %d", len(sender.lastMsg))
 	}
-	if sender.lastMsg[0].InvType != block.InvTypeMsgTx {
-		t.Fatalf("expected inventory[0].Type %v, got %v", block.InvTypeMsgTx, sender.lastMsg[0].InvType)
+	if sender.lastMsg[0].InvType != inv.InvTypeMsgTx {
+		t.Fatalf("expected inventory[0].Type %v, got %v", inv.InvTypeMsgTx, sender.lastMsg[0].InvType)
 	}
 	if sender.lastMsg[0].Hash != h {
 		t.Fatalf("expected inventory[0].Hash %v, got %v", h, sender.lastMsg[0].Hash)

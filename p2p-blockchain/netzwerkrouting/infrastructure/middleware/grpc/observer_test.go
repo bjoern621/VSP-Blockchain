@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"testing"
 	"time"
@@ -15,8 +16,8 @@ import (
 
 // MockObserver struct used to verify that the Server correctly notifies observers.
 type MockObserver struct {
-	InvCh         chan []*block.InvVector
-	GetDataCh     chan []*block.InvVector
+	InvCh         chan []*inv.InvVector
+	GetDataCh     chan []*inv.InvVector
 	BlockCh       chan block.Block
 	MerkleBlockCh chan block.MerkleBlock
 	TxCh          chan transaction.Transaction
@@ -29,8 +30,8 @@ type MockObserver struct {
 // NewMockObserver creates a MockObserver with buffered channels to prevent blocking during tests.
 func NewMockObserver() *MockObserver {
 	return &MockObserver{
-		InvCh:         make(chan []*block.InvVector, 10),
-		GetDataCh:     make(chan []*block.InvVector, 10),
+		InvCh:         make(chan []*inv.InvVector, 10),
+		GetDataCh:     make(chan []*inv.InvVector, 10),
 		BlockCh:       make(chan block.Block, 10),
 		MerkleBlockCh: make(chan block.MerkleBlock, 10),
 		TxCh:          make(chan transaction.Transaction, 10),
@@ -43,11 +44,11 @@ func NewMockObserver() *MockObserver {
 
 // Implement the BlockchainObserverAPI interface
 
-func (m *MockObserver) Inv(inventory []*block.InvVector, _ common.PeerId) {
+func (m *MockObserver) Inv(inventory []*inv.InvVector, _ common.PeerId) {
 	m.InvCh <- inventory
 }
 
-func (m *MockObserver) GetData(inventory []*block.InvVector, _ common.PeerId) {
+func (m *MockObserver) GetData(inventory []*inv.InvVector, _ common.PeerId) {
 	m.GetDataCh <- inventory
 }
 
@@ -117,11 +118,11 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 	timeout := time.Millisecond * 100
 
 	t.Run("NotifyInv", func(t *testing.T) {
-		invVector := block.InvVector{
-			InvType: block.InvTypeMsgBlock,
+		invVector := inv.InvVector{
+			InvType: inv.InvTypeMsgBlock,
 			Hash:    mustHash(0xAB),
 		}
-		inventory := make([]*block.InvVector, 1)
+		inventory := make([]*inv.InvVector, 1)
 		inventory[0] = &invVector
 
 		server.NotifyInv(inventory, testPeerID)
@@ -137,11 +138,11 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 	})
 
 	t.Run("NotifyGetData", func(t *testing.T) {
-		invVector := block.InvVector{
-			InvType: block.InvTypeMsgTx,
+		invVector := inv.InvVector{
+			InvType: inv.InvTypeMsgTx,
 			Hash:    mustHash(0xCD),
 		}
-		inventory := make([]*block.InvVector, 1)
+		inventory := make([]*inv.InvVector, 1)
 		inventory[0] = &invVector
 
 		server.NotifyGetData(inventory, testPeerID)
