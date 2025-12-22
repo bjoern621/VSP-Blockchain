@@ -1,14 +1,13 @@
 package transaction
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"errors"
 	"strconv"
 	"testing"
 
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
+
+	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 type MockUTXOService struct {
@@ -21,21 +20,26 @@ func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, index uint32) 
 	return out, ok
 }
 
-func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transaction, transaction.UTXO, *MockUTXOService) {
+func setupTestTransaction(
+	t *testing.T,
+) (transaction.PrivateKey, transaction.Transaction, transaction.UTXO, *MockUTXOService) {
+
 	t.Helper()
 
-	// Generate key pair
-	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// Generate secp256k1 key
+	btcecPriv, err := btcec.NewPrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	var privKey transaction.PrivateKey
+	copy(privKey[:], btcecPriv.Serialize())
+
 	// Create UTXO
 	prevTxID := make([]byte, 32)
 	prevIndex := uint32(0)
-	pubKeyBytes := make([]byte, 33)
-	compressed := elliptic.MarshalCompressed(privKey.Curve, privKey.X, privKey.Y)
-	copy(pubKeyBytes, compressed)
+
+	pubKeyBytes := btcecPriv.PubKey().SerializeCompressed()
 	pubKeyHash := transaction.Hash160(transaction.PubKey(pubKeyBytes))
 
 	utxo := transaction.UTXO{
@@ -50,12 +54,17 @@ func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transact
 	utxos := []transaction.UTXO{utxo}
 
 	// Create signed transaction
-	tx, err := transaction.NewTransaction(utxos, pubKeyHash, 500, 10, privKey)
-	if err != nil {
-		t.Fatal(err)
+	tx, err2 := transaction.NewTransaction(
+		utxos,
+		pubKeyHash,
+		500,
+		10,
+		privKey,
+	)
+	if err2 != nil {
+		t.Fatal(err2)
 	}
 
-	// Create mock UTXO service
 	mockUTXO := &MockUTXOService{
 		utxos: map[string]transaction.Output{
 			string(prevTxID) + ":" + strconv.Itoa(int(prevIndex)): utxo.Output,
@@ -110,19 +119,18 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	// Setup original UTXO and key
 	_, realTransaction, utxo, mockUTXO := setupTestTransaction(t)
 
-	// Generate a wrong private key for signing
-	wrongKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	wrongBtcecKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
+	var wrongKey transaction.PrivateKey
+	copy(wrongKey[:], wrongBtcecKey.Serialize())
 
 	toPubKeyHash := utxo.Output.PubKeyHash
 	amount := uint64(500)
 	fee := uint64(10)
 
-	fakePubKeyBytes := make([]byte, 33)
-	compressed := elliptic.MarshalCompressed(wrongKey.Curve, wrongKey.X, wrongKey.Y)
-	copy(fakePubKeyBytes, compressed)
+	fakePubKeyBytes := wrongBtcecKey.PubKey().SerializeCompressed()
 	fakePubKeyHash := transaction.Hash160(transaction.PubKey(fakePubKeyBytes))
 
 	fakeUTXO := transaction.UTXO{
@@ -134,25 +142,23 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 		},
 	}
 
-	tx, err := transaction.NewTransaction(
+	tx, err2 := transaction.NewTransaction(
 		[]transaction.UTXO{fakeUTXO},
 		toPubKeyHash,
 		amount,
 		fee,
 		wrongKey,
 	)
-
-	if err != nil {
-		t.Fatal(err)
+	if err2 != nil {
+		t.Fatal(err2)
 	}
 
+	// Inject invalid signature
 	realTransaction.Inputs[0].Signature = tx.Inputs[0].Signature
 
-	// Use the original UTXO service (which expects original pubkey)
 	validator := ValidationService{UTXOService: mockUTXO}
 
-	// Validate transaction - should fail due to signature mismatch
-	if err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
+	if err = validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to invalid signature")
 	}
 }

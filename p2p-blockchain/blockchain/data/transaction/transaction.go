@@ -1,8 +1,6 @@
 package transaction
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/dto"
 )
@@ -18,16 +16,23 @@ func NewTransaction(
 	toPubKeyHash PubKeyHash,
 	amount uint64,
 	fee uint64,
-	privateKey *ecdsa.PrivateKey,
+	privateKey PrivateKey,
 ) (*Transaction, error) {
 
 	selected, total := selectUTXOs(utxos, amount+fee)
 	if total < amount+fee {
 		return nil, fmt.Errorf("insufficient funds")
 	}
+
 	change := total - amount - fee
 
-	tx := fillInTransactionData(selected, amount, toPubKeyHash, privateKey, change)
+	tx := fillInTransactionData(
+		selected,
+		amount,
+		toPubKeyHash,
+		privateKey,
+		change,
+	)
 
 	if err := tx.Sign(privateKey, selected); err != nil {
 		return nil, err
@@ -52,7 +57,7 @@ func NewTransactionFromDTO(t dto.TransactionDTO) Transaction {
 	}
 }
 
-func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHash, privateKey *ecdsa.PrivateKey, change uint64) *Transaction {
+func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHash, privateKey PrivateKey, change uint64) *Transaction {
 	tx := &Transaction{
 		LockTime: 0,
 	}
@@ -66,10 +71,8 @@ func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHa
 	return tx
 }
 
-func (tx *Transaction) addChange(change uint64, privateKey *ecdsa.PrivateKey) {
-	compressedPubKey := elliptic.MarshalCompressed(privateKey.Curve, privateKey.X, privateKey.Y)
-	var pubKey PubKey
-	copy(pubKey[:], compressedPubKey)
+func (tx *Transaction) addChange(change uint64, privateKey PrivateKey) {
+	pubKey := pubFromPriv(privateKey)
 	ownAddress := Hash160(pubKey)
 
 	tx.Outputs = append(tx.Outputs, Output{

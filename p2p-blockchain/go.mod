@@ -6,12 +6,14 @@ require (
 	bjoernblessin.de/go-utils v1.0.1
 	github.com/akamensky/base58 v0.0.0-20210829145138-ce8bf8802e8f
 	github.com/arch-go/arch-go v1.7.0
+	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.6
 )
 
 require (
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
