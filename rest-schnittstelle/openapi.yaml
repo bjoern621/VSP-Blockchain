@@ -114,7 +114,7 @@ paths:
             $ref: '#/components/schemas/PrivateKeyWIF'
       responses:
         '200':
-          description: Successful response with V$Address and the private key.
+          description: Successful response with V$Address.
           content:
             application/json:
               schema:
