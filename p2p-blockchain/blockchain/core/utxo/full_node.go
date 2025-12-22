@@ -114,15 +114,15 @@ func (c *FullNodeUTXOService) SpendUTXO(outpoint utxopool.Outpoint) error {
 }
 
 // ApplyTransaction applies a transaction to the UTXO set
-// For unconfirmed transactions (blockHeight == 0), changes go to mempool
-// For confirmed transactions (blockHeight > 0), changes go to chainstate
+// For unconfirmed transactions (blockHeight <= 5), changes go to mempool
+// For confirmed transactions (blockHeight > 5), changes go to chainstate
 func (c *FullNodeUTXOService) ApplyTransaction(
 	tx *transaction.Transaction,
 	txID transaction.TransactionID,
 	blockHeight uint64,
 	isCoinbase bool,
 ) error {
-	isConfirmed := blockHeight > 0
+	isConfirmed := blockHeight > 5
 
 	// Spend inputs
 	for _, input := range tx.Inputs {
