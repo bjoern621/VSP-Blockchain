@@ -1,8 +1,8 @@
 package utxo
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // Modifier provides write operations on UTXOs

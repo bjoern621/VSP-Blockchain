@@ -3,9 +3,9 @@ package infrastructure
 import (
 	"encoding/binary"
 	"errors"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
 	"github.com/dgraph-io/badger/v4"
 )

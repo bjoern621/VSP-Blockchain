@@ -2,8 +2,8 @@ package utxopool
 
 import (
 	"encoding/binary"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // OutpointKeySize is the size of a serialized outpoint key (32 bytes TxID + 4 bytes OutputIndex)
