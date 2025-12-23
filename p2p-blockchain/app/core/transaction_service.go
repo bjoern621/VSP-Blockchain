@@ -1,4 +1,3 @@
-// Package core contains the core business logic services for the app layer.
 package core
 
 import (

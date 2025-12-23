@@ -20,8 +20,12 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
+<<<<<<< HEAD
 	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
+=======
+	walletapi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+>>>>>>> e2bad14 (draft for transaction request handling in p2p node)
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -82,15 +86,29 @@ func main() {
 		transactionCreationService := walletcore.NewTransactionCreationService(keyGenerator, keyEncodings, blockchainService, utxoAPI)
 		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
+<<<<<<< HEAD
 		// Initialize transaction service and API
 		transactionService := appcore.NewTransactionService(transactionCreationAPI)
+=======
+		// Initialize wallet key generator
+		keyEncodings := keys.NewKeyEncodingsImpl()
+		keyGenerator := keys.NewKeyGeneratorImpl(keyEncodings, keyEncodings)
+		keyGeneratorAPI := walletapi.NewKeyGeneratorApiImpl(keyGenerator)
+
+		// Initialize transaction service and API
+		transactionService := appcore.NewTransactionService(keyGeneratorAPI, blockchainService)
+>>>>>>> e2bad14 (draft for transaction request handling in p2p node)
 		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
+<<<<<<< HEAD
 		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler)
+=======
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, transactionHandler)
+>>>>>>> e2bad14 (draft for transaction request handling in p2p node)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
