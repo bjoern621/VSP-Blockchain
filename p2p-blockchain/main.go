@@ -39,7 +39,7 @@ func main() {
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
-	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "./utxo.db", InMemory: true}
+	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
 	assert.IsNil(err, "couldn't create UTXOEntryDAO")
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
