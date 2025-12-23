@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -24,14 +25,16 @@ type Server struct {
 	connService          *core.ConnectionEstablishmentService
 	regService           *core.InternalViewService
 	queryRegistryService *core.QueryRegistryService
+	transactionHandler   *adapters.TransactionHandlerAdapter
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, transactionHandler *adapters.TransactionHandlerAdapter) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
+		transactionHandler:   transactionHandler,
 	}
 }
 
@@ -150,4 +153,7 @@ func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest
 	}
 
 	return response, nil
+}
+func (s *Server) CreateTransaction(_ context.Context, req *pb.CreateTransactionRequest) (*pb.CreateTransactionResponse, error) {
+	return s.transactionHandler.CreateTransaction(req), nil
 }
