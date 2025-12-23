@@ -55,7 +55,29 @@ func timeIsTooFarInFuture(b block.Block) bool {
 
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
 	//TODO
+	/*
+		Transaction validation
+			- For every transaction:
+				- Signature checks
+				- Witness validation
+				- No double-spends within block
+				- No coinbase misuse
+		UTXO validation
+			- Inputs reference unspent outputs
+			- Values are in range
+			- Fees are non-negative
+			- Coinbase reward is correct
+	*/
+
+	if !isMerkleRootValid(block) {
+		return false, fmt.Errorf("merkle root in header does not match calculated merkle root")
+	}
 	return true, nil
+}
+
+func isMerkleRootValid(b block.Block) bool {
+	merkleRoot := b.MerkleRoot()
+	return merkleRoot.Equals(b.Header.MerkleRoot)
 }
 
 func isCoinBaseTransaction(transaction transaction.Transaction) bool {
