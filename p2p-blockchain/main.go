@@ -1,7 +1,9 @@
 package main
 
 import (
+	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
@@ -69,11 +71,15 @@ func main() {
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
+		// Initialize transaction service and API
+		transactionService := appcore.NewTransactionService(keyGeneratorApiImpl, blockchainService)
+		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
+		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -92,7 +98,7 @@ func main() {
 
 	grpcServer.Attach(blockchain)
 
-	err = grpcServer.Start(common.P2PPort())
+	err := grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
