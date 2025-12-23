@@ -11,6 +11,8 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
+const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
+
 type Blockchain struct {
 	mempool             *Mempool
 	blockchainMsgSender api.BlockchainAPI
@@ -61,12 +63,12 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	defer recheckAllOrphanBlocks()
 
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
-		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
 	if ok, err := b.blockValidator.ValidateHeader(receivedBlock); !ok {
-		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
@@ -78,7 +80,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
-		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
