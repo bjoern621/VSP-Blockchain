@@ -1,5 +1,5 @@
 // Package handlers contains HTTP handlers for the REST api endpoints.
-package transaction
+package api
 
 import (
 	"encoding/json"
