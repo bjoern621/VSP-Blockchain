@@ -1,13 +1,10 @@
 package block
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
-
-	"bjoernblessin.de/go-utils/util/assert"
 )
 
 // Block represents a block in the blockchain.
@@ -18,12 +15,8 @@ type Block struct {
 }
 
 func (b *Block) Hash() common.Hash {
-	merkleRoot := b.MerkleRoot()
-
-	assert.Assert(bytes.Equal(merkleRoot[:], b.Header.MerkleRoot[:]), "Merkle root of block does not match header")
-
 	var buffer = make([]byte, 0)
-	buffer = append(buffer, merkleRoot[:]...)
+	buffer = append(buffer, b.Header.MerkleRoot[:]...)
 	buffer = append(buffer, b.Header.PreviousBlockHash[:]...)
 	buffer = binary.LittleEndian.AppendUint64(buffer, uint64(b.Header.Timestamp))
 	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.DifficultyTarget)
