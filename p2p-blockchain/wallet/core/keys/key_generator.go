@@ -45,10 +45,13 @@ func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 
 // GetKeyset Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset {
+	publicKey := generator.getPublicKey(privateKey)
+
 	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: generator.encoder.PrivateKeyToWif(privateKey),
-		PublicKey:     generator.getPublicKey(privateKey),
+		PublicKey:     publicKey,
+		VSAddress:     generator.getVsAddress(publicKey),
 	}
 }
 
@@ -58,10 +61,14 @@ func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) (commo
 	if err != nil {
 		return common.Keyset{}, fmt.Errorf("error decoding WIF: %w", err)
 	}
+
+	publicKey := generator.getPublicKey(privateKey)
+
 	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: privateKeyWIF,
-		PublicKey:     generator.getPublicKey(privateKey),
+		PublicKey:     publicKey,
+		VSAddress:     generator.getVsAddress(publicKey),
 	}, nil
 }
 
@@ -105,4 +112,11 @@ func (generator *KeyGeneratorImpl) getPublicKey(privateKey [common.PrivateKeySiz
 	}
 
 	return publicKey
+}
+
+func (generator *KeyGeneratorImpl) getVsAddress(publicKey [common.PublicKeySize]byte) string {
+	firstHash := sha256.Sum256(publicKey[:])
+	secondHash := sha256.Sum256(firstHash[:])
+
+	return generator.encoder.BytesToBase58Check(secondHash[:20], 0x00)
 }
