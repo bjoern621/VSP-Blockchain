@@ -24,7 +24,13 @@ func NewBlockValidationService() *BlockValidationService {
 }
 
 func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) {
-	//TODO
+	if len(block.Transactions) < 1 {
+		return false, fmt.Errorf("block must contain at least one transaction")
+	}
+	if !isCoinBaseTransaction(block.Transactions[0]) {
+		return false, fmt.Errorf("first transaction must be the coinbase transaction")
+	}
+
 	return true, nil
 }
 
@@ -36,4 +42,9 @@ func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, erro
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
 	//TODO
 	return true, nil
+}
+
+func isCoinBaseTransaction(transaction transaction.Transaction) bool {
+	// TODO
+	return false
 }
