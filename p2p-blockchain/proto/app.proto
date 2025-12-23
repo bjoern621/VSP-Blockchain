@@ -51,7 +51,7 @@ service AppService {
     //  - Sends getaddr message to the specified peer.
     //  - Returns success/failure status.
     rpc SendGetAddr(SendGetAddrRequest) returns (SendGetAddrResponse);
-    
+
     // CreateTransaction creates and broadcasts a new transaction.
     //
     // Pre-conditions:
