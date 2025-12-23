@@ -11,13 +11,13 @@ import (
 )
 
 type Mempool struct {
-	validator validation.ValidationAPI
+	validator validation.TransactionValidationAPI
 
 	transactions map[transaction.TransactionID]transaction.Transaction
 	lock         sync.Mutex
 }
 
-func NewMempool(validator validation.ValidationAPI) *Mempool {
+func NewMempool(validator validation.TransactionValidationAPI) *Mempool {
 	return &Mempool{
 		validator:    validator,
 		transactions: make(map[transaction.TransactionID]transaction.Transaction),

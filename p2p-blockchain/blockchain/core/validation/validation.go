@@ -17,17 +17,17 @@ var (
 	ErrInvalidSigEncoding = errors.New("invalid signature encoding")
 )
 
-// ValidationService validates transactions using a UTXO lookup service
-type ValidationService struct {
+// TransactionValidationService validates transactions using a UTXO lookup service
+type TransactionValidationService struct {
 	UTXOService utxo.LookupAPI
 }
 
-type ValidationAPI interface {
+type TransactionValidationAPI interface {
 	ValidateTransaction(tx *transaction.Transaction) (bool, error)
 }
 
 // ValidateTransaction validates all inputs in a transaction by checking if each of the given inputs exists and all signatures are valid.
-func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
+func (v *TransactionValidationService) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
 	for i := range tx.Inputs {
 		if err := v.validateInput(tx, i); err != nil {
 			return false, err
@@ -37,7 +37,7 @@ func (v *ValidationService) ValidateTransaction(tx *transaction.Transaction) (bo
 }
 
 // validateInput validates a single input
-func (v *ValidationService) validateInput(tx *transaction.Transaction, inputIndex int) error {
+func (v *TransactionValidationService) validateInput(tx *transaction.Transaction, inputIndex int) error {
 	in := tx.Inputs[inputIndex]
 
 	referenced, err := v.getReferencedUTXO(in)
@@ -58,7 +58,7 @@ func (v *ValidationService) validateInput(tx *transaction.Transaction, inputInde
 	return nil
 }
 
-func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte) error {
+func (v *TransactionValidationService) verifySignature(in transaction.Input, sighash []byte) error {
 	sig, err := ecdsa.ParseDERSignature(in.Signature)
 	if err != nil {
 		return ErrInvalidSigEncoding
@@ -75,7 +75,7 @@ func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte
 	return nil
 }
 
-func (v *ValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
+func (v *TransactionValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
 	referenced, err := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
 	if err != nil {
 		return transaction.Output{}, ErrUTXONotFound

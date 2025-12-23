@@ -45,7 +45,7 @@ func main() {
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
-	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
+	transactionValidator := &validation.TransactionValidationService{UTXOService: chainStateService}
 	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
 	if common.AppEnabled() {
