@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
@@ -26,4 +27,15 @@ func createCandidateBlockHeader() block.BlockHeader {
 func (m *MinerService) MineBlock(candidateBlock block.Block) block.Block {
 
 	return block.Block{}
+}
+
+// getTarget calculates the target for the proof of work algorithm
+// It does so by shifting a one in a 256 bit number to the left by 256 - difficultyBits.
+// Theory: 0b1 << (256 - difficultyBits) But this is not possible as Go has no operator overloading :( and so big.Int is used
+// This is required as a valid hash should be smaller than the target.
+func getTarget(difficulty uint32) big.Int {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-difficulty))
+
+	return *target
 }
