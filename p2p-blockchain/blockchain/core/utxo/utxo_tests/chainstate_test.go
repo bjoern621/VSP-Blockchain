@@ -30,7 +30,7 @@ func TestChainState_AddAndGet(t *testing.T) {
 		t.Fatalf("Failed to create dao: %v", err)
 	}
 
-	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestChainState_InMemory(t *testing.T) {
 		t.Fatalf("Failed to create dao: %v", err)
 	}
 	var chainstate *utxo.ChainStateService
-	chainstate, err = utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err = utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create in-memory chainstate: %v", err)
 	}

@@ -21,7 +21,7 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 		}
 	}(dao)
 
-	chainstate, err := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
@@ -180,7 +180,7 @@ func TestFullNode_GetUTXOsByPubKeyHash(t *testing.T) {
 		t.Fatalf("Failed to create DAO: %v", err)
 	}
 
-	chainstate, err4 := utxo.NewChainState(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err4 := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err4 != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}

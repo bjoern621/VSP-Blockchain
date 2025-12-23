@@ -29,8 +29,8 @@ type ChainStateConfig struct {
 	CacheSize int
 }
 
-// NewChainState creates a new ChainStateService with BadgerDB storage
-func NewChainState(config ChainStateConfig, dao EntryDAO) (*ChainStateService, error) {
+// NewChainStateService creates a new ChainStateService with BadgerDB storage
+func NewChainStateService(config ChainStateConfig, dao EntryDAO) (*ChainStateService, error) {
 	cacheSize := config.CacheSize
 	if cacheSize <= 0 {
 		cacheSize = DefaultCacheSize
