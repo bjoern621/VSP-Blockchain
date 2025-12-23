@@ -46,7 +46,8 @@ func main() {
 	assert.IsNil(err, "couldn't create chainStateService")
 
 	transactionValidator := &validation.TransactionValidationService{UTXOService: chainStateService}
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
+	blockValidator := &validation.BlockValidationService{}
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")

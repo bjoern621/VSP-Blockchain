@@ -15,13 +15,15 @@ type Blockchain struct {
 	mempool              *Mempool
 	blockchainMsgSender  api.BlockchainAPI
 	transactionValidator validation.TransactionValidationAPI
+	blockValidator       validation.BlockValidationAPI
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator *validation.TransactionValidationService) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.TransactionValidationAPI, blockValidator validation.BlockValidationAPI) *Blockchain {
 	return &Blockchain{
 		mempool:              NewMempool(transactionValidator),
 		blockchainMsgSender:  blockchainMsgSender,
 		transactionValidator: transactionValidator,
+		blockValidator:       blockValidator,
 	}
 }
 
