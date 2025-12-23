@@ -45,6 +45,14 @@ func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, erro
 	return true, nil
 }
 
+func timeIsTooFarInFuture(b block.Block) bool {
+	currentTime := time.Now()
+	limit := currentTime.Add(time.Minute * minutesAheadLimit)
+
+	blockTime := time.Unix(b.Header.Timestamp, 0)
+	return blockTime.After(limit)
+}
+
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
 	//TODO
 	return true, nil
