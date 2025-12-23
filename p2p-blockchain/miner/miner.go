@@ -20,13 +20,30 @@ func (m *MinerService) CreateCandidateBlock(transactions []transaction.Transacti
 	return block.Block{Header: header}
 }
 
+// TODO: Kapitel Die Block-Header aufbauen
 func createCandidateBlockHeader() block.BlockHeader {
 	return block.BlockHeader{}
 }
 
-func (m *MinerService) MineBlock(candidateBlock block.Block) block.Block {
+// MineBlock
+func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
+	target := getTarget(candidateBlock.Header.DifficultyTarget)
 
-	return block.Block{}
+	var hashInt big.Int
+	nonce = 0
+
+	for {
+		candidateBlock.Header.Nonce = nonce
+		hash := candidateBlock.Hash() //TODO: Will work after merging https://github.com/bjoern621/VSP-Blockchain/pull/174
+
+		hashInt.SetBytes(hash[:])
+		if hashInt.Cmp(&target) == -1 {
+			break
+		}
+		nonce++
+	}
+
+	return nonce
 }
 
 // getTarget calculates the target for the proof of work algorithm
