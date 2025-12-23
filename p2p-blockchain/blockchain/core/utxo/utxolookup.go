@@ -5,8 +5,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
-// LookupService provides a read-only view of UTXOs
-type LookupService interface {
+// LookupAPI provides a read-only view of UTXOs
+type LookupAPI interface {
 	// GetUTXO retrieves an output by transaction ID and output index
 	GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error)
 
