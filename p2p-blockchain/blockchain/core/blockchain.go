@@ -86,10 +86,9 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	if isPartOfMainChain(receivedBlock) {
 		// entferne transactionen des blcoks aus dem mempool
-		// add block to main chain
+		// add block to main chain -> Should this implicitly update the utxos?
 	} else {
 		// add block to second chain (should check for chain reorganisations)
-
 	}
 
 	//b.blockchainMsgSender.BroadcastInvExclusionary()
@@ -104,14 +103,6 @@ func recheckAllOrphanBlocks() {
 
 func isPartOfMainChain(receivedBlock block.Block) bool {
 	return false
-}
-
-func addBlockToCorrespondingChain(receivedBlock block.Block) {
-	// TODO: adds block to corresponding chain
-	// either the longest chain or a side chain
-	// This can also trigger a chain reorganisation
-
-	// IF part longest chain -> update UTXOs
 }
 
 func isOrphanBlock(block block.Block) (bool, error) {
