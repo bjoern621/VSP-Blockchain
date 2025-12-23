@@ -35,7 +35,13 @@ func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) 
 }
 
 func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, error) {
-	//TODO
+	if !hashSmallerThanTarget(block) {
+		return false, fmt.Errorf("block hash is not smaller than target")
+	}
+	if timeIsTooFarInFuture(block) {
+		return false, fmt.Errorf("block timestamp is too far in the future")
+	}
+
 	return true, nil
 }
 
@@ -47,4 +53,15 @@ func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, erro
 func isCoinBaseTransaction(transaction transaction.Transaction) bool {
 	// TODO
 	return false
+}
+
+func hashSmallerThanTarget(block block.Block) bool {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-block.Header.DifficultyTarget))
+
+	hash := block.Hash()
+	var intHash big.Int
+	intHash.SetBytes(hash[:])
+
+	return target.Cmp(&intHash) == -1
 }
