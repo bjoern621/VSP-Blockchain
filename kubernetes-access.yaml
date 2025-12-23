@@ -5,11 +5,11 @@ metadata:
     namespace: vsp-blockchain
 subjects:
     - kind: User
-      name: infwqx847
+      name: wqx847
     - kind: User
-      name: infwwv166
+      name: wwv166
     - kind: User
-      name: infwxv415
+      name: wxv415
 roleRef:
     kind: Role
     name: hnc-user-default
