@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"strconv"
 	"testing"
 
@@ -15,10 +16,25 @@ type MockUTXOService struct {
 	utxos map[string]transaction.Output
 }
 
-func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, index uint32) (transaction.Output, bool) {
-	key := string(txID[:]) + ":" + strconv.Itoa(int(index))
+func (m *MockUTXOService) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+	panic("implement me")
+}
+
+func (m *MockUTXOService) ContainsUTXO(_ utxopool.Outpoint) bool {
+	panic("implement me")
+}
+
+func (m *MockUTXOService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	panic("implement me")
+}
+
+func (m *MockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+	key := string(txID[:]) + ":" + strconv.Itoa(int(outputIndex))
 	out, ok := m.utxos[key]
-	return out, ok
+	if !ok {
+		return transaction.Output{}, ErrUTXONotFound
+	}
+	return out, nil
 }
 
 func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transaction, transaction.UTXO, *MockUTXOService) {
@@ -49,7 +65,7 @@ func setupTestTransaction(t *testing.T) (*ecdsa.PrivateKey, transaction.Transact
 
 	utxos := []transaction.UTXO{utxo}
 
-	// Create signed validation
+	// Create signed transaction
 	tx, err := transaction.NewTransaction(utxos, pubKeyHash, 500, 10, privKey)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +89,7 @@ func TestValidateTransaction_Success(t *testing.T) {
 	}
 
 	if _, err := validator.ValidateTransaction(&tx); err != nil {
-		t.Fatal("expected validation to validate:", err)
+		t.Fatal("expected transaction to validate:", err)
 	}
 }
 
@@ -84,7 +100,7 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	brokenValidator := ValidationService{UTXOService: brokenUTXO}
 
 	if _, err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
-		t.Fatal("expected validation to fail due to missing UTXO")
+		t.Fatalf("expected validation to fail due to missing UTXO, was %v", err)
 	}
 }
 
@@ -151,7 +167,7 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	// Use the original UTXO service (which expects original pubkey)
 	validator := ValidationService{UTXOService: mockUTXO}
 
-	// Validate validation - should fail due to signature mismatch
+	// Validate transaction - should fail due to signature mismatch
 	if _, err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to invalid signature")
 	}

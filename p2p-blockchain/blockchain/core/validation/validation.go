@@ -19,7 +19,7 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	UTXOService utxo.UTXOLookupService
+	UTXOService utxo.LookupAPI
 }
 
 type ValidationAPI interface {
@@ -82,9 +82,8 @@ func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte
 }
 
 func (v *ValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
-	// Lookup UTXO
-	referenced, ok := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
-	if !ok {
+	referenced, err := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
+	if err != nil {
 		return transaction.Output{}, ErrUTXONotFound
 	}
 	if transaction.Hash160(in.PubKey) != referenced.PubKeyHash {
