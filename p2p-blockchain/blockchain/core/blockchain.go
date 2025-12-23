@@ -35,6 +35,9 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 	for _, v := range inventory {
 		switch v.InvType {
 		case inv.InvTypeMsgBlock:
+			//if !b.blockchain.IsBlockKnown(v.Hash) {
+			//	  unknownData = append(unknownData, v)
+			//}
 			panic("not implemented")
 		case inv.InvTypeMsgTx:
 			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
@@ -52,8 +55,60 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
 }
 
-func (b *Blockchain) Block(block block.Block, peerID common.PeerId) {
-	logger.Infof("Block Message received: %v from %v", block, peerID)
+func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
+
+	// defer recheckAllOrphanBlocks()
+
+	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
+		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		return
+	}
+
+	if ok, err := b.blockValidator.ValidateHeader(receivedBlock); !ok {
+		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		return
+	}
+
+	if ok, err := doesKnowPrevious(receivedBlock); !ok {
+		logger.Warnf("Blocks previous block is unknown: %v", err)
+		addToOrphanPool(receivedBlock)
+		requestMissingData(receivedBlock)
+		return
+	}
+
+	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
+		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
+		return
+	}
+
+	addBlockToCorrespondingChain(receivedBlock)
+
+	// entferne transactionen des blcoks aus dem mempool
+	//b.blockchainMsgSender.BroadcastInvExclusionary()
+
+	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
+
+	// Recheck other orphan blocks
+}
+
+func addBlockToCorrespondingChain(receivedBlock block.Block) {
+	// TODO: adds block to corresponding chain
+	// either the longest chain or a side chain
+	// This can also trigger a chain reorganisation
+
+	// IF part longest chain -> update UTXOs
+}
+
+func doesKnowPrevious(block block.Block) (bool, error) {
+	return true, nil
+}
+
+func addToOrphanPool(block block.Block) {
+
+}
+
+func requestMissingData(block block.Block) {
+	// TODO: request missing data via a GetHeaders() and a getData Method
 }
 
 func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
