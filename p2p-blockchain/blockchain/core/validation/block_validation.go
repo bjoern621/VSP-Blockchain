@@ -1,6 +1,14 @@
 package validation
 
-import "s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+import (
+	"fmt"
+	"math/big"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"time"
+)
+
+const minutesAheadLimit = 5
 
 type BlockValidationAPI interface {
 	SanityCheck(block block.Block) (bool, error)
