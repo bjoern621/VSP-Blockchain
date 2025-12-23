@@ -1,16 +1,14 @@
 package transaction
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"encoding/asn1"
 	"errors"
-	"math/big"
+
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 )
 
 // Sign calculates the Signature for all Inputs in the Transaction
-func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey, utxos []UTXO) error {
+func (tx *Transaction) Sign(privateKey PrivateKey, utxos []UTXO) error {
 	for i := range tx.Inputs {
 		err := tx.signInput(privateKey, utxos, i)
 		if err != nil {
@@ -20,7 +18,8 @@ func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey, utxos []UTXO) error {
 	return nil
 }
 
-func (tx *Transaction) signInput(privateKey *ecdsa.PrivateKey, utxos []UTXO, inputIndex int) error {
+func (tx *Transaction) signInput(privateKey PrivateKey, utxos []UTXO, inputIndex int) error {
+
 	input := &tx.Inputs[inputIndex]
 
 	referenced, ok := findUTXO(input.PrevTxID, input.OutputIndex, utxos)
@@ -33,25 +32,17 @@ func (tx *Transaction) signInput(privateKey *ecdsa.PrivateKey, utxos []UTXO, inp
 		return err
 	}
 
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, sighash)
-	if err != nil {
-		return err
-	}
+	privKey, pubKey := btcec.PrivKeyFromBytes(privateKey[:])
 
-	// DER-encode signature
-	sig, err := asn1.Marshal(EcdsaSignature{R: r, S: s})
-	if err != nil {
-		return err
-	}
-	input.Signature = sig
+	sig := ecdsa.Sign(privKey, sighash)
 
-	compressedPublicKeyBytes := elliptic.MarshalCompressed(privateKey.Curve, privateKey.X, privateKey.Y)
-	copy(input.PubKey[:], compressedPublicKeyBytes)
+	// DER encode
+	derSig := sig.Serialize()
+	input.Signature = derSig
+
+	copy(input.PubKey[:], pubKey.SerializeCompressed())
+
 	return nil
-}
-
-type EcdsaSignature struct {
-	R, S *big.Int
 }
 
 func findUTXO(id TransactionID, index uint32, utxos []UTXO) (Output, bool) {

@@ -1,12 +1,12 @@
 package validation
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"encoding/asn1"
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	UTXOService utxo.UTXOLookupService
+	UTXOService utxo.LookupAPI
 }
 
 type ValidationAPI interface {
@@ -45,7 +45,6 @@ func (v *ValidationService) validateInput(tx *transaction.Transaction, inputInde
 		return err
 	}
 
-	// Compute sighash
 	sighash, err := tx.SigHash(inputIndex, referenced)
 	if err != nil {
 		return err
@@ -60,31 +59,25 @@ func (v *ValidationService) validateInput(tx *transaction.Transaction, inputInde
 }
 
 func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte) error {
-	// Decode DER signature
-	var sig transaction.EcdsaSignature
-	_, err := asn1.Unmarshal(in.Signature, &sig)
+	sig, err := ecdsa.ParseDERSignature(in.Signature)
 	if err != nil {
 		return ErrInvalidSigEncoding
 	}
 
-	// Recover public key from compressed format
-	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), in.PubKey[:])
-	if x == nil || y == nil {
+	pubKey, err2 := btcec.ParsePubKey(in.PubKey[:])
+	if err2 != nil {
 		return ErrInvalidPubKey
 	}
-	pubKey := &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
 
-	// Verify signature
-	if !ecdsa.Verify(pubKey, sighash, sig.R, sig.S) {
+	if !sig.Verify(sighash, pubKey) {
 		return ErrSignatureInvalid
 	}
 	return nil
 }
 
 func (v *ValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
-	// Lookup UTXO
-	referenced, ok := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
-	if !ok {
+	referenced, err := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
+	if err != nil {
 		return transaction.Output{}, ErrUTXONotFound
 	}
 	if transaction.Hash160(in.PubKey) != referenced.PubKeyHash {
