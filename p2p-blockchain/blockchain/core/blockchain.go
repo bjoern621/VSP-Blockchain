@@ -12,8 +12,9 @@ import (
 )
 
 type Blockchain struct {
-	mempool              *Mempool
-	blockchainMsgSender  api.BlockchainAPI
+	mempool             *Mempool
+	blockchainMsgSender api.BlockchainAPI
+
 	transactionValidator validation.TransactionValidationAPI
 	blockValidator       validation.BlockValidationAPI
 }
@@ -57,7 +58,7 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
-	// defer recheckAllOrphanBlocks()
+	defer recheckAllOrphanBlocks()
 
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
 		logger.Warnf("Block Message received from %v is invalid: %v", peerID, err)
@@ -69,7 +70,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	if ok, err := doesKnowPrevious(receivedBlock); !ok {
+	if ok, err := isOrphanBlock(receivedBlock); !ok {
 		logger.Warnf("Blocks previous block is unknown: %v", err)
 		addToOrphanPool(receivedBlock)
 		requestMissingData(receivedBlock)
@@ -81,14 +82,26 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	addBlockToCorrespondingChain(receivedBlock)
+	if isPartOfMainChain(receivedBlock) {
+		// entferne transactionen des blcoks aus dem mempool
+		// add block to main chain
+	} else {
+		// add block to second chain (should check for chain reorganisations)
 
-	// entferne transactionen des blcoks aus dem mempool
+	}
+
 	//b.blockchainMsgSender.BroadcastInvExclusionary()
 
 	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
+}
 
-	// Recheck other orphan blocks
+// If a block from orphan pool is accepted into any chain, there should be an inv message send
+func recheckAllOrphanBlocks() {
+	//TODO
+}
+
+func isPartOfMainChain(receivedBlock block.Block) bool {
+	return false
 }
 
 func addBlockToCorrespondingChain(receivedBlock block.Block) {
@@ -99,7 +112,7 @@ func addBlockToCorrespondingChain(receivedBlock block.Block) {
 	// IF part longest chain -> update UTXOs
 }
 
-func doesKnowPrevious(block block.Block) (bool, error) {
+func isOrphanBlock(block block.Block) (bool, error) {
 	return true, nil
 }
 

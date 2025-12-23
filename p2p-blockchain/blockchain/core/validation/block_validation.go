@@ -16,13 +16,16 @@ func NewBlockValidationService() *BlockValidationService {
 }
 
 func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) {
+	//TODO
 	return true, nil
 }
 
 func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, error) {
+	//TODO
 	return true, nil
 }
 
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
+	//TODO
 	return true, nil
 }
