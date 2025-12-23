@@ -1,6 +1,8 @@
 package transaction
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
