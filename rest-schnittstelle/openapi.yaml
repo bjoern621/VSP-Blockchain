@@ -2,6 +2,16 @@ openapi: 3.0.3
 info:
   title: V$-GOIN API
   version: 1.0.0
+  description: |-
+    This is the official API for the interaction with the VS-Blockchain.
+    This API focuses on payment-related use cases in the most easy and feasible way.
+    All relevant keys and parameters are documented directly within the schema definitions.
+
+tags:
+  - name: Payment
+    description: Every endpoint for actual payment.
+  - name: KeyTools
+    description: Tools for generating or getting the needed Keys for the payment
 
 paths:
   /transaction:
@@ -17,24 +27,20 @@ paths:
             schema:
               type: object
               required:
-                - recipientPublicKeyHASH
+                - recipientVSAddress
                 - amount
-                - senderPrivateKey
+                - senderPrivateKeyWIF
               properties:
-                recipientPublicKeyHASH:
-                  type: string
-                  example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-                  description: Base58-encoded public key hash of the recipient.
+                recipientVSAddress:
+                  $ref: '#/components/schemas/VSAddress'
                 amount:
                   type: integer
                   minimum: 1
                   example: 100
                   description: The amount of V$-Goin the sender wants to transfer
-                senderPrivateKey:
-                  type: string
-                  pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
-                  example: 5J5jVboTKYrnQvXQ6uzxrzhHCmtLZX2efNE7svUEY4NKgC2KzSv
-                  description: The Base58-encoded private key belonging to the public key of the sender
+                senderPrivateKeyWIF:
+                  $ref: '#/components/schemas/PrivateKeyWIF'
+
       responses:
         '201':
           description: Transaction successfully executed
@@ -52,9 +58,8 @@ paths:
           name: VSAddress
           required: true
           schema:
-            type: string
-          example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-          description: Base58-encoded public key hash whose balance is requested.
+            $ref: '#/components/schemas/VSAddress'
+          description: The VSAddress whose balance is requested.
       responses:
         '200':
           description: Successful response with current balance.
@@ -78,9 +83,8 @@ paths:
           name: VSAddress
           required: true
           schema:
-            type: string
-          example: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-          description: Base58-encoded public key hash whose history is requested.
+            $ref: '#/components/schemas/VSAddress'
+          description: The VSAddress whose history is requested.
       responses:
         '200':
           description: Successful response with keys history.
@@ -103,21 +107,23 @@ paths:
       tags:
         - KeyTools
       parameters:
-        - name: privateKey
+        - name: privateKeyWIF
           required: true
           in: header
           schema:
-            type: string
-            pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+            $ref: '#/components/schemas/PrivateKeyWIF'
       responses:
         '200':
-          description: Successful response with V$Address and the private key.
+          description: Successful response with V$Address.
           content:
             application/json:
               schema:
-                type: string
-                description: The V$Address
-                example: "The V$Address"
+                type: object
+                properties:
+                  VSAddress:
+                    $ref: '#/components/schemas/VSAddress'
+                required:
+                  - VSAddress
         '400':
           description: private Key is not Valid
 
@@ -126,13 +132,6 @@ paths:
       summary: Returns a new V$Address with the corresponding private key.
       tags:
         - KeyTools
-      parameters:
-        - name: seed
-          description: "Seed for private Key generation"
-          required: false
-          in: header
-          schema:
-            type: string
       responses:
         '200':
           description: Successful response with V$Address and the private key.
@@ -141,16 +140,57 @@ paths:
               schema:
                 type: object
                 properties:
-                  address:
-                    type: string
-                    description: The new V$Address.
-                  privateKey:
-                    type: string
-                    description: The new private key.
+                  newVSAddress:
+                    $ref: '#/components/schemas/VSAddress'
+                  newPrivateKeyWIF:
+                    $ref: '#/components/schemas/PrivateKeyWIF'
                 required:
                   - address
-                  - privateKey
+                  - privateKeyWIF
 
+components:
+  schemas:
+    PrivateKeyWIF:
+      type: string
+      pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
+      example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+      description: |
+        Base58Check-encoded private key with 0x80 as prefix (Wallet Import Format, WIF)
+        
+        The private Key (WIF) gives access to the VSGoins send to the corresponding VSAddress.
+        Be careful not to shared it with others.
+        
+        Way to generate a PrivateKey:
+        1. Generate random 256 bit unsigned number
+        2. Check if number is greater than or equal to 1
+        3. Check if number is smaller than the order n of the generator G on Secp256k1
+        4. If the number is invalid, go back to 1
+        5. Create a SHA256 of the random number
 
-
-
+    VSAddress:
+      type: string
+      example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+      description: |
+        Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix.
+        
+        The VSAddress provides a point where VSGoins can be send to.
+        It is public and can be freely shared with others.
+        
+        Way to generate a PublicKey
+        1. Use the equation K = k * G
+          - K is the PublicKey (with two points x,y)
+          - k is the PrivateKey
+          - G is the generator point defined in the secp256k1 standard
+          - * denotes scalar multiplication on the elliptic curve
+        
+        Way to generate a compressed PublicKey
+        1. get x-coordinate from the PublicKey
+        2. if the y-coordinate from the Public key is even, the prefix is 0x02, otherwise it is 0x03
+        3. the compressed PublicKey is the prefix followed by the x-coordinate
+        
+        -> (the y-coordinate can afterwards easily be calculated with y^2 mod p = (x^3 + 7))
+        
+        Way to generate a compressed PublicKeyHash
+        1. Create a SHA 256 the compressed PublicKey
+        2. Create a SHA 256 of the result
+        3. the first 160 bits are the compressed PublicKeyHash

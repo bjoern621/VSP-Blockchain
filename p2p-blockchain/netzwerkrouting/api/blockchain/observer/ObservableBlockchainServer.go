@@ -3,6 +3,7 @@ package observer
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
@@ -15,8 +16,8 @@ type ObservableBlockchainServerAPI interface {
 	// Detach is called by the observer to detach itself from the server.
 	Detach(o BlockchainObserverAPI)
 
-	NotifyInv(inventory []*block.InvVector, peerID common.PeerId)
-	NotifyGetData(inventory []*block.InvVector, peerID common.PeerId)
+	NotifyInv(inventory []*inv.InvVector, peerID common.PeerId)
+	NotifyGetData(inventory []*inv.InvVector, peerID common.PeerId)
 	NotifyBlock(block block.Block, peerID common.PeerId)
 	NotifyMerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId)
 	NotifyTx(tx transaction.Transaction, peerID common.PeerId)

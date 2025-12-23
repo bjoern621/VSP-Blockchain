@@ -2,11 +2,11 @@ package adapter
 
 import (
 	"fmt"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
 
-func ToGrpcGetDataMsg(inventory []*block.InvVector) (*pb.GetDataMsg, error) {
+func ToGrpcGetDataMsg(inventory []*inv.InvVector) (*pb.GetDataMsg, error) {
 	if inventory == nil {
 		return nil, fmt.Errorf("inventory must not be nil")
 	}
@@ -14,7 +14,7 @@ func ToGrpcGetDataMsg(inventory []*block.InvVector) (*pb.GetDataMsg, error) {
 	return &pb.GetDataMsg{Inventory: pbInv}, nil
 }
 
-func ToGrpcGetInvMsg(inventory []*block.InvVector) (*pb.InvMsg, error) {
+func ToGrpcGetInvMsg(inventory []*inv.InvVector) (*pb.InvMsg, error) {
 	if inventory == nil {
 		return nil, fmt.Errorf("inventory must not be nil")
 	}
@@ -22,7 +22,7 @@ func ToGrpcGetInvMsg(inventory []*block.InvVector) (*pb.InvMsg, error) {
 	return &pb.InvMsg{Inventory: pbInv}, nil
 }
 
-func toGrpcInvVector(inventory []*block.InvVector) []*pb.InvVector {
+func toGrpcInvVector(inventory []*inv.InvVector) []*pb.InvVector {
 	pbInv := make([]*pb.InvVector, len(inventory))
 	for i, v := range inventory {
 		pbInv[i] = &pb.InvVector{

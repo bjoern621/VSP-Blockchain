@@ -3,6 +3,7 @@ package observer
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
@@ -12,8 +13,8 @@ import (
 // and be removed via the ObservableBlockchainServerAPI.Detach() method on a valid ObservableBlockchainServerAPI.
 // A blockchain observer shall implement the corresponding methods to handle blockchain events.
 type BlockchainObserverAPI interface {
-	Inv(inventory []*block.InvVector, peerID common.PeerId)
-	GetData(inventory []*block.InvVector, peerID common.PeerId)
+	Inv(inventory []*inv.InvVector, peerID common.PeerId)
+	GetData(inventory []*inv.InvVector, peerID common.PeerId)
 	Block(block block.Block, peerID common.PeerId)
 	MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId)
 	Tx(tx transaction.Transaction, peerID common.PeerId)

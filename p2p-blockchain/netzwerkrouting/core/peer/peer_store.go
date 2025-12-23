@@ -33,7 +33,7 @@ func (s *PeerStore) GetPeer(id common.PeerId) (*Peer, bool) {
 	return peer, exists
 }
 
-func (s *PeerStore) GetAllOutputPeers() []common.PeerId {
+func (s *PeerStore) GetAllOutboundPeers() []common.PeerId {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

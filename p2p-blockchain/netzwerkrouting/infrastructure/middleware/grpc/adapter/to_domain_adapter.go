@@ -4,27 +4,28 @@ import (
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
 
-func toInvVector(pbVec *pb.InvVector) (block.InvVector, error) {
+func toInvVector(pbVec *pb.InvVector) (inv.InvVector, error) {
 	if pbVec == nil {
-		return block.InvVector{}, fmt.Errorf("inv vector must not be nil")
+		return inv.InvVector{}, fmt.Errorf("inv vector must not be nil")
 	}
 	if len(pbVec.Hash) != common.HashSize {
-		return block.InvVector{}, fmt.Errorf("invalid hash length: %d", len(pbVec.Hash))
+		return inv.InvVector{}, fmt.Errorf("invalid hash length: %d", len(pbVec.Hash))
 	}
 
 	var hash common.Hash
 	copy(hash[:], pbVec.Hash)
-	return block.InvVector{
-		InvType: block.InvType(pbVec.Type),
+	return inv.InvVector{
+		InvType: inv.InvType(pbVec.Type),
 		Hash:    hash,
 	}, nil
 }
 
-func ToInvVectorsFromInvMsg(pbMsg *pb.InvMsg) ([]*block.InvVector, error) {
+func ToInvVectorsFromInvMsg(pbMsg *pb.InvMsg) ([]*inv.InvVector, error) {
 	if pbMsg == nil {
 		return nil, fmt.Errorf("inv msg must not be nil")
 	}
@@ -35,7 +36,7 @@ func ToInvVectorsFromInvMsg(pbMsg *pb.InvMsg) ([]*block.InvVector, error) {
 	return toInvVectors(pbMsg.Inventory)
 }
 
-func ToInvVectorsFromGetDataMsg(pb *pb.GetDataMsg) ([]*block.InvVector, error) {
+func ToInvVectorsFromGetDataMsg(pb *pb.GetDataMsg) ([]*inv.InvVector, error) {
 	if pb == nil {
 		return nil, fmt.Errorf("getDataMsg must not be nil")
 	}
@@ -205,8 +206,8 @@ func toHeader(pb *pb.BlockHeader) (block.BlockHeader, error) {
 	}, nil
 }
 
-func toInvVectors(inventoryPb []*pb.InvVector) ([]*block.InvVector, error) {
-	inventory := make([]*block.InvVector, len(inventoryPb))
+func toInvVectors(inventoryPb []*pb.InvVector) ([]*inv.InvVector, error) {
+	inventory := make([]*inv.InvVector, len(inventoryPb))
 	for i, v := range inventoryPb {
 		domainVec, err := toInvVector(v)
 		if err != nil {
