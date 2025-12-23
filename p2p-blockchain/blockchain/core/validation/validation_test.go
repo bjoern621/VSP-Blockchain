@@ -88,7 +88,7 @@ func TestValidateTransaction_Success(t *testing.T) {
 		UTXOService: mockUTXO,
 	}
 
-	if err := validator.ValidateTransaction(&tx); err != nil {
+	if _, err := validator.ValidateTransaction(&tx); err != nil {
 		t.Fatal("expected transaction to validate:", err)
 	}
 }
@@ -99,7 +99,7 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	brokenUTXO := &MockUTXOService{utxos: map[string]transaction.Output{}}
 	brokenValidator := ValidationService{UTXOService: brokenUTXO}
 
-	if err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
+	if _, err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
 		t.Fatalf("expected validation to fail due to missing UTXO, was %v", err)
 	}
 }
