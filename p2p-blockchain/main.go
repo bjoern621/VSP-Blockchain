@@ -73,7 +73,7 @@ func main() {
 
 	grpcServer.Attach(blockchain)
 
-	err := grpcServer.Start(common.P2PPort())
+	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
