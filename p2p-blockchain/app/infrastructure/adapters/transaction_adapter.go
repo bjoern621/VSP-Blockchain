@@ -2,7 +2,7 @@ package adapters
 
 import (
 	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
-	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	commonTx "s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
 
@@ -40,18 +40,18 @@ func (t *TransactionHandlerAdapter) CreateTransaction(req *pb.CreateTransactionR
 	}
 }
 
-func (t *TransactionHandlerAdapter) mapErrorCode(result appcore.TransactionResult) pb.TransactionErrorCode {
+func (t *TransactionHandlerAdapter) mapErrorCode(result commonTx.TransactionResult) pb.TransactionErrorCode {
 	var pbErrorCode pb.TransactionErrorCode
 	switch result.ErrorCode {
-	case appcore.ErrorCodeNone:
+	case commonTx.ErrorCodeNone:
 		pbErrorCode = pb.TransactionErrorCode_NONE
-	case appcore.ErrorCodeInvalidPrivateKey:
+	case commonTx.ErrorCodeInvalidPrivateKey:
 		pbErrorCode = pb.TransactionErrorCode_INVALID_PRIVATE_KEY
-	case appcore.ErrorCodeInsufficientFunds:
+	case commonTx.ErrorCodeInsufficientFunds:
 		pbErrorCode = pb.TransactionErrorCode_INSUFFICIENT_FUNDS
-	case appcore.ErrorCodeValidationFailed:
+	case commonTx.ErrorCodeValidationFailed:
 		pbErrorCode = pb.TransactionErrorCode_VALIDATION_FAILED
-	case appcore.ErrorCodeBroadcastFailed:
+	case commonTx.ErrorCodeBroadcastFailed:
 		pbErrorCode = pb.TransactionErrorCode_BROADCAST_FAILED
 	default:
 		pbErrorCode = pb.TransactionErrorCode_VALIDATION_FAILED

@@ -1,12 +1,12 @@
 package api
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	common "s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core"
 )
 
-// TransactionAPI useless API that wraps wallet's TransactionCreationAPI
-type TransactionAPI interface {
+// TransactionCreationAPI API for creating transactions.
+type TransactionCreationAPI interface {
 	// CreateTransaction creates and broadcasts a new transaction.
 	// It validates the private key, checks for sufficient funds, creates the transaction,
 	// and broadcasts it to the network.
@@ -21,19 +21,19 @@ type TransactionAPI interface {
 	CreateTransaction(recipientVSAddress string, amount uint64, senderPrivateKeyWIF string) common.TransactionResult
 }
 
-// TransactionAPIImpl implements TransactionAPI using the core TransactionService.
-type TransactionAPIImpl struct {
-	transactionService *core.TransactionService
+// TransactionCreationAPIImpl implements TransactionCreationAPI using the core TransactionCreationService.
+type TransactionCreationAPIImpl struct {
+	transactionService *core.TransactionCreationService
 }
 
-// NewTransactionAPIImpl creates a new TransactionAPIImpl with the given dependencies.
-func NewTransactionAPIImpl(transactionService *core.TransactionService) *TransactionAPIImpl {
-	return &TransactionAPIImpl{
+// NewTransactionCreationAPIImpl creates a new TransactionCreationAPIImpl with the given dependencies.
+func NewTransactionCreationAPIImpl(transactionService *core.TransactionCreationService) *TransactionCreationAPIImpl {
+	return &TransactionCreationAPIImpl{
 		transactionService: transactionService,
 	}
 }
 
-// CreateTransaction implements TransactionAPI.CreateTransaction.
-func (api *TransactionAPIImpl) CreateTransaction(recipientVSAddress string, amount uint64, senderPrivateKeyWIF string) common.TransactionResult {
+// CreateTransaction implements TransactionCreationAPI.CreateTransaction.
+func (api *TransactionCreationAPIImpl) CreateTransaction(recipientVSAddress string, amount uint64, senderPrivateKeyWIF string) common.TransactionResult {
 	return api.transactionService.CreateTransaction(recipientVSAddress, amount, senderPrivateKeyWIF)
 }
