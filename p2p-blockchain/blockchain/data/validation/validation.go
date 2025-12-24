@@ -2,7 +2,7 @@ package validation
 
 import (
 	"errors"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -19,12 +19,12 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	lookupApi utxo.LookupAPI
+	UTXOService utxo.LookupService
 }
 
-func NewValidationService(utxoService utxo.LookupAPI) ValidationAPI {
+func NewValidationService(utxoService utxo.LookupService) ValidationAPI {
 	return &ValidationService{
-		lookupApi: utxoService,
+		UTXOService: utxoService,
 	}
 }
 
@@ -82,7 +82,7 @@ func (v *ValidationService) verifySignature(in transaction.Input, sighash []byte
 }
 
 func (v *ValidationService) getReferencedUTXO(in transaction.Input) (transaction.Output, error) {
-	referenced, err := v.lookupApi.GetUTXO(in.PrevTxID, in.OutputIndex)
+	referenced, err := v.UTXOService.GetUTXO(in.PrevTxID, in.OutputIndex)
 	if err != nil {
 		return transaction.Output{}, ErrUTXONotFound
 	}
