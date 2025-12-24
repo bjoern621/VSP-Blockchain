@@ -8,7 +8,7 @@ import (
 )
 
 func TestMemPool_AddAndGet(t *testing.T) {
-	pool := utxo.NewMemUTXOPool()
+	pool := utxo.NewMemUTXOPoolService()
 
 	var txID transaction.TransactionID
 	txID[0] = 1
@@ -45,7 +45,7 @@ func TestMemPool_AddAndGet(t *testing.T) {
 }
 
 func TestMemPool_MarkSpent(t *testing.T) {
-	pool := utxo.NewMemUTXOPool()
+	pool := utxo.NewMemUTXOPoolService()
 
 	var txID transaction.TransactionID
 	txID[0] = 1
