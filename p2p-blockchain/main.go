@@ -5,10 +5,11 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
@@ -20,6 +21,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
 	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -66,13 +68,22 @@ func main() {
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
+	// Initialize UTXO lookup service and API
+	memPoolService := utxo.NewMemUTXOPoolService()
+	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
+	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+
 	minerImpl := minerCore.NewMinerService(blockchainMsgService, blockchain)
 	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
+		// Intialize Transaction Creation API
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGenerator, keyEncodings, blockchainService, utxoAPI)
+		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
+
 		// Initialize transaction service and API
-		transactionService := appcore.NewTransactionService(keyGeneratorApiImpl, blockchainService)
+		transactionService := appcore.NewTransactionService(transactionCreationAPI)
 		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
@@ -98,7 +109,7 @@ func main() {
 
 	grpcServer.Attach(blockchain)
 
-	err := grpcServer.Start(common.P2PPort())
+	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
