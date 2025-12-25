@@ -6,9 +6,9 @@ import (
 	"sync"
 )
 
-// MemPoolService is an in-memory UTXO pool for unconfirmed transactions
+// MemUTXOPoolService is an in-memory UTXO pool for unconfirmed transactions
 // It tracks both created UTXOs (from transaction outputs) and spent UTXOs (from transaction inputs)
-type MemPoolService struct {
+type MemUTXOPoolService struct {
 	mu sync.RWMutex
 
 	// utxos stores unconfirmed UTXOs created by mempool transactions
@@ -19,16 +19,16 @@ type MemPoolService struct {
 	spent map[string]struct{}
 }
 
-// NewMemUTXOPool creates a new in-memory UTXO pool
-func NewMemUTXOPool() *MemPoolService {
-	return &MemPoolService{
+// NewMemUTXOPoolService creates a new in-memory UTXO pool
+func NewMemUTXOPoolService() *MemUTXOPoolService {
+	return &MemUTXOPoolService{
 		utxos: make(map[string]utxopool.UTXOEntry),
 		spent: make(map[string]struct{}),
 	}
 }
 
 // Get retrieves a UTXO from the mempool
-func (m *MemPoolService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (m *MemUTXOPoolService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	entry, ok := m.utxos[string(outpoint.Key())]
@@ -39,7 +39,7 @@ func (m *MemPoolService) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, er
 }
 
 // IsSpent checks if an outpoint has been marked as spent in the mempool
-func (m *MemPoolService) IsSpent(outpoint utxopool.Outpoint) bool {
+func (m *MemUTXOPoolService) IsSpent(outpoint utxopool.Outpoint) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	_, spent := m.spent[string(outpoint.Key())]
@@ -47,7 +47,7 @@ func (m *MemPoolService) IsSpent(outpoint utxopool.Outpoint) bool {
 }
 
 // Add adds a new UTXO to the mempool
-func (m *MemPoolService) Add(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
+func (m *MemUTXOPoolService) Add(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -59,7 +59,7 @@ func (m *MemPoolService) Add(outpoint utxopool.Outpoint, entry utxopool.UTXOEntr
 }
 
 // Remove removes a UTXO from the mempool
-func (m *MemPoolService) Remove(outpoint utxopool.Outpoint) error {
+func (m *MemUTXOPoolService) Remove(outpoint utxopool.Outpoint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (m *MemPoolService) Remove(outpoint utxopool.Outpoint) error {
 
 // MarkSpent marks an outpoint as spent in the mempool
 // This is used when a mempool transaction spends a chainstate UTXO
-func (m *MemPoolService) MarkSpent(outpoint utxopool.Outpoint) {
+func (m *MemUTXOPoolService) MarkSpent(outpoint utxopool.Outpoint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -85,7 +85,7 @@ func (m *MemPoolService) MarkSpent(outpoint utxopool.Outpoint) {
 }
 
 // UnmarkSpent removes the spent marker from an outpoint
-func (m *MemPoolService) UnmarkSpent(outpoint utxopool.Outpoint) {
+func (m *MemUTXOPoolService) UnmarkSpent(outpoint utxopool.Outpoint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -94,7 +94,7 @@ func (m *MemPoolService) UnmarkSpent(outpoint utxopool.Outpoint) {
 }
 
 // Contains checks if a UTXO exists in the mempool
-func (m *MemPoolService) Contains(outpoint utxopool.Outpoint) bool {
+func (m *MemUTXOPoolService) Contains(outpoint utxopool.Outpoint) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	_, ok := m.utxos[string(outpoint.Key())]
@@ -102,7 +102,7 @@ func (m *MemPoolService) Contains(outpoint utxopool.Outpoint) bool {
 }
 
 // GetUTXO retrieves an output by transaction ID and output index
-func (m *MemPoolService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+func (m *MemUTXOPoolService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
 	outpoint := utxopool.NewOutpoint(txID, outputIndex)
 	entry, err := m.Get(outpoint)
 	if err != nil {
@@ -112,17 +112,17 @@ func (m *MemPoolService) GetUTXO(txID transaction.TransactionID, outputIndex uin
 }
 
 // GetUTXOEntry retrieves the full UTXO entry with metadata
-func (m *MemPoolService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (m *MemUTXOPoolService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	return m.Get(outpoint)
 }
 
 // ContainsUTXO checks if a UTXO exists
-func (m *MemPoolService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+func (m *MemUTXOPoolService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
 	return m.Contains(outpoint)
 }
 
 // Clear removes all UTXOs and spent markers from the mempool
-func (m *MemPoolService) Clear() {
+func (m *MemUTXOPoolService) Clear() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -131,7 +131,7 @@ func (m *MemPoolService) Clear() {
 }
 
 // Size returns the number of UTXOs in the mempool
-func (m *MemPoolService) Size() int {
+func (m *MemUTXOPoolService) Size() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -139,7 +139,7 @@ func (m *MemPoolService) Size() int {
 }
 
 // SpentSize returns the number of spent markers in the mempool
-func (m *MemPoolService) SpentSize() int {
+func (m *MemUTXOPoolService) SpentSize() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -147,13 +147,13 @@ func (m *MemPoolService) SpentSize() int {
 }
 
 // Close releases resources (no-op for in-memory store)
-func (m *MemPoolService) Close() error {
+func (m *MemUTXOPoolService) Close() error {
 	m.Clear()
 	return nil
 }
 
 // GetUTXOsByPubKeyHash returns all unconfirmed UTXO entries for a PubKeyHash.
-func (m *MemPoolService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]utxopool.UTXOEntry, error) {
+func (m *MemUTXOPoolService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]utxopool.UTXOEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -167,7 +167,7 @@ func (m *MemPoolService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash)
 }
 
 // GetUTXOsWithOutpointByPubKeyHash returns all unconfirmed UTXOs with their outpoints for a PubKeyHash.
-func (m *MemPoolService) GetUTXOsWithOutpointByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+func (m *MemUTXOPoolService) GetUTXOsWithOutpointByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -186,7 +186,7 @@ func (m *MemPoolService) GetUTXOsWithOutpointByPubKeyHash(pubKeyHash transaction
 }
 
 // GetSpentOutpoints returns a copy of all spent outpoint keys.
-func (m *MemPoolService) GetSpentOutpoints() map[string]struct{} {
+func (m *MemUTXOPoolService) GetSpentOutpoints() map[string]struct{} {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 

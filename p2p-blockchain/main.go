@@ -1,8 +1,11 @@
 package main
 
 import (
+	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
@@ -15,6 +18,9 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
+	walletapi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -48,13 +54,31 @@ func main() {
 	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
 	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
+	// Initialize UTXO lookup service and API
+	memPoolService := utxo.NewMemUTXOPoolService()
+	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
+	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 
+		// Initialize wallet key generator
+		keyEncodings := keys.NewKeyEncodingsImpl()
+		keyGenerator := keys.NewKeyGeneratorImpl(keyEncodings, keyEncodings)
+
+		// Intialize Transaction Creation API
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGenerator, keyEncodings, blockchainService, utxoAPI)
+		transactionCreationAPI := walletapi.NewTransactionCreationAPIImpl(transactionCreationService)
+
+		// Initialize transaction service and API
+		transactionService := appcore.NewTransactionService(transactionCreationAPI)
+		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+
+		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, transactionHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

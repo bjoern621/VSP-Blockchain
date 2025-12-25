@@ -19,7 +19,7 @@ var (
 
 // ValidationService validates transactions using a UTXO lookup service
 type ValidationService struct {
-	UTXOService utxo.LookupAPI
+	UTXOService utxo.LookupService
 }
 
 type ValidationAPI interface {

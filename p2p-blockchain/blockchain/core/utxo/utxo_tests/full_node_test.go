@@ -10,7 +10,7 @@ import (
 )
 
 func TestFullNode_LookupOrder(t *testing.T) {
-	mempool := utxo.NewMemUTXOPool()
+	mempool := utxo.NewMemUTXOPoolService()
 	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
 	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
@@ -23,7 +23,7 @@ func TestFullNode_LookupOrder(t *testing.T) {
 		}
 	}(chainstate)
 
-	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
+	pool := utxo.NewFullNodeUTXOService(mempool, chainstate)
 
 	var txID1 transaction.TransactionID
 	txID1[0] = 1
@@ -83,7 +83,7 @@ func TestFullNode_LookupOrder(t *testing.T) {
 }
 
 func TestFullNode_ApplyTransaction(t *testing.T) {
-	mempool := utxo.NewMemUTXOPool()
+	mempool := utxo.NewMemUTXOPoolService()
 	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
 	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
@@ -96,7 +96,7 @@ func TestFullNode_ApplyTransaction(t *testing.T) {
 		}
 	}(chainstate)
 
-	pool := utxo.NewCombinedUTXOPool(mempool, chainstate)
+	pool := utxo.NewFullNodeUTXOService(mempool, chainstate)
 
 	// Create a previous UTXO in chainstate
 	var prevTxID transaction.TransactionID
