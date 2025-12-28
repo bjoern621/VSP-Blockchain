@@ -29,16 +29,18 @@ type Server struct {
 	queryRegistryService *core.QueryRegistryService
 	keysApi              api.KeyGeneratorApi
 	transactionHandler   *adapters.TransactionHandlerAdapter
+	kontoHandler         *adapters.KontoHandlerAdapter
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, keysApi api.KeyGeneratorApi, transactionHandler *adapters.TransactionHandlerAdapter) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, keysApi api.KeyGeneratorApi, transactionHandler *adapters.TransactionHandlerAdapter, kontoHandler *adapters.KontoHandlerAdapter) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
 		keysApi:              keysApi,
 		transactionHandler:   transactionHandler,
+		kontoHandler:         kontoHandler,
 	}
 }
 
@@ -199,4 +201,8 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 		FalseInput: false,
 	}
 	return response, nil
+}
+
+func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
+	return s.kontoHandler.GetAssets(req), nil
 }
