@@ -16,11 +16,11 @@ type Block struct {
 
 func (b *Block) Hash() common.Hash {
 	var buffer = make([]byte, 0)
-	buffer = append(buffer, b.Header.MerkleRoot[:]...)
 	buffer = append(buffer, b.Header.PreviousBlockHash[:]...)
+	buffer = append(buffer, b.Header.MerkleRoot[:]...)
 	buffer = binary.LittleEndian.AppendUint64(buffer, uint64(b.Header.Timestamp))
-	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.DifficultyTarget)
 	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.Nonce)
+	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.DifficultyTarget)
 
 	return doubleSHA256(buffer)
 }
