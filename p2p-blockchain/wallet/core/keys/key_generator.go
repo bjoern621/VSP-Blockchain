@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 // KeyGenerator Interface for API for creating / getting keysets
@@ -43,9 +45,13 @@ func (generator *KeyGeneratorImpl) GenerateKeyset() common.Keyset {
 
 // GetKeyset Not fully implemented yet!
 func (generator *KeyGeneratorImpl) GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset {
+	publicKey := generator.getPublicKey(privateKey)
+
 	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: generator.encoder.PrivateKeyToWif(privateKey),
+		PublicKey:     publicKey,
+		VSAddress:     generator.getVsAddress(publicKey),
 	}
 }
 
@@ -55,9 +61,14 @@ func (generator *KeyGeneratorImpl) GetKeysetFromWIF(privateKeyWIF string) (commo
 	if err != nil {
 		return common.Keyset{}, fmt.Errorf("error decoding WIF: %w", err)
 	}
+
+	publicKey := generator.getPublicKey(privateKey)
+
 	return common.Keyset{
 		PrivateKey:    privateKey,
 		PrivateKeyWif: privateKeyWIF,
+		PublicKey:     publicKey,
+		VSAddress:     generator.getVsAddress(publicKey),
 	}, nil
 }
 
@@ -83,4 +94,29 @@ func (generator *KeyGeneratorImpl) createPrivateKey() [common.PrivateKeySize]byt
 			return key
 		}
 	}
+}
+
+func (generator *KeyGeneratorImpl) getPublicKey(privateKey [common.PrivateKeySize]byte) [common.PublicKeySize]byte {
+	x, y := secp256k1.S256().ScalarBaseMult(privateKey[:])
+	var publicKey [common.PublicKeySize]byte
+
+	copy(publicKey[1:33], x.Bytes())
+
+	//Prefix
+	even := big.NewInt(0)
+	even.Mod(y, big.NewInt(2))
+	if even.Int64() == 0 {
+		publicKey[0] = 0x02
+	} else {
+		publicKey[0] = 0x03
+	}
+
+	return publicKey
+}
+
+func (generator *KeyGeneratorImpl) getVsAddress(publicKey [common.PublicKeySize]byte) string {
+	firstHash := sha256.Sum256(publicKey[:])
+	secondHash := sha256.Sum256(firstHash[:])
+
+	return generator.encoder.BytesToBase58Check(secondHash[:20], 0x00)
 }

@@ -14,12 +14,12 @@ import (
 type Blockchain struct {
 	mempool              *Mempool
 	blockchainMsgSender  api.BlockchainAPI
-	transactionValidator validation.ValidationService
+	transactionValidator validation.ValidationAPI
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.ValidationService) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator *validation.ValidationService) *Blockchain {
 	return &Blockchain{
-		mempool:              NewMempool(&transactionValidator),
+		mempool:              NewMempool(transactionValidator),
 		blockchainMsgSender:  blockchainMsgSender,
 		transactionValidator: transactionValidator,
 	}
