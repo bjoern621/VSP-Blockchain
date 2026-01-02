@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	sw "s3b/vsp-blockchain/rest-api/api_adapter"
+	"s3b/vsp-blockchain/rest-api/konto"
+	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
 	"strings"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -40,9 +42,15 @@ func main() {
 		}
 	}(conn)
 
-	// REST API Server
+	// Dependencies
 
-	routes := sw.ApiHandleFunctions{}
+	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl()
+	kontostand := konto.NewKontostand(transactionAdapter)
+
+	// REST API Server
+	routes := sw.ApiHandleFunctions{
+		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
+	}
 
 	log.Printf("Server started")
 
