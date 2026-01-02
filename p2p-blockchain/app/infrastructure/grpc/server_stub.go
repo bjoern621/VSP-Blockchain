@@ -176,7 +176,9 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 	keyset, err := s.keysApi.GetKeysetFromWIF(wif.PrivateKeyWif)
 
 	if err != nil {
-		return nil, err
+		return &pb.GetKeysetFromWIFResponse{
+			FalseInput: true,
+		}, nil
 	}
 
 	pbKeyset := pb.Keyset{
@@ -187,7 +189,8 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 	}
 
 	response := &pb.GetKeysetFromWIFResponse{
-		Keyset: &pbKeyset,
+		Keyset:     &pbKeyset,
+		FalseInput: false,
 	}
 	return response, nil
 }

@@ -124,4 +124,5 @@ message GetKeysetFromWIFRequest{
 
 message GetKeysetFromWIFResponse{
   Keyset keyset = 1;
+  bool falseInput = 2;
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type KeyGenerator interface {
-	GenerateKeyset() common.Keyset
+	GenerateKeyset() (common.Keyset, error)
 	GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error)
 }
 
@@ -20,7 +20,7 @@ func NewKeyGeneratorImpl(transactionAdapter vsgoin_node_adapter.TransactionAdapt
 	}
 }
 
-func (k KeyGeneratorImpl) GenerateKeyset() common.Keyset {
+func (k KeyGeneratorImpl) GenerateKeyset() (common.Keyset, error) {
 	return k.transactionAdapter.GenerateKeyset()
 }
 

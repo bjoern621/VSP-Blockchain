@@ -10,6 +10,8 @@
 package api_adapter
 
 import (
+	"errors"
+	"s3b/vsp-blockchain/rest-api/internal/common"
 	"s3b/vsp-blockchain/rest-api/konto"
 
 	"github.com/gin-gonic/gin"
@@ -32,10 +34,25 @@ func (api *KeyToolsAPI) AddressGet(c *gin.Context) {
 	keyset, err := api.keyGenerator.GetKeysetFromWIF(c.GetHeader("privateKeyWIF"))
 
 	if err != nil {
-		c.JSON(400, gin.H{
-			"error": "private Key is not Valid",
+		if errors.Is(err, common.WIFInputError) {
+			c.JSON(400, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if errors.Is(err, common.ServerError) {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(500, gin.H{
+			"error": "unknown error",
 		})
 		return
+
 	}
 
 	response := AddressGet200Response{
@@ -48,7 +65,21 @@ func (api *KeyToolsAPI) AddressGet(c *gin.Context) {
 // Get /address/new
 // Returns a new V$Address with the corresponding private key.
 func (api *KeyToolsAPI) AddressNewGet(c *gin.Context) {
-	keyset := api.keyGenerator.GenerateKeyset()
+	keyset, err := api.keyGenerator.GenerateKeyset()
+
+	if err != nil {
+		if errors.Is(err, common.ServerError) {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(500, gin.H{
+			"error": "unknown error",
+		})
+		return
+
+	}
 
 	response := AddressNewGet200Response{
 		NewPrivateKeyWIF: keyset.PrivateKeyWif,
