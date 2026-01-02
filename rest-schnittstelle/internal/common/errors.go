@@ -2,5 +2,5 @@ package common
 
 import "errors"
 
-var WIFInputError = errors.New("the format of the private key WIF is invalid")
-var ServerError = errors.New("internal server error")
+var ErrWIFInput = errors.New("the format of the private key WIF is invalid")
+var ErrServer = errors.New("internal server error")

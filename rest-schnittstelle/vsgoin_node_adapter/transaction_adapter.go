@@ -26,7 +26,7 @@ func (t TransactionAdapterImpl) GenerateKeyset() (common.Keyset, error) {
 	pbKeyset, err := t.appServiceClient.GenerateKeyset(context.Background(), nil)
 
 	if err != nil {
-		return common.Keyset{}, common.ServerError
+		return common.Keyset{}, common.ErrServer
 	}
 
 	return common.Keyset{
@@ -41,11 +41,11 @@ func (t TransactionAdapterImpl) GetKeysetFromWIF(privateKeyWIF string) (common.K
 	request := pb.GetKeysetFromWIFRequest{PrivateKeyWif: privateKeyWIF}
 	pbKeyset, err := t.appServiceClient.GetKeysetFromWIF(context.Background(), &request)
 	if err != nil {
-		return common.Keyset{}, common.ServerError
+		return common.Keyset{}, common.ErrServer
 	}
 
 	if pbKeyset.FalseInput {
-		return common.Keyset{}, common.WIFInputError
+		return common.Keyset{}, common.ErrWIFInput
 	}
 
 	return common.Keyset{

@@ -34,14 +34,14 @@ func (api *KeyToolsAPI) AddressGet(c *gin.Context) {
 	keyset, err := api.keyGenerator.GetKeysetFromWIF(c.GetHeader("privateKeyWIF"))
 
 	if err != nil {
-		if errors.Is(err, common.WIFInputError) {
+		if errors.Is(err, common.ErrWIFInput) {
 			c.JSON(400, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
 
-		if errors.Is(err, common.ServerError) {
+		if errors.Is(err, common.ErrServer) {
 			c.JSON(500, gin.H{
 				"error": err.Error(),
 			})
@@ -68,7 +68,7 @@ func (api *KeyToolsAPI) AddressNewGet(c *gin.Context) {
 	keyset, err := api.keyGenerator.GenerateKeyset()
 
 	if err != nil {
-		if errors.Is(err, common.ServerError) {
+		if errors.Is(err, common.ErrServer) {
 			c.JSON(500, gin.H{
 				"error": err.Error(),
 			})
