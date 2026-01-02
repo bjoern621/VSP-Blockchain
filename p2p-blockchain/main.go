@@ -15,6 +15,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
+	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -48,13 +50,17 @@ func main() {
 	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
 	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
+	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
+	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
+	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

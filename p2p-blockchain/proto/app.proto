@@ -10,6 +10,7 @@ syntax="proto3";
 package app;
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "./internal/pb";
 
@@ -37,6 +38,12 @@ service AppService {
     // Post-conditions:
     //  - Returns a list of peer addresses from the DNS seed.
     rpc QueryRegistry(QueryRegistryRequest) returns (QueryRegistryResponse);
+
+    // GenerateKeyset Generates a completely new Keyset with a new random private Key
+    rpc GenerateKeyset(google.protobuf.Empty) returns (GenerateKeysetResponse);
+
+    // GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
+    rpc GetKeysetFromWIF (GetKeysetFromWIFRequest) returns (GetKeysetFromWIFResponse);
 }
 
 message ConnectToRequest {
@@ -98,4 +105,23 @@ message RegistryEntry {
     string ip_address = 1;
     // Peer ID assigned to this discovered peer.
     string peer_id = 2;
+}
+
+message Keyset{
+  bytes private_key = 1;
+  string private_key_wif = 2;
+  bytes public_key = 3;
+  string VSAddress = 4;
+}
+
+message GenerateKeysetResponse{
+  Keyset keyset = 1;
+}
+
+message GetKeysetFromWIFRequest{
+  string private_key_wif = 1;
+}
+
+message GetKeysetFromWIFResponse{
+  Keyset keyset = 1;
 }

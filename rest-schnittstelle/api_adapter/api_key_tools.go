@@ -16,12 +16,12 @@ import (
 )
 
 type KeyToolsAPI struct {
-	kontostand konto.Kontostand
+	keyGenerator konto.KeyGenerator
 }
 
-func NewKeyToolsAPI(kontostand konto.Kontostand) *KeyToolsAPI {
+func NewKeyToolsAPI(keyGenerator konto.KeyGenerator) *KeyToolsAPI {
 	return &KeyToolsAPI{
-		kontostand: kontostand,
+		keyGenerator: keyGenerator,
 	}
 }
 
@@ -29,7 +29,7 @@ func NewKeyToolsAPI(kontostand konto.Kontostand) *KeyToolsAPI {
 // Returns the V$Address to a corresponding private key.
 func (api *KeyToolsAPI) AddressGet(c *gin.Context) {
 	// Your handler implementation
-	keyset, err := api.kontostand.GetKeysetFromWIF(c.GetHeader("privateKeyWIF"))
+	keyset, err := api.keyGenerator.GetKeysetFromWIF(c.GetHeader("privateKeyWIF"))
 
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -48,7 +48,7 @@ func (api *KeyToolsAPI) AddressGet(c *gin.Context) {
 // Get /address/new
 // Returns a new V$Address with the corresponding private key.
 func (api *KeyToolsAPI) AddressNewGet(c *gin.Context) {
-	keyset := api.kontostand.GenerateKeyset()
+	keyset := api.keyGenerator.GenerateKeyset()
 
 	response := AddressNewGet200Response{
 		NewPrivateKeyWIF: keyset.PrivateKeyWif,

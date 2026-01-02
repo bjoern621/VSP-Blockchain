@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	sw "s3b/vsp-blockchain/rest-api/api_adapter"
+	"s3b/vsp-blockchain/rest-api/internal/pb"
 	"s3b/vsp-blockchain/rest-api/konto"
 	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
 	"strings"
@@ -44,8 +45,9 @@ func main() {
 
 	// Dependencies
 
-	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl()
-	kontostand := konto.NewKontostand(transactionAdapter)
+	appServiceClient := pb.NewAppServiceClient(conn)
+	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl(appServiceClient)
+	kontostand := konto.NewKeyGeneratorImpl(transactionAdapter)
 
 	// REST API Server
 	routes := sw.ApiHandleFunctions{
