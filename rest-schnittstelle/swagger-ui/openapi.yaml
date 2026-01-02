@@ -2,192 +2,195 @@ openapi: 3.0.3
 info:
   title: V$-GOIN API
   version: 1.0.0
-servers:
-- url: /
+  description: |-
+    This is the official API for the interaction with the VS-Blockchain.
+    This API focuses on payment-related use cases in the most easy and feasible way.
+    All relevant keys and parameters are documented directly within the schema definitions.
+
+tags:
+  - name: Payment
+    description: Every endpoint for actual payment.
+  - name: KeyTools
+    description: Tools for generating or getting the needed Keys for the payment
+
 paths:
   /transaction:
     post:
-      description: Transfers the given amount from the sender to the recipient as
-        long as sender can provide the amount and the private key can create a valid
-        signature
+      summary: Executes a transaction
+      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
+      tags:
+        - Payment
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_transaction_post_request'
-        required: true
+              type: object
+              required:
+                - recipientVSAddress
+                - amount
+                - senderPrivateKeyWIF
+              properties:
+                recipientVSAddress:
+                  $ref: '#/components/schemas/VSAddress'
+                amount:
+                  type: integer
+                  minimum: 1
+                  example: 100
+                  description: The amount of V$-Goin the sender wants to transfer
+                senderPrivateKeyWIF:
+                  $ref: '#/components/schemas/PrivateKeyWIF'
+
       responses:
-        "201":
+        '201':
           description: Transaction successfully executed
-        "400":
+        '400':
           description: Insufficient funds for the given transaction
-        "401":
+        '401':
           description: Invalid private key
-      summary: Executes a transaction
-      tags:
-      - Payment
   /balance:
     get:
-      parameters:
-      - description: The VSAddress whose balance is requested.
-        explode: true
-        in: query
-        name: VSAddress
-        required: true
-        schema:
-          $ref: '#/components/schemas/VSAddress'
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/_balance_get_200_response'
-          description: Successful response with current balance.
-        "400":
-          description: No balance tied to the given key
       summary: Returns the balance tied to the given public key hash
       tags:
-      - Payment
+        - Payment
+      parameters:
+        - in: query
+          name: VSAddress
+          required: true
+          schema:
+            $ref: '#/components/schemas/VSAddress'
+          description: The VSAddress whose balance is requested.
+      responses:
+        '200':
+          description: Successful response with current balance.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+                    example: 1250
+        '400':
+          description: No balance tied to the given key
   /history:
     get:
-      parameters:
-      - description: The VSAddress whose history is requested.
-        explode: true
-        in: query
-        name: VSAddress
-        required: true
-        schema:
-          $ref: '#/components/schemas/VSAddress'
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/_history_get_200_response'
-          description: Successful response with keys history.
-        "400":
-          description: Key hash was not involved in any transactions
       summary: Returns the history of transactions involving the given key hash
       tags:
-      - Payment
+        - Payment
+      parameters:
+        - in: query
+          name: VSAddress
+          required: true
+          schema:
+            $ref: '#/components/schemas/VSAddress'
+          description: The VSAddress whose history is requested.
+      responses:
+        '200':
+          description: Successful response with keys history.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      type: string
+                    example: [ "A sent B 100", "B sent A 50", "A sent C 10" ]
+        '400':
+          description: Key hash was not involved in any transactions
+
   /address:
     get:
-      parameters:
-      - explode: false
-        in: header
-        name: privateKey
-        required: true
-        schema:
-          $ref: '#/components/schemas/PrivateKeyWIF'
-        style: simple
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/_address_get_200_response'
-          description: Successful response with V$Address and the private key.
-        "400":
-          description: private Key is not Valid
       summary: Returns the V$Address to a corresponding private key.
       tags:
-      - KeyTools
-  /address/new:
-    get:
+        - KeyTools
+      parameters:
+        - name: privateKeyWIF
+          required: true
+          in: header
+          schema:
+            $ref: '#/components/schemas/PrivateKeyWIF'
       responses:
-        "200":
+        '200':
+          description: Successful response with V$Address.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/_address_new_get_200_response'
-          description: Successful response with V$Address and the private key.
+                type: object
+                properties:
+                  VSAddress:
+                    $ref: '#/components/schemas/VSAddress'
+                required:
+                  - VSAddress
+        '400':
+          description: private Key is not Valid
+
+  /address/new:
+    get:
       summary: Returns a new V$Address with the corresponding private key.
       tags:
-      - KeyTools
+        - KeyTools
+      responses:
+        '200':
+          description: Successful response with V$Address and the private key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newVSAddress:
+                    $ref: '#/components/schemas/VSAddress'
+                  newPrivateKeyWIF:
+                    $ref: '#/components/schemas/PrivateKeyWIF'
+                required:
+                  - address
+                  - privateKeyWIF
+
 components:
   schemas:
     PrivateKeyWIF:
-      description: Base58Check-encoded private key
-      example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+      type: string
       pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
-      type: string
+      example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
+      description: |
+        Base58Check-encoded private key with 0x80 as prefix (Wallet Import Format, WIF)
+        
+        The private Key (WIF) gives access to the VSGoins send to the corresponding VSAddress.
+        Be careful not to shared it with others.
+        
+        Way to generate a PrivateKey:
+        1. Generate random 256 bit unsigned number
+        2. Check if number is greater than or equal to 1
+        3. Check if number is smaller than the order n of the generator G on Secp256k1
+        4. If the number is invalid, go back to 1
+        5. Create a SHA256 of the random number
+
     VSAddress:
-      description: Base58Check-encoded public key hash.
-      example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
       type: string
-    _transaction_post_request:
-      properties:
-        recipientVSAddress:
-          description: Base58Check-encoded public key hash.
-          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
-          type: string
-        amount:
-          description: The amount of V$-Goin the sender wants to transfer
-          example: 100
-          minimum: 1
-          type: integer
-        senderPrivateKey:
-          description: Base58Check-encoded private key
-          example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
-          pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
-          type: string
-      required:
-      - amount
-      - recipientVSAddress
-      - senderPrivateKey
-      type: object
-    _balance_get_200_response:
-      example:
-        balance: 1250
-      properties:
-        balance:
-          example: 1250
-          type: integer
-      type: object
-    _history_get_200_response:
-      example:
-        transactions:
-        - A sent B 100
-        - B sent A 50
-        - A sent C 10
-      properties:
-        transactions:
-          example:
-          - A sent B 100
-          - B sent A 50
-          - A sent C 10
-          items:
-            type: string
-          type: array
-      type: object
-    _address_get_200_response:
-      example:
-        VSAddress: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
-      properties:
-        VSAddress:
-          description: Base58Check-encoded public key hash.
-          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
-          type: string
-      required:
-      - VSAddress
-      type: object
-    _address_new_get_200_response:
-      example:
-        newVSAddress: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
-        newPrivateKey: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
-      properties:
-        newVSAddress:
-          description: Base58Check-encoded public key hash.
-          example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
-          type: string
-        newPrivateKey:
-          description: Base58Check-encoded private key
-          example: 5JuqUeBRXKFXqetT6LujZGaBR9hfWCtCq7iSiFYeaBfp6PBJu2A
-          pattern: "^5[1-9A-HJ-NP-Za-km-z]{50}$"
-          type: string
-      required:
-      - address
-      - privateKey
-      type: object
+      example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
+      description: |
+        Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix.
+        
+        The VSAddress provides a point where VSGoins can be send to.
+        It is public and can be freely shared with others.
+        
+        Way to generate a PublicKey
+        1. Use the equation K = k * G
+          - K is the PublicKey (with two points x,y)
+          - k is the PrivateKey
+          - G is the generator point defined in the secp256k1 standard
+          - * denotes scalar multiplication on the elliptic curve
+        
+        Way to generate a compressed PublicKey
+        1. get x-coordinate from the PublicKey
+        2. if the y-coordinate from the Public key is even, the prefix is 0x02, otherwise it is 0x03
+        3. the compressed PublicKey is the prefix followed by the x-coordinate
+        
+        -> (the y-coordinate can afterwards easily be calculated with y^2 mod p = (x^3 + 7))
+        
+        Way to generate a compressed PublicKeyHash
+        1. Create a SHA 256 the compressed PublicKey
+        2. Create a SHA 256 of the result
+        3. the first 160 bits are the compressed PublicKeyHash
