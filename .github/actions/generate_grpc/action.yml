@@ -1,6 +1,6 @@
 name: generate_grpc
 author: bennet
-description: "Installs protoc and the api-adapter packages to generate stubs and generates stubs"
+description: "Installs protoc and the go packages to generate stubs and generates stubs"
 runs:
     using: composite
     steps:
