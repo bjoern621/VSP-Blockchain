@@ -926,6 +926,26 @@ Ein Block-Header besteht aus:
 Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenbehaftete 64-Bit-Ganzzahl.
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
+#### Keyset
+Ein Keyset hält alle notwendigen Schlüssel, welche zu einem Konto zugehörig sind.
+Es beinhaltet:
+
+| Name               | Datentyp |
+|--------------------|----------|
+| Private Key        | 32 Byte  |
+| Private Key WIF    | string   |
+| PubKey             | 33 Byte  |
+| V$Address          | string   |
+
+
+#### Private Key
+Der Private Key ist ein SHA 256 von einer kryptografisch sicher generierten 256 bit Zufallszahl welche größer gleich 1 und kleiner gleich den generatorpunkt G der Secp256k1 Kurve ist.\
+Der private Schlüssel ermöglicht den Zugriff auf die VSGoins, die an die entsprechende V$Address gesendet werden.
+
+#### Private Key WIF
+Der Private Key im WIF Format ist ein Base58Check-codierter privater Schlüssel mit 0x80 als Präfix\
+Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Keys. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
+
 #### PubKey (öffentlicher Schlüssel)
 
 -   Länge: **33 Byte**
@@ -934,16 +954,21 @@ Ein UInt steht für eine positive 32-Bit-Ganzzahl.
     -   Bestandteil der Signaturprüfung eines Inputs
     -   Basis für die Adressgenerierung
 
-#### PubKeyHash / Adresse
+#### PubKeyHash
 
 -   Länge: **20 Byte**
 -   Bildung:
     1. SHA-256 über den 33-Byte-PubKey
-    2. SHA-256 über den 33-Byte-Hash
-    3. ersten 20 Byte als Adresse nehmen
+    2. SHA-256 über den 32-Byte-Hash
+    3. ersten 20 Byte als PubKeyHash nehmen
 -   Verwendung:
     -   Identifiziert die Empfänger eines Outputs
     -   Dient als vereinfachter `scriptPubKey`
+
+#### V$Address
+Die V$Address ist ein Base58Check-kodierter PubKeyHash mit 0x00 als präfix.
+Sie bietet eine fehlererkenende und klare Darstellung des PubKeyHashs. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
+
 
 #### UTXO (Unspent Transaction Output)
 
