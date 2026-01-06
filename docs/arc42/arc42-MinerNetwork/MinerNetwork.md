@@ -926,6 +926,26 @@ Ein Block-Header besteht aus:
 Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenbehaftete 64-Bit-Ganzzahl.
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
+#### Keyset
+Ein Keyset hält alle notwendigen Schlüssel, welche zu einem Konto zugehörig sind.
+Es beinhaltet:
+
+| Name               | Datentyp |
+|--------------------|----------|
+| Private Key        | 32 Byte  |
+| Private Key WIF    | string   |
+| PubKey             | 33 Byte  |
+| V$Address          | string   |
+
+
+#### Private Key
+Der Private Key ist ein SHA 256 von einer kryptografisch sicher generierten 256 bit Zufallszahl welche größer gleich 1 und kleiner gleich den generatorpunkt G der Secp256k1 Kurve ist.\
+Der private Schlüssel ermöglicht den Zugriff auf die VSGoins, die an die entsprechende V$Address gesendet werden.
+
+#### Private Key WIF
+Der Private Key im WIF Format ist ein Base58Check-codierter privater Schlüssel mit 0x80 als Präfix\
+Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Keys. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
+
 #### PubKey (öffentlicher Schlüssel)
 
 -   Länge: **33 Byte**
@@ -934,16 +954,21 @@ Ein UInt steht für eine positive 32-Bit-Ganzzahl.
     -   Bestandteil der Signaturprüfung eines Inputs
     -   Basis für die Adressgenerierung
 
-#### PubKeyHash / Adresse
+#### PubKeyHash
 
 -   Länge: **20 Byte**
 -   Bildung:
     1. SHA-256 über den 33-Byte-PubKey
-    2. SHA-256 über den 33-Byte-Hash
-    3. ersten 20 Byte als Adresse nehmen
+    2. SHA-256 über den 32-Byte-Hash
+    3. ersten 20 Byte als PubKeyHash nehmen
 -   Verwendung:
     -   Identifiziert die Empfänger eines Outputs
     -   Dient als vereinfachter `scriptPubKey`
+
+#### V$Address
+Die V$Address ist ein Base58Check-kodierter PubKeyHash mit 0x00 als präfix.
+Sie bietet eine fehlererkenende und klare Darstellung des PubKeyHashs. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
+
 
 #### UTXO (Unspent Transaction Output)
 
@@ -1215,6 +1240,72 @@ Negative Konsequenzen:
 Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher und zuverlässig umgesetzt. Die garantierte Reihenfolge und Vollständigkeit der
 Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
 Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
+
+## ADR 4: Einsatz von BadgerDB zur Speicherung des vollständigen UTXO-Sets in Full Nodes
+
+### Kontext
+
+Ein Full Node muss das vollständige **UTXO-Set (Unspent Transaction Outputs)** persistent speichern und effizient nach `(TxID, OutputIndex)` auflösen können.  
+Die Datenmenge wächst kontinuierlich, kann beliebig groß werden und wird bei jeder Blockverarbeitung intensiv gelesen und geschrieben.
+
+Anforderungen:
+- Persistente Speicherung über Node-Neustarts hinweg
+- Sehr schnelle Key-Value-Lookups
+- Hohe Schreibperformance bei Blockverarbeitung
+- In-Prozess-Datenbank (kein externer DB-Server)
+- Gute Integration in eine Go-Codebasis
+- Möglichkeit zur späteren Erweiterung um Caching-Strategien
+
+Alternativen:
+- In-Memory Maps (nicht persistent, nicht skalierbar)
+- BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
+- LevelDB (bewährt, aber nicht nativ in Go)
+
+---
+
+### Entscheidung
+
+Für Full Nodes wird **BadgerDB** als persistente Key-Value-Datenbank zur Speicherung des vollständigen UTXO-Sets eingesetzt.
+
+BadgerDB wird genutzt als:
+- Disk-basierte, autoritative UTXO-Datenbank
+- Backend für `(TxID, OutputIndex) → Output` Lookups
+- Grundlage für spätere In-Memory-Caches
+
+---
+
+### Status
+
+Akzeptiert
+
+---
+
+### Konsequenzen
+
+#### Positive Konsequenzen:
+
+- **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
+- **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
+- **Persistente Speicherung**, geeignet für große Datenmengen
+- **Transaktionen und Batches** ermöglichen atomare Block-Updates
+- Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
+
+#### Negative Konsequenzen:
+
+- Komplexere API als einfache Maps oder bbolt
+- Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
+- Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
+
+---
+
+### Auswirkung
+
+- Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
+- Full Nodes können Transaktionen vollständig und unabhängig validieren
+- SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+- Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
+- Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
+
 
 # Qualitätsanforderungen
 

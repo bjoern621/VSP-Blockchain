@@ -6,9 +6,10 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	blockchain2 "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
+	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
@@ -35,10 +36,16 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	blockchainService := blockchain2.NewBlockchainService(grpcClient, peerStore)
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	utxoLookup := utxo.UTXOLookupImpl{}
-	transactionValidator := validation.ValidationService{UTXOService: &utxoLookup}
+	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
+	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
+	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
+	assert.IsNil(err, "couldn't create UTXOEntryDAO")
+	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
+	assert.IsNil(err, "couldn't create chainStateService")
+
+	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
 	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
 	if common.AppEnabled() {
@@ -66,7 +73,7 @@ func main() {
 
 	grpcServer.Attach(blockchain)
 
-	err := grpcServer.Start(common.P2PPort())
+	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {

@@ -17,6 +17,7 @@ contributors. Siehe <https://arc42.org>.
 
 Das System dient der Verwaltung und Abwicklung von digitalen Währungstransaktionen zwischen Nutzern und erleichtert den Nutzern die Interaktion mit der in der Blockchain repräsentierte Währung.  
 Kernfunktionalität ist das Anzeigen von Kontoständen und Transaktionsverläufen sowie die Durchführung und Nachverfolgung von Überweisungen zwischen Nutzern.
+Darüber hinaus werden Funktionalitäten für die Schlüsselerzeugung geboten.
 
 Treibende Kräfte sind die Notwendigkeit einer einfachen, transparenten und zuverlässigen Plattform für Transaktionen sowie die Nachvollziehbarkeit aller Bewegungen im System unserers V$Goins.
 
@@ -36,11 +37,13 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 
 ### Form
 
-| **Use Case / Aufgabe** | **Beschreibung**   | User Stories                                                                                |
-|-------------------------|-------------------|---------------------------------------------------------------------------------------------|
-| Währung senden | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt.| [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)                  |
-| Kontostand anzeigen | Ein Nutzer kann seinen aktuellen Kontostand einsehen. | [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)          |
-| Transaktionsverlauf anzeigen | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.  | [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27) |
+| **Use Case / Aufgabe**                          | **Beschreibung**                                                                                                                                                         | User Stories                                                                                 |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| Währung senden                                  | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. | [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)                   |
+| Kontostand anzeigen                             | Ein Nutzer kann seinen aktuellen Kontostand einsehen.                                                                                                                    | [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)           |
+| Transaktionsverlauf anzeigen                    | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.                                                     | [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)  |
+| Ein neuen privaten Schlüssel erzeugen           | Ein Nutzer kann ein neuen privaten Schlüssel generieren lassen, mit welchem er Transaktionen durchführen kann                                                            | [US-154 privaten Schlüssel generieren lassen](github.com/bjoern621/VSP-Blockchain/issues/154) 
+| V$Adresse von einem privaten Schlüssel erhalten | Ein Nutzer kann mithilfe eines privaten Schlüssels die dazugehörige V$Adresse erhalten                                                                                   | [US-155 V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/155)                                                                |                                                                                              |                                                                                              |                                                                                              |                                                                                                                                                                          |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
 
@@ -275,14 +278,14 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ### Transaktionsverlauf (Blackbox)
 
 #### Zweck / Verantwortung
-- Bereitstellung der Transaktionshistorie für einen bestimmte Wallet Adresse (Public Key Hash)
+- Bereitstellung der Transaktionshistorie für einen bestimmte V$Adresse
 
 #### Schnittstelle
 - REST-Endpunkt get /history
 - [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 #### Eingaben / Ausgaben
-- Eingaben: Wallet Adresse (Public Key Hash) base58 encoded
+- Eingaben: V$Adresse
 - Ausgaben: Liste von Transaktionen
 
 #### Abhängigkeiten
@@ -299,17 +302,17 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ### Konto (Blackbox)
 
 #### Zweck / Verantwortung
-- Bereitstellung des Kontostands für eine Wallet Adresse (Public Key Hash)
+- Bereitstellung des Kontostands für eine V$Adresse
 - Generierung privater Schlüssel
-- Ableitung der Public Key Adresse aus einem Private Key
+- Ableitung der V$Adresse aus einem Private Key
 
 #### Schnittstelle
-- REST-Endpunkte /balance und /adress
+- REST-Endpunkte /balance und /address
 - [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 #### Eingaben / Ausgaben
-- Eingaben: Walled Adresse base58 encoded, Private Key base58 encoded oder Seed für key generierung 
-- Ausgaben: Balance, Private Key, Wallet Adresse
+- Eingaben: V$Adresse, Private Key WIF
+- Ausgaben: Balance, V$Adresse, Private Key WIF
 
 #### Abhängigkeiten
 - V$Goin-Lib-Adapter (Key-Funktionen, Balance, Key-Ableitung)
@@ -455,10 +458,10 @@ Zuordnung von Bausteinen zu Infrastruktur
 Das System bildet ein vereinfachtes Blockchain-basiertes Zahlungssystem ab.  
 Zentrale fachliche Objekte sind:
 
-- Adresse (doppelter SHA-256 Hash eines öffentlicher Schlüssel)
-- Privater Schlüssel (zur Signatur)
+- V$Adresse (base 58 check kodierter doppelter SHA-256 Hash eines öffentlicher Schlüssel)
+- Private Key WIF (zur Signatur)
 - UTXO / Assets (nicht ausgegebene Transaktionseinheiten)
-- Transaktion (signiertes Transferobjekt, welches den Besitzwechsel von Währung representiert)
+- Transaktion (signiertes Transferobjekt, welches den Besitzwechsel von Währung repräsentiert)
 - Historie (Liste verifizierter Transaktionen)
 
 ### 1.2 Validierungsregeln
@@ -479,8 +482,8 @@ Temporäre Daten:
 - JSON als API-Format, binäre Formate der V$Goin Blockchain
 
 ### 3.2 Formatkonzept
-- Adressen → Base58
-- Schlüssel → Base58 
+- V$Adressen → String
+- Private Key WIFs → String 
 - Transaktionen → binäre V$Goin-Formate, API JSON
 
 ## 4. Kommunikations- und Integrationskonzept

@@ -84,6 +84,14 @@ func TestArchitecture(t *testing.T) {
 		})
 	}
 
+	// Allow test packages to depend on anything
+	rules = append(rules, &config.DependenciesRule{
+		Package: "**.*_tests",
+		ShouldOnlyDependsOn: &config.Dependencies{
+			Internal: []string{"**"},
+		},
+	})
+
 	configuration := config.Config{
 		DependenciesRules: rules,
 	}
