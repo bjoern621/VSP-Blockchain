@@ -25,13 +25,13 @@ func (b *Block) Hash() common.Hash {
 	return doubleSHA256(buffer)
 }
 
-func (b *Block) MerkleRoot() common.Hash {
-	tmpTransactions := make([]transaction.Transaction, len(b.Transactions))
-	copy(tmpTransactions, b.Transactions)
+func MerkleRoot(transactions []transaction.Transaction) common.Hash {
+	tmpTransactions := make([]transaction.Transaction, len(transactions))
+	copy(tmpTransactions, transactions)
 
-	if len(b.Transactions)%2 == 1 {
+	if len(transactions)%2 == 1 {
 		// Append last transaction to make event number of transactions
-		tmpTransactions = append(tmpTransactions, b.Transactions[len(b.Transactions)-1])
+		tmpTransactions = append(tmpTransactions, transactions[len(transactions)-1])
 	}
 
 	var hashes = make([]common.Hash, len(tmpTransactions))
