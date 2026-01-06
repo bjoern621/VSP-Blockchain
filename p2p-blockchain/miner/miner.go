@@ -25,7 +25,7 @@ func createCandidateBlockHeader() block.BlockHeader {
 	return block.BlockHeader{}
 }
 
-// MineBlock
+// MineBlock Mines a block by change the nonce until the block matches the given difficulty target
 func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
 
