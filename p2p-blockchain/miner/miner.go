@@ -34,7 +34,7 @@ func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
 
 	for {
 		candidateBlock.Header.Nonce = nonce
-		hash := candidateBlock.Hash() //TODO: Will work after merging https://github.com/bjoern621/VSP-Blockchain/pull/174
+		hash := candidateBlock.Hash()
 
 		hashInt.SetBytes(hash[:])
 		if hashInt.Cmp(&target) == -1 {
