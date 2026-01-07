@@ -163,7 +163,7 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 				PreviousBlockHash: mustHash(0x01),
 				MerkleRoot:        mustHash(0x02),
 				Timestamp:         123,
-				DifficultyTarget:  0x1d00ffff,
+				DifficultyTarget:  0,
 				Nonce:             123,
 			},
 			Transactions: []transaction.Transaction{},
@@ -187,7 +187,7 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 				PreviousBlockHash: mustHash(0x03),
 				MerkleRoot:        mustHash(0x04),
 				Timestamp:         456,
-				DifficultyTarget:  0x1d00ffff,
+				DifficultyTarget:  0,
 				Nonce:             456,
 			},
 			Proofs: []block.MerkleProof{{
@@ -264,14 +264,14 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 			PreviousBlockHash: mustHash(0x40),
 			MerkleRoot:        mustHash(0x41),
 			Timestamp:         789,
-			DifficultyTarget:  0x1d00ffff,
+			DifficultyTarget:  0,
 			Nonce:             789,
 		}
 		h2 := &block.BlockHeader{
 			PreviousBlockHash: mustHash(0x42),
 			MerkleRoot:        mustHash(0x43),
 			Timestamp:         101,
-			DifficultyTarget:  0x1d00ffff,
+			DifficultyTarget:  0,
 			Nonce:             101,
 		}
 		headers := []*block.BlockHeader{
