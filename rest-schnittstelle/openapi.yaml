@@ -127,8 +127,7 @@ paths:
         '400':
           description: private Key is not Valid
 
-  /address/new:
-    get:
+    post:
       summary: Returns a new V$Address with the corresponding private key.
       tags:
         - KeyTools
