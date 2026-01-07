@@ -20,7 +20,7 @@ type blockForest struct {
 // blockNode represents a node in the block forest.
 type blockNode struct {
 	// AccumulatedWork is the total chain work from genesis up to and including this header.
-	// There is no accumulated work for blocks in side chains.
+	// There is no accumulated work for orphans.
 	AccumulatedWork uint64
 	// Height is the number of blocks from genesis to this header (genesis has height 0).
 	Height uint64
