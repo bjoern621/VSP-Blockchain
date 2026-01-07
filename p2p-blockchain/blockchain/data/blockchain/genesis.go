@@ -45,7 +45,7 @@ func GenesisBlock() block.Block {
 		PreviousBlockHash: common.Hash{}, // Genesis specific
 		MerkleRoot:        merkleRoot,
 		Timestamp:         time.Date(2025, 12, 19, 8, 0, 0, 0, time.UTC).Unix(),
-		DifficultyTarget:  block.StandardDifficultyTarget,
+		DifficultyTarget:  28, // StandardDifficultyTarget
 		Nonce:             190089269,
 	}
 
