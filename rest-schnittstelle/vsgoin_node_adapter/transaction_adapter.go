@@ -30,9 +30,9 @@ func (t TransactionAdapterImpl) GenerateKeyset() (common.Keyset, error) {
 	}
 
 	return common.Keyset{
-		PrivateKey:    [32]byte(pbKeyset.GetKeyset().PrivateKey),
+		PrivateKey:    [common.PrivateKeySize]byte(pbKeyset.GetKeyset().PrivateKey),
 		PrivateKeyWif: pbKeyset.GetKeyset().PrivateKeyWif,
-		PublicKey:     [33]byte(pbKeyset.GetKeyset().PublicKey),
+		PublicKey:     [common.PublicKeySize]byte(pbKeyset.GetKeyset().PublicKey),
 		VSAddress:     pbKeyset.GetKeyset().VSAddress,
 	}, nil
 }
@@ -49,9 +49,9 @@ func (t TransactionAdapterImpl) GetKeysetFromWIF(privateKeyWIF string) (common.K
 	}
 
 	return common.Keyset{
-		PrivateKey:    [32]byte(pbKeyset.GetKeyset().PrivateKey),
+		PrivateKey:    [common.PrivateKeySize]byte(pbKeyset.GetKeyset().PrivateKey),
 		PrivateKeyWif: pbKeyset.GetKeyset().PrivateKeyWif,
-		PublicKey:     [33]byte(pbKeyset.GetKeyset().PublicKey),
+		PublicKey:     [common.PublicKeySize]byte(pbKeyset.GetKeyset().PublicKey),
 		VSAddress:     pbKeyset.GetKeyset().VSAddress,
 	}, nil
 }
