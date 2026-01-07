@@ -161,13 +161,14 @@ message Transaction {
 message TxInput {
     bytes prev_tx_hash = 1;
     uint32 output_index = 2; // Index of the output in the previous transaction
-    bytes signature_script = 3;
-    uint32 sequence = 4;
+    bytes signature = 3; // Signature and public_key together equals the script used to unlock the output
+    bytes public_key = 4; // The public key corresponding to the address spending the output
+    uint32 sequence = 5;
 }
 
 message TxOutput {
     uint64 value = 1; // Amount in smallest unit
-    bytes public_key_script = 2;
+    bytes public_key_hash = 2; // Hash of the public key (address) that can spend this output, no script needed as all Tx use the same standard script
 }
 
 message BlockHeader {

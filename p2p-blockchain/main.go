@@ -3,13 +3,20 @@ package main
 import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
+	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
+	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -31,13 +38,29 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
+
+	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
+	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
+	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
+	assert.IsNil(err, "couldn't create UTXOEntryDAO")
+	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
+	assert.IsNil(err, "couldn't create chainStateService")
+
+	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
+
+	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
+	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
+	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -54,7 +77,9 @@ func main() {
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
 
-	err := grpcServer.Start(common.P2PPort())
+	grpcServer.Attach(blockchain)
+
+	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
