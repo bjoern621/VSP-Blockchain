@@ -15,4 +15,4 @@ type BlockHeader struct {
 	Nonce uint32
 }
 
-const StandardDifficultyTarget uint8 = 24 // ~10 mins average mining time
+const StandardDifficultyTarget uint8 = 28 // ~100 seconds per block
