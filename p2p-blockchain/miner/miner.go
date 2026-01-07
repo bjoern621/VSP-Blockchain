@@ -1,6 +1,7 @@
 package miner
 
 import (
+	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -28,6 +29,8 @@ func createCandidateBlockHeader() block.BlockHeader {
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
 func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
+
+	fmt.Printf("%s", target.String())
 
 	var hashInt big.Int
 	nonce = 0
