@@ -61,10 +61,59 @@ func NewBlockStore(genesis block.Block) *BlockStore {
 	}
 }
 
-// Wahrscheinlich wird hier dann bei dir intern entschieden, an welche Kette, oder sogar orphan pool, der block angehängt wird
-// func (hs *BlockStore) AddBlock(block *block.Block) (bool, error) {
+// AddBlock adds a new block to the block store.
+//
+// The block is linked to its parent based on the PreviousBlockHash field.
+// If the parent does not exist, the block becomes an orphan (added to roots without parent).
+//
+// After execution, the block store will contain the new block, either as part of the main chain, a side chain, or as an orphan.
+// Errors if the block violates any domain rules.
+func (s *BlockStore) AddBlock(block block.Block) error {
+	blockHash := block.Hash()
 
-// }
+	// Check if block already exists
+	if _, exists := s.hashToHeaders[blockHash]; exists {
+		return nil // Block already exists, no need to add it again
+	}
+
+	// Find parent block
+	parentHash := block.Header.PreviousBlockHash
+	parent, parentExists := s.hashToHeaders[parentHash]
+
+	newNode := blockNode{
+		Block:    &block,
+		Children: []*blockNode{},
+	}
+
+	if parentExists {
+		// Block has a parent
+		newNode.Parent = parent
+		newNode.AccumulatedWork = parent.AccumulatedWork + uint64(block.BlockDifficulty())
+		newNode.Height = parent.Height + 1
+
+		// Add new node to parent's children
+		parent.Children = append(parent.Children, &newNode)
+
+		// Remove parent from leaves if it was a leaf
+		for i, leaf := range s.blockForest.Leaves {
+			if leaf == parent {
+				s.blockForest.Leaves = append(s.blockForest.Leaves[:i], s.blockForest.Leaves[i+1:]...)
+				break
+			}
+		}
+	} else {
+		// Block is an orphan (parent not found)
+		newNode.AccumulatedWork = uint64(block.BlockDifficulty())
+		newNode.Height = 0
+		s.blockForest.Roots = append(s.blockForest.Roots, &newNode)
+	}
+
+	// Add new block to leaves and hash map
+	s.blockForest.Leaves = append(s.blockForest.Leaves, &newNode)
+	s.hashToHeaders[blockHash] = &newNode
+
+	return nil
+}
 
 // func RecheckOrphanBlocks() (blocksAcceptedIntoChain int) {}
 
