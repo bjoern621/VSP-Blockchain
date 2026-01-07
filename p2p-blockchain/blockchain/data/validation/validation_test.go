@@ -94,7 +94,7 @@ func TestValidateTransaction_Success(t *testing.T) {
 	_, tx, _, mockUTXO := setupTestTransaction(t)
 
 	validator := ValidationService{
-		UTXOService: mockUTXO,
+		lookupApi: mockUTXO,
 	}
 
 	if _, err := validator.ValidateTransaction(&tx); err != nil {
@@ -106,7 +106,7 @@ func TestValidateTransaction_UTXONotFound(t *testing.T) {
 	_, tx, _, _ := setupTestTransaction(t)
 
 	brokenUTXO := &MockUTXOService{utxos: map[string]transaction.Output{}}
-	brokenValidator := ValidationService{UTXOService: brokenUTXO}
+	brokenValidator := ValidationService{lookupApi: brokenUTXO}
 
 	if _, err := brokenValidator.ValidateTransaction(&tx); !errors.Is(err, ErrUTXONotFound) {
 		t.Fatalf("expected validation to fail due to missing UTXO, was %v", err)
@@ -124,7 +124,7 @@ func TestValidateTransaction_PubKeyMismatch(t *testing.T) {
 			},
 		},
 	}
-	badValidator := ValidationService{UTXOService: badUTXO}
+	badValidator := ValidationService{lookupApi: badUTXO}
 
 	if _, err := badValidator.ValidateTransaction(&tx); !errors.Is(err, ErrPubKeyMismatch) {
 		t.Fatal("expected validation to fail due to pubkey mismatch")
@@ -172,7 +172,7 @@ func TestValidateTransaction_InvalidSignature(t *testing.T) {
 	// Inject invalid signature
 	realTransaction.Inputs[0].Signature = tx.Inputs[0].Signature
 
-	validator := ValidationService{UTXOService: mockUTXO}
+	validator := ValidationService{lookupApi: mockUTXO}
 
 	// Validate transaction - should fail due to signature mismatch
 	if _, err := validator.ValidateTransaction(&realTransaction); !errors.Is(err, ErrSignatureInvalid) {
@@ -187,7 +187,7 @@ func TestValidateTransaction_FeeManipulated(t *testing.T) {
 	txTampered := tx
 	txTampered.Outputs[0].Value += 1000
 
-	validator := ValidationService{UTXOService: mockUTXO}
+	validator := ValidationService{lookupApi: mockUTXO}
 	_, err := validator.ValidateTransaction(&txTampered)
 	if !errors.Is(err, ErrSignatureInvalid) {
 		t.Fatal("expected validation to fail due to fee manipulation")

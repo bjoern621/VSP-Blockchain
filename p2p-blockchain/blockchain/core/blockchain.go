@@ -17,7 +17,7 @@ type Blockchain struct {
 	transactionValidator validation.ValidationAPI
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator *validation.ValidationService) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.ValidationAPI) *Blockchain {
 	return &Blockchain{
 		mempool:              NewMempool(transactionValidator),
 		blockchainMsgSender:  blockchainMsgSender,
