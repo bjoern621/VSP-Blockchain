@@ -34,12 +34,10 @@ func GenesisBlock() block.Block {
 		LockTime: 0,
 	}
 
-	// Verify merkle root
+	// Sanity check: Verify merkle root
 	merkleRoot := block.MerkleRootFromTransactions([]transaction.Transaction{coinbaseTx})
-
 	expectedMerkleRoot, err := hex.DecodeString("0cff1e741712b5b4671a88918dd003aaed08a76e234bd484b42e169dd844db03")
 	assert.IsNil(err, "failed to decode expected merkle root")
-
 	assert.Assert(slices.Compare(merkleRoot[:], expectedMerkleRoot) == 0, "calculated merkle root does not match expected merkle root")
 
 	// Genesis Header
@@ -48,11 +46,19 @@ func GenesisBlock() block.Block {
 		MerkleRoot:        merkleRoot,
 		Timestamp:         time.Date(2025, 12, 19, 8, 0, 0, 0, time.UTC).Unix(),
 		DifficultyTarget:  block.StandardDifficultyTarget,
-		Nonce:             2083236893,
+		Nonce:             190089269,
 	}
 
-	return block.Block{
+	genesisBlock := block.Block{
 		Header:       header,
 		Transactions: []transaction.Transaction{coinbaseTx},
 	}
+
+	// Sanity check: Verify genesis block hash
+	expectedGenesisHash, err := hex.DecodeString("000000063acfc03f9652beadf92737461bb90443d006fd1a899a9a332d23ee17")
+	assert.IsNil(err, "failed to decode expected genesis hash")
+	actualGenesisHash := genesisBlock.Hash()
+	assert.Assert(slices.Compare(actualGenesisHash[:], expectedGenesisHash) == 0, "genesis block hash does not match expected hash")
+
+	return genesisBlock
 }
