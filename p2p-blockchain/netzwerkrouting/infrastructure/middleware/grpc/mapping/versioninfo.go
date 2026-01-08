@@ -3,9 +3,9 @@ package mapping
 import (
 	"fmt"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/assert"
 )
@@ -21,18 +21,18 @@ import (
 //	SERVICE_NETZWERKROUTING         4       ServiceType_Miner              4
 
 // serviceTypeFromProto converts a protobuf ServiceType to the domain ServiceType.
-func serviceTypeFromProto(pbService pb.ServiceType) (peer.ServiceType, bool) {
+func serviceTypeFromProto(pbService pb.ServiceType) (common.ServiceType, bool) {
 	switch pbService {
 	case pb.ServiceType_SERVICE_NETZWERKROUTING:
-		return peer.ServiceType_Netzwerkrouting, true
+		return common.ServiceType_Netzwerkrouting, true
 	case pb.ServiceType_SERVICE_BLOCKCHAIN_FULL:
-		return peer.ServiceType_BlockchainFull, true
+		return common.ServiceType_BlockchainFull, true
 	case pb.ServiceType_SERVICE_BLOCKCHAIN_SIMPLE:
-		return peer.ServiceType_BlockchainSimple, true
+		return common.ServiceType_BlockchainSimple, true
 	case pb.ServiceType_SERVICE_WALLET:
-		return peer.ServiceType_Wallet, true
+		return common.ServiceType_Wallet, true
 	case pb.ServiceType_SERVICE_MINER:
-		return peer.ServiceType_Miner, true
+		return common.ServiceType_Miner, true
 	default:
 		return 0, false
 	}
@@ -40,17 +40,17 @@ func serviceTypeFromProto(pbService pb.ServiceType) (peer.ServiceType, bool) {
 
 // serviceTypeToProto converts a domain ServiceType to the protobuf ServiceType.
 // Fails if the ServiceType is unknown.
-func serviceTypeToProto(service peer.ServiceType) pb.ServiceType {
+func serviceTypeToProto(service common.ServiceType) pb.ServiceType {
 	switch service {
-	case peer.ServiceType_Netzwerkrouting:
+	case common.ServiceType_Netzwerkrouting:
 		return pb.ServiceType_SERVICE_NETZWERKROUTING
-	case peer.ServiceType_BlockchainFull:
+	case common.ServiceType_BlockchainFull:
 		return pb.ServiceType_SERVICE_BLOCKCHAIN_FULL
-	case peer.ServiceType_BlockchainSimple:
+	case common.ServiceType_BlockchainSimple:
 		return pb.ServiceType_SERVICE_BLOCKCHAIN_SIMPLE
-	case peer.ServiceType_Wallet:
+	case common.ServiceType_Wallet:
 		return pb.ServiceType_SERVICE_WALLET
-	case peer.ServiceType_Miner:
+	case common.ServiceType_Miner:
 		return pb.ServiceType_SERVICE_MINER
 	default:
 		assert.Never("unhandled ServiceType")
@@ -84,8 +84,8 @@ func VersionInfoFromProto(info *pb.VersionInfo) (handshake.VersionInfo, netip.Ad
 	return versionInfo, endpoint, nil
 }
 
-func serviceTypesFromProtoServiceTypes(pbServices []pb.ServiceType) ([]peer.ServiceType, error) {
-	services := make([]peer.ServiceType, 0, len(pbServices))
+func serviceTypesFromProtoServiceTypes(pbServices []pb.ServiceType) ([]common.ServiceType, error) {
+	services := make([]common.ServiceType, 0, len(pbServices))
 	for _, pbService := range pbServices {
 		svc, ok := serviceTypeFromProto(pbService)
 		if !ok {

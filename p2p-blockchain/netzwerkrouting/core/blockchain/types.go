@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 type BlockchainService struct {

@@ -2,7 +2,6 @@ package handshake
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
@@ -29,7 +28,7 @@ func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 	p.Lock()
 	defer p.Unlock()
 
-	if p.State != peer.StateNew {
+	if p.State != common.StateNew {
 		logger.Warnf("peer %s sent Version message in invalid state %v", peerID, p.State)
 		return
 	}
@@ -46,7 +45,7 @@ func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 
 	versionInfo := NewLocalVersionInfo()
 
-	p.State = peer.StateAwaitingAck
+	p.State = common.StateAwaitingAck
 
 	go h.handshakeMsgSender.SendVerack(peerID, versionInfo)
 }
@@ -61,7 +60,7 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	p.Lock()
 	defer p.Unlock()
 
-	if p.State != peer.StateAwaitingVerack {
+	if p.State != common.StateAwaitingVerack {
 		logger.Warnf("peer %s sent Verack message in invalid state %v", peerID, p.State)
 		return
 	}
@@ -73,7 +72,7 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 
 	// Valid
 
-	p.State = peer.StateConnected
+	p.State = common.StateConnected
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices()
 
@@ -90,10 +89,10 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.State != peer.StateAwaitingAck {
+	if p.State != common.StateAwaitingAck {
 		logger.Warnf("peer %s sent Ack message in invalid state %v", peerID, p.State)
 		return
 	}
 
-	p.State = peer.StateConnected
+	p.State = common.StateConnected
 }

@@ -3,7 +3,7 @@ package handshake
 import (
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"slices"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -20,12 +20,12 @@ type VersionInfo struct {
 	Version string
 	// supportedServices holds the list of services supported by the peer.
 	// It is guaranteed to follow all domain rules.
-	supportedServices []peer.ServiceType
+	supportedServices []common.ServiceType
 }
 
 // SupportedServices returns a copy of the supported services slice.
-func (v *VersionInfo) SupportedServices() []peer.ServiceType {
-	return append([]peer.ServiceType(nil), v.supportedServices...)
+func (v *VersionInfo) SupportedServices() []common.ServiceType {
+	return append([]common.ServiceType(nil), v.supportedServices...)
 }
 
 // validateRequiresBlockchain checks that all domain rules are satisfied.
@@ -33,14 +33,14 @@ func (v *VersionInfo) SupportedServices() []peer.ServiceType {
 //   - wallet requires blockchain_full or blockchain_simple.
 //   - miner requires blockchain_full or blockchain_simple.
 func (v *VersionInfo) validateRequiresBlockchain() error {
-	hasBlockchain := slices.Contains(v.supportedServices, peer.ServiceType_BlockchainFull) ||
-		slices.Contains(v.supportedServices, peer.ServiceType_BlockchainSimple)
+	hasBlockchain := slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) ||
+		slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple)
 
-	if slices.Contains(v.supportedServices, peer.ServiceType_Wallet) && !hasBlockchain {
+	if slices.Contains(v.supportedServices, common.ServiceType_Wallet) && !hasBlockchain {
 		return ErrWalletRequiresBlockchain
 	}
 
-	if slices.Contains(v.supportedServices, peer.ServiceType_Miner) && !hasBlockchain {
+	if slices.Contains(v.supportedServices, common.ServiceType_Miner) && !hasBlockchain {
 		return ErrMinerRequiresBlockchain
 	}
 
@@ -50,7 +50,7 @@ func (v *VersionInfo) validateRequiresBlockchain() error {
 // TryAddService tries to add a service to supportedServices with domain rule validation.
 // Returns true if the service was added successfully, false otherwise.
 // See also AddService for the rules.
-func (v *VersionInfo) TryAddService(svc ...peer.ServiceType) error {
+func (v *VersionInfo) TryAddService(svc ...common.ServiceType) error {
 	for _, s := range svc {
 		err := v.addService(s)
 		if err != nil {
@@ -73,7 +73,7 @@ func (v *VersionInfo) TryAddService(svc ...peer.ServiceType) error {
 //   - miner requires blockchain_full or blockchain_simple.
 //
 // If multiple services need to be added, consider adding them in a single call. This ensures order-independent addition.
-func (v *VersionInfo) AddService(svc ...peer.ServiceType) {
+func (v *VersionInfo) AddService(svc ...common.ServiceType) {
 	for _, s := range svc {
 		err := v.addService(s)
 		assert.Assert(err == nil, err)
@@ -82,19 +82,19 @@ func (v *VersionInfo) AddService(svc ...peer.ServiceType) {
 	assert.Assert(err == nil, err)
 }
 
-func (v *VersionInfo) addService(svc peer.ServiceType) error {
+func (v *VersionInfo) addService(svc common.ServiceType) error {
 	if slices.Contains(v.supportedServices, svc) {
 		return ErrDuplicateService
 	}
 
-	if svc == peer.ServiceType_BlockchainFull {
-		if slices.Contains(v.supportedServices, peer.ServiceType_BlockchainSimple) {
+	if svc == common.ServiceType_BlockchainFull {
+		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple) {
 			return ErrMutuallyExclusiveBlockchain
 		}
 	}
 
-	if svc == peer.ServiceType_BlockchainSimple {
-		if slices.Contains(v.supportedServices, peer.ServiceType_BlockchainFull) {
+	if svc == common.ServiceType_BlockchainSimple {
+		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) {
 			return ErrMutuallyExclusiveBlockchain
 		}
 	}
@@ -122,9 +122,9 @@ func NewLocalVersionInfo() VersionInfo {
 		Version: common.VersionString,
 	}
 
-	var services []peer.ServiceType
+	var services []common.ServiceType
 	for _, svcString := range common.EnabledTeilsystemeNames() {
-		svc, ok := peer.ParseServiceType(svcString)
+		svc, ok := common.ParseServiceType(svcString)
 		assert.Assert(ok, "enabled service is not a valid ServiceType:", svcString)
 		services = append(services, svc)
 	}

@@ -27,9 +27,9 @@ type PeerInfo struct {
 	PeerInfrastructureData map[string]any
 
 	Version           string
-	ConnectionState   peer.PeerConnectionState
-	Direction         peer.Direction
-	SupportedServices []peer.ServiceType
+	ConnectionState   common.PeerConnectionState
+	Direction         common.Direction
+	SupportedServices []common.ServiceType
 }
 
 // NetworkInfoAPI provides access to peer information.
@@ -39,13 +39,13 @@ type NetworkInfoAPI interface {
 
 type networkRegistryService struct {
 	networkInfoProvider InfrastructureInfoProvider
-	peerStore           *peer.PeerStore
+	peerRetriever       peer.PeerRetriever
 }
 
-func NewNetworkRegistryService(networkInfoProvider InfrastructureInfoProvider, peerStore *peer.PeerStore) NetworkInfoAPI {
+func NewNetworkRegistryService(networkInfoProvider InfrastructureInfoProvider, peerRetriever peer.PeerRetriever) NetworkInfoAPI {
 	return &networkRegistryService{
 		networkInfoProvider: networkInfoProvider,
-		peerStore:           peerStore,
+		peerRetriever:       peerRetriever,
 	}
 }
 
@@ -60,7 +60,7 @@ func (s *networkRegistryService) GetInternalPeerInfo() []PeerInfo {
 			PeerInfrastructureData: infraData,
 		}
 
-		if p, exists := s.peerStore.GetPeer(peerID); exists {
+		if p, exists := s.peerRetriever.GetPeer(peerID); exists {
 			p.Lock()
 			pInfo.Version = p.Version
 			pInfo.ConnectionState = p.State

@@ -14,18 +14,18 @@ type Peer struct {
 	mu                sync.Mutex
 	id                common.PeerId
 	Version           string
-	SupportedServices []ServiceType
-	State             PeerConnectionState
-	Direction         Direction
+	SupportedServices []common.ServiceType
+	State             common.PeerConnectionState
+	Direction         common.Direction
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
 // PeerConnectionState is initialized to StateNew.
-func (s *PeerStore) newPeer(direction Direction) common.PeerId {
+func (s *PeerStore) newPeer(direction common.Direction) common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:        peerID,
-		State:     StateNew,
+		State:     common.StateNew,
 		Direction: direction,
 	}
 	s.addPeer(peer)
@@ -39,7 +39,7 @@ func (s *PeerStore) newGenericPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:    peerID,
-		State: StateNew,
+		State: common.StateNew,
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created", peerID)

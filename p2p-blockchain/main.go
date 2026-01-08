@@ -11,7 +11,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"

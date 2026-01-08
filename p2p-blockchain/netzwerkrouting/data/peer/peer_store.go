@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// PeerStore manages the storage and retrieval of peer information.
+// It primarily implements the PeerCreator and PeerRetriever interfaces.
 type PeerStore struct {
 	mu    sync.RWMutex
 	peers map[common.PeerId]*Peer
@@ -18,6 +20,14 @@ type PeerCreator interface {
 	NewInboundPeer() common.PeerId
 	// NewPeer creates a new peer without a specified direction.
 	NewPeer() common.PeerId
+}
+
+// PeerRetriever is an interface for retrieving peers.
+type PeerRetriever interface {
+	// GetPeer retrieves a peer by its ID.
+	GetPeer(id common.PeerId) (*Peer, bool)
+	// GetAllOutboundPeers retrieves all outbound peers' IDs.
+	GetAllOutboundPeers() []common.PeerId
 }
 
 func NewPeerStore() *PeerStore {
@@ -40,7 +50,7 @@ func (s *PeerStore) GetAllOutboundPeers() []common.PeerId {
 	peerIds := make([]common.PeerId, 0)
 
 	for k, v := range s.peers {
-		if v.Direction == DirectionOutbound {
+		if v.Direction == common.DirectionOutbound {
 			peerIds = append(peerIds, k)
 		}
 	}
@@ -62,12 +72,12 @@ func (s *PeerStore) RemovePeer(id common.PeerId) {
 
 // NewInboundPeer creates a new peer for an inbound connection.
 func (s *PeerStore) NewInboundPeer() common.PeerId {
-	return s.newPeer(DirectionInbound)
+	return s.newPeer(common.DirectionInbound)
 }
 
 // NewOutboundPeer creates a new peer for an outbound connection.
 func (s *PeerStore) NewOutboundPeer() common.PeerId {
-	return s.newPeer(DirectionOutbound)
+	return s.newPeer(common.DirectionOutbound)
 }
 
 func (s *PeerStore) NewPeer() common.PeerId {

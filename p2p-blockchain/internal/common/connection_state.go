@@ -1,4 +1,4 @@
-package peer
+package common
 
 import "bjoernblessin.de/go-utils/util/assert"
 

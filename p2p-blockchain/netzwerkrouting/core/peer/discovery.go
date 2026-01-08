@@ -1,6 +1,9 @@
 package peer
 
-import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
+import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
+)
 
 // RegistryQuerier abstracts registry lookups for the core layer.
 // This interface is implemented by the infrastructure layer which handles network details.
@@ -13,11 +16,11 @@ type RegistryQuerier interface {
 // This includes (1) querying a registry for peers, (2) asking neighbors for their known peers as well as (3) keeping track of active peers through heartbeats.
 type DiscoveryService struct {
 	querier     RegistryQuerier
-	peerCreator PeerCreator
+	peerCreator peer.PeerCreator
 }
 
 // NewDiscoveryService creates a new DiscoveryService.
-func NewDiscoveryService(querier RegistryQuerier, peerCreator PeerCreator) *DiscoveryService {
+func NewDiscoveryService(querier RegistryQuerier, peerCreator peer.PeerCreator) *DiscoveryService {
 	return &DiscoveryService{
 		querier:     querier,
 		peerCreator: peerCreator,
