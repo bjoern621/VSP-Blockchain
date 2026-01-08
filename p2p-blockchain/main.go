@@ -4,8 +4,8 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
@@ -47,7 +47,7 @@ func main() {
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
-	transactionValidator := &validation.ValidationService{UTXOService: chainStateService}
+	transactionValidator := validation.NewValidationService(chainStateService)
 	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()

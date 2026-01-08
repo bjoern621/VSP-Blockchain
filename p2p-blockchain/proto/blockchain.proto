@@ -175,7 +175,7 @@ message BlockHeader {
     bytes prev_block_hash = 1;
     bytes merkle_root = 2;
     int64 timestamp = 3;
-    uint32 difficulty_target = 4; // Bits
+    uint32 difficulty_target = 4; // Number of leading zero bits [0; 255]
     uint32 nonce = 5;
 }
 

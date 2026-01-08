@@ -1,7 +1,7 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
@@ -17,7 +17,7 @@ type Blockchain struct {
 	transactionValidator validation.ValidationAPI
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator *validation.ValidationService) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.ValidationAPI) *Blockchain {
 	return &Blockchain{
 		mempool:              NewMempool(transactionValidator),
 		blockchainMsgSender:  blockchainMsgSender,

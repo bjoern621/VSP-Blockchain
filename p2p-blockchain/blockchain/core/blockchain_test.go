@@ -1,8 +1,11 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"testing"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -24,10 +27,27 @@ func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.P
 
 func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
 
+type mockLookupAPIImpl struct{}
+
+var _ utxo.LookupAPI = (*mockLookupAPIImpl)(nil)
+
+func (mockLookupAPIImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+	return transaction.Output{}, nil
+}
+func (mockLookupAPIImpl) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+	return utxopool.UTXOEntry{}, nil
+}
+func (mockLookupAPIImpl) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+	return true
+}
+func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	return []transaction.UTXO{}, nil
+}
+
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
-	bc := NewBlockchain(sender, &validation.ValidationService{})
+	bc := NewBlockchain(sender, validation.NewValidationService(mockLookupAPIImpl{}))
 
 	peerID := common.PeerId("peer-1")
 
