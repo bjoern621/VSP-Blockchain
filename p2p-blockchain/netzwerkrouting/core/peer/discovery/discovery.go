@@ -1,4 +1,4 @@
-package peer
+package discovery
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"

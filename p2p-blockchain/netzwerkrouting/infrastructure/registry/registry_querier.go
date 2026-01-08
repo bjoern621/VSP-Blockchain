@@ -7,7 +7,7 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 )
 
@@ -16,7 +16,7 @@ type dnsRegistryQuerier struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
-func NewDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) peer.RegistryQuerier {
+func NewDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) discovery.RegistryQuerier {
 	return newDNSRegistryQuerier(networkInfoRegistry)
 }
 
