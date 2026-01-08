@@ -23,7 +23,7 @@ type HandshakeInitiator interface {
 }
 
 func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
-	p, ok := h.peerStore.GetPeer(peerID)
+	p, ok := h.peerRetriever.GetPeer(peerID)
 	if !ok {
 		return fmt.Errorf("peer %s not found in store", peerID)
 	}

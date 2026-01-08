@@ -21,7 +21,7 @@ type Peer struct {
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
 // PeerConnectionState is initialized to StateNew.
-func (s *PeerStore) newPeer(direction common.Direction) common.PeerId {
+func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:        peerID,
@@ -35,7 +35,7 @@ func (s *PeerStore) newPeer(direction common.Direction) common.PeerId {
 
 // newGenericPeer creates a new peer without a specified direction.
 // Otherwise similar to newPeer.
-func (s *PeerStore) newGenericPeer() common.PeerId {
+func (s *peerStore) newGenericPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:    peerID,

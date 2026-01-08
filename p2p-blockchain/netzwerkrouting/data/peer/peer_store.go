@@ -5,9 +5,9 @@ import (
 	"sync"
 )
 
-// PeerStore manages the storage and retrieval of peer information.
+// peerStore manages the storage and retrieval of peer information.
 // It primarily implements the PeerCreator and PeerRetriever interfaces.
-type PeerStore struct {
+type peerStore struct {
 	mu    sync.RWMutex
 	peers map[common.PeerId]*Peer
 }
@@ -30,20 +30,20 @@ type PeerRetriever interface {
 	GetAllOutboundPeers() []common.PeerId
 }
 
-func NewPeerStore() *PeerStore {
-	return &PeerStore{
+func NewPeerStore() *peerStore {
+	return &peerStore{
 		peers: make(map[common.PeerId]*Peer),
 	}
 }
 
-func (s *PeerStore) GetPeer(id common.PeerId) (*Peer, bool) {
+func (s *peerStore) GetPeer(id common.PeerId) (*Peer, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	peer, exists := s.peers[id]
 	return peer, exists
 }
 
-func (s *PeerStore) GetAllOutboundPeers() []common.PeerId {
+func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -58,28 +58,28 @@ func (s *PeerStore) GetAllOutboundPeers() []common.PeerId {
 	return peerIds
 }
 
-func (s *PeerStore) addPeer(peer *Peer) {
+func (s *peerStore) addPeer(peer *Peer) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.peers[peer.id] = peer
 }
 
-func (s *PeerStore) RemovePeer(id common.PeerId) {
+func (s *peerStore) RemovePeer(id common.PeerId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.peers, id)
 }
 
 // NewInboundPeer creates a new peer for an inbound connection.
-func (s *PeerStore) NewInboundPeer() common.PeerId {
+func (s *peerStore) NewInboundPeer() common.PeerId {
 	return s.newPeer(common.DirectionInbound)
 }
 
 // NewOutboundPeer creates a new peer for an outbound connection.
-func (s *PeerStore) NewOutboundPeer() common.PeerId {
+func (s *peerStore) NewOutboundPeer() common.PeerId {
 	return s.newPeer(common.DirectionOutbound)
 }
 
-func (s *PeerStore) NewPeer() common.PeerId {
+func (s *peerStore) NewPeer() common.PeerId {
 	return s.newGenericPeer()
 }

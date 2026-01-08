@@ -7,12 +7,12 @@ import (
 // handshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
 type handshakeService struct {
 	handshakeMsgSender HandshakeMsgSender
-	peerStore          *peer.PeerStore
+	peerRetriever      peer.PeerRetriever
 }
 
-func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerStore *peer.PeerStore) *handshakeService {
+func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerRetriever peer.PeerRetriever) *handshakeService {
 	return &handshakeService{
 		handshakeMsgSender: handshakeMsgSender,
-		peerStore:          peerStore,
+		peerRetriever:      peerRetriever,
 	}
 }

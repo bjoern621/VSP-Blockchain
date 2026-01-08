@@ -6,12 +6,12 @@ import (
 
 type BlockchainService struct {
 	blockchainMsgSender BlockchainMsgSender
-	peerStore           *peer.PeerStore
+	peerRetriever       peer.PeerRetriever
 }
 
-func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerStore *peer.PeerStore) *BlockchainService {
+func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerRetriever peer.PeerRetriever) *BlockchainService {
 	return &BlockchainService{
 		blockchainMsgSender: blockchainMsgSender,
-		peerStore:           peerStore,
+		peerRetriever:       peerRetriever,
 	}
 }
