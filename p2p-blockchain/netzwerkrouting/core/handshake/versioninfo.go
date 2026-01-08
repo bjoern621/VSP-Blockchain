@@ -22,6 +22,23 @@ type VersionInfo struct {
 	supportedServices []common.ServiceType
 }
 
+// NewLocalVersionInfo creates a VersionInfo struct with the local node's version and supported services.
+func NewLocalVersionInfo() VersionInfo {
+	info := VersionInfo{
+		Version: common.VersionString,
+	}
+
+	var services []common.ServiceType
+	for _, svcString := range common.EnabledTeilsystemeNames() {
+		svc, ok := common.ParseServiceType(svcString)
+		assert.Assert(ok, "enabled service is not a valid ServiceType:", svcString)
+		services = append(services, svc)
+	}
+	info.AddService(services...)
+
+	return info
+}
+
 // SupportedServices returns a copy of the supported services slice.
 func (v *VersionInfo) SupportedServices() []common.ServiceType {
 	return append([]common.ServiceType(nil), v.supportedServices...)
