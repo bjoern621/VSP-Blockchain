@@ -96,25 +96,32 @@ func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash
 	// Find parent
 	parentHash := block.Header.PreviousBlockHash
 	parent, parentExists := s.hashToHeaders[parentHash]
+	isParentOrphan := false
+	if parentExists {
+		var err error
+		isParentOrphan, err = s.IsOrphanBlock(*parent.Block)
+		assert.IsNil(err, "error checking if parent is orphan")
+	}
 
 	newNode := blockNode{
 		Block:    &block,
 		Children: []*blockNode{},
 	}
 
-	if parentExists {
+	// Add new block to hash map
+	s.hashToHeaders[blockHash] = &newNode
+
+	if parentExists && !isParentOrphan {
 		// Block can be part of main chain or side chain
 		s.connectNodes(parent, &newNode)
 		addedBlockHashes = append(addedBlockHashes, blockHash)
+
+		addedBlockHashes = append(addedBlockHashes, s.connectOrphanBlock(&newNode)...)
 	} else {
 		// Block is an orphan
 		s.blockForest.Roots = append(s.blockForest.Roots, &newNode)
 	}
 
-	// Add new block to hash map
-	s.hashToHeaders[blockHash] = &newNode
-
-	addedBlockHashes = append(addedBlockHashes, s.connectOrphanBlock(&newNode)...)
 	return
 }
 
@@ -175,8 +182,8 @@ func (s *BlockStore) IsOrphanBlock(block block.Block) (bool, error) {
 		return false, fmt.Errorf("block with hash %v not found", block.Hash())
 	}
 
-	// A block is an orphan if it has no parent and is not the genesis block
-	isOrphan := blockNode.Parent == nil && blockNode.Height != 0
+	// A block is an orphan if it has no parent and no accumulated work (genesis has accumulated work from its difficulty)
+	isOrphan := blockNode.Parent == nil && blockNode.AccumulatedWork == 0
 	return isOrphan, nil
 }
 
@@ -224,6 +231,7 @@ func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
 // Never contains orphans, as orphans have no defined height in relation to the genesis block.
 func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 	var blocksAtHeight []block.Block
+	addedBlocks := make(map[common.Hash]bool)
 
 	for _, leaf := range s.blockForest.Leaves {
 		currentNode := leaf
@@ -231,7 +239,17 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 		// Traverse up the tree as long as (1) we are not at the root and (2) we are above the desired height
 		for currentNode != nil && currentNode.Height >= height {
 			if currentNode.Height == height {
-				blocksAtHeight = append(blocksAtHeight, copyOfBlock(currentNode))
+				// isOrphan removes orphans from the result (orphans may have the default height 0)
+				isOrphan, err := s.IsOrphanBlock(*currentNode.Block)
+				assert.IsNil(err, "error checking if block is orphan")
+				if !isOrphan {
+					blockHash := currentNode.Block.Hash()
+					if !addedBlocks[blockHash] {
+						blocksAtHeight = append(blocksAtHeight, copyOfBlock(currentNode))
+						addedBlocks[blockHash] = true
+					}
+				}
+
 				break
 			}
 
