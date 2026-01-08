@@ -1,17 +1,26 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
+	"log"
 	"net/http"
 	"os"
+	sw "s3b/vsp-blockchain/rest-api/api_adapter"
+	"s3b/vsp-blockchain/rest-api/internal/pb"
+	"s3b/vsp-blockchain/rest-api/konto"
+	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
 	"strings"
-
-	"s3b/vsp-blockchain/rest-api/internal/api/handlers"
-	"s3b/vsp-blockchain/rest-api/internal/api/middleware"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/gin-gonic/gin"
 )
+
+//go:embed swagger-ui/*
+var swaggerContent embed.FS
 
 func main() {
 	logger.Infof("Running...")
@@ -34,13 +43,28 @@ func main() {
 		}
 	}(conn)
 
+	// Dependencies
+
+	appServiceClient := pb.NewAppServiceClient(conn)
+	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl(appServiceClient)
+	kontostand := konto.NewKeyGeneratorImpl(transactionAdapter)
+
 	// REST API Server
+	routes := sw.ApiHandleFunctions{
+		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
+	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /test", handlers.TestHandler)
+	log.Printf("Server started")
 
-	handler := middleware.Logging(mux)
+	router := sw.NewRouter(routes)
 
-	err = http.ListenAndServe(":8080", handler)
-	logger.Errorf("%v", err)
+	fsys, _ := fs.Sub(swaggerContent, "swagger-ui")
+	router.StaticFS("/swagger-ui/", http.FS(fsys))
+
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "./swagger-ui")
+	})
+
+	log.Fatal(router.Run(":8080"))
+
 }

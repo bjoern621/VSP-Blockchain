@@ -201,7 +201,7 @@ func toHeader(pb *pb.BlockHeader) (block.BlockHeader, error) {
 		PreviousBlockHash: prevBlockHash,
 		MerkleRoot:        merkleRoot,
 		Timestamp:         pb.Timestamp,
-		DifficultyTarget:  pb.DifficultyTarget,
+		DifficultyTarget:  uint8(pb.DifficultyTarget), // silently removes invalid values
 		Nonce:             pb.Nonce,
 	}, nil
 }
