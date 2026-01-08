@@ -11,7 +11,7 @@ import (
 func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 	var merkleRoot common.Hash
 	// Use a simple pattern for merkle root
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		merkleRoot[i] = byte(i + 1)
 	}
 
@@ -69,6 +69,7 @@ func createTestBlockWithLeadingZeros(prevHash common.Hash, nonce uint32) block.B
 }
 
 // TestNewBlockStore tests creating a new block store with a genesis block
+// (g)
 func TestNewBlockStore(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -119,6 +120,9 @@ func TestNewBlockStore(t *testing.T) {
 }
 
 // TestAddBlock_Idempotent tests that adding the same block multiple times has no effect
+// (g)
+// (g) -> (b1)
+// Add (b1) again: no change
 func TestAddBlock_Idempotent(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -142,6 +146,8 @@ func TestAddBlock_Idempotent(t *testing.T) {
 }
 
 // TestAddBlock_MainChain tests adding blocks to form a main chain
+// (g)
+// (g) -> (b1) -> (b2)
 func TestAddBlock_MainChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -200,6 +206,9 @@ func TestAddBlock_MainChain(t *testing.T) {
 }
 
 // TestAddBlock_SideChain tests creating a side chain
+// (g)
+// (g) -> (b1) -> (b2)  [main chain]
+// (g) -> (s1)          [side chain]
 func TestAddBlock_SideChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -267,6 +276,10 @@ func TestAddBlock_SideChain(t *testing.T) {
 }
 
 // TestAddBlock_SideChainBecomesMainChain tests that a side chain becomes main chain with higher accumulated work
+// (g)
+// (g) -> (b1) -> (b2)
+// (g) -> (s1)
+// If (s1) has higher accumulated work, it becomes main chain tip
 func TestAddBlock_SideChainBecomesMainChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -304,6 +317,9 @@ func TestAddBlock_SideChainBecomesMainChain(t *testing.T) {
 }
 
 // TestAddBlock_OrphanBlock tests creating orphan blocks
+// (g)
+//
+//	..> (o) [orphan, no parent in store]
 func TestAddBlock_OrphanBlock(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -350,6 +366,11 @@ func TestAddBlock_OrphanBlock(t *testing.T) {
 }
 
 // TestAddBlock_OrphanBecomesSideChain tests that orphans become side chains when parent is added
+// (g)
+// ..> (o) [orphan - points to unknown parent]
+// ---
+// (g) -> (p)        [add parent with hash matching unknown parent]
+// (g) -> (p) -> (c) [re-add as connected block]
 func TestAddBlock_OrphanBecomesSideChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -466,6 +487,8 @@ func TestIsPartOfMainChain_NotFound(t *testing.T) {
 }
 
 // TestGetBlocksByHeight_EmptyResult tests GetBlocksByHeight with no blocks at height
+// (g)
+// Query height 10: returns empty
 func TestGetBlocksByHeight_EmptyResult(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -477,6 +500,11 @@ func TestGetBlocksByHeight_EmptyResult(t *testing.T) {
 }
 
 // TestGetBlocksByHeight_MultipleBlocks tests GetBlocksByHeight with multiple blocks at same height
+// (g)
+// (g) -> (b1)
+// (g) -> (b2)
+// (g) -> (b3)
+// All at height 1
 func TestGetBlocksByHeight_MultipleBlocks(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -523,6 +551,7 @@ func TestGetBlocksByHeight_MultipleBlocks(t *testing.T) {
 }
 
 // TestGetCurrentHeight_Empty tests GetCurrentHeight with only genesis
+// (g)
 func TestGetCurrentHeight_Empty(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -534,6 +563,12 @@ func TestGetCurrentHeight_Empty(t *testing.T) {
 }
 
 // TestGetCurrentHeight_WithOrphans tests GetCurrentHeight ignores orphans
+// (g)
+// (g) -> (b1)
+//
+//	..> (o) [orphan, height ignored]
+//
+// Height should be 1
 func TestGetCurrentHeight_WithOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -556,6 +591,11 @@ func TestGetCurrentHeight_WithOrphans(t *testing.T) {
 }
 
 // TestGetMainChainTip_MultipleChains tests GetMainChainTip with multiple chains
+// (g)
+// (g) -> (b1a) -> (b2a)
+// (g) -> (b1b) -> (b2b) -> (b3b)
+// (g) -> (b1c)
+// Tip should be the chain with highest accumulated work
 func TestGetMainChainTip_MultipleChains(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -597,6 +637,10 @@ func TestGetMainChainTip_MultipleChains(t *testing.T) {
 }
 
 // TestGetMainChainTip_EqualWork tests GetMainChainTip when chains have equal accumulated work
+// (g)
+// (g) -> (b1)
+// (g) -> (b2)
+// Either (b1) or (b2) can be main chain tip (implementation choice)
 func TestGetMainChainTip_EqualWork(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -620,6 +664,12 @@ func TestGetMainChainTip_EqualWork(t *testing.T) {
 }
 
 // TestComplexScenario_MainChainSideChainOrphans tests a complex scenario with main chain, side chains, and orphans
+// (g)
+// (g) -> (b1) -> (b2) -> (b3)  [main chain]
+// (g) -> (s1) -> (s2)          [side chain]
+//
+//	..> (o1)                     [orphan]
+//	..> (o2)                     [orphan]
 func TestComplexScenario_MainChainSideChainOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
@@ -746,7 +796,9 @@ func TestComplexScenario_MainChainSideChainOrphans(t *testing.T) {
 
 // TestAddBlock_ChainedOrphans tests that orphans can chain together
 // (g)
-// (g) | (o1) ..> (o2) ..> (o3)
+// Add orphans: (they point to each other but aren't connected to each other yet)
+// (g)
+// (o1) ..> (o2) ..> (o3)
 // Then add (p) which connects to (g), causing (o1), (o2), (o3) to connect
 // (g) -> (p) -> (o1) -> (o2) -> (o3)
 func TestAddBlock_ChainedOrphans(t *testing.T) {
