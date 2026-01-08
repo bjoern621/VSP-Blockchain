@@ -2,8 +2,13 @@
 package blockchain
 
 import (
+	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"slices"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -13,7 +18,12 @@ import (
 //   - Side chains are chains that branch off from the main chain at some point.
 //   - Orphans are blocks that don't have the genesis block as an ancestor. Their highest ancestor is a root blockNode in the forest which is not the genesis block.
 type blockForest struct {
-	Roots  []*blockNode
+	// Roots are the root nodes of all trees in the forest.
+	// The genesis block is always one of the roots.
+	// Also includes orphans.
+	Roots []*blockNode
+	// Leaves are the leaf nodes of all trees in the forest.
+	// This includes the tip of the main chain and side chains and orphan blocks.
 	Leaves []*blockNode
 }
 
@@ -32,8 +42,8 @@ type blockNode struct {
 }
 
 // BlockStore manages the storage and retrieval of blocks in the blockchain.
-// It's underlying structure is private and only [block.Block] can be accessed externally.
-// It is responsible for maintaining the integrity of the blockchain data. This means the BlockStore state is always consistent and valid.
+// Its underlying structure is private and only [block.Block] can be accessed externally.
+// It's responsible for maintaining the integrity of the blockchain data. This means the BlockStore state is always consistent and valid.
 // Retrieved blocks are always copies of the stored blocks to prevent external modification of the internal state. This means that any modification to a retrieved block does not affect the stored block in the BlockStore.
 type BlockStore struct {
 	blockForest blockForest
@@ -67,16 +77,23 @@ func NewBlockStore(genesis block.Block) *BlockStore {
 // If the parent does not exist, the block becomes an orphan (added to roots without parent).
 //
 // After execution, the block store will contain the new block, either as part of the main chain, a side chain, or as an orphan.
-// Errors if the block violates any domain rules.
-func (s *BlockStore) AddBlock(block block.Block) error {
+// This operation is idempotent; adding the same block multiple times has no effect after the first addition.
+//
+// Panics if the block violates any domain rules.
+// Returns a (non-nil) slice of block hashes that were added to the main or side chain because of this addition.
+func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash) {
 	blockHash := block.Hash()
+
+	// TODO validate block, panic if invalid
+
+	addedBlockHashes = []common.Hash{}
 
 	// Check if block already exists
 	if _, exists := s.hashToHeaders[blockHash]; exists {
-		return nil // Block already exists, no need to add it again
+		return
 	}
 
-	// Find parent block
+	// Find parent
 	parentHash := block.Header.PreviousBlockHash
 	parent, parentExists := s.hashToHeaders[parentHash]
 
@@ -86,41 +103,193 @@ func (s *BlockStore) AddBlock(block block.Block) error {
 	}
 
 	if parentExists {
-		// Block has a parent
-		newNode.Parent = parent
-		newNode.AccumulatedWork = parent.AccumulatedWork + uint64(block.BlockDifficulty())
-		newNode.Height = parent.Height + 1
-
-		// Add new node to parent's children
-		parent.Children = append(parent.Children, &newNode)
-
-		// Remove parent from leaves if it was a leaf
-		for i, leaf := range s.blockForest.Leaves {
-			if leaf == parent {
-				s.blockForest.Leaves = append(s.blockForest.Leaves[:i], s.blockForest.Leaves[i+1:]...)
-				break
-			}
-		}
+		// Block can be part of main chain or side chain
+		s.connectNodes(parent, &newNode)
+		addedBlockHashes = append(addedBlockHashes, blockHash)
 	} else {
-		// Block is an orphan (parent not found)
-		newNode.AccumulatedWork = uint64(block.BlockDifficulty())
-		newNode.Height = 0
+		// Block is an orphan
 		s.blockForest.Roots = append(s.blockForest.Roots, &newNode)
 	}
 
-	// Add new block to leaves and hash map
-	s.blockForest.Leaves = append(s.blockForest.Leaves, &newNode)
+	// Add new block to hash map
 	s.hashToHeaders[blockHash] = &newNode
 
-	return nil
+	addedBlockHashes = append(addedBlockHashes, s.connectOrphanBlock(&newNode)...)
+	return
 }
 
-// func RecheckOrphanBlocks() (blocksAcceptedIntoChain int) {}
+// connectOrphanBlock tries to connect orphan blocks to the given newNode.
+// Returns a slice of block hashes that were added to the main or side chain because of this connection.
+func (s *BlockStore) connectOrphanBlock(newNode *blockNode) (addedBlockHashes []common.Hash) {
+	addedBlockHashes = []common.Hash{}
 
-// // IsOrphanBlock return true if the given block is an orphan block.
-// // An orphan block is a block that is not connected to the main chain or any known side chain.
-// func IsOrphanBlock(block block.Block) bool                 {} // Wird zB. gebraucht, um ein GetHeaders/GetData zu starten, falls true zurück kommt
-// func IsPartOfMainChain(receivedBlock block.Block) bool     {} //Wird gebraucht, da abhängig davon, ob der block Teil der MainChain ist, oder nicht, anders verfahrenn wird
-// func GetBlockByHash(hash common.Hash) (block.Block, error) {}
-// func GetBlockByIndex(height uint32) (block.Block, error)   {}
-// func GetCurrentHeight() uint32
+	for _, orphanRoot := range s.blockForest.Roots {
+		if orphanRoot.Block.Header.PreviousBlockHash != newNode.Block.Hash() {
+			continue
+		}
+
+		// Connects (newNode) --> (orphanRoot)
+		s.connectNodes(newNode, orphanRoot)
+		addedBlockHashes = append(addedBlockHashes, orphanRoot.Block.Hash())
+
+		// Recursively try to connect further orphans
+		addedBlockHashes = append(addedBlockHashes, s.connectOrphanBlock(orphanRoot)...)
+	}
+
+	return
+}
+
+// connectNodes connects a parent blockNode to a child blockNode.
+// Updates (1) accumulated work, (2) height, (3) leaves, (4) roots and (5) connection relation accordingly.
+func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
+	child.Parent = parent
+	parent.Children = append(parent.Children, child)
+
+	child.AccumulatedWork = parent.AccumulatedWork + uint64(child.Block.BlockDifficulty())
+	child.Height = parent.Height + 1
+
+	// Remove parent from leaves (if it was a leaf)
+	// Is a leaf if it was a tip before
+	// Is not a leaf if it had children before (creating a side chain)
+	s.blockForest.Leaves = slices.DeleteFunc(s.blockForest.Leaves, func(leaf *blockNode) bool {
+		return leaf == parent
+	})
+
+	// Add child to leaves
+	s.blockForest.Leaves = append(s.blockForest.Leaves, child)
+
+	// Remove child from roots (if it was a root)
+	// Is a root if it was an orphan before
+	// Is not a root if completely new block
+	s.blockForest.Roots = slices.DeleteFunc(s.blockForest.Roots, func(root *blockNode) bool {
+		return root == child
+	})
+}
+
+// IsOrphanBlock checks if the given block is an orphan.
+// Returns an error if the block is not found in the block store.
+// O(1) time complexity.
+func (s *BlockStore) IsOrphanBlock(block block.Block) (bool, error) {
+	blockNode, exists := s.hashToHeaders[block.Hash()]
+	if !exists {
+		return false, fmt.Errorf("block with hash %v not found", block.Hash())
+	}
+
+	// A block is an orphan if it has no parent and is not the genesis block
+	isOrphan := blockNode.Parent == nil && blockNode.Height != 0
+	return isOrphan, nil
+}
+
+// IsPartOfMainChain checks if the given block is part of the main chain.
+// Returns false if the block is not found in the block store.
+// O(h) time complexity, with h being the height of the main chain.
+func (s *BlockStore) IsPartOfMainChain(block block.Block) bool {
+	blockNode, exists := s.hashToHeaders[block.Hash()]
+	if !exists {
+		return false
+	}
+
+	// Get main chain tip
+	mainChainTip := s.GetMainChainTip()
+	mainChainTipNode := s.hashToHeaders[mainChainTip.Hash()]
+
+	// Traverse up from main chain tip to genesis, checking if we encounter the blockNode
+	currentNode := mainChainTipNode
+	for currentNode != nil {
+		if currentNode == blockNode {
+			return true
+		}
+		currentNode = currentNode.Parent
+	}
+
+	return false
+}
+
+// GetBlockByHash retrieves a block by its hash.
+// Returns an error if the block is not found.
+// O(1) time complexity.
+// Also works for orphan blocks.
+func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+	blockNode, exists := s.hashToHeaders[hash]
+	if !exists {
+		return block.Block{}, fmt.Errorf("block with hash %v not found", hash)
+	}
+
+	return copyOfBlock(blockNode), nil
+}
+
+// GetBlocksbyHeight retrieves all blocks at the specified height.
+// Returns an empty slice if no blocks are found at that height.
+// Starts search at leaves, so retrieving blocks at higher heights is faster.
+// Never contains orphans, as orphans have no defined height in relation to the genesis block.
+func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
+	var blocksAtHeight []block.Block
+
+	for _, leaf := range s.blockForest.Leaves {
+		currentNode := leaf
+
+		// Traverse up the tree as long as (1) we are not at the root and (2) we are above the desired height
+		for currentNode != nil && currentNode.Height >= height {
+			if currentNode.Height == height {
+				blocksAtHeight = append(blocksAtHeight, copyOfBlock(currentNode))
+				break
+			}
+
+			currentNode = currentNode.Parent
+		}
+	}
+
+	return blocksAtHeight
+}
+
+// GetCurrentHeight returns the current maximum height of the blockchain.
+// Note that this height may correspond to multiple(!) blocks in case of side chains.
+// Also note that the highest block may not be part of the main chain (the main chain is the one with the most accumulated work).
+// Use GetMainChainTip to get the tip of the main chain.
+func (s *BlockStore) GetCurrentHeight() uint64 {
+	var maxHeight uint64
+	for _, leaf := range s.blockForest.Leaves {
+		if leaf.Height > maxHeight {
+			maxHeight = leaf.Height
+		}
+	}
+
+	return maxHeight
+}
+
+// GetMainChainTip returns the tip block of the main chain.
+// The main chain is defined as the chain with the highest accumulated work.
+// In case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
+func (s *BlockStore) GetMainChainTip() block.Block {
+	var mainChainTip *blockNode
+	var maxAccumulatedWork uint64
+
+	for _, leaf := range s.blockForest.Leaves {
+		if leaf.AccumulatedWork > maxAccumulatedWork {
+			maxAccumulatedWork = leaf.AccumulatedWork
+			mainChainTip = leaf
+		}
+	}
+
+	assert.IsNotNil(mainChainTip, "no main chain tip found in block store")
+
+	return copyOfBlock(mainChainTip)
+}
+
+// copyOfBlock creates and returns a deep copy of the block contained in the given blockNode.
+// Should be used to prevent external modification of the internal state of the BlockStore.
+func copyOfBlock(node *blockNode) block.Block {
+	originalBlock := node.Block
+
+	// Deep copy transactions
+	copiedTransactions := make([]transaction.Transaction, len(originalBlock.Transactions))
+	copy(copiedTransactions, originalBlock.Transactions)
+
+	// Create new block with copied transactions
+	copiedBlock := block.Block{
+		Header:       originalBlock.Header,
+		Transactions: copiedTransactions,
+	}
+
+	return copiedBlock
+}
