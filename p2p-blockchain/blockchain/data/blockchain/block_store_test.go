@@ -745,15 +745,17 @@ func TestComplexScenario_MainChainSideChainOrphans(t *testing.T) {
 }
 
 // TestAddBlock_ChainedOrphans tests that orphans can chain together
+// (g)
+// (g) | (o1) ..> (o2) ..> (o3)
+// Then add (p) which connects to (g), causing (o1), (o2), (o3) to connect
+// (g) -> (p) -> (o1) -> (o2) -> (o3)
 func TestAddBlock_ChainedOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
 	store := NewBlockStore(genesis)
 
-	// Create a chain of orphans
-	var orphanParentHash common.Hash
-	orphanParentHash[0] = 0xAA
+	parent := createTestBlockWithLeadingZeros(genesis.Hash(), 10)
 
-	orphan1 := createTestBlock(orphanParentHash, 1)
+	orphan1 := createTestBlock(parent.Hash(), 1)
 	store.AddBlock(orphan1)
 
 	// Orphan 2 points to orphan 1
@@ -776,24 +778,21 @@ func TestAddBlock_ChainedOrphans(t *testing.T) {
 	}
 
 	// Now add the parent, all orphans should connect
-	parent := createTestBlockWithLeadingZeros(genesis.Hash(), 10)
-	store.AddBlock(parent)
+	addedHashes := store.AddBlock(parent)
 
-	// Recreate orphan1 connected to parent
-	connected1 := createTestBlock(parent.Hash(), 1)
-	addedHashes := store.AddBlock(connected1)
-
-	// Should add at least connected1
-	if len(addedHashes) != 1 {
-		t.Errorf("Expected at least 1 added hash: got %d", len(addedHashes))
+	// Should add parent + orphan1, orphan2, orphan3
+	if len(addedHashes) != 4 {
+		t.Errorf("Expected 4 added hashes (parent + 3 orphans): got %d", len(addedHashes))
 	}
 
-	// Verify connected1 is no longer an orphan
-	isOrphan, err := store.IsOrphanBlock(connected1)
-	if err != nil {
-		t.Fatalf("Failed to check connected1: %v", err)
-	}
-	if isOrphan {
-		t.Error("Connected1 should no longer be an orphan")
+	// Verify orphan1, 2 and 3 are no longer orphans
+	for i, orphan := range []block.Block{orphan1, orphan2, orphan3} {
+		isOrphan, err := store.IsOrphanBlock(orphan)
+		if err != nil {
+			t.Fatalf("Failed to check orphan%d: %v", i+1, err)
+		}
+		if isOrphan {
+			t.Errorf("Orphan%d should no longer be marked as orphan", i+1)
+		}
 	}
 }
