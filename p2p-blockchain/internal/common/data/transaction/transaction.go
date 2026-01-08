@@ -8,8 +8,12 @@ import (
 )
 
 type Transaction struct {
-	Inputs   []Input
-	Outputs  []Output
+	Inputs  []Input
+	Outputs []Output
+	// LockTime specifies the earliest time or block when the transaction may be added to the blockchain.
+	//  - 0 means the transaction can be added immediately.
+	//  - If less than 500_000_000, it is interpreted as a block height.
+	//  - Otherwise (greater than or equal to 500_000_000), it is interpreted as a Unix epoch time.
 	LockTime uint64
 }
 

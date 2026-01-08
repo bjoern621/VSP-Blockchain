@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -13,6 +14,7 @@ import (
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -24,14 +26,16 @@ type Server struct {
 	connService          *core.ConnectionEstablishmentService
 	regService           *core.InternalViewService
 	queryRegistryService *core.QueryRegistryService
+	keysApi              api.KeyGeneratorApi
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, keysApi api.KeyGeneratorApi) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
+		keysApi:              keysApi,
 	}
 }
 
@@ -149,5 +153,44 @@ func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest
 		})
 	}
 
+	return response, nil
+}
+
+func (s *Server) GenerateKeyset(context.Context, *emptypb.Empty) (*pb.GenerateKeysetResponse, error) {
+	keyset := s.keysApi.GenerateKeyset()
+
+	pbKeyset := pb.Keyset{
+		PrivateKey:    keyset.PrivateKey[:],
+		PrivateKeyWif: keyset.PrivateKeyWif,
+		PublicKey:     keyset.PublicKey[:],
+		VSAddress:     keyset.VSAddress,
+	}
+
+	response := &pb.GenerateKeysetResponse{
+		Keyset: &pbKeyset,
+	}
+	return response, nil
+}
+
+func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFRequest) (*pb.GetKeysetFromWIFResponse, error) {
+	keyset, err := s.keysApi.GetKeysetFromWIF(wif.PrivateKeyWif)
+
+	if err != nil {
+		return &pb.GetKeysetFromWIFResponse{
+			FalseInput: true,
+		}, nil
+	}
+
+	pbKeyset := pb.Keyset{
+		PrivateKey:    keyset.PrivateKey[:],
+		PrivateKeyWif: keyset.PrivateKeyWif,
+		PublicKey:     keyset.PublicKey[:],
+		VSAddress:     keyset.VSAddress,
+	}
+
+	response := &pb.GetKeysetFromWIFResponse{
+		Keyset:     &pbKeyset,
+		FalseInput: false,
+	}
 	return response, nil
 }

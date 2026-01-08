@@ -27,14 +27,14 @@ func NewKeyGeneratorApiImpl(keyGenerator keys.KeyGenerator) *KeyGeneratorApiImpl
 	}
 }
 
-func (k KeyGeneratorApiImpl) GenerateKeyset() common.Keyset {
+func (k *KeyGeneratorApiImpl) GenerateKeyset() common.Keyset {
 	return k.keyGenerator.GenerateKeyset()
 }
 
-func (k KeyGeneratorApiImpl) GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset {
+func (k *KeyGeneratorApiImpl) GetKeyset(privateKey [common.PrivateKeySize]byte) common.Keyset {
 	return k.keyGenerator.GetKeyset(privateKey)
 }
 
-func (k KeyGeneratorApiImpl) GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error) {
+func (k *KeyGeneratorApiImpl) GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error) {
 	return k.keyGenerator.GetKeysetFromWIF(privateKeyWIF)
 }

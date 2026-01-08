@@ -5,13 +5,58 @@ import (
 	"encoding/binary"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 // Block represents a block in the blockchain.
 // It consists of a BlockHeader and a list of Transactions.
 type Block struct {
-	Header       BlockHeader
+	Header BlockHeader
+	// Transactions holds all transactions included in the block.
+	// The first transaction is always the coinbase transaction.
+	// This slice should never be empty.
 	Transactions []transaction.Transaction
+}
+
+// BlockDifficulty calculates and returns the difficulty of the block.
+//
+// The difficulty is the number of leading zero bits in the block hash.
+// This can be different from the difficulty target specified in the block header.
+// Invariant: BlockDifficulty >= Header.DifficultyTarget.
+//
+// (In Bitcoin a different formula is used to calculate the difficulty.)
+func (b *Block) BlockDifficulty() uint8 {
+	hash := b.Hash()
+	return countLeadingZeroBits(hash)
+}
+
+func countLeadingZeroBits(hash common.Hash) uint8 {
+	var difficulty uint16 = 0
+
+	// For each byte in the hash
+	for _, byteVal := range hash {
+
+		// Go through each bit in the byte, from most significant to least significant
+		for bitPos := 7; bitPos >= 0; bitPos-- {
+			bitmask := byte(1 << bitPos)
+
+			if (byteVal & bitmask) == 0 {
+				difficulty++
+			} else {
+				assert.Assert(difficulty <= 255, "difficulty should never exceed 255")
+				return uint8(difficulty)
+			}
+		}
+	}
+
+	// All bits are zero, so difficulty is 256, but we cap it at 255
+	// This case is considered as "255 leading zeros and one bit that is either set or not set"
+	if difficulty > 255 {
+		difficulty = 255
+	}
+
+	return uint8(difficulty)
 }
 
 func (b *Block) Hash() common.Hash {
@@ -20,24 +65,38 @@ func (b *Block) Hash() common.Hash {
 	buffer = append(buffer, b.Header.MerkleRoot[:]...)
 	buffer = binary.LittleEndian.AppendUint64(buffer, uint64(b.Header.Timestamp))
 	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.Nonce)
-	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.DifficultyTarget)
+	buffer = append(buffer, b.Header.DifficultyTarget)
 
 	return doubleSHA256(buffer)
 }
 
-func MerkleRoot(transactions []transaction.Transaction) common.Hash {
-	tmpTransactions := make([]transaction.Transaction, len(transactions))
-	copy(tmpTransactions, transactions)
+// MerkleRoot calculates and returns the Merkle root of the block's transactions.
+func (b *Block) MerkleRoot() common.Hash {
+	return MerkleRootFromTransactions(b.Transactions)
+}
 
-	if len(transactions)%2 == 1 {
-		// Append last transaction to make event number of transactions
-		tmpTransactions = append(tmpTransactions, transactions[len(transactions)-1])
+// MerkleRootFromTransactions calculates the Merkle root from a list of transactions.
+func MerkleRootFromTransactions(txs []transaction.Transaction) common.Hash {
+	tmpTransactions := make([]transaction.Transaction, len(txs))
+	copy(tmpTransactions, txs)
+
+	if len(txs)%2 == 1 {
+		// Append last transaction to make even number of transactions
+		tmpTransactions = append(tmpTransactions, txs[len(txs)-1])
 	}
 
 	var hashes = make([]common.Hash, len(tmpTransactions))
 	for i, tx := range tmpTransactions {
 		hashes[i] = tx.Hash()
 	}
+
+	return merkleRootFromHashes(hashes)
+}
+
+// merkleRootFromHashes calculates the Merkle root from a list of hashes.
+// The list of hashes must have an even length.
+func merkleRootFromHashes(hashes []common.Hash) common.Hash {
+	assert.Assert(len(hashes)%2 == 0, "merkleRootFromHashes requires even number of hashes")
 
 	for len(hashes) != 1 {
 		var tmpHashes = make([]common.Hash, 0)
