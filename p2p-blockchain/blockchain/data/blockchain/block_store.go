@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -234,8 +235,7 @@ func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
 // Starts search at leaves, so retrieving blocks at higher heights is faster.
 // Never contains orphans, as orphans have no defined height in relation to the genesis block.
 func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
-	var blocksAtHeight []block.Block
-	addedBlocks := make(map[common.Hash]bool)
+	blockHashesAtHeight := mapset.NewSet[common.Hash]()
 
 	for _, leaf := range s.blockForest.Leaves {
 		currentNode := leaf
@@ -247,11 +247,7 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 				isOrphan, err := s.IsOrphanBlock(*currentNode.Block)
 				assert.IsNil(err, "error checking if block is orphan")
 				if !isOrphan {
-					blockHash := currentNode.Block.Hash()
-					if !addedBlocks[blockHash] {
-						blocksAtHeight = append(blocksAtHeight, copyOfBlock(currentNode))
-						addedBlocks[blockHash] = true
-					}
+					blockHashesAtHeight.Add(currentNode.Block.Hash())
 				}
 
 				break
@@ -259,6 +255,14 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 
 			currentNode = currentNode.Parent
 		}
+	}
+
+	// Convert hashes back to blocks
+	blocksAtHeight := make([]block.Block, 0, blockHashesAtHeight.Cardinality())
+	for hash := range blockHashesAtHeight.Iter() {
+		b, err := s.GetBlockByHash(hash)
+		assert.IsNil(err, "error retrieving block by hash")
+		blocksAtHeight = append(blocksAtHeight, b)
 	}
 
 	return blocksAtHeight
