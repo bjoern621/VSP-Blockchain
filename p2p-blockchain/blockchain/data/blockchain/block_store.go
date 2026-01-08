@@ -154,6 +154,8 @@ func (s *BlockStore) connectOrphanBlock(newNode *blockNode) (addedBlockHashes []
 // connectNodes connects a parent blockNode to a child blockNode.
 // Updates (1) accumulated work, (2) height, (3) leaves, (4) roots and (5) connection relation accordingly.
 func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
+	assert.Assert(child.Block.Header.PreviousBlockHash == parent.Block.Hash())
+
 	child.Parent = parent
 	parent.Children = append(parent.Children, child)
 
