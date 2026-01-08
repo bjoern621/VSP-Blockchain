@@ -130,11 +130,15 @@ func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash
 func (s *BlockStore) connectOrphanBlock(newNode *blockNode) (addedBlockHashes []common.Hash) {
 	addedBlockHashes = []common.Hash{}
 
+	// Collect orphans to connect first to avoid modifying slice during iteration (connectNodes modifies s.blockForest.Roots)
+	var orphansToConnect []*blockNode
 	for _, orphanRoot := range s.blockForest.Roots {
-		if orphanRoot.Block.Header.PreviousBlockHash != newNode.Block.Hash() {
-			continue
+		if orphanRoot.Block.Header.PreviousBlockHash == newNode.Block.Hash() {
+			orphansToConnect = append(orphansToConnect, orphanRoot)
 		}
+	}
 
+	for _, orphanRoot := range orphansToConnect {
 		// Connects (newNode) --> (orphanRoot)
 		s.connectNodes(newNode, orphanRoot)
 		addedBlockHashes = append(addedBlockHashes, orphanRoot.Block.Hash())
