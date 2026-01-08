@@ -10,6 +10,7 @@ type RegistryQuerier interface {
 }
 
 // DiscoveryService provides peer discovery functionality.
+// This includes (1) querying a registry for peers, (2) asking neighbors for their known peers as well as (3) keeping track of active peers through heartbeats.
 type DiscoveryService struct {
 	querier     RegistryQuerier
 	peerCreator PeerCreator
