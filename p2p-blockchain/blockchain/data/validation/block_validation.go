@@ -1,10 +1,10 @@
 package validation
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"time"
 )
 
@@ -77,7 +77,7 @@ func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, erro
 
 func isMerkleRootValid(b block.Block) bool {
 	merkleRoot := b.MerkleRoot()
-	return merkleRoot.Equals(b.Header.MerkleRoot)
+	return bytes.Equal(merkleRoot[:], b.Header.MerkleRoot[:])
 }
 
 func hashSmallerThanTarget(block block.Block) bool {
