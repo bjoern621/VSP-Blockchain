@@ -33,21 +33,27 @@ func (m *MinerService) mineBlock(candidateBlock block.Block) (nonce uint32, time
 	nonce = 0
 
 	for {
-		if counter > uint64(^uint32(0)) {
-			timestamp++
-			candidateBlock.Header.Timestamp = timestamp
-			counter = 0
-		}
+		select {
+		case <-ctx.Done():
+			logger.Infof("Mining cancelled")
+			return 0, 0, fmt.Errorf("mining cancelled")
+		default:
+			if counter > uint64(^uint32(0)) {
+				timestamp++
+				candidateBlock.Header.Timestamp = timestamp
+				counter = 0
+			}
 
-		candidateBlock.Header.Nonce = nonce
-		hash := candidateBlock.Hash()
+			candidateBlock.Header.Nonce = nonce
+			hash := candidateBlock.Hash()
 
-		hashInt.SetBytes(hash[:])
-		if hashInt.Cmp(&target) == -1 {
-			break
+			hashInt.SetBytes(hash[:])
+			if hashInt.Cmp(&target) == -1 {
+				return nonce, timestamp, nil
+			}
+			nonce++
+			counter++
 		}
-		nonce++
-		counter++
 	}
 
 	return nonce, timestamp
