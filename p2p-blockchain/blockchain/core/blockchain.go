@@ -85,13 +85,14 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
+	b.miner.startNewBlockMining()
 	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
 	// 3. Handle orphans
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
 		logger.Infof("Block is Orphan: %v", err)
-		b.requestMissingData(receivedBlock)
+		b.requestMissingBlockHeaders(receivedBlock)
 		return
 	}
 
@@ -116,6 +117,8 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 6. Broadcast new blocks
 	b.broadcastAddedBlocks(addedBlocks, peerID)
+
+	b.miner.startNewBlockMining()
 
 	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
 }
@@ -175,6 +178,6 @@ func (b *Blockchain) broadcastAddedBlocks(addedBlocks []common.Hash, peerID comm
 	//TODO implement this
 }
 
-func (b *Blockchain) requestMissingData(receivedBlock block.Block) {
+func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block) {
 	// TODO implement this
 }
