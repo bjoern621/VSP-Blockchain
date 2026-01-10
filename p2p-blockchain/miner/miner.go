@@ -26,15 +26,20 @@ func createCandidateBlockHeader() block.BlockHeader {
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
-func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
+func (m *MinerService) mineBlock(candidateBlock block.Block) (nonce uint32, timestamp int64) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
 
-	fmt.Printf("%s", target.String())
-
+	var counter uint64 = 0
 	var hashInt big.Int
 	nonce = 0
 
 	for {
+		if counter > uint64(^uint32(0)) {
+			timestamp++
+			candidateBlock.Header.Timestamp = timestamp
+			counter = 0
+		}
+
 		candidateBlock.Header.Nonce = nonce
 		hash := candidateBlock.Hash()
 
@@ -43,9 +48,10 @@ func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
 			break
 		}
 		nonce++
+		counter++
 	}
 
-	return nonce
+	return nonce, timestamp
 }
 
 // getTarget calculates the target for the proof of work algorithm
