@@ -92,7 +92,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	//b.miner.startNewBlockMining()
+	b.NotifyStartMining()
 	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
@@ -125,7 +125,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	// 6. Broadcast new blocks
 	b.broadcastAddedBlocks(addedBlocks, peerID)
 
-	//b.miner.startNewBlockMining()
+	b.NotifyStopMining()
 
 	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
 }
