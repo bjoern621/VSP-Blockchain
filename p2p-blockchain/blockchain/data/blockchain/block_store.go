@@ -232,7 +232,7 @@ func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
 	return copyOfBlock(blockNode), nil
 }
 
-// GetBlocksbyHeight retrieves all blocks at the specified height.
+// GetBlocksByHeight retrieves all blocks at the specified height.
 // Returns an empty slice if no blocks are found at that height.
 // Starts search at leaves, so retrieving blocks at higher heights is faster.
 // Never contains orphans, as orphans have no defined height in relation to the genesis block.
