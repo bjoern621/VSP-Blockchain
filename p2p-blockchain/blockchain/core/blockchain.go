@@ -92,15 +92,16 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
+	b.
+
 	if b.blockStore.IsPartOfMainChain(receivedBlock) {
+		// Block is part of main chain - update mempool accordingly
+
+		// Remove transactions from mempool:
+		// 1. All confirmed transactions (those in the added blocks)
+		// 2. Transactions that conflict with confirmed ones (spend same UTXOs)
+		// 3. Re-validate all remaining transactions (they may now be invalid due to spent UTXOs)
 		b.mempool.Remove(addedBlocks)
-		// entferne transactionen des blcoks aus dem mempool
-		// add block to main chain -> Should this implicitly update the utxos?
-		// Remove all confirmed transactions
-
-		// Remove transactions that conflict with confirmed ones
-
-		// Re-evaluate dependent transactions
 	} else {
 		// add block to second chain (should check for chain reorganisations)
 	}
