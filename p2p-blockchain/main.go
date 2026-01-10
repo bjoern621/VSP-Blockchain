@@ -4,6 +4,7 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
@@ -38,8 +39,6 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
-
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
@@ -47,8 +46,18 @@ func main() {
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
+	genesisBlock := blockchainData.GenesisBlock()
+	blockStore := blockchainData.NewBlockStore(genesisBlock)
+
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
+
 	transactionValidator := validation.NewValidationService(chainStateService)
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
+	blockValidator := validation.NewBlockValidationService()
+
+	utxoMempool := utxo.NewMemUTXOPool()
+	combinedPool := utxo.NewCombinedUTXOPool(utxoMempool, chainStateService)
+
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator, blockStore, combinedPool)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
