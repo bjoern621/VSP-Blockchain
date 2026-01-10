@@ -4,10 +4,12 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/miner"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
@@ -38,8 +40,6 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
-
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
@@ -47,12 +47,25 @@ func main() {
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
+	genesisBlock := blockchainData.GenesisBlock()
+	blockStore := blockchainData.NewBlockStore(genesisBlock)
+
+	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
+
 	transactionValidator := validation.NewValidationService(chainStateService)
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
+	blockValidator := validation.NewBlockValidationService()
+
+	utxoMempool := utxo.NewMemUTXOPool()
+	combinedPool := utxo.NewCombinedUTXOPool(utxoMempool, chainStateService)
+
+	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, combinedPool)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+
+	minerImpl := miner.NewMinerService(blockchainMsgService, blockchain)
+	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
