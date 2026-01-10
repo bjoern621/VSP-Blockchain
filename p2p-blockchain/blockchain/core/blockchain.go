@@ -180,5 +180,48 @@ func (b *Blockchain) broadcastAddedBlocks(addedBlocks []common.Hash, peerID comm
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
 	parentHash := receivedBlock.Header.PreviousBlockHash
-	b.blockchainMsgSender.RequestMissingBlockHeaders(parentHash, peerId)
+
+	currentHeight := b.blockStore.GetCurrentHeight()
+	locatorHashes := b.buildBlockLocator(currentHeight)
+
+	// Prepend the orphan parent hash at the beginning (most recent hash)
+	locatorHashes = append([]common.Hash{parentHash}, locatorHashes...)
+
+	locator := block.BlockLocator{
+		BlockLocatorHashes: locatorHashes,
+		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
+	}
+
+	b.blockchainMsgSender.RequestMissingBlockHeaders(locator, peerId)
+}
+
+// buildBlockLocator creates a block locator using Fibonacci series to sample the chain.
+// Returns hashes starting from newer blocks (closer to tip) to older blocks (closer to genesis).
+func (b *Blockchain) buildBlockLocator(tipHeight uint64) []common.Hash {
+	locatorHashes := make([]common.Hash, 0)
+
+	fib1, fib2 := uint64(1), uint64(2)
+	offset := uint64(0)
+
+	for offset <= tipHeight {
+		height := tipHeight - offset
+
+		blocksAtHeight := b.blockStore.GetBlocksByHeight(height)
+
+		for _, blk := range blocksAtHeight {
+			if b.blockStore.IsPartOfMainChain(blk) {
+				locatorHashes = append(locatorHashes, blk.Hash())
+				break
+			}
+		}
+
+		offset += fib1
+		fib1, fib2 = fib2, fib1+fib2
+
+		if len(locatorHashes) > 1000 {
+			break
+		}
+	}
+
+	return locatorHashes
 }

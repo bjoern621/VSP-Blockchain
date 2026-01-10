@@ -11,10 +11,9 @@ type BlockchainService struct {
 	blockStore          *blockchain.BlockStore
 }
 
-func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerStore *peer.PeerStore, blockStore *blockchain.BlockStore) *BlockchainService {
+func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerStore *peer.PeerStore) *BlockchainService {
 	return &BlockchainService{
 		blockchainMsgSender: blockchainMsgSender,
 		peerStore:           peerStore,
-		blockStore:          blockStore,
 	}
 }

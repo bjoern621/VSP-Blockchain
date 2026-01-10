@@ -49,8 +49,7 @@ func main() {
 	genesisBlock := blockchainData.GenesisBlock()
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
 
-	// Create blockchain service after blockStore is available
-	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore, blockStore)
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()

@@ -4,6 +4,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"testing"
@@ -28,7 +29,7 @@ func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.P
 func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
 func (m *mockBlockchainSender) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
 }
-func (m *mockBlockchainSender) RequestMissingBlockHeaders(orphanParentHash common.Hash, peerId common.PeerId) {
+func (m *mockBlockchainSender) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
 }
 
 type mockLookupAPIImpl struct{}
