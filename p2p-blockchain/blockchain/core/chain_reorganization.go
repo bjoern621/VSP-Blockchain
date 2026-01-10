@@ -83,17 +83,6 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 // findForkPoint finds the common ancestor (fork point) between the current tip
 // and the new chain tip.
 func (cr *ChainReorganization) findForkPoint(oldTip, newTip common.Hash) (common.Hash, error) {
-	// Walk backwards from both tips until we find a common ancestor
-	oldBlock, err := cr.blockStore.GetBlockByHash(oldTip)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	newBlock, err := cr.blockStore.GetBlockByHash(newTip)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
 	// Create sets to track visited blocks from both chains
 	oldChain := make(map[common.Hash]bool)
 
@@ -125,7 +114,7 @@ func (cr *ChainReorganization) findForkPoint(oldTip, newTip common.Hash) (common
 
 		currentBlock, err := cr.blockStore.GetBlockByHash(currentHash)
 		if err != nil {
-			break
+			return common.Hash{}, err
 		}
 
 		// Stop at genesis
@@ -136,8 +125,6 @@ func (cr *ChainReorganization) findForkPoint(oldTip, newTip common.Hash) (common
 
 		currentHash = currentBlock.Header.PreviousBlockHash
 	}
-
-	return common.Hash{}, err
 }
 
 // disconnectBlocks rolls back blocks from the current tip to the fork point.
