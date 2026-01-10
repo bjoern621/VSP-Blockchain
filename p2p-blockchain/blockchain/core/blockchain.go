@@ -8,9 +8,12 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
+	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
