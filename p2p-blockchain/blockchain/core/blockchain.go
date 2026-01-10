@@ -233,3 +233,10 @@ func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
 func (b *Blockchain) Detach(o observer.BlockchainObserverAPI) {
 	b.observers.Remove(o)
 }
+
+func (b *Blockchain) NotifyStartMining() {
+	transactions := b.mempool.GetTransactionsForMining()
+	for o := range b.observers.Iter() {
+		o.StartMining(transactions)
+	}
+}
