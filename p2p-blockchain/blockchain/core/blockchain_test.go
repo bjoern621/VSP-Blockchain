@@ -9,8 +9,10 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"testing"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -331,6 +333,8 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	// Create a block with a non-zero parent hash (simulating an orphan)
@@ -385,6 +389,8 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -428,6 +434,8 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -478,6 +486,8 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -523,6 +533,8 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	peerID := common.PeerId("peer-broadcast")
@@ -559,6 +571,8 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		mempool:             NewMempool(nil),
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
