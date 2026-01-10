@@ -225,3 +225,7 @@ func (b *Blockchain) buildBlockLocator(tipHeight uint64) []common.Hash {
 
 	return locatorHashes
 }
+
+func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
+	b.observers.Add(o)
+}
