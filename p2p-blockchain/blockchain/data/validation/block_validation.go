@@ -27,7 +27,7 @@ func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) 
 	if len(block.Transactions) < 1 {
 		return false, fmt.Errorf("block must contain at least one transaction")
 	}
-	if !isCoinBaseTransaction(block.Transactions[0]) {
+	if block.Transactions[0].IsCoinbase() {
 		return false, fmt.Errorf("first transaction must be the coinbase transaction")
 	}
 
@@ -78,11 +78,6 @@ func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, erro
 func isMerkleRootValid(b block.Block) bool {
 	merkleRoot := b.MerkleRoot()
 	return merkleRoot.Equals(b.Header.MerkleRoot)
-}
-
-func isCoinBaseTransaction(transaction transaction.Transaction) bool {
-	// TODO
-	return false
 }
 
 func hashSmallerThanTarget(block block.Block) bool {

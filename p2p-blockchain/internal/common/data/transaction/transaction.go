@@ -166,3 +166,28 @@ func doubleSHA256(data []byte) []byte {
 	second := sha256.Sum256(first[:])
 	return second[:]
 }
+
+// IsCoinbase returns true if the transaction is a coinbase transaction.
+// A coinbase transaction has exactly one input with:
+// - PrevTxID is all zeros (empty TransactionID)
+// - OutputIndex is 0xFFFFFFFF
+func (tx *Transaction) IsCoinbase() bool {
+	if len(tx.Inputs) != 1 {
+		return false
+	}
+
+	input := tx.Inputs[0]
+
+	// Check if PrevTxID is all zeros
+	emptyTxID := TransactionID{}
+	if input.PrevTxID != emptyTxID {
+		return false
+	}
+
+	// Check if OutputIndex is 0xFFFFFFFF
+	if input.OutputIndex != 0xFFFFFFFF {
+		return false
+	}
+
+	return true
+}
