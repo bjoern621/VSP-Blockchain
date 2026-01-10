@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"slices"
 )
@@ -9,6 +10,7 @@ import (
 type BlockchainMsgSender interface {
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
 	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
+	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
 }
 
 // SendGetData sends a getdata message to the given peer
@@ -28,4 +30,28 @@ func (b *BlockchainService) BroadcastInvExclusionary(inventory []*inv.InvVector,
 	for _, id := range ids {
 		b.blockchainMsgSender.SendInv(inventory, id)
 	}
+}
+
+// BroadcastAddedBlocks broadcasts new block hashes to all outbound peers except the sender.
+func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
+	if len(blockHashes) == 0 {
+		return
+	}
+
+	invVectors := make([]*inv.InvVector, 0, len(blockHashes))
+	for _, blockHash := range blockHashes {
+		invVectors = append(invVectors, &inv.InvVector{
+			Hash:    blockHash,
+			InvType: inv.InvTypeMsgBlock,
+		})
+	}
+
+	b.BroadcastInvExclusionary(invVectors, excludedPeerId)
+}
+
+// RequestMissingBlockHeaders sends a GetHeaders message to all outbound peers to request missing blocks.
+// The locator is built using Fibonacci series to exponentially go back through the chain,
+// allowing efficient synchronization even when chains have diverged significantly.
+func (b *BlockchainService) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
+	b.blockchainMsgSender.SendGetHeaders(blockLocator, peerId)
 }

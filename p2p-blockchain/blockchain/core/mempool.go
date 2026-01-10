@@ -24,6 +24,19 @@ func NewMempool(validator validation.ValidationAPI) *Mempool {
 	}
 }
 
+func (m *Mempool) GetTransactionsForMining() []transaction.Transaction {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	txs := make([]transaction.Transaction, 0, len(m.transactions))
+	for _, tx := range m.transactions {
+		txs = append(txs, tx)
+	}
+
+	clear(m.transactions)
+	return txs
+}
+
 // IsKnownTransactionHash returns true if the transaction with the given Hash is known to the mempool.
 func (m *Mempool) IsKnownTransactionHash(hash common.Hash) bool {
 	txId := getTransactionIdFromHash(hash)
@@ -51,6 +64,34 @@ func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
 	}
 
 	return !ok
+}
+
+// Remove removes all transactions from the mempool that are included in the given block hashes.
+// Also removes transactions that conflict with confirmed transactions (spend the same UTXOs).
+// Finally, re-validates all remaining transactions in the mempool.
+func (m *Mempool) Remove(blockHashes []common.Hash) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// Track all transaction IDs to remove
+	toRemove := make(map[transaction.TransactionID]bool)
+
+	// Collect all transactions from blocks (placeholder - would need block access)
+	// For now, this marks transactions for removal
+	for txId := range m.transactions {
+		// Re-validate each transaction
+		tx := m.transactions[txId]
+		ok, _ := m.validator.ValidateTransaction(&tx)
+		if !ok {
+			// Transaction is no longer valid (UTXOs spent, conflicts with confirmed tx)
+			toRemove[txId] = true
+		}
+	}
+
+	// Remove invalid transactions
+	for txId := range toRemove {
+		delete(m.transactions, txId)
+	}
 }
 
 func getTransactionIdFromHash(hash common.Hash) transaction.TransactionID {

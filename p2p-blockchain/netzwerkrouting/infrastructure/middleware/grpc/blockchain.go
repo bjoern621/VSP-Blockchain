@@ -228,3 +228,24 @@ func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 		}
 	}()
 }
+
+func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send GetHeaders: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbLocator, err := adapter.ToGrpcBlockLocator(locator)
+	if err != nil {
+		logger.Warnf("failed to create BlockLocator from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.GetHeaders(context.Background(), pbLocator)
+		if err != nil {
+			logger.Warnf("failed to send GetHeaders to peer %s: %v", peerId, err)
+		}
+	}()
+}

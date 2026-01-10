@@ -12,6 +12,16 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+type BlockStoreAPI interface {
+	AddBlock(block block.Block) (addedBlockHashes []common.Hash)
+	IsOrphanBlock(block block.Block) (bool, error)
+	IsPartOfMainChain(block block.Block) bool
+	GetBlockByHash(hash common.Hash) (block.Block, error)
+	GetBlocksByHeight(height uint64) []block.Block
+	GetCurrentHeight() uint64
+	GetMainChainTip() block.Block
+}
+
 // blockForest represents a collection of trees structures representing the blockchain.
 //
 // There is one main chain (starting with the genesis as root), potentially several side chains and orphans.
@@ -232,7 +242,7 @@ func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
 	return copyOfBlock(blockNode), nil
 }
 
-// GetBlocksbyHeight retrieves all blocks at the specified height.
+// GetBlocksByHeight retrieves all blocks at the specified height.
 // Returns an empty slice if no blocks are found at that height.
 // Starts search at leaves, so retrieving blocks at higher heights is faster.
 // Never contains orphans, as orphans have no defined height in relation to the genesis block.
