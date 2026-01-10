@@ -1,9 +1,9 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"testing"
@@ -29,7 +29,7 @@ func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, pe
 
 type mockLookupAPIImpl struct{}
 
-var _ utxo.LookupAPI = (*mockLookupAPIImpl)(nil)
+var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
 
 func (mockLookupAPIImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
 	return transaction.Output{}, nil

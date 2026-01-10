@@ -1,11 +1,14 @@
 package main
 
 import (
+	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
+	utxo2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
@@ -16,6 +19,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
 	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -40,11 +44,11 @@ func main() {
 
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
+	chainStateConfig := utxo2.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
 	assert.IsNil(err, "couldn't create UTXOEntryDAO")
-	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
+	chainStateService, err := utxo2.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
 	transactionValidator := validation.NewValidationService(chainStateService)
@@ -54,13 +58,26 @@ func main() {
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
+	// Initialize UTXO lookup service and API
+	memPoolService := utxo2.NewMemUTXOPoolService()
+	fullNodeUtxoService := utxo2.NewFullNodeUTXOService(memPoolService, chainStateService)
+	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
+		// Intialize Transaction Creation API
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorApiImpl, keyEncodingsImpl, blockchainService, utxoAPI)
+		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
+		// Initialize transaction service and API
+		transactionService := appcore.NewTransactionService(transactionCreationAPI)
+		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+
+		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

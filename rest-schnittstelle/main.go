@@ -9,6 +9,7 @@ import (
 	sw "s3b/vsp-blockchain/rest-api/api_adapter"
 	"s3b/vsp-blockchain/rest-api/internal/pb"
 	"s3b/vsp-blockchain/rest-api/konto"
+	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
 	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
 	"strings"
 
@@ -48,10 +49,12 @@ func main() {
 	appServiceClient := pb.NewAppServiceClient(conn)
 	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl(appServiceClient)
 	kontostand := konto.NewKeyGeneratorImpl(transactionAdapter)
+	transactionApi := transactionapi.NewTransaktionAPI(transactionAdapter)
 
 	// REST API Server
 	routes := sw.ApiHandleFunctions{
 		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
+		PaymentAPI:  *sw.NewPaymentAPI(transactionApi),
 	}
 
 	log.Printf("Server started")
