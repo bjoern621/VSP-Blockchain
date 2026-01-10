@@ -54,7 +54,10 @@ func main() {
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator, blockStore)
+	utxoMempool := utxo.NewMemUTXOPool()
+	combinedPool := utxo.NewCombinedUTXOPool(utxoMempool, chainStateService)
+
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator, blockStore, combinedPool)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
