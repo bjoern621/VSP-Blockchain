@@ -4,6 +4,7 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
@@ -47,8 +48,11 @@ func main() {
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
+	genesisBlock := blockchainData.GenesisBlock()
+	blockStore := blockchainData.NewBlockStore(genesisBlock)
+
 	transactionValidator := validation.NewValidationService(chainStateService)
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator)
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockStore)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)

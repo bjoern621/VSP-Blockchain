@@ -1,6 +1,7 @@
 package core
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
@@ -12,16 +13,18 @@ import (
 )
 
 type Blockchain struct {
-	mempool              *Mempool
-	blockchainMsgSender  api.BlockchainAPI
-	transactionValidator validation.ValidationAPI
+	mempool             *Mempool
+	blockchainMsgSender api.BlockchainAPI
+	validator           validation.ValidationAPI
+	blockStore          *blockchain.BlockStore
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, transactionValidator validation.ValidationAPI) *Blockchain {
+func NewBlockchain(blockchainMsgSender api.BlockchainAPI, validator validation.ValidationAPI, blockStore *blockchain.BlockStore) *Blockchain {
 	return &Blockchain{
-		mempool:              NewMempool(transactionValidator),
-		blockchainMsgSender:  blockchainMsgSender,
-		transactionValidator: transactionValidator,
+		mempool:             NewMempool(validator),
+		blockchainMsgSender: blockchainMsgSender,
+		validator:           validator,
+		blockStore:          blockStore,
 	}
 }
 
@@ -62,7 +65,7 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 // If the transaction is valid and not yet known, it is added to the mempool and broadcasted to other peers
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
-	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
+	isValid, err := b.validator.ValidateTransaction(&tx)
 	if !isValid {
 		logger.Errorf("Tx Message received from %v is invalid: %v", peerID, err)
 		return
