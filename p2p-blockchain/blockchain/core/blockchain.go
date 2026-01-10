@@ -12,6 +12,8 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
+const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
+
 type Blockchain struct {
 	mempool             *Mempool
 	blockchainMsgSender api.BlockchainAPI
@@ -64,8 +66,48 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
 }
 
-func (b *Blockchain) Block(block block.Block, peerID common.PeerId) {
-	logger.Infof("Block Message received: %v from %v", block, peerID)
+func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
+
+	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		return
+	}
+
+	if ok, err := b.blockValidator.ValidateHeader(receivedBlock); !ok {
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		return
+	}
+
+	// Dann wird ja ggf. ein nicht vollständig valider Block hinzugefügt?
+	addedBlocks := b.blockStore.AddBlock(receivedBlock)
+
+	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
+		logger.Infof("Block is Orphan: %v", err)
+		requestMissingData(receivedBlock)
+		return
+	}
+
+	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		return
+	}
+
+	if b.blockStore.IsPartOfMainChain(receivedBlock) {
+		b.mempool.Remove(addedBlocks)
+		// entferne transactionen des blcoks aus dem mempool
+		// add block to main chain -> Should this implicitly update the utxos?
+		// Remove all confirmed transactions
+
+		// Remove transactions that conflict with confirmed ones
+
+		// Re-evaluate dependent transactions
+	} else {
+		// add block to second chain (should check for chain reorganisations)
+	}
+
+	b.blockchainMsgSender.BroadcastInvExclusionary(addedBlocks)
+
+	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
 }
 
 func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
@@ -117,4 +159,9 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 
 func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
 	b.blockchainMsgSender.SendGetData(missingData, id)
+}
+
+func (b *Blockchain) requestMissingData(receivedBlock block.Block) {
+	var i int
+	for i = 0; b.blockStore.GetCurrentHeight()
 }
