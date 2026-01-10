@@ -2,6 +2,7 @@ package core
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
@@ -21,7 +22,8 @@ type Blockchain struct {
 	transactionValidator validation.ValidationAPI
 	blockValidator       validation.BlockValidationAPI
 
-	blockStore *blockchain.BlockStore
+	blockStore          *blockchain.BlockStore
+	chainReorganization *ChainReorganization
 }
 
 func NewBlockchain(
@@ -29,15 +31,18 @@ func NewBlockchain(
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
 	blockStore *blockchain.BlockStore,
+	utxoService utxo.UTXOService,
 ) *Blockchain {
+	mempool := NewMempool(transactionValidator)
 	return &Blockchain{
-		mempool:             NewMempool(transactionValidator),
+		mempool:             mempool,
 		blockchainMsgSender: blockchainMsgSender,
 
 		transactionValidator: transactionValidator,
 		blockValidator:       blockValidator,
 
-		blockStore: blockStore,
+		blockStore:          blockStore,
+		chainReorganization: NewChainReorganization(blockStore, utxoService, mempool),
 	}
 }
 
@@ -67,7 +72,7 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 }
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
-
+	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
@@ -78,35 +83,38 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	// Dann wird ja ggf. ein nicht vollständig valider Block hinzugefügt?
+	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
+	// 3. Handle orphans
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
 		logger.Infof("Block is Orphan: %v", err)
-		requestMissingData(receivedBlock)
+		b.requestMissingData(receivedBlock)
 		return
 	}
 
+	// 4. Full validation BEFORE applying to UTXO set
 	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		// TODO: Should remove invalid block from blockStore?
 		return
 	}
 
-	b.
-
-	if b.blockStore.IsPartOfMainChain(receivedBlock) {
-		// Block is part of main chain - update mempool accordingly
-
-		// Remove transactions from mempool:
-		// 1. All confirmed transactions (those in the added blocks)
-		// 2. Transactions that conflict with confirmed ones (spend same UTXOs)
-		// 3. Re-validate all remaining transactions (they may now be invalid due to spent UTXOs)
-		b.mempool.Remove(addedBlocks)
-	} else {
-		// add block to second chain (should check for chain reorganisations)
+	// 5. Check if chain reorganization is needed
+	tip := b.blockStore.GetMainChainTip()
+	tipHash := tip.Hash()
+	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
+	if err != nil {
+		logger.Errorf("Chain reorganization failed: %v", err)
+		return
 	}
 
-	b.blockchainMsgSender.BroadcastInvExclusionary(addedBlocks)
+	if reorganized {
+		logger.Infof("Chain reorganization performed")
+	}
+
+	// 6. Broadcast new blocks
+	b.broadcastAddedBlocks(addedBlocks, peerID)
 
 	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
 }
@@ -162,7 +170,10 @@ func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId)
 	b.blockchainMsgSender.SendGetData(missingData, id)
 }
 
+func (b *Blockchain) broadcastAddedBlocks(addedBlocks []common.Hash, peerID common.PeerId) {
+	//TODO implement this
+}
+
 func (b *Blockchain) requestMissingData(receivedBlock block.Block) {
-	var i int
-	for i = 0; b.blockStore.GetCurrentHeight()
+	// TODO implement this
 }
