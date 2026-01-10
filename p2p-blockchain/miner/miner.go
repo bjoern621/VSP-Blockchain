@@ -23,6 +23,16 @@ type MinerService struct {
 	blockchain          blockchainApi.BlockchainAPI
 }
 
+func NewMinerService(
+	blockchainMsgSender api.BlockchainAPI,
+	blockchain blockchainApi.BlockchainAPI,
+) *MinerService {
+	return &MinerService{
+		blockchainMsgSender: blockchainMsgSender,
+		blockchain:          blockchain,
+	}
+}
+
 func (m *MinerService) StartMining(transactions []transaction.Transaction) {
 	candidateBlock := m.createCandidateBlock(transactions)
 
