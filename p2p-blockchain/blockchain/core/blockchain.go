@@ -175,9 +175,10 @@ func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId)
 }
 
 func (b *Blockchain) broadcastAddedBlocks(addedBlocks []common.Hash, peerID common.PeerId) {
-	//TODO implement this
+	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block) {
-	// TODO implement this
+	parentHash := receivedBlock.Header.PreviousBlockHash
+	b.blockchainMsgSender.RequestMissingBlockHeaders(parentHash)
 }
