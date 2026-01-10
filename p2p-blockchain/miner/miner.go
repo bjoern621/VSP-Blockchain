@@ -11,10 +11,9 @@ type MinerAPI interface {
 	MineBlock(candidateBlock block.Block) block.Block
 }
 
-type MinerService struct {
-}
+type MinerService struct{}
 
-func (m *MinerService) CreateCandidateBlock(transactions []transaction.Transaction) block.Block {
+func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
 	header := createCandidateBlockHeader()
 
 	return block.Block{Header: header}
