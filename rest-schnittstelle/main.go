@@ -48,13 +48,15 @@ func main() {
 
 	appServiceClient := pb.NewAppServiceClient(conn)
 	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl(appServiceClient)
+	kontoAdapter := vsgoin_node_adapter.NewKontoAdapter(conn)
 	kontostand := konto.NewKeyGeneratorImpl(transactionAdapter)
 	transactionApi := transactionapi.NewTransaktionAPI(transactionAdapter)
+	kontostandService := konto.NewKontostandService(kontoAdapter)
 
 	// REST API Server
 	routes := sw.ApiHandleFunctions{
 		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
-		PaymentAPI:  *sw.NewPaymentAPI(transactionApi),
+		PaymentAPI:  *sw.NewPaymentAPI(transactionApi, kontostandService),
 	}
 
 	log.Printf("Server started")

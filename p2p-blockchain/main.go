@@ -76,7 +76,7 @@ func main() {
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 
 		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodings)
+		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
