@@ -229,3 +229,7 @@ func (b *Blockchain) buildBlockLocator(tipHeight uint64) []common.Hash {
 func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
 	b.observers.Add(o)
 }
+
+func (b *Blockchain) Detach(o observer.BlockchainObserverAPI) {
+	b.observers.Remove(o)
+}
