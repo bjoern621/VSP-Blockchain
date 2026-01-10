@@ -7,8 +7,8 @@ import (
 )
 
 type MinerAPI interface {
-	CreateCandidateBlock() block.Block
-	MineBlock(candidateBlock block.Block) block.Block
+	StartMining(transactions []transaction.Transaction) (minedBlock block.Block)
+	StopMining()
 }
 
 type MinerService struct{}
