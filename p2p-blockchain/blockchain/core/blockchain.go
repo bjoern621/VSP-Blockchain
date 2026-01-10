@@ -240,3 +240,9 @@ func (b *Blockchain) NotifyStartMining() {
 		o.StartMining(transactions)
 	}
 }
+
+func (b *Blockchain) NotifyStopMining() {
+	for o := range b.observers.Iter() {
+		o.StopMining()
+	}
+}
