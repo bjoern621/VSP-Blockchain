@@ -1,9 +1,15 @@
 package miner
 
 import (
+	"context"
+	"fmt"
 	"math/big"
+	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type MinerAPI interface {
@@ -52,7 +58,7 @@ func createCandidateBlockHeader() block.BlockHeader {
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
-func (m *MinerService) mineBlock(candidateBlock block.Block) (nonce uint32, timestamp int64) {
+func (m *MinerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
 
 	var counter uint64 = 0
@@ -82,8 +88,6 @@ func (m *MinerService) mineBlock(candidateBlock block.Block) (nonce uint32, time
 			counter++
 		}
 	}
-
-	return nonce, timestamp
 }
 
 // getTarget calculates the target for the proof of work algorithm
