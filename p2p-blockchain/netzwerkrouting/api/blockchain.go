@@ -9,5 +9,5 @@ type BlockchainAPI interface {
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
 	BroadcastInvExclusionary(inventory []*inv.InvVector, peerId common.PeerId)
 	BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId)
-	RequestMissingBlockHeaders(orphanParentHash common.Hash)
+	RequestMissingBlockHeaders(orphanParentHash common.Hash, peerDd common.PeerId)
 }

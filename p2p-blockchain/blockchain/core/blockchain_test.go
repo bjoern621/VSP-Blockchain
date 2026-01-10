@@ -26,6 +26,10 @@ func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.P
 }
 
 func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
+func (m *mockBlockchainSender) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
+}
+func (m *mockBlockchainSender) RequestMissingBlockHeaders(orphanParentHash common.Hash, peerId common.PeerId) {
+}
 
 type mockLookupAPIImpl struct{}
 

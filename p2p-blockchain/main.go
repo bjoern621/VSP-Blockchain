@@ -39,8 +39,6 @@ func main() {
 	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
-
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
@@ -50,6 +48,9 @@ func main() {
 
 	genesisBlock := blockchainData.GenesisBlock()
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
+
+	// Create blockchain service after blockStore is available
+	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore, blockStore)
 
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()

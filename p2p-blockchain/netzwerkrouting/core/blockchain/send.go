@@ -52,18 +52,50 @@ func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excl
 }
 
 // RequestMissingBlockHeaders sends a GetHeaders message to all outbound peers to request missing blocks.
-// The locator is built from the orphan block's parent hash.
-func (b *BlockchainService) RequestMissingBlockHeaders(orphanParentHash common.Hash) {
-	// Create a block locator with the parent hash
-	// This tells peers: "I have this hash, send me headers after it"
+// The locator is built using Fibonacci series to exponentially go back through the chain,
+// allowing efficient synchronization even when chains have diverged significantly.
+func (b *BlockchainService) RequestMissingBlockHeaders(orphanParentHash common.Hash, peerId common.PeerId) {
+	currentHeight := b.blockStore.GetCurrentHeight()
+	locatorHashes := b.buildBlockLocator(currentHeight)
+
+	// Prepend the orphan parent hash at the beginning (most recent hash)
+	locatorHashes = append([]common.Hash{orphanParentHash}, locatorHashes...)
+
 	locator := block.BlockLocator{
-		BlockLocatorHashes: []common.Hash{orphanParentHash},
-		StopHash:           common.Hash{}, // Empty stop hash means don't stop
+		BlockLocatorHashes: locatorHashes,
+		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
 	}
 
-	// Send to all outbound peers
-	allPeers := b.peerStore.GetAllOutboundPeers()
-	for _, peerID := range allPeers {
-		b.blockchainMsgSender.SendGetHeaders(locator, peerID)
+	b.blockchainMsgSender.SendGetHeaders(locator, peerId)
+}
+
+// buildBlockLocator creates a block locator using Fibonacci series to sample the chain.
+// Returns hashes starting from newer blocks (closer to tip) to older blocks (closer to genesis).
+func (b *BlockchainService) buildBlockLocator(tipHeight uint64) []common.Hash {
+	locatorHashes := make([]common.Hash, 0)
+
+	fib1, fib2 := uint64(1), uint64(2)
+	offset := uint64(0)
+
+	for offset <= tipHeight {
+		height := tipHeight - offset
+
+		blocksAtHeight := b.blockStore.GetBlocksByHeight(height)
+
+		for _, blk := range blocksAtHeight {
+			if b.blockStore.IsPartOfMainChain(blk) {
+				locatorHashes = append(locatorHashes, blk.Hash())
+				break
+			}
+		}
+
+		offset += fib1
+		fib1, fib2 = fib2, fib1+fib2
+
+		if len(locatorHashes) > 1000 {
+			break
+		}
 	}
+
+	return locatorHashes
 }
