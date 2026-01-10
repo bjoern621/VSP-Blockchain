@@ -10,17 +10,55 @@
 package openapi
 
 import (
+	"errors"
+	"net/http"
+	"s3b/vsp-blockchain/rest-api/internal/common"
+	"s3b/vsp-blockchain/rest-api/konto"
+	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
+
+	"bjoernblessin.de/go-utils/util/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type PaymentAPI struct {
+	transactionService *transactionapi.TransaktionAPI
+	kontostandService  *konto.KontostandService
+}
+
+// NewPaymentAPI creates a new PaymentAPI with the given services.
+func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostandService *konto.KontostandService) *PaymentAPI {
+	return &PaymentAPI{
+		transactionService: transactionService,
+		kontostandService:  kontostandService,
+	}
 }
 
 // Get /balance
 // Returns the balance tied to the given public key hash
 func (api *PaymentAPI) BalanceGet(c *gin.Context) {
-	// Your handler implementation
-	c.JSON(200, gin.H{"status": "OK"})
+	// Extract VSAddress from query parameter
+	vsAddress := c.Query("vsAddress")
+	// Call the domain service
+	result, err := api.kontostandService.GetBalance(vsAddress)
+	if errors.Is(err, common.ErrInvalidAddress) {
+		logger.Warnf("Balance request validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	var assetErr *common.AssetError
+	if errors.As(err, &assetErr) {
+		logger.Warnf("Balance request asset error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	if err != nil {
+		logger.Errorf("Failed to get balance: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	// Return successful response
+	c.JSON(http.StatusOK, BalanceGet200Response{Balance: int32(result)})
 }
 
 // Get /history
@@ -33,6 +71,60 @@ func (api *PaymentAPI) HistoryGet(c *gin.Context) {
 // Post /transaction
 // Executes a transaction
 func (api *PaymentAPI) TransactionPost(c *gin.Context) {
-	// Your handler implementation
-	c.JSON(200, gin.H{"status": "OK"})
+	// Parse request body
+	var req TransactionPostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warnf("Failed to decode transaction request: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON request body"})
+		return
+	}
+
+	// Convert to domain request
+	domainReq := common.TransactionRequest{
+		RecipientVSAddress:  req.RecipientVSAddress,
+		Amount:              uint64(req.Amount),
+		SenderPrivateKeyWIF: req.SenderPrivateKeyWIF,
+	}
+
+	// Call the domain service
+	result, validationErr := api.transactionService.CreateTransaction(domainReq)
+	if validationErr != nil {
+		logger.Warnf("Transaction request validation failed: %v", validationErr)
+		if validationErr.IsAuthError {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": validationErr.Message})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Message})
+		}
+		return
+	}
+
+	// Handle result based on error code
+	api.writeResponse(c, result)
+}
+
+// writeResponse writes the appropriate HTTP response based on the transaction result.
+func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionResult) {
+	if result.Success {
+		// 201 Created - Transaction successfully executed
+		c.Status(http.StatusCreated)
+		logger.Infof("Transaction created successfully: %s", result.TransactionID)
+		return
+	}
+
+	switch result.ErrorCode {
+	case common.ErrorCodeInvalidPrivateKey:
+		// 401 Unauthorized - Invalid private key
+		c.JSON(http.StatusUnauthorized, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeInsufficientFunds:
+		// 400 Bad Request - Insufficient funds
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeValidationFailed, common.ErrorCodeBroadcastFailed:
+		// 400 Bad Request - Validation or broadcast failed
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
+	default:
+		// 500 Internal Server Error - Unexpected error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	}
+
+	logger.Warnf("Transaction failed: code=%d, message=%s", result.ErrorCode, result.ErrorMessage)
 }
