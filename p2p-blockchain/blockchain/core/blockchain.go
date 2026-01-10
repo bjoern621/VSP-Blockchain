@@ -96,9 +96,8 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	// 4. Full validation BEFORE applying to UTXO set
-	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
-		logger.Warnf(invalidBlockMessageFormat, peerID, err)
-		// TODO: Should remove invalid block from blockStore?
+	if ok, _ := b.blockValidator.FullValidation(receivedBlock); !ok {
+		// An invalid block will be "removed" in the block store in form of not beeing available for retreval
 		return
 	}
 
