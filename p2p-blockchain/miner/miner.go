@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"math/big"
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
-	"bjoernblessin.de/go-utils/util/logger"
 	"slices"
 	"sort"
 	"time"
+
+	"bjoernblessin.de/go-utils/util/logger"
 
 	"bjoernblessin.de/go-utils/util/assert"
 )
@@ -22,12 +22,10 @@ import (
 type MinerAPI interface {
 	StartMining(transactions []transaction.Transaction) (minedBlock block.Block)
 	StopMining()
-	createCandidateBlock(transactions []transaction.Transaction) (block.Block, error)
-	MineBlock(candidateBlock block.Block) uint32
 }
 
 type MinerService struct {
-	utxoLookupService utxo.LookupAPI
+	utxoLookupService utxo.UTXOService
 
 	cancelMining        context.CancelFunc
 	blockchainMsgSender api.BlockchainAPI
@@ -49,8 +47,9 @@ type transactionWithFee struct {
 	Fee uint64
 }
 
-func (m *MinerService) StartMining(transactions []transaction.Transaction) {
-	candidateBlock := m.createCandidateBlock(transactions)
+func (m *MinerService) StartMining(transactions []transaction.Transaction, prevBlock block.Block) {
+	candidateBlock, err := m.createCandidateBlock(transactions, prevBlock)
+	assert.IsNil(err, "Failed to create candidate block for mining: %v", err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
@@ -68,7 +67,11 @@ func (m *MinerService) StartMining(transactions []transaction.Transaction) {
 	}()
 }
 
-func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction) (block.Block, error) {
+func (m *MinerService) StopMining() {
+	m.cancelMining()
+}
+
+func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction, prevBlock block.Block) (block.Block, error) {
 	transactionsWithFees, err := m.getTransactionWithFee(transactions)
 	if err != nil {
 		return block.Block{}, err
@@ -89,7 +92,7 @@ func (m *MinerService) createCandidateBlock(transactions []transaction.Transacti
 
 	txToPutInBlock := append([]transaction.Transaction{coinbaseTx}, transactionsSorted[:MAX_TX_PER_BLOCK-1]...)
 
-	header := createCandidateBlockHeader(txToPutInBlock)
+	header := createCandidateBlockHeader(txToPutInBlock, prevBlock)
 
 	return block.Block{Header: header}, nil
 }
@@ -99,25 +102,12 @@ func (m *MinerService) createCoinbaseTransaction(transactions []transactionWithF
 	for _, tx := range transactions {
 		sumOfFees += tx.Fee
 	}
-}
 
-func (m *MinerService) StopMining() {
-	m.cancelMining()
-}
-
-func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
-	header := createCandidateBlockHeader()
-
-	//TODO: Implement
 	bounty := getCurrentBounty()
 	ownPubKeyHash := getOwnPubKeyHash()
 	ownPrivKey := getOwnPrivKey()
-	//TODO: Mit bjarne sprechen
-	tx, err := transaction.NewTransaction(nil, ownPubKeyHash, sumOfFees+bounty, 0, ownPrivKey)
-	if err != nil {
-		return transaction.Transaction{}, err
-	}
-	return *tx, nil
+
+	return transaction.Transaction{}, nil
 }
 
 func (m *MinerService) getTransactionWithFee(transactions []transaction.Transaction) ([]transactionWithFee, error) {
@@ -140,21 +130,21 @@ func (m *MinerService) getTransactionWithFee(transactions []transaction.Transact
 
 func (m *MinerService) getInputSum(tx transaction.Transaction) (inputSum uint64, err error) {
 	for _, input := range tx.Inputs {
-		utxo, err := m.utxoLookupService.GetUTXO(input.PrevTxID, input.OutputIndex)
+		utxoResult, err := m.utxoLookupService.GetUTXO(input.PrevTxID, input.OutputIndex)
 		if err != nil {
 			return 0, err
 		}
-		inputSum += utxo.Value
+		inputSum += utxoResult.Value
 	}
 	return inputSum, nil
 }
 
 // TODO: Kapitel Die Block-Header aufbauen
-func createCandidateBlockHeader(transactions []transaction.Transaction) block.BlockHeader {
+func createCandidateBlockHeader(transactions []transaction.Transaction, prevBlock block.Block) block.BlockHeader {
 	target, err := GetCurrentTargetBits()
 	assert.IsNotNil(err)
 
-	highestBlockHash := getHighestBlock().Hash() //TODO: Implement this
+	highestBlockHash := prevBlock.Hash()
 	merkleRoot := block.MerkleRoot(transactions)
 
 	currentTime := time.Now().Unix()
