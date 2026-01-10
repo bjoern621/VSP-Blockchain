@@ -2,7 +2,7 @@ package utxo_tests
 
 import (
 	"errors"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	utxo2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -10,20 +10,20 @@ import (
 )
 
 func TestFullNode_LookupOrder(t *testing.T) {
-	mempool := utxo.NewMemUTXOPoolService()
+	mempool := utxo2.NewMemUTXOPoolService()
 	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
-	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer func(chainstate *utxo.ChainStateService) {
+	defer func(chainstate *utxo2.ChainStateService) {
 		err2 := chainstate.Close()
 		if err2 != nil {
 			t.Fatalf("Failed to close chainstate: %v", err2)
 		}
 	}(chainstate)
 
-	pool := utxo.NewFullNodeUTXOService(mempool, chainstate)
+	pool := utxo2.NewFullNodeUTXOService(mempool, chainstate)
 
 	var txID1 transaction.TransactionID
 	txID1[0] = 1
@@ -77,26 +77,26 @@ func TestFullNode_LookupOrder(t *testing.T) {
 
 	// Now the chainstate UTXO should not be available
 	_, err = pool.GetUTXO(txID1, 0)
-	if !errors.Is(err, utxo.ErrUTXOAlreadySpent) {
+	if !errors.Is(err, utxo2.ErrUTXOAlreadySpent) {
 		t.Error("Should not get spent chainstate UTXO")
 	}
 }
 
 func TestFullNode_ApplyTransaction(t *testing.T) {
-	mempool := utxo.NewMemUTXOPoolService()
+	mempool := utxo2.NewMemUTXOPoolService()
 	dao, _ := infrastructure.NewUTXOEntryDAO(infrastructure.UTXOEntryDAOConfig{InMemory: true})
-	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer func(chainstate *utxo.ChainStateService) {
+	defer func(chainstate *utxo2.ChainStateService) {
 		err2 := chainstate.Close()
 		if err2 != nil {
 			t.Fatalf("Failed to close chainstate: %v", err2)
 		}
 	}(chainstate)
 
-	pool := utxo.NewFullNodeUTXOService(mempool, chainstate)
+	pool := utxo2.NewFullNodeUTXOService(mempool, chainstate)
 
 	// Create a previous UTXO in chainstate
 	var prevTxID transaction.TransactionID
@@ -133,7 +133,7 @@ func TestFullNode_ApplyTransaction(t *testing.T) {
 
 	// The previous UTXO should now be marked as spent
 	_, err = pool.GetUTXO(prevTxID, 0)
-	if !errors.Is(err, utxo.ErrUTXOAlreadySpent) {
+	if !errors.Is(err, utxo2.ErrUTXOAlreadySpent) {
 		t.Error("Previous UTXO should be marked as spent")
 	}
 

@@ -7,8 +7,8 @@ import (
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
 	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
+	utxo2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
@@ -44,11 +44,11 @@ func main() {
 
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
+	chainStateConfig := utxo2.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
 	assert.IsNil(err, "couldn't create UTXOEntryDAO")
-	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
+	chainStateService, err := utxo2.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
 
 	transactionValidator := validation.NewValidationService(chainStateService)
@@ -59,15 +59,15 @@ func main() {
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
 	// Initialize UTXO lookup service and API
-	memPoolService := utxo.NewMemUTXOPoolService()
-	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
+	memPoolService := utxo2.NewMemUTXOPoolService()
+	fullNodeUtxoService := utxo2.NewFullNodeUTXOService(memPoolService, chainStateService)
 	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
 		// Intialize Transaction Creation API
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGenerator, keyEncodings, blockchainService, utxoAPI)
-		transactionCreationAPI := walletapi.NewTransactionCreationAPIImpl(transactionCreationService)
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorApiImpl, keyEncodingsImpl, blockchainService, utxoAPI)
+		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
 		// Initialize transaction service and API
 		transactionService := appcore.NewTransactionService(transactionCreationAPI)

@@ -17,7 +17,7 @@ const (
 // It uses BadgerDB for on-disk storage and an LRU cache for frequently accessed UTXOs
 type ChainStateService struct {
 	mu  sync.RWMutex
-	dao EntryDAO
+	dao utxopool.EntryDAO
 	// cache is an LRU cache for recently accessed UTXOs
 	cache     map[string]utxopool.UTXOEntry
 	cacheKeys []string // keys in order of access
@@ -30,7 +30,7 @@ type ChainStateConfig struct {
 }
 
 // NewChainStateService creates a new ChainStateService with BadgerDB storage
-func NewChainStateService(config ChainStateConfig, dao EntryDAO) (*ChainStateService, error) {
+func NewChainStateService(config ChainStateConfig, dao utxopool.EntryDAO) (*ChainStateService, error) {
 	cacheSize := config.CacheSize
 	if cacheSize <= 0 {
 		cacheSize = DefaultCacheSize
