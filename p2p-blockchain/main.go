@@ -52,7 +52,9 @@ func main() {
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
 
 	transactionValidator := validation.NewValidationService(chainStateService)
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockStore)
+	blockValidator := validation.NewBlockValidationService()
+
+	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator, blockStore)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)

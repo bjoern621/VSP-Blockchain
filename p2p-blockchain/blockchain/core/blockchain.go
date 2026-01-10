@@ -15,16 +15,27 @@ import (
 type Blockchain struct {
 	mempool             *Mempool
 	blockchainMsgSender api.BlockchainAPI
-	validator           validation.ValidationAPI
-	blockStore          *blockchain.BlockStore
+
+	transactionValidator validation.ValidationAPI
+	blockValidator       validation.BlockValidationAPI
+
+	blockStore *blockchain.BlockStore
 }
 
-func NewBlockchain(blockchainMsgSender api.BlockchainAPI, validator validation.ValidationAPI, blockStore *blockchain.BlockStore) *Blockchain {
+func NewBlockchain(
+	blockchainMsgSender api.BlockchainAPI,
+	transactionValidator validation.ValidationAPI,
+	blockValidator validation.BlockValidationAPI,
+	blockStore *blockchain.BlockStore,
+) *Blockchain {
 	return &Blockchain{
-		mempool:             NewMempool(validator),
+		mempool:             NewMempool(transactionValidator),
 		blockchainMsgSender: blockchainMsgSender,
-		validator:           validator,
-		blockStore:          blockStore,
+
+		transactionValidator: transactionValidator,
+		blockValidator:       blockValidator,
+
+		blockStore: blockStore,
 	}
 }
 
@@ -65,7 +76,7 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 // If the transaction is valid and not yet known, it is added to the mempool and broadcasted to other peers
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 
-	isValid, err := b.validator.ValidateTransaction(&tx)
+	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
 	if !isValid {
 		logger.Errorf("Tx Message received from %v is invalid: %v", peerID, err)
 		return
