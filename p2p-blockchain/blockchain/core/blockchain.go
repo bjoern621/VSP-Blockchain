@@ -48,6 +48,8 @@ func NewBlockchain(
 
 		blockStore:          blockStore,
 		chainReorganization: NewChainReorganization(blockStore, utxoService, mempool),
+
+		observers: mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 }
 
