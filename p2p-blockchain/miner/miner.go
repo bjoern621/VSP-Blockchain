@@ -52,9 +52,9 @@ func (m *MinerService) MineBlock(candidateBlock block.Block) (nonce uint32) {
 // It does so by shifting a one in a 256 bit number to the left by 256 - difficultyBits.
 // Theory: 0b1 << (256 - difficultyBits) But this is not possible as Go has no operator overloading :( and so big.Int is used
 // This is required as a valid hash should be smaller than the target.
-func getTarget(difficulty uint32) big.Int {
+func getTarget(difficulty uint8) big.Int {
 	target := big.NewInt(1)
-	target.Lsh(target, uint(256-difficulty))
+	target.Lsh(target, uint(256-uint32(difficulty)))
 
 	return *target
 }
