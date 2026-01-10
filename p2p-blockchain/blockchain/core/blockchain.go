@@ -54,7 +54,9 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 	for _, v := range inventory {
 		switch v.InvType {
 		case inv.InvTypeMsgBlock:
-			panic("not implemented")
+			if _, err := b.blockStore.GetBlockByHash(v.Hash); err != nil {
+				unknownData = append(unknownData, v)
+			}
 		case inv.InvTypeMsgTx:
 			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
 				unknownData = append(unknownData, v)
