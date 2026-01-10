@@ -22,15 +22,15 @@ type Blockchain struct {
 	transactionValidator validation.ValidationAPI
 	blockValidator       validation.BlockValidationAPI
 
-	blockStore          *blockchain.BlockStore
-	chainReorganization *ChainReorganization
+	blockStore          blockchain.BlockStoreAPI
+	chainReorganization ChainReorganizationAPI
 }
 
 func NewBlockchain(
 	blockchainMsgSender api.BlockchainAPI,
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
-	blockStore *blockchain.BlockStore,
+	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UTXOService,
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator)

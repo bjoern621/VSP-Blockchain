@@ -9,15 +9,19 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
+type ChainReorganizationAPI interface {
+	CheckAndReorganize(newTip common.Hash) (bool, error)
+}
+
 type ChainReorganization struct {
 	lastKnownTip common.Hash
-	blockStore   *blockchain.BlockStore
+	blockStore   blockchain.BlockStoreAPI
 	utxoService  utxo.UTXOService
 	mempool      *Mempool
 }
 
 func NewChainReorganization(
-	blockStore *blockchain.BlockStore,
+	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UTXOService,
 	mempool *Mempool,
 ) *ChainReorganization {
