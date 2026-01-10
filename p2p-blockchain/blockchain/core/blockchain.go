@@ -24,6 +24,8 @@ type Blockchain struct {
 
 	blockStore          blockchain.BlockStoreAPI
 	chainReorganization ChainReorganizationAPI
+
+	observers mapset.Set[observer.BlockchainObserverAPI]
 }
 
 func NewBlockchain(
