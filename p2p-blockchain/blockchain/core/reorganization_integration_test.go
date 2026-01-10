@@ -333,7 +333,11 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 
 	// Manually apply the coinbase transaction to UTXO set
 	block1TxID := block1.Transactions[0].TransactionId()
-	utxoService.ApplyTransaction(&block1.Transactions[0], block1TxID, 1, true)
+	err := utxoService.ApplyTransaction(&block1.Transactions[0], block1TxID, 1, true)
+	if err != nil {
+		assert.Fail(t, "Should not happen in test")
+		return
+	}
 
 	// Initialize with current tip
 	_, _ = reorg.CheckAndReorganize(block1.Hash())
@@ -397,7 +401,10 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 	// Apply blocks to UTXO set
 	for _, b := range []block.Block{block1, block2, block3} {
 		txID := b.Transactions[0].TransactionId()
-		utxoService.ApplyTransaction(&b.Transactions[0], txID, uint64(b.Header.Nonce), true)
+		err := utxoService.ApplyTransaction(&b.Transactions[0], txID, uint64(b.Header.Nonce), true)
+		if err != nil {
+			assert.Fail(t, "Should not happen in test")
+		}
 	}
 
 	_, _ = reorg.CheckAndReorganize(block3.Hash())
@@ -518,7 +525,10 @@ func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 	// Build chain
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)
 	store.AddBlock(block1)
-	utxoService.ApplyTransaction(&block1.Transactions[0], block1.Transactions[0].TransactionId(), 1, true)
+	err := utxoService.ApplyTransaction(&block1.Transactions[0], block1.Transactions[0].TransactionId(), 1, true)
+	if err != nil {
+		assert.Fail(t, "Should not happen in test")
+	}
 
 	_, _ = reorg.CheckAndReorganize(block1.Hash())
 
