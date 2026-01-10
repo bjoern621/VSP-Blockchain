@@ -24,6 +24,19 @@ func NewMempool(validator validation.ValidationAPI) *Mempool {
 	}
 }
 
+func (m *Mempool) GetTransactionsForMining() []transaction.Transaction {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	txs := make([]transaction.Transaction, 0, len(m.transactions))
+	for _, tx := range m.transactions {
+		txs = append(txs, tx)
+	}
+
+	clear(m.transactions)
+	return txs
+}
+
 // IsKnownTransactionHash returns true if the transaction with the given Hash is known to the mempool.
 func (m *Mempool) IsKnownTransactionHash(hash common.Hash) bool {
 	txId := getTransactionIdFromHash(hash)
