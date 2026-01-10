@@ -11,7 +11,34 @@ type MinerAPI interface {
 	StopMining()
 }
 
-type MinerService struct{}
+type MinerService struct {
+	cancelMining        context.CancelFunc
+	blockchainMsgSender api.BlockchainAPI
+	blockchain          blockchainApi.BlockchainAPI
+}
+
+func (m *MinerService) StartMining(transactions []transaction.Transaction) {
+	candidateBlock := m.createCandidateBlock(transactions)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	m.cancelMining = cancel
+
+	go func() {
+		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
+		if err != nil {
+			logger.Infof("Mining stopped: %v", err)
+			return
+		}
+		candidateBlock.Header.Nonce = nonce
+		candidateBlock.Header.Timestamp = timestamp
+		logger.Infof("Mined new block: %v", candidateBlock.Header)
+		m.blockchain.Block(candidateBlock, "")
+	}()
+}
+
+func (m *MinerService) StopMining() {
+	m.cancelMining()
+}
 
 func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
 	header := createCandidateBlockHeader()
