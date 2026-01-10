@@ -169,7 +169,7 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 
 type mockLookupAPIImpl struct{}
 
-var _ utxo.LookupAPI = (*mockLookupAPIImpl)(nil)
+var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
 
 func (mockLookupAPIImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
 	return transaction.Output{}, nil

@@ -101,7 +101,6 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, transactionHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

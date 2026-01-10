@@ -1,7 +1,7 @@
 package utxo_tests
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	utxo2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -21,11 +21,11 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 		}
 	}(dao)
 
-	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer func(chainstate *utxo.ChainStateService) {
+	defer func(chainstate *utxo2.ChainStateService) {
 		err = chainstate.Close()
 		if err != nil {
 			t.Fatalf("Failed to close dao: %v", err)
@@ -118,8 +118,8 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 }
 
 func TestMemPool_GetUTXOsByPubKeyHash(t *testing.T) {
-	mempool := utxo.NewMemUTXOPoolService()
-	defer func(mempool *utxo.MemUTXOPoolService) {
+	mempool := utxo2.NewMemUTXOPoolService()
+	defer func(mempool *utxo2.MemUTXOPoolService) {
 		err := mempool.Close()
 		if err != nil {
 			t.Fatalf("Failed to close mempool: %v", err)
@@ -180,14 +180,14 @@ func TestFullNode_GetUTXOsByPubKeyHash(t *testing.T) {
 		t.Fatalf("Failed to create DAO: %v", err)
 	}
 
-	chainstate, err4 := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err4 := utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
 	if err4 != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
 
-	mempool := utxo.NewMemUTXOPoolService()
-	fullNode := utxo.NewFullNodeUTXOService(mempool, chainstate)
-	defer func(fullNode *utxo.FullNodeUTXOService) {
+	mempool := utxo2.NewMemUTXOPoolService()
+	fullNode := utxo2.NewFullNodeUTXOService(mempool, chainstate)
+	defer func(fullNode *utxo2.FullNodeUTXOService) {
 		err = fullNode.Close()
 		if err != nil {
 			t.Fatalf("Failed to close fullnode: %v", err)
