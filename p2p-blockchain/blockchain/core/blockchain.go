@@ -118,7 +118,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	// 6. Broadcast new blocks
-	b.broadcastAddedBlocks(addedBlocks, peerID)
+	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
 
 	//b.miner.startNewBlockMining()
 }
@@ -172,10 +172,6 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 
 func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
 	b.blockchainMsgSender.SendGetData(missingData, id)
-}
-
-func (b *Blockchain) broadcastAddedBlocks(addedBlocks []common.Hash, peerID common.PeerId) {
-	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
