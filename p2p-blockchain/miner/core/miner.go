@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"math/rand"
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -73,7 +74,7 @@ func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context
 
 	var counter uint64 = 0
 	var hashInt big.Int
-	nonce = 0
+	nonce = rand.Uint32()
 
 	for {
 		select {
