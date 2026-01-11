@@ -166,3 +166,68 @@ func doubleSHA256(data []byte) []byte {
 	second := sha256.Sum256(first[:])
 	return second[:]
 }
+
+// IsCoinbase returns true if the transaction is a coinbase transaction.
+// A coinbase transaction has exactly one input with:
+// - PrevTxID is all zeros (empty TransactionID)
+// - OutputIndex is 0xFFFFFFFF
+func (tx *Transaction) IsCoinbase() bool {
+	if len(tx.Inputs) != 1 {
+		return false
+	}
+
+	input := tx.Inputs[0]
+
+	emptyTxID := TransactionID{}
+	if input.PrevTxID != emptyTxID {
+		return false
+	}
+
+	if input.OutputIndex != 0xFFFFFFFF {
+		return false
+	}
+
+	return true
+}
+
+// NewCoinbaseTransaction creates a new coinbase transaction.
+// A coinbase transaction is the first transaction in a block and rewards the miner.
+//
+// Parameters:
+//   - receiverPubKeyHash: The 20-byte public key hash (address) of the miner who will receive the reward
+//   - blockReward: The total amount to reward the miner (block subsidy + transaction fees)
+//   - coinbaseData: Optional arbitrary data to include in the coinbase input (e.g., block height, nonce, or a message).
+//     If empty, a default message will be used. Max 100 bytes recommended.
+//
+// The coinbase transaction has:
+//   - One input with PrevTxID = 0, OutputIndex = 0xFFFFFFFF (coinbase specific)
+//   - One or more outputs paying to the miner's address
+//   - No signature verification needed (it's newly created coins)
+func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, coinbaseData ...[]byte) Transaction {
+	// Build coinbase data (signature field can contain arbitrary data in coinbase)
+	var signature []byte
+	if len(coinbaseData) > 0 && len(coinbaseData[0]) > 0 {
+		signature = coinbaseData[0]
+	} else {
+		signature = []byte("VSP-Blockchain Coinbase")
+	}
+
+	return Transaction{
+		Inputs: []Input{
+			{
+				PrevTxID:    TransactionID{},
+				OutputIndex: 0xFFFFFFFF,
+				Signature:   signature,
+				PubKey:      PubKey{},
+				Sequence:    0xFFFFFFFF,
+			},
+		},
+		Outputs: []Output{
+			{
+				Value:      blockReward,
+				PubKeyHash: receiverPubKeyHash,
+			},
+		},
+		LockTime: 0,
+	}
+}
