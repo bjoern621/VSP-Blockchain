@@ -112,7 +112,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	if reorganized {
-		logger.Infof("Chain reorganization performed")
+		logger.Debugf("Chain reorganization performed")
 	}
 
 	// 6. Broadcast new blocks
