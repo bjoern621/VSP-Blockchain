@@ -57,6 +57,23 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	//b.miner.startNewBlockMining()
 }
 
+func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
+	parentHash := receivedBlock.Header.PreviousBlockHash
+
+	currentHeight := b.blockStore.GetCurrentHeight()
+	locatorHashes := b.buildBlockLocator(currentHeight)
+
+	// Prepend the orphan parent hash at the beginning (most recent hash)
+	locatorHashes = append([]common.Hash{parentHash}, locatorHashes...)
+
+	locator := block.BlockLocator{
+		BlockLocatorHashes: locatorHashes,
+		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
+	}
+
+	b.blockchainMsgSender.RequestMissingBlockHeaders(locator, peerId)
+}
+
 // buildBlockLocator creates a block locator using Fibonacci series to sample the chain.
 // Returns hashes starting from newer blocks (closer to tip) to older blocks (closer to genesis).
 func (b *Blockchain) buildBlockLocator(tipHeight uint64) []common.Hash {
