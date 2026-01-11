@@ -33,7 +33,7 @@ func NewBlockchain(
 	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UTXOService,
 ) *Blockchain {
-	mempool := NewMempool(transactionValidator)
+	mempool := NewMempool(transactionValidator, blockStore)
 	return &Blockchain{
 		mempool:             mempool,
 		blockchainMsgSender: blockchainMsgSender,
