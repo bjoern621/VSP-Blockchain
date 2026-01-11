@@ -9,6 +9,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
@@ -49,7 +50,7 @@ func main() {
 	genesisBlock := blockchainData.GenesisBlock()
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
 
-	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
+	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
@@ -57,11 +58,14 @@ func main() {
 	utxoMempool := utxo.NewMemUTXOPool()
 	combinedPool := utxo.NewCombinedUTXOPool(utxoMempool, chainStateService)
 
-	blockchain := core.NewBlockchain(blockchainService, transactionValidator, blockValidator, blockStore, combinedPool)
+	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, combinedPool)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+
+	minerImpl := minerCore.NewMinerService(blockchainMsgService, blockchain)
+	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")

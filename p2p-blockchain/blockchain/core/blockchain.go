@@ -7,9 +7,11 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
+	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
 	"bjoernblessin.de/go-utils/util/logger"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
@@ -23,6 +25,8 @@ type Blockchain struct {
 
 	blockStore          blockchain.BlockStoreAPI
 	chainReorganization ChainReorganizationAPI
+
+	observers mapset.Set[observer.BlockchainObserverAPI]
 }
 
 func NewBlockchain(
@@ -42,7 +46,13 @@ func NewBlockchain(
 
 		blockStore:          blockStore,
 		chainReorganization: NewChainReorganization(blockStore, utxoService, mempool),
+
+		observers: mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
+}
+
+func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
+	b.Block(selfMinedBlock, "")
 }
 
 func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
@@ -70,4 +80,25 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 
 func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
 	b.blockchainMsgSender.SendGetData(missingData, id)
+}
+
+func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
+	b.observers.Add(o)
+}
+
+func (b *Blockchain) Detach(o observer.BlockchainObserverAPI) {
+	b.observers.Remove(o)
+}
+
+func (b *Blockchain) NotifyStartMining() {
+	transactions := b.mempool.GetTransactionsForMining()
+	for o := range b.observers.Iter() {
+		o.StartMining(transactions)
+	}
+}
+
+func (b *Blockchain) NotifyStopMining() {
+	for o := range b.observers.Iter() {
+		o.StopMining()
+	}
 }
