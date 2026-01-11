@@ -187,6 +187,7 @@ func (s *Server) NotifyMempool(peerID common.PeerId) {
 	}
 }
 
+// SendGetData sends a getdata message to the given peer
 func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
@@ -208,6 +209,7 @@ func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	}()
 }
 
+// SendInv sends an inv message to the given peer
 func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
@@ -229,6 +231,7 @@ func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 	}()
 }
 
+// SendGetHeaders sends a GetHeaders message to the given peer
 func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {

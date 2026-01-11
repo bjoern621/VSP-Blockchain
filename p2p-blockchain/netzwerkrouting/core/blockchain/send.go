@@ -8,8 +8,13 @@ import (
 )
 
 type BlockchainMsgSender interface {
+	// SendGetData sends a getdata message to the given peer
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
+
+	// SendInv sends an inv message to the given peer
 	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
+
+	// SendGetHeaders sends a GetHeaders message to the given peer
 	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
 }
 
