@@ -4,6 +4,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 
+	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
@@ -21,13 +22,14 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	//b.miner.startNewBlockMining()
+	b.NotifyStopMining()
 	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
 	// 3. Handle orphans
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
 		logger.Debugf("Block is Orphan: %v", err)
+		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
 	}
@@ -54,7 +56,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	// 6. Broadcast new blocks
 	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
 
-	//b.miner.startNewBlockMining()
+	b.NotifyStartMining()
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
