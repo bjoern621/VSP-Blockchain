@@ -74,6 +74,8 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 }
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
+	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
+
 	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
@@ -119,8 +121,6 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	b.broadcastAddedBlocks(addedBlocks, peerID)
 
 	//b.miner.startNewBlockMining()
-
-	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
 }
 
 func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
