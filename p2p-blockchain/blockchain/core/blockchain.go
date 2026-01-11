@@ -91,7 +91,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 3. Handle orphans
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
-		logger.Infof("Block is Orphan: %v", err)
+		logger.Debugf("Block is Orphan: %v", err)
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
 	}
