@@ -51,6 +51,10 @@ func NewBlockchain(
 	}
 }
 
+func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
+	b.Block(selfMinedBlock, "")
+}
+
 func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
 }

@@ -49,7 +49,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
 		logger.Infof("Mined new block: %v", candidateBlock.Header)
-		m.blockchain.Block(candidateBlock, "")
+		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
 
