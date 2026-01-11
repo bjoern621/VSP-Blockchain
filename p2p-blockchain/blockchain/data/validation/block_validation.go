@@ -10,9 +10,19 @@ import (
 
 const minutesAheadLimit = 5
 
+// BlockValidationAPI defines the interface for block validation
+// There are three levels of validation:
+//  1. Sanity Check: Basic checks on the block structure and content
+//  2. Header Validation: Validates the block header (proof of work, timestamp, etc.)
+//     -> Block can still be invalid but be added to the block store as an orphan
+//  3. Full Validation: Comprehensive validation including transactions and UTXO set
+//     -> Block must be valid to be added to the main chain
 type BlockValidationAPI interface {
+	// SanityCheck Sanity Check: Basic checks on the block structure and content
 	SanityCheck(block block.Block) (bool, error)
+	// ValidateHeader Validates the block header (proof of work, timestamp, etc.)
 	ValidateHeader(block block.Block) (bool, error)
+	// FullValidation Comprehensive validation including transactions and UTXO set
 	FullValidation(block block.Block) (bool, error)
 }
 

@@ -1,10 +1,12 @@
 package core
 
 import (
+	"fmt"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"testing"
-
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"testing"
 )
 
 // txIDToBlockHash converts a TransactionID (32 bytes) into the block.Hash type used by Mempool.IsKnownTransaction.
@@ -20,8 +22,43 @@ func (m *mockValidator) ValidateTransaction(tx *transaction.Transaction) (bool, 
 	return true, nil
 }
 
+// mockBlockStore is a mock implementation of blockchain.BlockStoreAPI for testing
+type mockBlockStore2 struct{}
+
+func (m *mockBlockStore2) AddBlock(block block.Block) []common.Hash {
+	return nil
+}
+
+func (m *mockBlockStore2) IsOrphanBlock(block block.Block) (bool, error) {
+	return false, nil
+}
+
+func (m *mockBlockStore2) IsPartOfMainChain(block block.Block) bool {
+	return true
+}
+
+func (m *mockBlockStore2) GetBlockByHash(hash common.Hash) (block.Block, error) {
+	return block.Block{}, fmt.Errorf("block not found")
+}
+
+func (m *mockBlockStore2) GetBlocksByHeight(height uint64) []block.Block {
+	return nil
+}
+
+func (m *mockBlockStore2) GetCurrentHeight() uint64 {
+	return 0
+}
+
+func (m *mockBlockStore2) GetMainChainTip() block.Block {
+	return block.Block{}
+}
+
+func newMockBlockStore() blockchain.BlockStoreAPI {
+	return &mockBlockStore2{}
+}
+
 func TestNewMempool_StartsEmpty(t *testing.T) {
-	m := NewMempool(&mockValidator{})
+	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
 	if m == nil {
 		t.Fatalf("expected mempool to be non-nil")
@@ -35,7 +72,7 @@ func TestNewMempool_StartsEmpty(t *testing.T) {
 }
 
 func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
-	m := NewMempool(&mockValidator{})
+	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
 	// Two different transactions (Hash() is expected to reflect the content).
 	tx1 := transaction.Transaction{
@@ -84,7 +121,7 @@ func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 }
 
 func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) {
-	m := NewMempool(&mockValidator{})
+	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
 	tx := transaction.Transaction{
 		LockTime: 123,
@@ -110,7 +147,7 @@ func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) 
 }
 
 func TestMempool_IsKnownTransaction_UnknownHashReturnsFalse(t *testing.T) {
-	m := NewMempool(&mockValidator{})
+	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
 	// Some arbitrary hash that (with overwhelming probability) doesn't match any tx hash in an empty mempool.
 	var unknown common.Hash

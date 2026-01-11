@@ -9,7 +9,14 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
+// ChainReorganizationAPI defines the interface for chain reorganization handling.
+// This is afaik the only place, where the tx-mempool is directly manipulated
 type ChainReorganizationAPI interface {
+	// CheckAndReorganize checks if the new tip is different from the last known tip
+	// and triggers reorganization if necessary.
+	// Returns true if reorganization was performed.
+	// This includes reseting the UTXO set and updating the mempool accordingly.
+	// This is usually called after one or more blocks are added to the block store.
 	CheckAndReorganize(newTip common.Hash) (bool, error)
 }
 
@@ -35,6 +42,8 @@ func NewChainReorganization(
 // CheckAndReorganize checks if the new tip is different from the last known tip
 // and triggers reorganization if necessary.
 // Returns true if reorganization was performed.
+// This includes reseting the UTXO set and updating the mempool accordingly.
+// This is usually called after one or more blocks are added to the block store.
 func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, error) {
 	// First time initialization
 	if cr.lastKnownTip == (common.Hash{}) {
