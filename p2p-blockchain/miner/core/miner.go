@@ -1,4 +1,4 @@
-package miner
+package core
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 )
 
 type MinerAPI interface {
-	StartMining(transactions []transaction.Transaction) (minedBlock block.Block)
+	StartMining(transactions []transaction.Transaction)
 	StopMining()
 }
 
-type MinerService struct {
+type minerService struct {
 	cancelMining        context.CancelFunc
 	blockchainMsgSender api.BlockchainAPI
 	blockchain          blockchainApi.BlockchainAPI
@@ -26,14 +26,14 @@ type MinerService struct {
 func NewMinerService(
 	blockchainMsgSender api.BlockchainAPI,
 	blockchain blockchainApi.BlockchainAPI,
-) *MinerService {
-	return &MinerService{
+) MinerAPI {
+	return &minerService{
 		blockchainMsgSender: blockchainMsgSender,
 		blockchain:          blockchain,
 	}
 }
 
-func (m *MinerService) StartMining(transactions []transaction.Transaction) {
+func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	candidateBlock := m.createCandidateBlock(transactions)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -52,14 +52,14 @@ func (m *MinerService) StartMining(transactions []transaction.Transaction) {
 	}()
 }
 
-func (m *MinerService) StopMining() {
+func (m *minerService) StopMining() {
 	m.cancelMining()
 }
 
-func (m *MinerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
+func (m *minerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
 	header := createCandidateBlockHeader()
 
-	return block.Block{Header: header}
+	return block.Block{Header: header, Transactions: transactions}
 }
 
 // TODO: Kapitel Die Block-Header aufbauen
@@ -68,7 +68,7 @@ func createCandidateBlockHeader() block.BlockHeader {
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
-func (m *MinerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
+func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
 
 	var counter uint64 = 0
