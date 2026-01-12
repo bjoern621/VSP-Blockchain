@@ -3,8 +3,12 @@ package transaction
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
+	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+)
+
+var (
+	ErrInsufficientFunds = errors.New("insufficient funds")
 )
 
 type Transaction struct {
@@ -27,7 +31,7 @@ func NewTransaction(
 
 	selected, total := selectUTXOs(utxos, amount+fee)
 	if total < amount+fee {
-		return nil, fmt.Errorf("insufficient funds")
+		return &Transaction{}, ErrInsufficientFunds
 	}
 	change := total - amount - fee
 

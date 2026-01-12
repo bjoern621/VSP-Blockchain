@@ -10,10 +10,23 @@
 package openapi
 
 import (
+	"net/http"
+	"s3b/vsp-blockchain/rest-api/internal/common"
+	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
+
+	"bjoernblessin.de/go-utils/util/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type PaymentAPI struct {
+	transactionService *transactionapi.TransaktionAPI
+}
+
+// NewPaymentAPI creates a new PaymentAPI with the given transaction service.
+func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI) *PaymentAPI {
+	return &PaymentAPI{
+		transactionService: transactionService,
+	}
 }
 
 // Get /balance
@@ -33,6 +46,63 @@ func (api *PaymentAPI) HistoryGet(c *gin.Context) {
 // Post /transaction
 // Executes a transaction
 func (api *PaymentAPI) TransactionPost(c *gin.Context) {
-	// Your handler implementation
-	c.JSON(200, gin.H{"status": "OK"})
+	// Parse request body
+	var req TransactionPostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warnf("Failed to decode transaction request: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON request body"})
+		return
+	}
+
+	// Convert to domain request
+	domainReq := common.TransactionRequest{
+		RecipientVSAddress:  req.RecipientVSAddress,
+		Amount:              uint64(req.Amount),
+		SenderPrivateKeyWIF: req.SenderPrivateKeyWIF,
+	}
+
+	// Call the domain service
+	result, validationErr := api.transactionService.CreateTransaction(domainReq)
+	if validationErr != nil {
+		logger.Warnf("Transaction request validation failed: %v", validationErr)
+		if validationErr.IsAuthError {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": validationErr.Message})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Message})
+		}
+		return
+	}
+
+	// Handle result based on error code
+	api.writeResponse(c, result)
+}
+
+// writeResponse writes the appropriate HTTP response based on the transaction result.
+func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionResult) {
+	if result.Success {
+		// 201 Created - Transaction successfully executed
+		c.Status(http.StatusCreated)
+		logger.Infof("Transaction created successfully: %s", result.TransactionID)
+		return
+	}
+
+	switch result.ErrorCode {
+	case common.ErrorCodeInvalidPrivateKey:
+		// 401 Unauthorized - Invalid private key
+		c.JSON(http.StatusUnauthorized, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeInsufficientFunds:
+		// 400 Bad Request - Insufficient funds
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeValidationFailed:
+		// 400 Bad Request - Validation failed
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeBroadcastFailed:
+		// 500 Internal Server Error - Broadcast failed
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	default:
+		// 500 Internal Server Error - Unexpected error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	}
+
+	logger.Warnf("Transaction failed: code=%d, message=%s", result.ErrorCode, result.ErrorMessage)
 }

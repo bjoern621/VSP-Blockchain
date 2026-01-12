@@ -51,6 +51,17 @@ service AppService {
     //  - Sends getaddr message to the specified peer.
     //  - Returns success/failure status.
     rpc SendGetAddr(SendGetAddrRequest) returns (SendGetAddrResponse);
+    
+    // CreateTransaction creates and broadcasts a new transaction.
+    //
+    // Pre-conditions:
+    //  - Sender must have sufficient funds (UTXOs) to cover amount.
+    //  - Private key must be valid
+    //
+    // Post-conditions:
+    //  - Transaction is created, signed, validated and broadcast to the network.
+    //  - Returns success/failure status with error details.
+    rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
 }
 
 message ConnectToRequest {
@@ -143,3 +154,33 @@ message SendGetAddrResponse {
     bool success = 1;
     string error_message = 2;
 }
+
+// CreateTransactionRequest contains the data needed to create a new transaction.
+message CreateTransactionRequest {
+    // The recipient's V$Address (Base58Check encoded public key hash)
+    string recipient_vs_address = 1;
+    // The amount of V$Goin to transfer (must be >= 1).
+    uint64 amount = 2;
+    // The sender's private key in WIF format (Base58Check encoded)
+    string sender_private_key_wif = 3;
+}
+
+// CreateTransactionResponse contains the result of the transaction creation.
+message CreateTransactionResponse {
+    bool success = 1;
+    TransactionErrorCode error_code = 2;
+    // Human-readable error message with details.
+    string error_message = 3;
+    // The transaction ID if successful
+    string transaction_id = 4;
+}
+
+// TransactionErrorCode categorizes transaction creation failures.
+enum TransactionErrorCode {
+    NONE = 0;
+    INVALID_PRIVATE_KEY = 1;
+    INSUFFICIENT_FUNDS = 2;
+    VALIDATION_FAILED = 3;
+    BROADCAST_FAILED = 4;
+}
+
