@@ -31,6 +31,13 @@ type mockBlockchainSender struct {
 	requestMissingHeadersPeerId  common.PeerId
 }
 
+func (m *mockBlockchainSender) SendInv(inventory []*inv.InvVector, peerId common.PeerId) {
+	m.called = true
+	m.callsCount++
+	m.lastMsg = inventory
+	m.lastPeerID = peerId
+}
+
 func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.PeerId) {
 	m.called = true
 	m.callsCount++
