@@ -151,10 +151,11 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 
 	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
 
-	// Add a peer
+	// Add a peer with LastSeen set
 	testPeer := &peer.Peer{
-		Version: "1.0.0",
-		State:   common.StateConnected,
+		Version:  "1.0.0",
+		State:    common.StateConnected,
+		LastSeen: time.Now().Unix(),
 	}
 	peerStore.AddPeerById("peer-1", testPeer)
 
