@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
@@ -595,6 +596,7 @@ func TestMineBlock_Success(t *testing.T) {
 	if nonce == 0 && candidateBlock.Header.Nonce == 0 {
 		// With difficulty 0, any hash should work, so we should find immediately
 		// The actual nonce might be 0 or 1 depending on implementation
+		fmt.Print("Test")
 	}
 
 	// Verify timestamp is reasonable
