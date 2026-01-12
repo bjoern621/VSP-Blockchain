@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
@@ -715,7 +715,7 @@ func TestMinerBlockchainAPI_Interface(t *testing.T) {
 
 func TestMinerUTXOService_Interface(t *testing.T) {
 	// Compile-time check that mockUTXOLookupService implements utxo.LookupAPI
-	var _ utxo.LookupAPI = &mockUTXOLookupService{}
+	var _ utxo.UTXOService = &mockUTXOLookupService{}
 }
 
 func TestMinerBlockStoreAPI_Interface(t *testing.T) {
