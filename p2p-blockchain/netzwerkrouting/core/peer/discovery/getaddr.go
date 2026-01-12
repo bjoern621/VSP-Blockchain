@@ -1,8 +1,6 @@
 package discovery
 
 import (
-	"time"
-
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -40,7 +38,7 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 			continue
 		}
 
-		_, exists := s.peerRetriever.GetPeer(pID)
+		peer, exists := s.peerRetriever.GetPeer(pID)
 		if !exists {
 			continue
 		}
@@ -49,7 +47,7 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 		// Core layer only tracks peer IDs and timestamps
 		peerAddresses = append(peerAddresses, PeerAddress{
 			PeerId:              pID,
-			LastActiveTimestamp: time.Now().Unix(), // TODO anpassen wenn heartbeat fertig
+			LastActiveTimestamp: peer.LastSeen,
 		})
 	}
 
