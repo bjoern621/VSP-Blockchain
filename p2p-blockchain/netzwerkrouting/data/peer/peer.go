@@ -18,7 +18,10 @@ type Peer struct {
 	SupportedServices []common.ServiceType
 	State             common.PeerConnectionState
 	Direction         common.Direction
-	LastSeen          int64
+	// LastSeen is a Unix timestamp indicating the last time the peer was seen active.
+	// Seen active means, that a heartbeat message was received from the peer.
+	// It's not updated on every interaction with the peer.
+	LastSeen int64
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
