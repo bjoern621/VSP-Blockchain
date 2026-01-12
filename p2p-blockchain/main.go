@@ -42,7 +42,7 @@ func main() {
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, peerStore, grpcClient, peerStore, grpcClient)
-	discoveryAPI := api.NewDiscoveryAPIService(discoveryService) // TODO
+	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
