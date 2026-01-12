@@ -39,7 +39,11 @@ func NewMinerService(
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
-	candidateBlock := m.createCandidateBlock(transactions)
+	candidateBlock, err := m.createCandidateBlock(transactions)
+	if err != nil {
+		logger.Errorf("Failed to create candidate block: %v", err)
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
