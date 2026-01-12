@@ -5,6 +5,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"slices"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 type BlockchainMsgSender interface {
@@ -64,4 +66,11 @@ func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excl
 // allowing efficient synchronization even when chains have diverged significantly.
 func (b *BlockchainService) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
 	b.blockchainMsgSender.SendGetHeaders(blockLocator, peerId)
+}
+
+// SendHeaders sends a Headers message to the given peer
+func (b *BlockchainService) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
+	_, ok := b.peerStore.GetPeer(peerId)
+	assert.Assert(ok, "peer '"+peerId+"' not found")
+	b.blockchainMsgSender.SendHeaders(headers, peerId)
 }
