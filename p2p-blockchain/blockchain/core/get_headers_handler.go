@@ -37,7 +37,6 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 			genesisBlock, err = b.blockStore.GetBlockByHash(genesisBlock.Header.PreviousBlockHash)
 		}
 		if err == nil {
-			commonAncestorHash = genesisBlock.Hash()
 			commonAncestorHeight = 0
 		} else {
 			logger.Warnf("Failed to find genesis block for GetHeaders response")
