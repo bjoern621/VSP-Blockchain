@@ -10,6 +10,7 @@ import (
 )
 
 // Peer represents a peer in the network.
+// Peer fields can be modified if the Lock() and Unlock() methods are used.
 type Peer struct {
 	mu                sync.Mutex
 	id                common.PeerId
@@ -17,6 +18,7 @@ type Peer struct {
 	SupportedServices []common.ServiceType
 	State             common.PeerConnectionState
 	Direction         common.Direction
+	LastSeen          int64
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.

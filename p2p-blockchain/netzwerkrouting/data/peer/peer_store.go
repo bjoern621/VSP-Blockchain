@@ -23,6 +23,7 @@ type PeerCreator interface {
 }
 
 // PeerRetriever is an interface for retrieving peers.
+// Returned peer pointers can be modifed if proper locking of the peer is used.
 type PeerRetriever interface {
 	// GetPeer retrieves a peer by its ID.
 	GetPeer(id common.PeerId) (*Peer, bool)
