@@ -14,6 +14,21 @@ type GetAddrMsgHandler interface {
 	HandleGetAddr(peerID common.PeerId)
 }
 
+// AddrMsgSender defines the interface for sending addr messages.
+// This interface is implemented in the infrastructure layer and used by the core/domain layer.
+type AddrMsgSender interface {
+	// SendAddr sends an addr message containing a list of peer addresses to the specified peer.
+	SendAddr(peerID common.PeerId, addrs []PeerAddress)
+}
+
+// GetAddrMsgSender defines the interface for sending getaddr messages.
+// This interface is implemented in the infrastructure layer and used by the core/domain layer.
+type GetAddrMsgSender interface {
+	// SendGetAddr sends a getaddr message to the specified peer.
+	// This is usually called after a successful handshake or if we run out of known peers.
+	SendGetAddr(peerID common.PeerId)
+}
+
 func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 	// Read all known peers and send them back in an addr message
 	peers := s.peerRetriever.GetAllPeers()
@@ -44,40 +59,9 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 	}
 }
 
-// GetAddrMsgSender defines the interface for sending getaddr messages.
-type GetAddrMsgSender interface {
-	// SendGetAddr sends a getaddr message to the specified peer.
-	// This is usually called after a successful handshake.
-	SendGetAddr(peerID common.PeerId)
-}
-
 func (s *DiscoveryService) SendGetAddr(peerID common.PeerId) {
 	logger.Infof("Sending getaddr message to peer %s", peerID)
 	// Implementation for sending getaddr messages goes here.
-}
-
-// AddrMsgHandler defines an interface for handling incoming addr messages.
-type AddrMsgHandler interface {
-	HandleAddr(peerID common.PeerId, addrs []PeerAddress)
-}
-
-func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress) {
-	logger.Infof("Received addr message from peer %s with %d addresses", peerID, len(addrs))
-
-	for _, addr := range addrs {
-		// Check if we already know this peer
-		_, exists := s.peerRetriever.GetPeer(addr.PeerId)
-		if exists {
-			logger.Debugf("Already know peer %s, skipping", addr.PeerId)
-			continue
-		}
-
-		// Core layer only tracks peer IDs
-		// The infrastructure layer will handle the IP address mapping
-		logger.Debugf("New peer discovered: PeerId=%s, LastSeen=%v",
-			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
-		// TODO: Trigger peer creation and connection for new peer
-	}
 }
 
 // PeerAddress represents a peer identifier and last activity timestamp.
