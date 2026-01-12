@@ -68,6 +68,7 @@ func (m *minerService) StopMining() {
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
 func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
+	timestamp = candidateBlock.Header.Timestamp
 
 	var counter uint64 = 0
 	var hashInt big.Int
