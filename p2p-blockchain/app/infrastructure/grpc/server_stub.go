@@ -26,15 +26,17 @@ type Server struct {
 	connService          *core.ConnectionEstablishmentService
 	regService           *core.InternalViewService
 	queryRegistryService *core.QueryRegistryService
+	discoveryService     *core.DiscoveryService
 	keysApi              api.KeyGeneratorApi
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, keysApi api.KeyGeneratorApi) *Server {
+func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, discoveryService *core.DiscoveryService, keysApi api.KeyGeneratorApi) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
+		discoveryService:     discoveryService,
 		keysApi:              keysApi,
 	}
 }
@@ -193,4 +195,21 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 		FalseInput: false,
 	}
 	return response, nil
+}
+
+// SendGetAddr handles the SendGetAddr RPC call from external local systems.
+// This allows manual triggering of getaddr requests to specific peers.
+func (s *Server) SendGetAddr(ctx context.Context, req *pb.SendGetAddrRequest) (*pb.SendGetAddrResponse, error) {
+	err := s.discoveryService.SendGetAddr(req.PeerId)
+	if err != nil {
+		return &pb.SendGetAddrResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to send GetAddr: %v", err),
+		}, nil
+	}
+
+	return &pb.SendGetAddrResponse{
+		Success:      true,
+		ErrorMessage: "",
+	}, nil
 }

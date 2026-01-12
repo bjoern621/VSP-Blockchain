@@ -43,6 +43,17 @@ func (s *peerStore) GetPeer(id common.PeerId) (*Peer, bool) {
 	return peer, exists
 }
 
+func (s *peerStore) GetAllPeers() []common.PeerId {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerIds := make([]common.PeerId, 0, len(s.peers))
+	for k := range s.peers {
+		peerIds = append(peerIds, k)
+	}
+	return peerIds
+}
+
 func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	s.mu.Lock()
 	defer s.mu.Unlock()

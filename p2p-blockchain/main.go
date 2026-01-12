@@ -11,6 +11,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
@@ -40,6 +41,9 @@ func main() {
 
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
+	discoveryService := discovery.NewDiscoveryService(registry.FullRegistryToDiscovery(registryQuerier), peerStore, grpcClient, peerStore)
+	discoveryAPI := api.NewDiscoveryAPIService(discoveryService) // TODO
+
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
@@ -60,7 +64,8 @@ func main() {
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
+		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, discoveryAppService, keyGeneratorApiImpl)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -75,7 +80,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService)
 
 	grpcServer.Attach(blockchain)
 
