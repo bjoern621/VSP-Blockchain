@@ -15,7 +15,13 @@ type DiscoveryService struct {
 }
 
 // NewDiscoveryService creates a new DiscoveryService.
-func NewDiscoveryService(querier RegistryQuerier, peerCreator peer.PeerCreator, addrMsgSender AddrMsgSender, peerRetriever DiscoveryPeerRetriever, getAddrMsgSender GetAddrMsgSender) *DiscoveryService {
+func NewDiscoveryService(
+	querier RegistryQuerier,
+	peerCreator peer.PeerCreator,
+	addrMsgSender AddrMsgSender,
+	peerRetriever DiscoveryPeerRetriever,
+	getAddrMsgSender GetAddrMsgSender,
+) *DiscoveryService {
 	return &DiscoveryService{
 		querier:          querier,
 		peerCreator:      peerCreator,
