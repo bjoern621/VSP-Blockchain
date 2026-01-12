@@ -19,7 +19,7 @@ func TestEvenBlock(t *testing.T) {
 	block := Block{
 		Transactions: txs,
 	}
-	calculatedMerkleRoot := MerkleRoot(block.Transactions)
+	calculatedMerkleRoot := MerkleRootFromTransactions(block.Transactions)
 
 	//Do calculation by hand
 	h1 := txs[0].Hash()
@@ -54,7 +54,7 @@ func TestUnevenBlock(t *testing.T) {
 	block := Block{
 		Transactions: txs,
 	}
-	calculatedMerkleRoot := MerkleRoot(block.Transactions)
+	calculatedMerkleRoot := MerkleRootFromTransactions(block.Transactions)
 
 	//Do calculation by hand
 	h1 := txs[0].Hash()
@@ -92,7 +92,7 @@ func TestMerkleRoot_OneTx(t *testing.T) {
 	tx := transaction.Transaction{} // zero value should still hash deterministically
 	b := Block{Transactions: []transaction.Transaction{tx}}
 
-	got := MerkleRoot(b.Transactions)
+	got := MerkleRootFromTransactions(b.Transactions)
 
 	h := tx.Hash()
 	want := doubleSHA256(append(h[:], h[:]...)) // duplicated leaf when odd count
@@ -107,7 +107,7 @@ func TestMerkleRoot_TwoTx(t *testing.T) {
 	tx2 := transaction.Transaction{}
 	b := Block{Transactions: []transaction.Transaction{tx1, tx2}}
 
-	got := MerkleRoot(b.Transactions)
+	got := MerkleRootFromTransactions(b.Transactions)
 
 	h1 := tx1.Hash()
 	h2 := tx2.Hash()
@@ -124,7 +124,7 @@ func TestMerkleRoot_ThreeTx_DuplicatesLast(t *testing.T) {
 	tx3 := transaction.Transaction{}
 	b := Block{Transactions: []transaction.Transaction{tx1, tx2, tx3}}
 
-	got := MerkleRoot(b.Transactions)
+	got := MerkleRootFromTransactions(b.Transactions)
 
 	// Leaves: h1, h2, h3, h3
 	h1 := tx1.Hash()
@@ -149,7 +149,7 @@ func TestMerkleRoot_NineTx_UnevenMultipleLevels(t *testing.T) {
 	}
 
 	b := Block{Transactions: txs}
-	got := MerkleRoot(b.Transactions)
+	got := MerkleRootFromTransactions(b.Transactions)
 
 	leaves := make([]common.Hash, 0, len(txs))
 	for _, tx := range txs {
