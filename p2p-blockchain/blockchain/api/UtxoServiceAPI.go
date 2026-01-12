@@ -1,7 +1,9 @@
 package api
 
-import "s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+import (
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+)
 
 type UtxoServiceAPI interface {
-	core.UtxoServiceAPI
+	utxo.UTXOService
 }
