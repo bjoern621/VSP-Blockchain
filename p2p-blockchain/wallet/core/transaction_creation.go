@@ -71,7 +71,7 @@ func (s *TransactionCreationService) handleSuccess(tx *transaction.Transaction) 
 			InvType: inv.InvTypeMsgTx,
 		},
 	}
-	s.blockchainAPI.BroadcastInvExclusionary(invVectors, "") // TODO: What is the peerID?
+	s.blockchainAPI.BroadcastInvExclusionary(invVectors, "") // TODO: Replace with broadcast to all when implemented
 
 	logger.Infof("Transaction created and broadcast successfully: %s", txIDHex)
 

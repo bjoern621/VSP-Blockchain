@@ -93,9 +93,12 @@ func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionR
 	case common.ErrorCodeInsufficientFunds:
 		// 400 Bad Request - Insufficient funds
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
-	case common.ErrorCodeValidationFailed, common.ErrorCodeBroadcastFailed:
-		// 400 Bad Request - Validation or broadcast failed
+	case common.ErrorCodeValidationFailed:
+		// 400 Bad Request - Validation failed
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
+	case common.ErrorCodeBroadcastFailed:
+		// 500 Internal Server Error - Broadcast failed
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 	default:
 		// 500 Internal Server Error - Unexpected error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})

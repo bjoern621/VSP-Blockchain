@@ -3,7 +3,7 @@ package utxo_tests
 import (
 	"errors"
 	"os"
-	utxo2 "s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -30,11 +30,11 @@ func TestChainState_AddAndGet(t *testing.T) {
 		t.Fatalf("Failed to create dao: %v", err)
 	}
 
-	chainstate, err := utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
+	chainstate, err := utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
-	defer func(chainstate *utxo2.ChainStateService) {
+	defer func(chainstate *utxo.ChainStateService) {
 		err2 := chainstate.Close()
 		if err2 != nil {
 			t.Fatalf("Failed to close chainstate: %v", err2)
@@ -84,7 +84,7 @@ func TestChainState_AddAndGet(t *testing.T) {
 
 	// Verify removed
 	_, err = chainstate.Get(outpoint)
-	if !errors.Is(err, utxo2.ErrUTXONotFound) {
+	if !errors.Is(err, utxo.ErrUTXONotFound) {
 		t.Fatalf("Expected Get to return Not found after removal, is %v", err)
 	}
 }
@@ -97,12 +97,12 @@ func TestChainState_InMemory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create dao: %v", err)
 	}
-	var chainstate *utxo2.ChainStateService
-	chainstate, err = utxo2.NewChainStateService(utxo2.ChainStateConfig{CacheSize: 100}, dao)
+	var chainstate *utxo.ChainStateService
+	chainstate, err = utxo.NewChainStateService(utxo.ChainStateConfig{CacheSize: 100}, dao)
 	if err != nil {
 		t.Fatalf("Failed to create in-memory chainstate: %v", err)
 	}
-	defer func(chainstate *utxo2.ChainStateService) {
+	defer func(chainstate *utxo.ChainStateService) {
 		err2 := chainstate.Close()
 		if err2 != nil {
 			t.Fatalf("Failed to close chainstate: %v", err2)
