@@ -8,8 +8,13 @@ import (
 )
 
 type BlockchainMsgSender interface {
+	// SendGetData sends a getdata message to the given peer
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
+
+	// SendInv sends an inv message to the given peer
 	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
+
+	// SendGetHeaders sends a GetHeaders message to the given peer
 	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
 }
 
@@ -33,6 +38,8 @@ func (b *BlockchainService) BroadcastInvExclusionary(inventory []*inv.InvVector,
 }
 
 // BroadcastAddedBlocks broadcasts new block hashes to all outbound peers except the sender.
+// Usually called when new blocks are added to the blockchain. This can happen, when a new block is mined locally
+// or when new blocks are received from other peers and they are successfully validated and added to the side or main chain.
 func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
 	if len(blockHashes) == 0 {
 		return

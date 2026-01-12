@@ -9,7 +9,15 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
+// ChainReorganizationAPI defines the interface for chain reorganization handling.
+// This is afaik the only place, where the tx-mempool is directly manipulated
 type ChainReorganizationAPI interface {
+	// CheckAndReorganize checks if the new tip is different from the last known tip
+	// and triggers reorganization if necessary.
+	// Returns true if a reorganization was performed (i.e., part of the old chain was disconnected).
+	// Returns false if no change occurred or if the new blocks are a simple extension of the current chain.
+	// This includes updating the UTXO set and mempool accordingly in both cases.
+	// This is usually called after one or more blocks are added to the block store.
 	CheckAndReorganize(newTip common.Hash) (bool, error)
 }
 
@@ -34,7 +42,10 @@ func NewChainReorganization(
 
 // CheckAndReorganize checks if the new tip is different from the last known tip
 // and triggers reorganization if necessary.
-// Returns true if reorganization was performed.
+// Returns true if a reorganization was performed (i.e., part of the old chain was disconnected).
+// Returns false if no change occurred or if the new blocks are a simple extension of the current chain.
+// This includes updating the UTXO set and mempool accordingly in both cases.
+// This is usually called after one or more blocks are added to the block store.
 func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, error) {
 	// First time initialization
 	if cr.lastKnownTip == (common.Hash{}) {
@@ -47,6 +58,26 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 		return false, nil
 	}
 
+	// Check if newTip is a direct extension of the current chain
+	// (i.e., newTip's previous block is our current tip or points to it)
+	newBlock, err := cr.blockStore.GetBlockByHash(newTip)
+	if err != nil {
+		return false, err
+	}
+
+	// Case 1: Simple chain extension - NOT a reorganization
+	// The new block(s) build directly on top of our current tip
+	if newBlock.Header.PreviousBlockHash == cr.lastKnownTip {
+		// Just apply the new block(s) to UTXO set and mempool
+		err := cr.connectNewChain(newTip)
+		if err != nil {
+			return false, err
+		}
+		cr.updateLastKnownTip(newTip)
+		return false, nil // NO reorg occurred, just chain extension
+	}
+
+	// Case 2: Reorganization needed - the new chain diverges from our current chain
 	// Find the fork point
 	forkPoint, err := cr.findForkPoint(cr.lastKnownTip, newTip)
 	if err != nil {
@@ -77,7 +108,7 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 	// Update the tip
 	cr.updateLastKnownTip(newTip)
 
-	return true, nil
+	return true, nil // Reorg occurred
 }
 
 // =========================================================================
@@ -224,6 +255,38 @@ func (cr *ChainReorganization) moveTransactionsToMempool(blk block.Block) {
 // =========================================================================
 // Phase 2: Connect (Roll Forward)
 // =========================================================================
+
+// connectNewChain applies new blocks that extend the current chain.
+// This is NOT a reorganization - the new blocks build directly on top of the current tip.
+// This method is called when newTip.PreviousBlockHash == lastKnownTip.
+func (cr *ChainReorganization) connectNewChain(newTip common.Hash) error {
+	// Walk backwards from new tip to lastKnownTip, collecting blocks
+	// We need to collect them first so we can apply them in forward order
+	var blocksToApply []block.Block
+	currentHash := newTip
+
+	for currentHash != cr.lastKnownTip {
+		blk, err := cr.blockStore.GetBlockByHash(currentHash)
+		if err != nil {
+			return err
+		}
+
+		// Prepend to list so we apply in correct order
+		blocksToApply = append([]block.Block{blk}, blocksToApply...)
+
+		currentHash = blk.Header.PreviousBlockHash
+	}
+
+	// Apply all blocks to UTXO set and mempool
+	for _, blk := range blocksToApply {
+		err := cr.connectBlock(blk)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // getNewChainPath returns the list of blocks from the fork point to the new tip.
 // The blocks are returned in the order they should be applied (fork point + 1 to new tip).

@@ -333,7 +333,7 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -389,7 +389,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -434,7 +434,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -486,7 +486,7 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -533,7 +533,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -571,7 +571,7 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil),
+		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
