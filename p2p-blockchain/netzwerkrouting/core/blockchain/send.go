@@ -16,6 +16,9 @@ type BlockchainMsgSender interface {
 
 	// SendGetHeaders sends a GetHeaders message to the given peer
 	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
+
+	// SendHeaders sends a Headers message to the given peer
+	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 }
 
 // SendGetData sends a getdata message to the given peer
