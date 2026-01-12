@@ -22,4 +22,7 @@ type BlockchainAPI interface {
 	// The locator is built using Fibonacci series to exponentially go back through the chain,
 	// allowing efficient synchronization even when chains have diverged significantly.
 	RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerDd common.PeerId)
+
+	// SendHeaders sends a Headers message to the given peer
+	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 }
