@@ -117,10 +117,21 @@ jobs:
                   kubectl -n "$NAMESPACE" set image deployment/rest-api rest-api="$REST_TAG"
                   kubectl -n "$NAMESPACE" set image deployment/registry registry-crawler="$REGISTRY_CRAWLER_TAG"
 
+            - name: Restart all miner pods
+              env:
+                  NAMESPACE: ${{ env.NAMESPACE }}
+              run: |
+                  # Delete all miner pods at once - they will be recreated in parallel
+                  echo "Deleting all miner pods..."
+                  kubectl -n "$NAMESPACE" delete pods -l app=miner --wait=false
+
+                  # Wait for all pods to be ready
+                  echo "Waiting for all miner pods to be ready..."
+                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=180s
+
             - name: Wait for rollout
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=1200s
                   kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
                   kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
