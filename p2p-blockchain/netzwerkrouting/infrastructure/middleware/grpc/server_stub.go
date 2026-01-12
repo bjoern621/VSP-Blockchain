@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -29,13 +31,17 @@ type Server struct {
 
 	pb.UnimplementedBlockchainServiceServer
 	observers mapset.Set[observer.BlockchainObserverAPI]
+
+	pb.UnimplementedPeerDiscoveryServer
+	discoveryService *discovery.DiscoveryService
 }
 
-func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Server {
+func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, discoveryService *discovery.DiscoveryService) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
+		discoveryService:    discoveryService,
 	}
 }
 
@@ -51,6 +57,7 @@ func (s *Server) Start(port uint16) error {
 	s.grpcServer = grpc.NewServer()
 	pb.RegisterConnectionEstablishmentServer(s.grpcServer, s)
 	pb.RegisterBlockchainServiceServer(s.grpcServer, s)
+	pb.RegisterPeerDiscoveryServer(s.grpcServer, s)
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
@@ -77,4 +84,16 @@ func (s *Server) Attach(o observer.BlockchainObserverAPI) {
 
 func (s *Server) Detach(o observer.BlockchainObserverAPI) {
 	s.observers.Remove(o)
+}
+
+// GetPeerId retrieves the PeerId associated with the incoming gRPC context.
+// It registers the peer if it is not already known.
+// The registed / created peer will be available in data layers PeerStore.
+// The peer will have no direction assigned yet.
+func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
+	inboundAddr := getPeerAddr(ctx)
+	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, netip.AddrPort{})
+	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
+
+	return peerID
 }

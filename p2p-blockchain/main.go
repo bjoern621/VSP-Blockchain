@@ -1,23 +1,28 @@
 package main
 
 import (
+	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
 	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
+	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -37,8 +42,11 @@ func main() {
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
-	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
+	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
+
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, peerStore, grpcClient, peerStore, grpcClient)
+	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
@@ -46,6 +54,9 @@ func main() {
 	assert.IsNil(err, "couldn't create UTXOEntryDAO")
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
+	// Initialize UTXO lookup service and API
+	memPoolService := utxo.NewMemUTXOPoolService()
+	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
 
 	genesisBlock := blockchainData.GenesisBlock()
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
@@ -55,25 +66,34 @@ func main() {
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	utxoMempool := utxo.NewMemUTXOPool()
-	combinedPool := utxo.NewCombinedUTXOPool(utxoMempool, chainStateService)
-
-	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, combinedPool)
+	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	minerImpl := minerCore.NewMinerService(blockchain, combinedPool, blockStore)
+	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+
+	minerImpl := minerCore.NewMinerService(blockchainMsgService, blockchain)
 	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
+		// Intialize Transaction Creation API
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
+		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
+		// Initialize transaction service and API
+		transactionService := appcore.NewTransactionService(transactionCreationAPI)
+		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+
+		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl)
+		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -88,7 +108,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService)
 
 	grpcServer.Attach(blockchain)
 

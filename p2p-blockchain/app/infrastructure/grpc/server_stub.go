@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
@@ -26,16 +27,27 @@ type Server struct {
 	connService          *core.ConnectionEstablishmentService
 	regService           *core.InternalViewService
 	queryRegistryService *core.QueryRegistryService
+	discoveryService     *core.DiscoveryService
 	keysApi              api.KeyGeneratorApi
+	transactionHandler   *adapters.TransactionHandlerAdapter
 }
 
 // NewServer creates a new external API server.
-func NewServer(connService *core.ConnectionEstablishmentService, regService *core.InternalViewService, queryRegistryService *core.QueryRegistryService, keysApi api.KeyGeneratorApi) *Server {
+func NewServer(
+	connService *core.ConnectionEstablishmentService,
+	regService *core.InternalViewService,
+	queryRegistryService *core.QueryRegistryService,
+	keysApi api.KeyGeneratorApi,
+	transactionHandler *adapters.TransactionHandlerAdapter,
+	discoveryService *core.DiscoveryService,
+) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
+		discoveryService:     discoveryService,
 		keysApi:              keysApi,
+		transactionHandler:   transactionHandler,
 	}
 }
 
@@ -155,6 +167,9 @@ func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest
 
 	return response, nil
 }
+func (s *Server) CreateTransaction(_ context.Context, req *pb.CreateTransactionRequest) (*pb.CreateTransactionResponse, error) {
+	return s.transactionHandler.CreateTransaction(req), nil
+}
 
 func (s *Server) GenerateKeyset(context.Context, *emptypb.Empty) (*pb.GenerateKeysetResponse, error) {
 	keyset := s.keysApi.GenerateKeyset()
@@ -193,4 +208,21 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 		FalseInput: false,
 	}
 	return response, nil
+}
+
+// SendGetAddr handles the SendGetAddr RPC call from external local systems.
+// This allows manual triggering of getaddr requests to specific peers.
+func (s *Server) SendGetAddr(ctx context.Context, req *pb.SendGetAddrRequest) (*pb.SendGetAddrResponse, error) {
+	err := s.discoveryService.SendGetAddr(req.PeerId)
+	if err != nil {
+		return &pb.SendGetAddrResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to send GetAddr: %v", err),
+		}, nil
+	}
+
+	return &pb.SendGetAddrResponse{
+		Success:      true,
+		ErrorMessage: "",
+	}, nil
 }

@@ -1,8 +1,9 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
@@ -22,7 +23,7 @@ type Blockchain struct {
 	transactionValidator validation.ValidationAPI
 	blockValidator       validation.BlockValidationAPI
 
-	blockStore          BlockStoreAPI
+	blockStore          blockchain.BlockStoreAPI
 	chainReorganization ChainReorganizationAPI
 
 	observers mapset.Set[observer.BlockchainObserverAPI]
@@ -32,7 +33,7 @@ func NewBlockchain(
 	blockchainMsgSender api.BlockchainAPI,
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
-	blockStore BlockStoreAPI,
+	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UTXOService,
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator, blockStore)
