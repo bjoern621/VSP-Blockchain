@@ -24,12 +24,6 @@ func NewDNSFullRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegis
 	return newDNSRegistryQuerier(networkInfoRegistry)
 }
 
-// FullRegistryToDiscovery converts a FullRegistryQuerier to a DiscoveryRegistryQuerier.
-// This is safe because dnsRegistryQuerier implements both interfaces.
-func FullRegistryToDiscovery(fullRegistry api.FullRegistryQuerier) discovery.RegistryQuerier {
-	return fullRegistry.(discovery.RegistryQuerier) // TODO
-}
-
 func newDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *dnsRegistryQuerier {
 	return &dnsRegistryQuerier{
 		networkInfoRegistry: networkInfoRegistry,
