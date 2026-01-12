@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -129,9 +128,9 @@ func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.
 	mockBlockStore := &mockBlockStore{tip: tip}
 
 	return &minerService{
-		blockchain:        mockBlockchain,
-		utxoLookupService: mockUTXO,
-		blockStore:        mockBlockStore,
+		blockchain:  mockBlockchain,
+		utxoService: mockUTXO,
+		blockStore:  mockBlockStore,
 	}
 }
 
@@ -654,9 +653,9 @@ func TestStartMining_StopsMining(t *testing.T) {
 	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
 
 	miner := &minerService{
-		blockchain:        mockBlockchain,
-		utxoLookupService: mockUTXO,
-		blockStore:        mockBlockStore,
+		blockchain:  mockBlockchain,
+		utxoService: mockUTXO,
+		blockStore:  mockBlockStore,
 	}
 
 	// Start mining
@@ -693,7 +692,7 @@ func TestNewMinerService(t *testing.T) {
 		t.Error("Blockchain not set correctly")
 	}
 
-	if minerService.utxoLookupService != mockUTXO {
+	if minerService.utxoService != mockUTXO {
 		t.Error("UTXO service not set correctly")
 	}
 
@@ -719,5 +718,5 @@ func TestMinerUTXOService_Interface(t *testing.T) {
 
 func TestMinerBlockStoreAPI_Interface(t *testing.T) {
 	// Compile-time check that mockBlockStore implements blockchain.BlockStoreAPI
-	var _ blockchain.BlockStoreAPI = &mockBlockStore{}
+	var _ api.BlockStoreAPI = &mockBlockStore{}
 }
