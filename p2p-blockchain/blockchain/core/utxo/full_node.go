@@ -20,14 +20,14 @@ var (
 // 2. Check mempool UTXOs -> return if found
 // 3. Check chainstate -> return if found
 type FullNodeUTXOService struct {
-	mempool    *MemPoolService
+	mempool    *MemUTXOPoolService
 	chainstate *ChainStateService
 }
 
 var _ UTXOService = (*FullNodeUTXOService)(nil)
 
-// NewCombinedUTXOPool creates a new combined UTXO pool
-func NewCombinedUTXOPool(mempool *MemPoolService, chainstate *ChainStateService) *FullNodeUTXOService {
+// NewFullNodeUTXOService creates a new combined UTXO pool
+func NewFullNodeUTXOService(mempool *MemUTXOPoolService, chainstate *ChainStateService) *FullNodeUTXOService {
 	return &FullNodeUTXOService{
 		mempool:    mempool,
 		chainstate: chainstate,
@@ -212,7 +212,7 @@ func (c *FullNodeUTXOService) ClearMempool() {
 }
 
 // GetMempool returns the mempool for direct access
-func (c *FullNodeUTXOService) GetMempool() *MemPoolService {
+func (c *FullNodeUTXOService) GetMempool() *MemUTXOPoolService {
 	return c.mempool
 }
 

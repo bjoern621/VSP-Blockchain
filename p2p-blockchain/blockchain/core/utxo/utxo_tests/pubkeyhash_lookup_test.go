@@ -1,7 +1,7 @@
 package utxo_tests
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -118,8 +118,8 @@ func TestChainState_GetUTXOsByPubKeyHash(t *testing.T) {
 }
 
 func TestMemPool_GetUTXOsByPubKeyHash(t *testing.T) {
-	mempool := utxo.NewMemUTXOPool()
-	defer func(mempool *utxo.MemPoolService) {
+	mempool := utxo.NewMemUTXOPoolService()
+	defer func(mempool *utxo.MemUTXOPoolService) {
 		err := mempool.Close()
 		if err != nil {
 			t.Fatalf("Failed to close mempool: %v", err)
@@ -185,8 +185,8 @@ func TestFullNode_GetUTXOsByPubKeyHash(t *testing.T) {
 		t.Fatalf("Failed to create chainstate: %v", err)
 	}
 
-	mempool := utxo.NewMemUTXOPool()
-	fullNode := utxo.NewCombinedUTXOPool(mempool, chainstate)
+	mempool := utxo.NewMemUTXOPoolService()
+	fullNode := utxo.NewFullNodeUTXOService(mempool, chainstate)
 	defer func(fullNode *utxo.FullNodeUTXOService) {
 		err = fullNode.Close()
 		if err != nil {

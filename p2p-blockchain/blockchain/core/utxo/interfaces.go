@@ -7,7 +7,7 @@ import (
 
 // Modifier provides write operations on UTXOs
 type Modifier interface {
-	LookupAPI
+	LookupService
 
 	// AddUTXO adds a new UTXO from a transaction output
 	AddUTXO(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error
