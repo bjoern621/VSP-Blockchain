@@ -52,18 +52,25 @@ func (m *mockAddrMsgSender) getLastSendAddrCall() *sendAddrCall {
 type mockGetAddrMsgSender struct {
 	mu               sync.Mutex
 	sendGetAddrCalls []common.PeerId
+	called           chan struct{}
 }
 
 func newMockGetAddrMsgSender() *mockGetAddrMsgSender {
 	return &mockGetAddrMsgSender{
 		sendGetAddrCalls: make([]common.PeerId, 0),
+		called:           make(chan struct{}, 10),
 	}
 }
 
 func (m *mockGetAddrMsgSender) SendGetAddr(peerID common.PeerId) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.sendGetAddrCalls = append(m.sendGetAddrCalls, peerID)
+	m.mu.Unlock()
+	m.called <- struct{}{}
+}
+
+func (m *mockGetAddrMsgSender) waitForCall() {
+	<-m.called
 }
 
 func (m *mockGetAddrMsgSender) getSendGetAddrCallCount() int {

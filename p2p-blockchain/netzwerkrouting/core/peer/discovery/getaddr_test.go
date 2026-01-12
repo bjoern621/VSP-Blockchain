@@ -230,6 +230,9 @@ func TestSendGetAddr_ForwardsToSender(t *testing.T) {
 	// Call SendGetAddr
 	service.SendGetAddr(targetPeerID)
 
+	// Wait for the goroutine to complete
+	getAddrSender.waitForCall()
+
 	// Verify SendGetAddr was called on the sender
 	if getAddrSender.getSendGetAddrCallCount() != 1 {
 		t.Errorf("expected 1 SendGetAddr call, got %d", getAddrSender.getSendGetAddrCallCount())
