@@ -16,7 +16,7 @@ type AddrMsgHandler interface {
 func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress) {
 	logger.Infof("Received addr message from peer %s with %d addresses", peerID, len(addrs))
 
-	// There not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.
+	// There is not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.
 	// With other words, the peers are already known to the PeerStore.
 
 	for _, addr := range addrs {
