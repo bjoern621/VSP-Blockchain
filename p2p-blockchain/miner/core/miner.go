@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"math/rand"
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
@@ -21,13 +20,13 @@ type MinerAPI interface {
 type minerService struct {
 	cancelMining context.CancelFunc
 	blockchain   blockchainApi.BlockchainAPI
-	utxoService  utxo.UTXOService
+	utxoService  blockchainApi.UtxoServiceAPI
 	blockStore   blockchainApi.BlockStoreAPI
 }
 
 func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
-	utxoServiceAPI utxo.UTXOService,
+	utxoServiceAPI blockchainApi.UtxoServiceAPI,
 	blockStore blockchainApi.BlockStoreAPI,
 ) MinerAPI {
 	return &minerService{
