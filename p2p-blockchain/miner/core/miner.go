@@ -6,9 +6,10 @@ import (
 	"math/big"
 	"math/rand"
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
@@ -19,18 +20,21 @@ type MinerAPI interface {
 }
 
 type minerService struct {
-	cancelMining        context.CancelFunc
-	blockchainMsgSender api.BlockchainAPI
-	blockchain          blockchainApi.BlockchainAPI
+	cancelMining      context.CancelFunc
+	blockchain        blockchainApi.BlockchainAPI
+	utxoLookupService utxo.UTXOService
+	blockStore        blockchain.BlockStoreAPI
 }
 
 func NewMinerService(
-	blockchainMsgSender api.BlockchainAPI,
 	blockchain blockchainApi.BlockchainAPI,
+	utxoLookupAPI utxo.UTXOService,
+	blockStore blockchain.BlockStoreAPI,
 ) MinerAPI {
 	return &minerService{
-		blockchainMsgSender: blockchainMsgSender,
-		blockchain:          blockchain,
+		blockchain:        blockchain,
+		utxoLookupService: utxoLookupAPI,
+		blockStore:        blockStore,
 	}
 }
 
