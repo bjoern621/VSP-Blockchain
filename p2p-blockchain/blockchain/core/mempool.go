@@ -113,6 +113,20 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 	}
 }
 
+// GetAllTransactionHashes returns all transaction hashes currently in the mempool.
+func (m *Mempool) GetAllTransactionHashes() []common.Hash {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	hashes := make([]common.Hash, 0, len(m.transactions))
+	for txId := range m.transactions {
+		var hash common.Hash
+		copy(hash[:], txId[:])
+		hashes = append(hashes, hash)
+	}
+	return hashes
+}
+
 func getTransactionIdFromHash(hash common.Hash) transaction.TransactionID {
 	var transactionId transaction.TransactionID
 	copy(transactionId[:], hash[:])

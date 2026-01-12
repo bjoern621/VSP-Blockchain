@@ -74,9 +74,6 @@ func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.Pe
 func (b *Blockchain) SetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
 	logger.Infof("setFilerRequest Message received: %v from %v", setFilterRequest, peerID)
 }
-func (b *Blockchain) Mempool(peerID common.PeerId) {
-	logger.Infof("Mempool Message received from %v", peerID)
-}
 
 func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
 	b.blockchainMsgSender.SendGetData(missingData, id)
