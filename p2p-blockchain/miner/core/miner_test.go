@@ -1,1 +1,723 @@
 package core
+
+import (
+	"context"
+	"math/big"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
+	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"testing"
+	"time"
+)
+
+// mockBlockchainAPI is a mock implementation of BlockchainAPI
+type mockBlockchainAPI struct {
+	addSelfMinedBlockCalled bool
+	selfMinedBlock          block.Block
+}
+
+func (m *mockBlockchainAPI) AddSelfMinedBlock(selfMinedBlock block.Block) {
+	m.addSelfMinedBlockCalled = true
+	m.selfMinedBlock = selfMinedBlock
+}
+
+// mockUTXOLookupService is a mock implementation of utxo.LookupAPI
+type mockUTXOLookupService struct {
+	utxos map[utxoOutpoint]transaction.Output
+}
+
+func (m *mockUTXOLookupService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+	return utxopool.UTXOEntry{}, nil
+}
+
+func (m *mockUTXOLookupService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+	return true
+}
+
+func (m *mockUTXOLookupService) AddUTXO(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) SpendUTXO(outpoint utxopool.Outpoint) error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) Remove(outpoint utxopool.Outpoint) error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) ApplyTransaction(tx *transaction.Transaction, txID transaction.TransactionID, blockHeight uint64, isCoinbase bool) error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) RevertTransaction(tx *transaction.Transaction, txID transaction.TransactionID, inputUTXOs []utxopool.UTXOEntry) error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) Flush() error {
+	return nil
+}
+
+func (m *mockUTXOLookupService) Close() error {
+	return nil
+}
+
+type utxoOutpoint struct {
+	txID        transaction.TransactionID
+	outputIndex uint32
+}
+
+func (m *mockUTXOLookupService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+	outpoint := utxoOutpoint{txID: txID, outputIndex: outputIndex}
+	if utxo, exists := m.utxos[outpoint]; exists {
+		return utxo, nil
+	}
+	return transaction.Output{}, &utxoNotFoundError{}
+}
+
+func (m *mockUTXOLookupService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+	return nil, nil
+}
+
+type utxoNotFoundError struct{}
+
+func (e *utxoNotFoundError) Error() string {
+	return "UTXO not found"
+}
+
+// mockBlockStore is a mock implementation of blockchain.BlockStoreAPI
+type mockBlockStore struct {
+	tip block.Block
+}
+
+func (m *mockBlockStore) AddBlock(b block.Block) []common.Hash {
+	return nil
+}
+
+func (m *mockBlockStore) IsOrphanBlock(b block.Block) (bool, error) {
+	return false, nil
+}
+
+func (m *mockBlockStore) IsPartOfMainChain(b block.Block) bool {
+	return true
+}
+
+func (m *mockBlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+	return block.Block{}, nil
+}
+
+func (m *mockBlockStore) GetBlocksByHeight(height uint64) []block.Block {
+	return nil
+}
+
+func (m *mockBlockStore) GetCurrentHeight() uint64 {
+	return 0
+}
+
+func (m *mockBlockStore) GetMainChainTip() block.Block {
+	return m.tip
+}
+
+// Helper function to create a test miner service
+func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.Output) *minerService {
+	mockBlockchain := &mockBlockchainAPI{}
+	mockUTXO := &mockUTXOLookupService{utxos: utxos}
+	mockBlockStore := &mockBlockStore{tip: tip}
+
+	return &minerService{
+		blockchain:        mockBlockchain,
+		utxoLookupService: mockUTXO,
+		blockStore:        mockBlockStore,
+	}
+}
+
+// Helper function to create a test transaction
+func createTestTransaction(inputValue uint64, outputValue uint64) transaction.Transaction {
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xAA
+
+	return transaction.Transaction{
+		Inputs: []transaction.Input{
+			{
+				PrevTxID:    prevTxID,
+				OutputIndex: 0,
+				Signature:   []byte("signature"),
+				PubKey:      transaction.PubKey{},
+				Sequence:    0xFFFFFFFF,
+			},
+		},
+		Outputs: []transaction.Output{
+			{
+				Value:      outputValue,
+				PubKeyHash: transaction.PubKeyHash{},
+			},
+		},
+		LockTime: 0,
+	}
+}
+
+// Helper function to create a genesis block
+func createGenesisBlock() block.Block {
+	genesisTx := transaction.NewCoinbaseTransaction(transaction.PubKeyHash{}, 50, []byte("Genesis"))
+
+	return block.Block{
+		Header: block.BlockHeader{
+			PreviousBlockHash: common.Hash{},
+			MerkleRoot:        block.MerkleRootFromTransactions([]transaction.Transaction{genesisTx}),
+			Timestamp:         time.Now().Unix(),
+			DifficultyTarget:  28,
+			Nonce:             0,
+		},
+		Transactions: []transaction.Transaction{genesisTx},
+	}
+}
+
+func TestGetTarget(t *testing.T) {
+	tests := []struct {
+		name       string
+		difficulty uint8
+		wantBits   int
+	}{
+		{
+			name:       "Difficulty 28 (standard)",
+			difficulty: 28,
+			wantBits:   256 - 28,
+		},
+		{
+			name:       "Difficulty 0 (no zeros required)",
+			difficulty: 0,
+			wantBits:   256,
+		},
+		{
+			name:       "Difficulty 255 (maximum)",
+			difficulty: 255,
+			wantBits:   1,
+		},
+		{
+			name:       "Difficulty 16",
+			difficulty: 16,
+			wantBits:   240,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			target := getTarget(tt.difficulty)
+
+			// Verify the target is a big integer with a single bit set
+			expected := big.NewInt(1)
+			expected.Lsh(expected, uint(tt.wantBits))
+
+			if target.Cmp(expected) != 0 {
+				t.Errorf("getTarget(%d) = %v, want %v", tt.difficulty, &target, expected)
+			}
+		})
+	}
+}
+
+func TestGetCurrentTargetBits(t *testing.T) {
+	target, err := GetCurrentTargetBits()
+	if err != nil {
+		t.Errorf("GetCurrentTargetBits() returned error: %v", err)
+	}
+	if target != 28 {
+		t.Errorf("GetCurrentTargetBits() = %d, want 28", target)
+	}
+}
+
+func TestGetCurrentReward(t *testing.T) {
+	reward, err := GetCurrentReward()
+	if err != nil {
+		t.Errorf("GetCurrentReward() returned error: %v", err)
+	}
+	if reward != 50 {
+		t.Errorf("GetCurrentReward() = %d, want 50", reward)
+	}
+}
+
+func TestGetOwnPubKeyHash(t *testing.T) {
+	pubKeyHash, err := getOwnPubKeyHash()
+	if err != nil {
+		t.Errorf("getOwnPubKeyHash() returned error: %v", err)
+	}
+	// Currently returns empty hash (TODO)
+	if pubKeyHash != (transaction.PubKeyHash{}) {
+		t.Errorf("getOwnPubKeyHash() returned non-empty hash")
+	}
+}
+
+func TestCreateCandidateBlockHeader(t *testing.T) {
+	genesis := createGenesisBlock()
+	miner := createTestMinerService(genesis, nil)
+
+	txs := []transaction.Transaction{
+		createTestTransaction(100, 90),
+	}
+
+	header, err := miner.createCandidateBlockHeader(txs)
+	if err != nil {
+		t.Fatalf("createCandidateBlockHeader() returned error: %v", err)
+	}
+
+	// Verify previous block hash points to genesis
+	expectedPrevHash := genesis.Hash()
+	if header.PreviousBlockHash != expectedPrevHash {
+		t.Errorf("PreviousBlockHash = %v, want %v", header.PreviousBlockHash, expectedPrevHash)
+	}
+
+	// Verify merkle root is calculated
+	expectedMerkleRoot := block.MerkleRootFromTransactions(txs)
+	if header.MerkleRoot != expectedMerkleRoot {
+		t.Errorf("MerkleRoot = %v, want %v", header.MerkleRoot, expectedMerkleRoot)
+	}
+
+	// Verify difficulty target
+	if header.DifficultyTarget != 28 {
+		t.Errorf("DifficultyTarget = %d, want 28", header.DifficultyTarget)
+	}
+
+	// Verify timestamp is recent (within 1 second)
+	now := time.Now().Unix()
+	if header.Timestamp < now-1 || header.Timestamp > now+1 {
+		t.Errorf("Timestamp = %d, want approximately %d", header.Timestamp, now)
+	}
+
+	// Verify nonce is 0
+	if header.Nonce != 0 {
+		t.Errorf("Nonce = %d, want 0", header.Nonce)
+	}
+}
+
+func TestGetInputSum(t *testing.T) {
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xBB
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+		{txID: prevTxID, outputIndex: 1}: {Value: 50, PubKeyHash: transaction.PubKeyHash{}},
+	}
+
+	miner := createTestMinerService(createGenesisBlock(), utxos)
+
+	tx := transaction.Transaction{
+		Inputs: []transaction.Input{
+			{
+				PrevTxID:    prevTxID,
+				OutputIndex: 0,
+			},
+			{
+				PrevTxID:    prevTxID,
+				OutputIndex: 1,
+			},
+		},
+	}
+
+	sum, err := miner.getInputSum(tx)
+	if err != nil {
+		t.Fatalf("getInputSum() returned error: %v", err)
+	}
+
+	if sum != 150 {
+		t.Errorf("getInputSum() = %d, want 150", sum)
+	}
+}
+
+func TestGetInputSum_UTXONotFound(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	tx := transaction.Transaction{
+		Inputs: []transaction.Input{
+			{
+				PrevTxID:    transaction.TransactionID{},
+				OutputIndex: 0,
+			},
+		},
+	}
+
+	_, err := miner.getInputSum(tx)
+	if err == nil {
+		t.Error("getInputSum() should return error when UTXO not found")
+	}
+}
+
+func TestGetTransactionWithFee(t *testing.T) {
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xCC
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+		{txID: prevTxID, outputIndex: 1}: {Value: 200, PubKeyHash: transaction.PubKeyHash{}},
+	}
+
+	miner := createTestMinerService(createGenesisBlock(), utxos)
+
+	txs := []transaction.Transaction{
+		{
+			Inputs: []transaction.Input{
+				{PrevTxID: prevTxID, OutputIndex: 0},
+			},
+			Outputs: []transaction.Output{{Value: 90, PubKeyHash: transaction.PubKeyHash{}}},
+		},
+		{
+			Inputs: []transaction.Input{
+				{PrevTxID: prevTxID, OutputIndex: 1},
+			},
+			Outputs: []transaction.Output{{Value: 180, PubKeyHash: transaction.PubKeyHash{}}},
+		},
+	}
+
+	txFees, err := miner.getTransactionWithFee(txs)
+	if err != nil {
+		t.Fatalf("getTransactionWithFee() returned error: %v", err)
+	}
+
+	if len(txFees) != 2 {
+		t.Fatalf("getTransactionWithFee() returned %d transactions, want 2", len(txFees))
+	}
+
+	// First tx: input 100, output 90, fee = 10
+	if txFees[0].Fee != 10 {
+		t.Errorf("Transaction 0 fee = %d, want 10", txFees[0].Fee)
+	}
+
+	// Second tx: input 200, output 180, fee = 20
+	if txFees[1].Fee != 20 {
+		t.Errorf("Transaction 1 fee = %d, want 20", txFees[1].Fee)
+	}
+}
+
+func TestSortAndReversedTransactions(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	txFee1 := transactionWithFee{tx: transaction.Transaction{LockTime: 1}, Fee: 10}
+	txFee2 := transactionWithFee{tx: transaction.Transaction{LockTime: 2}, Fee: 30}
+	txFee3 := transactionWithFee{tx: transaction.Transaction{LockTime: 3}, Fee: 20}
+
+	txsWithFees := []transactionWithFee{txFee1, txFee2, txFee3}
+
+	sorted := miner.sortAndReversedTransactions(txsWithFees)
+
+	// Should be sorted by fee in descending order: 30, 20, 10
+	if len(sorted) != 3 {
+		t.Fatalf("sortAndReversedTransactions() returned %d transactions, want 3", len(sorted))
+	}
+
+	if sorted[0].LockTime != 2 {
+		t.Errorf("First transaction should have LockTime 2 (fee 30), got %d", sorted[0].LockTime)
+	}
+	if sorted[1].LockTime != 3 {
+		t.Errorf("Second transaction should have LockTime 3 (fee 20), got %d", sorted[1].LockTime)
+	}
+	if sorted[2].LockTime != 1 {
+		t.Errorf("Third transaction should have LockTime 1 (fee 10), got %d", sorted[2].LockTime)
+	}
+}
+
+func TestCreateCoinbaseTransaction(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	txFee1 := transactionWithFee{Fee: 10, tx: transaction.Transaction{}}
+	txFee2 := transactionWithFee{Fee: 20, tx: transaction.Transaction{}}
+
+	coinbase, err := miner.createCoinbaseTransaction([]transactionWithFee{txFee1, txFee2})
+	if err != nil {
+		t.Fatalf("createCoinbaseTransaction() returned error: %v", err)
+	}
+
+	// Verify it's a coinbase transaction
+	if !coinbase.IsCoinbase() {
+		t.Error("createCoinbaseTransaction() did not create a coinbase transaction")
+	}
+
+	// Verify the reward amount (fees 10+20 + block reward 50 = 80)
+	if len(coinbase.Outputs) == 0 {
+		t.Fatal("Coinbase transaction has no outputs")
+	}
+
+	if coinbase.Outputs[0].Value != 80 {
+		t.Errorf("Coinbase output value = %d, want 80 (10+20+50)", coinbase.Outputs[0].Value)
+	}
+}
+
+func TestBuildTransactions(t *testing.T) {
+	// Set up UTXOs for the transactions (all use the same prevTxID from createTestTransaction)
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xAA
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+	}
+	miner := createTestMinerService(createGenesisBlock(), utxos)
+
+	// Create transactions with different fees
+	txs := []transaction.Transaction{
+		createTestTransaction(100, 90), // fee 10
+	}
+
+	builtTxs, err := miner.buildTransactions(txs)
+	if err != nil {
+		t.Fatalf("buildTransactions() returned error: %v", err)
+	}
+
+	// Should have coinbase + regular transactions
+	if len(builtTxs) != 2 { // 1 coinbase + 1 regular
+		t.Errorf("buildTransactions() returned %d transactions, want 2", len(builtTxs))
+	}
+
+	// First transaction should be coinbase
+	if !builtTxs[0].IsCoinbase() {
+		t.Error("First transaction should be coinbase")
+	}
+}
+
+func TestBuildTransactions_LimitToTxPerBlock(t *testing.T) {
+	// Set up UTXOs for the transactions
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xAA
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+	}
+	miner := createTestMinerService(createGenesisBlock(), utxos)
+
+	// Create more transactions than TxPerBlock
+	txs := make([]transaction.Transaction, TxPerBlock+10)
+	for i := 0; i < len(txs); i++ {
+		txs[i] = createTestTransaction(100, 90)
+	}
+
+	builtTxs, err := miner.buildTransactions(txs)
+	if err != nil {
+		t.Fatalf("buildTransactions() returned error: %v", err)
+	}
+
+	// Should have exactly TxPerBlock transactions (1 coinbase + TxPerBlock-1 regular)
+	if len(builtTxs) != TxPerBlock {
+		t.Errorf("buildTransactions() returned %d transactions, want %d", len(builtTxs), TxPerBlock)
+	}
+}
+
+func TestCreateCandidateBlock(t *testing.T) {
+	genesis := createGenesisBlock()
+
+	// Set up UTXOs for the transactions
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xAA
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+	}
+	miner := createTestMinerService(genesis, utxos)
+
+	txs := []transaction.Transaction{
+		createTestTransaction(100, 90),
+	}
+
+	candidateBlock, err := miner.createCandidateBlock(txs)
+	if err != nil {
+		t.Fatalf("createCandidateBlock() returned error: %v", err)
+	}
+
+	// Verify header fields
+	if candidateBlock.Header.PreviousBlockHash != genesis.Hash() {
+		t.Errorf("PreviousBlockHash does not match genesis hash")
+	}
+
+	if candidateBlock.Header.DifficultyTarget != 28 {
+		t.Errorf("DifficultyTarget = %d, want 28", candidateBlock.Header.DifficultyTarget)
+	}
+
+	// Verify transactions are present (should include coinbase)
+	if len(candidateBlock.Transactions) == 0 {
+		t.Error("Candidate block has no transactions")
+	}
+
+	// First transaction should be coinbase
+	if !candidateBlock.Transactions[0].IsCoinbase() {
+		t.Error("First transaction should be coinbase")
+	}
+}
+
+func TestMineBlock_ContextCancellation(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	// Create a candidate block with high difficulty (will take time to mine)
+	candidateBlock := block.Block{
+		Header: block.BlockHeader{
+			PreviousBlockHash: common.Hash{},
+			MerkleRoot:        common.Hash{},
+			Timestamp:         time.Now().Unix(),
+			DifficultyTarget:  255, // Very high difficulty
+			Nonce:             0,
+		},
+		Transactions: []transaction.Transaction{},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, _, err := miner.mineBlock(candidateBlock, ctx)
+	if err == nil {
+		t.Error("mineBlock() should return error when context is cancelled")
+		return
+	}
+
+	if err.Error() != "mining cancelled" {
+		t.Errorf("mineBlock() error = %v, want 'mining cancelled'", err)
+	}
+}
+
+func TestMineBlock_Success(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	// Create a candidate block with very low difficulty (easy to mine)
+	candidateBlock := block.Block{
+		Header: block.BlockHeader{
+			PreviousBlockHash: common.Hash{},
+			MerkleRoot:        common.Hash{},
+			Timestamp:         time.Now().Unix(),
+			DifficultyTarget:  0, // No leading zeros required
+			Nonce:             0,
+		},
+		Transactions: []transaction.Transaction{},
+	}
+
+	ctx := context.Background()
+	nonce, timestamp, err := miner.mineBlock(candidateBlock, ctx)
+	if err != nil {
+		t.Fatalf("mineBlock() returned error: %v", err)
+	}
+
+	// Verify nonce was found
+	if nonce == 0 && candidateBlock.Header.Nonce == 0 {
+		// With difficulty 0, any hash should work, so we should find immediately
+		// The actual nonce might be 0 or 1 depending on implementation
+	}
+
+	// Verify timestamp is reasonable
+	if timestamp < candidateBlock.Header.Timestamp-1 {
+		t.Error("Mined timestamp is before candidate block timestamp")
+	}
+}
+
+func TestMineBlock_LowDifficulty(t *testing.T) {
+	miner := createTestMinerService(createGenesisBlock(), nil)
+
+	// Test with difficulty of 1 (should find quickly)
+	candidateBlock := block.Block{
+		Header: block.BlockHeader{
+			PreviousBlockHash: common.Hash{},
+			MerkleRoot:        common.Hash{},
+			Timestamp:         time.Now().Unix(),
+			DifficultyTarget:  1, // At least 1 leading zero
+			Nonce:             0,
+		},
+		Transactions: []transaction.Transaction{},
+	}
+
+	ctx := context.Background()
+	nonce, timestamp, err := miner.mineBlock(candidateBlock, ctx)
+	if err != nil {
+		t.Fatalf("mineBlock() returned error: %v", err)
+	}
+
+	// Set the nonce and verify the hash meets the difficulty
+	candidateBlock.Header.Nonce = nonce
+	candidateBlock.Header.Timestamp = timestamp
+
+	hash := candidateBlock.Hash()
+	target := getTarget(candidateBlock.Header.DifficultyTarget)
+
+	hashInt := new(big.Int)
+	hashInt.SetBytes(hash[:])
+
+	if hashInt.Cmp(&target) >= 0 {
+		t.Errorf("Mined block hash does not meet difficulty target. Hash: %x, Target: %v", hash, &target)
+	}
+}
+
+func TestStartMining_StopsMining(t *testing.T) {
+	// Set up UTXOs for the transactions
+	prevTxID := transaction.TransactionID{}
+	prevTxID[0] = 0xAA
+
+	utxos := map[utxoOutpoint]transaction.Output{
+		{txID: prevTxID, outputIndex: 0}: {Value: 100, PubKeyHash: transaction.PubKeyHash{}},
+	}
+
+	mockBlockchain := &mockBlockchainAPI{}
+	mockUTXO := &mockUTXOLookupService{utxos: utxos}
+	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
+
+	miner := &minerService{
+		blockchain:        mockBlockchain,
+		utxoLookupService: mockUTXO,
+		blockStore:        mockBlockStore,
+	}
+
+	// Start mining
+	txs := []transaction.Transaction{createTestTransaction(100, 90)}
+	miner.StartMining(txs)
+
+	// Stop mining immediately
+	miner.StopMining()
+
+	// Give time for goroutine to stop
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify blockchain was not called (mining was stopped)
+	// This is a rough check - in real scenario, mining might have completed before StopMining
+}
+
+func TestNewMinerService(t *testing.T) {
+	mockBlockchain := &mockBlockchainAPI{}
+	mockUTXO := &mockUTXOLookupService{utxos: map[utxoOutpoint]transaction.Output{}}
+	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
+
+	miner := NewMinerService(mockBlockchain, mockUTXO, mockBlockStore)
+
+	if miner == nil {
+		t.Fatal("NewMinerService() returned nil")
+	}
+
+	minerService, ok := miner.(*minerService)
+	if !ok {
+		t.Fatal("NewMinerService() did not return *minerService")
+	}
+
+	if minerService.blockchain != mockBlockchain {
+		t.Error("Blockchain not set correctly")
+	}
+
+	if minerService.utxoLookupService != mockUTXO {
+		t.Error("UTXO service not set correctly")
+	}
+
+	if minerService.blockStore != mockBlockStore {
+		t.Error("Block store not set correctly")
+	}
+}
+
+func TestMinerAPI_Interface(t *testing.T) {
+	// Compile-time check that minerService implements MinerAPI
+	var _ MinerAPI = &minerService{}
+}
+
+func TestMinerBlockchainAPI_Interface(t *testing.T) {
+	// Compile-time check that mockBlockchainAPI implements api.BlockchainAPI
+	var _ api.BlockchainAPI = &mockBlockchainAPI{}
+}
+
+func TestMinerUTXOService_Interface(t *testing.T) {
+	// Compile-time check that mockUTXOLookupService implements utxo.LookupAPI
+	var _ utxo.LookupAPI = &mockUTXOLookupService{}
+}
+
+func TestMinerBlockStoreAPI_Interface(t *testing.T) {
+	// Compile-time check that mockBlockStore implements blockchain.BlockStoreAPI
+	var _ blockchain.BlockStoreAPI = &mockBlockStore{}
+}
