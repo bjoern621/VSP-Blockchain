@@ -1,17 +1,17 @@
 package blockchain
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 type BlockchainService struct {
 	blockchainMsgSender BlockchainMsgSender
-	peerStore           *peer.PeerStore
+	peerRetriever       peer.PeerRetriever
 }
 
-func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerStore *peer.PeerStore) *BlockchainService {
+func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerRetriever peer.PeerRetriever) *BlockchainService {
 	return &BlockchainService{
 		blockchainMsgSender: blockchainMsgSender,
-		peerStore:           peerStore,
+		peerRetriever:       peerRetriever,
 	}
 }

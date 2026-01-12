@@ -1,4 +1,4 @@
-package peer
+package discovery
 
 import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
 
@@ -7,20 +7,6 @@ import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
 type RegistryQuerier interface {
 	// QueryPeers queries the registry and returns discovered peers.
 	QueryPeers() ([]common.PeerId, error)
-}
-
-// DiscoveryService provides peer discovery functionality.
-type DiscoveryService struct {
-	querier     RegistryQuerier
-	peerCreator PeerCreator
-}
-
-// NewDiscoveryService creates a new DiscoveryService.
-func NewDiscoveryService(querier RegistryQuerier, peerCreator PeerCreator) *DiscoveryService {
-	return &DiscoveryService{
-		querier:     querier,
-		peerCreator: peerCreator,
-	}
 }
 
 // GetPeers queries the registry and creates peers for each discovered address.

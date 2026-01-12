@@ -17,6 +17,7 @@ type QueryRegistryAPI interface {
 	QueryRegistry() ([]RegistryEntry, error)
 }
 
+// queryRegistryAPIService is the implementation of QueryRegistryAPI.
 type queryRegistryAPIService struct {
 	querier FullRegistryQuerier
 }

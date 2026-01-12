@@ -10,22 +10,27 @@ import (
 )
 
 // Peer represents a peer in the network.
+// Peer fields can be modified if the Lock() and Unlock() methods are used.
 type Peer struct {
 	mu                sync.Mutex
 	id                common.PeerId
 	Version           string
-	SupportedServices []ServiceType
-	State             PeerConnectionState
-	Direction         Direction
+	SupportedServices []common.ServiceType
+	State             common.PeerConnectionState
+	Direction         common.Direction
+	// LastSeen is a Unix timestamp indicating the last time the peer was seen active.
+	// Seen active means, that a heartbeat message was received from the peer.
+	// It's not updated on every interaction with the peer.
+	LastSeen int64 // TODO anpassen wenn heartbeat fertig
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
 // PeerConnectionState is initialized to StateNew.
-func (s *PeerStore) newPeer(direction Direction) common.PeerId {
+func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:        peerID,
-		State:     StateNew,
+		State:     common.StateNew,
 		Direction: direction,
 	}
 	s.addPeer(peer)
@@ -35,11 +40,11 @@ func (s *PeerStore) newPeer(direction Direction) common.PeerId {
 
 // newGenericPeer creates a new peer without a specified direction.
 // Otherwise similar to newPeer.
-func (s *PeerStore) newGenericPeer() common.PeerId {
+func (s *peerStore) newGenericPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:    peerID,
-		State: StateNew,
+		State: common.StateNew,
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created", peerID)

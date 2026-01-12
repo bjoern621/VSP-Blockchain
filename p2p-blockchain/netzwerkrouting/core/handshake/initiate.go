@@ -3,7 +3,6 @@ package handshake
 import (
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
 // HandshakeMsgSender defines the interface for initiating a handshake with a peer.
@@ -24,7 +23,7 @@ type HandshakeInitiator interface {
 }
 
 func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
-	p, ok := h.peerStore.GetPeer(peerID)
+	p, ok := h.peerRetriever.GetPeer(peerID)
 	if !ok {
 		return fmt.Errorf("peer %s not found in store", peerID)
 	}
@@ -32,13 +31,13 @@ func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.State != peer.StateNew {
+	if p.State != common.StateNew {
 		return fmt.Errorf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
 	}
 
 	versionInfo := NewLocalVersionInfo()
 
-	p.State = peer.StateAwaitingVerack
+	p.State = common.StateAwaitingVerack
 
 	go h.handshakeMsgSender.SendVersion(peerID, versionInfo)
 

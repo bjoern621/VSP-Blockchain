@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 type mockHandshakeInitiator struct {
@@ -272,10 +272,10 @@ func TestInitiateHandshake_FullChain_CreationToInitiation(t *testing.T) {
 		t.Fatal("peer not found in peer store")
 	}
 
-	if peerObj.Direction != peer.DirectionOutbound {
+	if peerObj.Direction != common.DirectionOutbound {
 		t.Errorf("expected peer direction OutBound, got %v", peerObj.Direction)
 	}
-	if peerObj.State != peer.StateNew {
+	if peerObj.State != common.StateNew {
 		t.Errorf("expected peer state New, got %v", peerObj.State)
 	}
 }
