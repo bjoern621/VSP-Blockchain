@@ -7,31 +7,22 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 )
 
-// dnsRegistryQuerier implements peer.RegistryQuerier and api.FullRegistryQuerier using DNS lookups.
-type dnsRegistryQuerier struct {
+// DnsRegistryQuerier implements discovery.RegistryQuerier and api.FullRegistryQuerier using DNS lookups.
+type DnsRegistryQuerier struct {
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
 }
 
-func NewDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) discovery.RegistryQuerier {
-	return newDNSRegistryQuerier(networkInfoRegistry)
-}
-
-func NewDNSFullRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) api.FullRegistryQuerier {
-	return newDNSRegistryQuerier(networkInfoRegistry)
-}
-
-func newDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *dnsRegistryQuerier {
-	return &dnsRegistryQuerier{
+func NewDNSRegistryQuerier(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *DnsRegistryQuerier {
+	return &DnsRegistryQuerier{
 		networkInfoRegistry: networkInfoRegistry,
 	}
 }
 
 // QueryPeers queries the DNS seed registry and returns a list of peer IDs.
-func (r *dnsRegistryQuerier) QueryPeers() ([]common.PeerId, error) {
+func (r *DnsRegistryQuerier) QueryPeers() ([]common.PeerId, error) {
 	entries, err := r.queryRegistry()
 	if err != nil {
 		return nil, err
@@ -46,12 +37,12 @@ func (r *dnsRegistryQuerier) QueryPeers() ([]common.PeerId, error) {
 }
 
 // QueryFullRegistry queries the DNS seed registry and returns full entries including IP addresses.
-func (r *dnsRegistryQuerier) QueryFullRegistry() ([]api.RegistryEntry, error) {
+func (r *DnsRegistryQuerier) QueryFullRegistry() ([]api.RegistryEntry, error) {
 	return r.queryRegistry()
 }
 
 // queryRegistry queries the DNS seed registry for available peer addresses.
-func (r *dnsRegistryQuerier) queryRegistry() ([]api.RegistryEntry, error) {
+func (r *DnsRegistryQuerier) queryRegistry() ([]api.RegistryEntry, error) {
 	addrs, err := net.DefaultResolver.LookupNetIP(context.Background(), "ip4", common.RegistrySeedHostnameEnv())
 	if err != nil {
 		return nil, err

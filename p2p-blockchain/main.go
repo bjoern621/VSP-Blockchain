@@ -36,7 +36,7 @@ func main() {
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
-	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
+	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
 	blockchainService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
