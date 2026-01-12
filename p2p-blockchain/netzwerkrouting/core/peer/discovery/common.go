@@ -6,7 +6,7 @@ import (
 )
 
 // DiscoveryPeerRetriever is an interface for retrieving peers specifically for discovery purposes.
-// Implemented bythe data layer's PeerStore.
+// Implemented by the data layer's PeerStore.
 type DiscoveryPeerRetriever interface {
 	// GetAllPeers retrieves all known peers.
 	GetAllPeers() []common.PeerId
