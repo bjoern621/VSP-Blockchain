@@ -62,7 +62,8 @@ func (m *minerService) buildTransactions(transactions []transaction.Transaction)
 	if err != nil {
 		return nil, err
 	}
-	txToPutInBlock := append([]transaction.Transaction{coinbaseTx}, transactionsSorted[:TxPerBlock-1]...)
+	transactionCount := int(min(TxPerBlock-1, float64(len(transactionsSorted))))
+	txToPutInBlock := append([]transaction.Transaction{coinbaseTx}, transactionsSorted[:transactionCount]...)
 	return txToPutInBlock, nil
 }
 
