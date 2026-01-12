@@ -178,6 +178,7 @@ func (s *Server) NotifyMempool(peerID common.PeerId) {
 	}
 }
 
+// SendGetData sends a getdata message to the given peer
 func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
@@ -199,6 +200,7 @@ func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	}()
 }
 
+// SendInv sends an inv message to the given peer
 func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
 	if !ok {
@@ -216,6 +218,28 @@ func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 		_, err := client.Inv(context.Background(), pbInvMsg)
 		if err != nil {
 			logger.Warnf("failed to send InvMsg to peer %s: %v", peerId, err)
+		}
+	}()
+}
+
+// SendGetHeaders sends a GetHeaders message to the given peer
+func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send GetHeaders: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbLocator, err := adapter.ToGrpcBlockLocator(locator)
+	if err != nil {
+		logger.Warnf("failed to create BlockLocator from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.GetHeaders(context.Background(), pbLocator)
+		if err != nil {
+			logger.Warnf("failed to send GetHeaders to peer %s: %v", peerId, err)
 		}
 	}()
 }
