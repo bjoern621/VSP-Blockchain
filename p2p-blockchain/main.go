@@ -64,7 +64,7 @@ func main() {
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	minerImpl := minerCore.NewMinerService(blockchainMsgService, blockchain)
+	minerImpl := minerCore.NewMinerService(blockchain, combinedPool, blockStore)
 	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {
