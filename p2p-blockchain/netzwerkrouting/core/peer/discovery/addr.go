@@ -23,9 +23,10 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 			continue
 		}
 
-		// Core layer only tracks peer IDs
-		logger.Debugf("New peer discovered: PeerId=%s, LastSeen=%v",
-			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
-		// TODO: Trigger peer creation and connection for new peer
+		// Create a new outbound peer entry for the discovered peer
+		// This tracks the peer for potential future connection attempts
+		newPeerID := s.peerCreator.NewOutboundPeer()
+		logger.Infof("Discovered new peer: PeerId=%s (registered as %s), LastSeen=%v",
+			addr.PeerId, newPeerID, time.Unix(addr.LastActiveTimestamp, 0))
 	}
 }
