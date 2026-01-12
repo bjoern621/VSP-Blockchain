@@ -63,10 +63,6 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 	logger.Infof("MerkleBlock Message received: %v from %v", merkleBlock, peerID)
 }
 
-func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
-	logger.Infof("GetHeaders Message received: %v from %v", locator, peerID)
-}
-
 func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
 	logger.Infof("Headers Message received: %v from %v", blockHeaders, peerID)
 }
