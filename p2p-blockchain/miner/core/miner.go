@@ -57,17 +57,6 @@ func (m *minerService) StopMining() {
 	m.cancelMining()
 }
 
-func (m *minerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
-	header := createCandidateBlockHeader()
-
-	return block.Block{Header: header, Transactions: transactions}
-}
-
-// TODO: Kapitel Die Block-Header aufbauen
-func createCandidateBlockHeader() block.BlockHeader {
-	return block.BlockHeader{}
-}
-
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
 func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
