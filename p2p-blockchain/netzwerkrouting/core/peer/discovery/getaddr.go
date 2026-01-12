@@ -61,7 +61,7 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 
 func (s *DiscoveryService) SendGetAddr(peerID common.PeerId) {
 	logger.Infof("Sending getaddr message to peer %s", peerID)
-	// Implementation for sending getaddr messages goes here.
+	s.getAddrMsgSender.SendGetAddr(peerID)
 }
 
 // PeerAddress represents a peer identifier and last activity timestamp.

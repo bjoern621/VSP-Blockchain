@@ -24,7 +24,6 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 		}
 
 		// Core layer only tracks peer IDs
-		// The infrastructure layer will handle the IP address mapping
 		logger.Debugf("New peer discovered: PeerId=%s, LastSeen=%v",
 			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
 		// TODO: Trigger peer creation and connection for new peer
