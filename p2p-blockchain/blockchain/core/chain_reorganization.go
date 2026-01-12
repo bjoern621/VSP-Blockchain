@@ -1,7 +1,6 @@
 package core
 
 import (
-	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -23,13 +22,13 @@ type ChainReorganizationAPI interface {
 
 type ChainReorganization struct {
 	lastKnownTip common.Hash
-	blockStore   blockchainApi.BlockStoreAPI
+	blockStore   BlockStoreAPI
 	utxoService  utxo.UTXOService
 	mempool      *Mempool
 }
 
 func NewChainReorganization(
-	blockStore blockchainApi.BlockStoreAPI,
+	blockStore BlockStoreAPI,
 	utxoService utxo.UTXOService,
 	mempool *Mempool,
 ) *ChainReorganization {

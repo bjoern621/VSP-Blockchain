@@ -1,7 +1,6 @@
 package core
 
 import (
-	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -13,13 +12,13 @@ import (
 
 type Mempool struct {
 	validator  validation.ValidationAPI
-	blockStore blockchainApi.BlockStoreAPI
+	blockStore BlockStoreAPI
 
 	transactions map[transaction.TransactionID]transaction.Transaction
 	lock         sync.Mutex
 }
 
-func NewMempool(validator validation.ValidationAPI, blockStore blockchainApi.BlockStoreAPI) *Mempool {
+func NewMempool(validator validation.ValidationAPI, blockStore BlockStoreAPI) *Mempool {
 	return &Mempool{
 		validator:    validator,
 		blockStore:   blockStore,
