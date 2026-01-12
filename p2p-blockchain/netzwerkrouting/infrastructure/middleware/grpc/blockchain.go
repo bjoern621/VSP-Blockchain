@@ -252,3 +252,25 @@ func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId
 		}
 	}()
 }
+
+// SendHeaders sends a Headers message to the given peer
+func (c *Client) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
+	conn, ok := c.networkInfoRegistry.GetConnection(peerId)
+	if !ok {
+		logger.Warnf("failed to send Headers: no connection for peer %s", peerId)
+		return
+	}
+
+	client := pb.NewBlockchainServiceClient(conn)
+	pbHeaders, err := adapter.ToGrpcHeadersMsg(headers)
+	if err != nil {
+		logger.Warnf("failed to create HeadersMsg from DTO: %v", err)
+		return
+	}
+	go func() {
+		_, err := client.Headers(context.Background(), pbHeaders)
+		if err != nil {
+			logger.Warnf("failed to send Headers to peer %s: %v", peerId, err)
+		}
+	}()
+}
