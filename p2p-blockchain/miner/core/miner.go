@@ -20,21 +20,21 @@ type MinerAPI interface {
 }
 
 type minerService struct {
-	cancelMining      context.CancelFunc
-	blockchain        blockchainApi.BlockchainAPI
-	utxoLookupService utxo.UTXOService
-	blockStore        blockchain.BlockStoreAPI
+	cancelMining context.CancelFunc
+	blockchain   blockchainApi.BlockchainAPI
+	utxoService  utxo.UTXOService
+	blockStore   blockchain.BlockStoreAPI
 }
 
 func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
-	utxoLookupAPI utxo.UTXOService,
+	utxoServiceAPI utxo.UTXOService,
 	blockStore blockchain.BlockStoreAPI,
 ) MinerAPI {
 	return &minerService{
-		blockchain:        blockchain,
-		utxoLookupService: utxoLookupAPI,
-		blockStore:        blockStore,
+		blockchain:  blockchain,
+		utxoService: utxoServiceAPI,
+		blockStore:  blockStore,
 	}
 }
 
