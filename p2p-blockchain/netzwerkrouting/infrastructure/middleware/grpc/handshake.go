@@ -16,6 +16,7 @@ import (
 )
 
 // getPeerAddr extracts the remote peer address from the gRPC context.
+// I.e., the IP and port of the peer that sent the request.
 func getPeerAddr(ctx context.Context) netip.AddrPort {
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {

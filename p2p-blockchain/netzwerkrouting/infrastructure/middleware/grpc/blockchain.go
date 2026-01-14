@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
@@ -13,14 +12,6 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
-
-func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
-	inboundAddr := getPeerAddr(ctx)
-	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, netip.AddrPort{})
-	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
-
-	return peerID
-}
 
 func (s *Server) Inv(ctx context.Context, msg *pb.InvMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)

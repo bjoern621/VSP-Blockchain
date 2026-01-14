@@ -16,7 +16,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/registry"
@@ -41,8 +42,11 @@ func main() {
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
-	registryQuerier := registry.NewDNSFullRegistryQuerier(networkInfoRegistry)
+	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
+
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, peerStore, grpcClient, peerStore, grpcClient)
+	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
@@ -87,7 +91,9 @@ func main() {
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler)
+		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -102,7 +108,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService)
 
 	grpcServer.Attach(blockchain)
 

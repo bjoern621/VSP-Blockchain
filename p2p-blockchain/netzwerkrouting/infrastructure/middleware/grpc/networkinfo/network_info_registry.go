@@ -6,7 +6,7 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"slices"
 	"sync"
 
@@ -83,6 +83,7 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID common.PeerId, listeningEndpoi
 
 // GetOrRegisterPeer atomically looks up a peer by addresses, or registers a new one if not found.
 // Returns the peerID and true if the peer already existed, or the new peerID and false if created.
+// The registered peer will have NO direction assigned yet.
 func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) common.PeerId {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -106,7 +107,7 @@ func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, list
 	}
 
 	// Not found, create new peer
-	peerID := r.peerCreator.NewInboundPeer()
+	peerID := r.peerCreator.NewPeer()
 	entry := &NetworkInfoEntry{
 		ListeningEndpoint: listeningEndpoint,
 	}

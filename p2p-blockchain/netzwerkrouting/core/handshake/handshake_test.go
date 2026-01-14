@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 // TestMain sets up the environment for the tests.
@@ -92,7 +92,7 @@ func TestInitiateHandshake(t *testing.T) {
 		t.Fatal("peer should exist")
 	}
 
-	if p.State != peer.StateAwaitingVerack {
+	if p.State != common.StateAwaitingVerack {
 		t.Errorf("expected state StateAwaitingVerack, got %v", p.State)
 	}
 }
@@ -106,7 +106,7 @@ func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
-	p.State = peer.StateConnected
+	p.State = common.StateConnected
 	p.Unlock()
 
 	err := service.InitiateHandshake(peerID)
@@ -130,7 +130,7 @@ func TestHandleVersion(t *testing.T) {
 	versionInfo := VersionInfo{
 		Version: "2.5.1",
 	}
-	versionInfo.AddService(peer.ServiceType_Netzwerkrouting, peer.ServiceType_BlockchainFull)
+	versionInfo.AddService(common.ServiceType_Netzwerkrouting, common.ServiceType_BlockchainFull)
 
 	service.HandleVersion(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -141,7 +141,7 @@ func TestHandleVersion(t *testing.T) {
 
 	p, _ := peerStore.GetPeer(peerID)
 
-	if p.State != peer.StateAwaitingAck {
+	if p.State != common.StateAwaitingAck {
 		t.Errorf("expected state StateAwaitingAck, got %v", p.State)
 	}
 	if p.Version != "2.5.1" {
@@ -161,13 +161,13 @@ func TestHandleVerack(t *testing.T) {
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
-	p.State = peer.StateAwaitingVerack
+	p.State = common.StateAwaitingVerack
 	p.Unlock()
 
 	versionInfo := VersionInfo{
 		Version: "1.5.0",
 	}
-	versionInfo.AddService(peer.ServiceType_BlockchainFull, peer.ServiceType_Netzwerkrouting, peer.ServiceType_Miner)
+	versionInfo.AddService(common.ServiceType_BlockchainFull, common.ServiceType_Netzwerkrouting, common.ServiceType_Miner)
 
 	service.HandleVerack(peerID, versionInfo)
 	time.Sleep(10 * time.Millisecond)
@@ -176,7 +176,7 @@ func TestHandleVerack(t *testing.T) {
 		t.Errorf("expected 1 SendAck call, got %d", sender.getAckCallCount())
 	}
 
-	if p.State != peer.StateConnected {
+	if p.State != common.StateConnected {
 		t.Errorf("expected state StateConnected, got %v", p.State)
 	}
 	if p.Version != "1.5.0" {
@@ -196,12 +196,12 @@ func TestHandleAck(t *testing.T) {
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
-	p.State = peer.StateAwaitingAck
+	p.State = common.StateAwaitingAck
 	p.Unlock()
 
 	service.HandleAck(peerID)
 
-	if p.State != peer.StateConnected {
+	if p.State != common.StateConnected {
 		t.Errorf("expected state StateConnected, got %v", p.State)
 	}
 }
