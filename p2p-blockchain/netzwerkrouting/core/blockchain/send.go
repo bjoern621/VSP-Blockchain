@@ -29,7 +29,7 @@ func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId commo
 
 // SendInv sends an inv message to the given peer
 func (b *BlockchainService) SendInv(inventory []*inv.InvVector, peerId common.PeerId) {
-	_, ok := b.peerStore.GetPeer(peerId)
+	_, ok := b.peerRetriever.GetPeer(peerId)
 	assert.Assert(ok, "peer '"+peerId+"' not found")
 	b.blockchainMsgSender.SendInv(inventory, peerId)
 }
