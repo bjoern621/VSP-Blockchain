@@ -1,15 +1,15 @@
 package api
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/app/data"
 	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/konto"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // KontoAPI provides the interface for querying konto (account) information.
 type KontoAPI interface {
 	// GetAssets returns the assets (UTXO values) for a given V$Address.
-	GetAssets(vsAddress string) data.AssetsResult
+	GetAssets(vsAddress string) konto.AssetsResult
 }
 
 // KontoAPIImpl implements KontoAPI using the UTXO API.
@@ -32,7 +32,7 @@ func NewKontoAPIImpl(utxoAPI *blockapi.UtxoAPI, keyDecoder VSAddressDecoder) *Ko
 }
 
 // GetAssets implements KontoAPI.GetAssets.
-func (api *KontoAPIImpl) GetAssets(vsAddress string) data.AssetsResult {
+func (api *KontoAPIImpl) GetAssets(vsAddress string) konto.AssetsResult {
 	// Decode the V$Address to get the public key hash
 	pubKeyHashBytes, version, err := api.keyDecoder.Base58CheckToBytes(vsAddress)
 	result, ok := api.validatePubKeyHash(err, version, pubKeyHashBytes)
@@ -45,7 +45,7 @@ func (api *KontoAPIImpl) GetAssets(vsAddress string) data.AssetsResult {
 
 	utxos, err := api.utxoAPI.GetUTXOsByPubKeyHash(pubKeyHash)
 	if err != nil {
-		return data.AssetsResult{
+		return konto.AssetsResult{
 			Success:      false,
 			ErrorMessage: "failed to query UTXOs: " + err.Error(),
 		}
@@ -54,23 +54,23 @@ func (api *KontoAPIImpl) GetAssets(vsAddress string) data.AssetsResult {
 	return api.handleSuccess(utxos)
 }
 
-func (api *KontoAPIImpl) handleSuccess(utxos []transaction.UTXO) data.AssetsResult {
-	assets := make([]data.Asset, 0, len(utxos))
+func (api *KontoAPIImpl) handleSuccess(utxos []transaction.UTXO) konto.AssetsResult {
+	assets := make([]konto.Asset, 0, len(utxos))
 	for _, utxo := range utxos {
-		assets = append(assets, data.Asset{
+		assets = append(assets, konto.Asset{
 			Value: utxo.Output.Value,
 		})
 	}
 
-	return data.AssetsResult{
+	return konto.AssetsResult{
 		Success: true,
 		Assets:  assets,
 	}
 }
 
-func (api *KontoAPIImpl) validatePubKeyHash(err error, version byte, pubKeyHashBytes []byte) (data.AssetsResult, bool) {
+func (api *KontoAPIImpl) validatePubKeyHash(err error, version byte, pubKeyHashBytes []byte) (konto.AssetsResult, bool) {
 	if err != nil {
-		return data.AssetsResult{
+		return konto.AssetsResult{
 			Success:      false,
 			ErrorMessage: "invalid V$Address format: " + err.Error(),
 		}, false
@@ -78,7 +78,7 @@ func (api *KontoAPIImpl) validatePubKeyHash(err error, version byte, pubKeyHashB
 
 	// V$Address uses version 0x00
 	if version != 0x00 {
-		return data.AssetsResult{
+		return konto.AssetsResult{
 			Success:      false,
 			ErrorMessage: "invalid V$Address version byte",
 		}, false
@@ -86,10 +86,10 @@ func (api *KontoAPIImpl) validatePubKeyHash(err error, version byte, pubKeyHashB
 
 	// Convert to fixed-size array (20 bytes for public key hash)
 	if len(pubKeyHashBytes) != 20 {
-		return data.AssetsResult{
+		return konto.AssetsResult{
 			Success:      false,
 			ErrorMessage: "invalid public key hash length",
 		}, false
 	}
-	return data.AssetsResult{}, true
+	return konto.AssetsResult{}, true
 }

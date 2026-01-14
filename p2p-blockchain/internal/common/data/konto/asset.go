@@ -1,4 +1,4 @@
-package data
+package konto
 
 // Asset represents a single unspent output value belonging to an address.
 type Asset struct {
