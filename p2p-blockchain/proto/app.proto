@@ -45,6 +45,13 @@ service AppService {
     // GetKeysetFromWIF Gets the complete keyset from the WIF encoded private key
     rpc GetKeysetFromWIF (GetKeysetFromWIFRequest) returns (GetKeysetFromWIFResponse);
 
+    // SendGetAddr sends a getaddr message to the specified peer to request peer addresses.
+    //
+    // Post-conditions:
+    //  - Sends getaddr message to the specified peer.
+    //  - Returns success/failure status.
+    rpc SendGetAddr(SendGetAddrRequest) returns (SendGetAddrResponse);
+    
     // CreateTransaction creates and broadcasts a new transaction.
     //
     // Pre-conditions:
@@ -136,6 +143,16 @@ message GetKeysetFromWIFRequest{
 message GetKeysetFromWIFResponse{
   Keyset keyset = 1;
   bool falseInput = 2;
+}
+
+message SendGetAddrRequest {
+    // Peer ID of the peer to send getaddr message to.
+    string peer_id = 1;
+}
+
+message SendGetAddrResponse {
+    bool success = 1;
+    string error_message = 2;
 }
 
 // CreateTransactionRequest contains the data needed to create a new transaction.
