@@ -70,7 +70,7 @@ func (b *BlockchainService) RequestMissingBlockHeaders(blockLocator block.BlockL
 
 // SendHeaders sends a Headers message to the given peer
 func (b *BlockchainService) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
-	_, ok := b.peerStore.GetPeer(peerId)
+	_, ok := b.peerRetriever.GetPeer(peerId)
 	assert.Assert(ok, "peer '"+peerId+"' not found")
 	b.blockchainMsgSender.SendHeaders(headers, peerId)
 }
