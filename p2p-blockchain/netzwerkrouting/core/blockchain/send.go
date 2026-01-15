@@ -18,6 +18,9 @@ type BlockchainMsgSender interface {
 
 	// SendGetHeaders sends a GetHeaders message to the given peer
 	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
+
+	// SendHeaders sends a Headers message to the given peer
+	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 }
 
 // SendGetData sends a getdata message to the given peer
@@ -68,4 +71,11 @@ func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excl
 // allowing efficient synchronization even when chains have diverged significantly.
 func (b *BlockchainService) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
 	b.blockchainMsgSender.SendGetHeaders(blockLocator, peerId)
+}
+
+// SendHeaders sends a Headers message to the given peer
+func (b *BlockchainService) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
+	_, ok := b.peerRetriever.GetPeer(peerId)
+	assert.Assert(ok, "peer '"+peerId+"' not found")
+	b.blockchainMsgSender.SendHeaders(headers, peerId)
 }
