@@ -52,8 +52,9 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
 	}
 
-	// Forward addresses to random neighbors (per-recipient filtering happens in forwardAddrs)
-	s.forwardAddrs(filteredAddrs, peerID)
+	// Forward addresses to random neighbors
+	// Uses addrs instead of filteredAddrs by design
+	s.forwardAddrs(addrs, peerID)
 }
 
 // forwardAddrs forwards the given addrs to neighboring peers.
