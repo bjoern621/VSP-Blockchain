@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -53,7 +52,7 @@ func (m *mockBlockStore2) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
-func newMockBlockStore() blockchain.BlockStoreAPI {
+func newMockBlockStore() BlockStoreAPI {
 	return &mockBlockStore2{}
 }
 
