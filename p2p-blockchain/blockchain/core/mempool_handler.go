@@ -15,7 +15,6 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 
 	if len(txHashes) == 0 {
 		logger.Debugf("No transactions in mempool to announce to %v", peerID)
-		return
 	}
 
 	// Create InvVectors for each transaction
