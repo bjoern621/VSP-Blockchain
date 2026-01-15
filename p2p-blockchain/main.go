@@ -74,7 +74,7 @@ func main() {
 
 	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
 
-	minerImpl := minerCore.NewMinerService(blockchainMsgService, blockchain)
+	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
 	blockchain.Attach(minerImpl)
 
 	if common.AppEnabled() {

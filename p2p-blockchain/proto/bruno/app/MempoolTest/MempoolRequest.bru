@@ -1,0 +1,21 @@
+meta {
+  name: MempoolRequest
+  type: grpc
+  seq: 2
+}
+
+grpc {
+  url: 172.28.1.13:50051
+  method: /blockchain.BlockchainService/Mempool
+  body: grpc
+  protoPath: ../../blockchain.proto
+  auth: none
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}

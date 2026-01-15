@@ -49,3 +49,25 @@ func toGrpcInvVector(inventory []*inv.InvVector) []*pb.InvVector {
 	}
 	return pbInv
 }
+
+func ToGrpcHeadersMsg(headers []*block.BlockHeader) (*pb.BlockHeaders, error) {
+	if headers == nil {
+		return nil, fmt.Errorf("headers must not be nil")
+	}
+
+	pbHeaders := make([]*pb.BlockHeader, len(headers))
+	for i, h := range headers {
+		if h == nil {
+			return nil, fmt.Errorf("headers[%d] must not be nil", i)
+		}
+		pbHeaders[i] = &pb.BlockHeader{
+			PrevBlockHash:    h.PreviousBlockHash[:],
+			MerkleRoot:       h.MerkleRoot[:],
+			Timestamp:        h.Timestamp,
+			DifficultyTarget: uint32(h.DifficultyTarget),
+			Nonce:            h.Nonce,
+		}
+	}
+
+	return &pb.BlockHeaders{Headers: pbHeaders}, nil
+}

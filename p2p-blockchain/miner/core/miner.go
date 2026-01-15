@@ -8,7 +8,6 @@ import (
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
@@ -19,23 +18,30 @@ type MinerAPI interface {
 }
 
 type minerService struct {
-	cancelMining        context.CancelFunc
-	blockchainMsgSender api.BlockchainAPI
-	blockchain          blockchainApi.BlockchainAPI
+	cancelMining context.CancelFunc
+	blockchain   blockchainApi.BlockchainAPI
+	utxoService  blockchainApi.UtxoServiceAPI
+	blockStore   blockchainApi.BlockStoreAPI
 }
 
 func NewMinerService(
-	blockchainMsgSender api.BlockchainAPI,
 	blockchain blockchainApi.BlockchainAPI,
+	utxoServiceAPI blockchainApi.UtxoServiceAPI,
+	blockStore blockchainApi.BlockStoreAPI,
 ) MinerAPI {
 	return &minerService{
-		blockchainMsgSender: blockchainMsgSender,
-		blockchain:          blockchain,
+		blockchain:  blockchain,
+		utxoService: utxoServiceAPI,
+		blockStore:  blockStore,
 	}
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
-	candidateBlock := m.createCandidateBlock(transactions)
+	candidateBlock, err := m.createCandidateBlock(transactions)
+	if err != nil {
+		logger.Errorf("Failed to create candidate block: %v", err)
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
@@ -57,20 +63,10 @@ func (m *minerService) StopMining() {
 	m.cancelMining()
 }
 
-func (m *minerService) createCandidateBlock(transactions []transaction.Transaction) block.Block {
-	header := createCandidateBlockHeader()
-
-	return block.Block{Header: header, Transactions: transactions}
-}
-
-// TODO: Kapitel Die Block-Header aufbauen
-func createCandidateBlockHeader() block.BlockHeader {
-	return block.BlockHeader{}
-}
-
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
 func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context) (nonce uint32, timestamp int64, err error) {
 	target := getTarget(candidateBlock.Header.DifficultyTarget)
+	timestamp = candidateBlock.Header.Timestamp
 
 	var counter uint64 = 0
 	var hashInt big.Int

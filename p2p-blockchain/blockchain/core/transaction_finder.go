@@ -11,5 +11,6 @@ func (b *Blockchain) IsTransactionKnown(hash common.Hash) bool {
 }
 
 func (b *Blockchain) IsTransactionKnownById(hash transaction.TransactionID) bool {
+	// TODO: Irgendwie auf BlockStore gucken, ob die Transaction schon bekannt ist
 	return true
 }

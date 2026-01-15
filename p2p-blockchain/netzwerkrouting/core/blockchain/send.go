@@ -5,6 +5,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"slices"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 type BlockchainMsgSender interface {
@@ -16,15 +18,23 @@ type BlockchainMsgSender interface {
 
 	// SendGetHeaders sends a GetHeaders message to the given peer
 	SendGetHeaders(locator block.BlockLocator, peerId common.PeerId)
+
+	// SendHeaders sends a Headers message to the given peer
+	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 }
 
 // SendGetData sends a getdata message to the given peer
 func (b *BlockchainService) SendGetData(inventory []*inv.InvVector, peerId common.PeerId) {
 	_, ok := b.peerRetriever.GetPeer(peerId)
-	if !ok {
-		panic("peer '" + peerId + "' not found")
-	}
+	assert.Assert(ok, "peer '"+peerId+"' not found")
 	b.blockchainMsgSender.SendGetData(inventory, peerId)
+}
+
+// SendInv sends an inv message to the given peer
+func (b *BlockchainService) SendInv(inventory []*inv.InvVector, peerId common.PeerId) {
+	_, ok := b.peerRetriever.GetPeer(peerId)
+	assert.Assert(ok, "peer '"+peerId+"' not found")
+	b.blockchainMsgSender.SendInv(inventory, peerId)
 }
 
 // BroadcastInvExclusionary propagates an inventory message to all outbound peers except the specified peer.
@@ -61,4 +71,11 @@ func (b *BlockchainService) BroadcastAddedBlocks(blockHashes []common.Hash, excl
 // allowing efficient synchronization even when chains have diverged significantly.
 func (b *BlockchainService) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
 	b.blockchainMsgSender.SendGetHeaders(blockLocator, peerId)
+}
+
+// SendHeaders sends a Headers message to the given peer
+func (b *BlockchainService) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
+	_, ok := b.peerRetriever.GetPeer(peerId)
+	assert.Assert(ok, "peer '"+peerId+"' not found")
+	b.blockchainMsgSender.SendHeaders(headers, peerId)
 }
