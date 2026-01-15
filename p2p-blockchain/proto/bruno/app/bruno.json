@@ -6,13 +6,17 @@
     "node_modules",
     ".git"
   ],
-  "size": 0.0006809234619140625,
-  "filesCount": 4,
+  "size": 0.003772735595703125,
+  "filesCount": 15,
   "protobuf": {
     "importPaths": [],
     "protoFiles": [
       {
         "path": "../../app.proto",
+        "type": "file"
+      },
+      {
+        "path": "../../blockchain.proto",
         "type": "file"
       }
     ]
