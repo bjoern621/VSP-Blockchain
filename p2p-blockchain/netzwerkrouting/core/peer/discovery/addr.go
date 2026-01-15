@@ -8,7 +8,6 @@ import (
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // AddrMsgHandler defines an interface for handling incoming addr messages.
@@ -88,9 +87,6 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 			}
 
 			recipient.Lock()
-			if recipient.AddrsSentTo == nil {
-				recipient.AddrsSentTo = mapset.NewSet[common.PeerId]()
-			}
 
 			// Check if this recipient has already received this address
 			if !recipient.AddrsSentTo.Contains(addr.PeerId) {
