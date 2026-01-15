@@ -22,6 +22,9 @@ type Peer struct {
 	// Seen active means, that a heartbeat message was received from the peer.
 	// It's not updated on every interaction with the peer.
 	LastSeen int64 // TODO anpassen wenn heartbeat fertig
+	// AddrsSentTo tracks PeerIds whose addresses have been sent to this peer.
+	// Prevents sending the same address twice to the same recipient.
+	AddrsSentTo map[common.PeerId]bool
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.

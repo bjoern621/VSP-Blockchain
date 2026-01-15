@@ -70,6 +70,21 @@ func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	return peerIds
 }
 
+// GetAllConnectedPeers retrieves all connected peers' IDs (both inbound and outbound).
+// All peers with StateConnected are considered connected.
+func (s *peerStore) GetAllConnectedPeers() []common.PeerId {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerIds := make([]common.PeerId, 0)
+	for k, v := range s.peers {
+		if v.State == common.StateConnected {
+			peerIds = append(peerIds, k)
+		}
+	}
+	return peerIds
+}
+
 func (s *peerStore) addPeer(peer *Peer) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

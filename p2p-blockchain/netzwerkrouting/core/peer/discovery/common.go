@@ -12,4 +12,7 @@ type DiscoveryPeerRetriever interface {
 	GetAllPeers() []common.PeerId
 	// GetPeer retrieves a peer by its ID.
 	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	// GetAllConnectedPeers retrieves all connected peers' IDs (both inbound and outbound).
+	// All peers with StateConnected are considered connected.
+	GetAllConnectedPeers() []common.PeerId
 }
