@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
-	"github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 )
 
@@ -33,9 +33,10 @@ type Peer struct {
 func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
-		id:        peerID,
-		State:     common.StateNew,
-		Direction: direction,
+		id:          peerID,
+		State:       common.StateNew,
+		Direction:   direction,
+		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created (direction: %v)", peerID, direction)
@@ -47,8 +48,9 @@ func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 func (s *peerStore) newGenericPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
-		id:    peerID,
-		State: common.StateNew,
+		id:          peerID,
+		State:       common.StateNew,
+		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created", peerID)

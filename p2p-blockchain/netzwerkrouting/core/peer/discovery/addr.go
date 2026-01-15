@@ -3,6 +3,7 @@ package discovery
 import (
 	"math/rand"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"slices"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/assert"
@@ -46,38 +47,28 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 // Forwarding rules:
 //   - Do not forward to the peer from which we received the addr
 //   - Do not forward an address to a peer that has already received it
-//   - Forward to a small random selection of connected peers (1-3 peers, average of 2)
+//   - Forward to 2 random peers of connected peers
 func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
-	// Build set of address peer IDs to exclude
-	addrPeerIds := mapset.NewSet[common.PeerId]()
-	for _, addr := range addrs {
-		addrPeerIds.Add(addr.PeerId)
-	}
-
-	// Filter out: 1) sender, 2) peers mentioned in the addr list
-	eligiblePeers := make([]common.PeerId, 0, len(connectedPeers))
-	for _, peerID := range connectedPeers {
-		if peerID == sender {
-			continue // Don't forward to sender
-		}
-		if addrPeerIds.Contains(peerID) {
-			continue // Don't forward to peers mentioned in the addr list
-		}
-		eligiblePeers = append(eligiblePeers, peerID)
-	}
+	// Filter out the sender
+	eligiblePeers := slices.DeleteFunc(connectedPeers, func(peerID common.PeerId) bool {
+		return peerID == sender
+	})
 
 	if len(eligiblePeers) == 0 {
 		logger.Debugf("No eligible peers for addr forwarding")
 		return
 	}
 
-	// Select 1-3 random peers (average of 2) for forwarding
-	numPeers := 2 // Average of 2 as per issue #75
-	if len(eligiblePeers) < numPeers {
-		numPeers = len(eligiblePeers)
+	// Build set of addresses to forward
+	addrsToForward := mapset.NewSet[common.PeerId]()
+	for _, addr := range addrs {
+		addrsToForward.Add(addr.PeerId)
 	}
+
+	// Select 2 random peers to forward to
+	numPeers := min(len(eligiblePeers), 2)
 	selectedPeers := selectPeersForAddrForwarding(eligiblePeers, numPeers)
 
 	// Forward addresses to selected peers, filtering per-recipient
@@ -89,10 +80,6 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 
 		// Filter addresses that haven't been sent to this recipient yet
 		recipient.Lock()
-		if recipient.AddrsSentTo == nil {
-			recipient.AddrsSentTo = mapset.NewSet[common.PeerId]()
-		}
-
 		filteredAddrs := make([]PeerAddress, 0, len(addrs))
 		for _, addr := range addrs {
 			if !recipient.AddrsSentTo.Contains(addr.PeerId) {
