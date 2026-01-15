@@ -121,13 +121,13 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  # Delete all miner pods at once - they will be recreated in parallel
-                  echo "Deleting all miner pods..."
-                  kubectl -n "$NAMESPACE" delete pods -l app=miner --wait=false
+                  # Restart the StatefulSet to ensure all miner pods start with the new image
+                  echo "Restarting miner StatefulSet..."
+                  kubectl -n "$NAMESPACE" rollout restart statefulset/miner
 
                   # Wait for all pods to be ready
                   echo "Waiting for all miner pods to be ready..."
-                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
 
             - name: Wait for rollout
               env:
