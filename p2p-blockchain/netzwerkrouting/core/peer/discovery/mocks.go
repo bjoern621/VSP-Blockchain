@@ -89,13 +89,15 @@ func (m *mockGetAddrMsgSender) getLastSendGetAddrCall() *common.PeerId {
 }
 
 type mockDiscoveryPeerRetriever struct {
-	mu    sync.RWMutex
-	peers map[common.PeerId]*peer.Peer
+	mu          sync.RWMutex
+	peers       map[common.PeerId]*peer.Peer
+	localPeerID common.PeerId
 }
 
 func newMockDiscoveryPeerRetriever() *mockDiscoveryPeerRetriever {
 	return &mockDiscoveryPeerRetriever{
-		peers: make(map[common.PeerId]*peer.Peer),
+		peers:       make(map[common.PeerId]*peer.Peer),
+		localPeerID: "local-peer",
 	}
 }
 
@@ -138,6 +140,12 @@ func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool
 	defer m.mu.RUnlock()
 	p, exists := m.peers[id]
 	return p, exists
+}
+
+func (m *mockDiscoveryPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return peerID == m.localPeerID
 }
 
 type mockPeerCreator struct{}
