@@ -37,7 +37,7 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 	}
 
 	// Collect headers starting from the block after the common ancestor
-	// Maximum 100 headers as per protocol specification
+	// Maximum 100 headers as we will most likely never have a blockchain this long...block
 	headers := b.collectBlockHeaders(locator, commonAncestorHeight)
 
 	// Send headers back to the requesting peer
