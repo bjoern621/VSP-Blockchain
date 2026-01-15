@@ -8,8 +8,9 @@ import (
 // peerStore manages the storage and retrieval of peer information.
 // It primarily implements the PeerCreator and PeerRetriever interfaces.
 type peerStore struct {
-	mu    sync.RWMutex
-	peers map[common.PeerId]*Peer
+	mu          sync.RWMutex
+	peers       map[common.PeerId]*Peer
+	localPeerID common.PeerId
 }
 
 // PeerCreator is an interface for creating new peers.
@@ -35,6 +36,21 @@ func NewPeerStore() *peerStore {
 	return &peerStore{
 		peers: make(map[common.PeerId]*Peer),
 	}
+}
+
+// SetLocalPeerID sets the local/own peer ID.
+// Should be called once on startup after the local peer is created.
+func (s *peerStore) SetLocalPeerID(peerID common.PeerId) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.localPeerID = peerID
+}
+
+// IsLocalPeerID checks if the given peer ID is the local/own peer ID.
+func (s *peerStore) IsLocalPeerID(peerID common.PeerId) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.localPeerID == peerID
 }
 
 func (s *peerStore) GetPeer(id common.PeerId) (*Peer, bool) {
