@@ -5,6 +5,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 
+	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
@@ -90,7 +91,12 @@ func (b *Blockchain) sendHeadersBackToPeer(headers []*block.BlockHeader, peerID 
 }
 
 // findBlockHeight finds the height of a block with the given hash
+// Note that the hash, passed to this function must be part of the main chain
 func (b *Blockchain) findBlockHeight(hash common.Hash) uint64 {
+	block, err := b.blockStore.GetBlockByHash(hash)
+	assert.IsNil(err)
+	assert.Assert(b.blockStore.IsPartOfMainChain(block))
+
 	// Start from the tip and work backwards
 	tip := b.blockStore.GetMainChainTip()
 	tipHash := tip.Hash()
