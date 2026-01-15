@@ -7,6 +7,7 @@ import (
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // AddrMsgHandler defines an interface for handling incoming addr messages.
@@ -47,13 +48,12 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 //   - Do not forward an address to a peer that has already received it
 //   - Forward to a small random selection of connected peers (1-3 peers, average of 2)
 func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
-	// Get all connected peers (both inbound and outbound)
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
 	// Build set of address peer IDs to exclude
-	addrPeerIds := make(map[common.PeerId]bool)
+	addrPeerIds := mapset.NewSet[common.PeerId]()
 	for _, addr := range addrs {
-		addrPeerIds[addr.PeerId] = true
+		addrPeerIds.Add(addr.PeerId)
 	}
 
 	// Filter out: 1) sender, 2) peers mentioned in the addr list
@@ -62,7 +62,7 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 		if peerID == sender {
 			continue // Don't forward to sender
 		}
-		if addrPeerIds[peerID] {
+		if addrPeerIds.Contains(peerID) {
 			continue // Don't forward to peers mentioned in the addr list
 		}
 		eligiblePeers = append(eligiblePeers, peerID)
@@ -90,14 +90,14 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 		// Filter addresses that haven't been sent to this recipient yet
 		recipient.Lock()
 		if recipient.AddrsSentTo == nil {
-			recipient.AddrsSentTo = make(map[common.PeerId]bool)
+			recipient.AddrsSentTo = mapset.NewSet[common.PeerId]()
 		}
 
 		filteredAddrs := make([]PeerAddress, 0, len(addrs))
 		for _, addr := range addrs {
-			if !recipient.AddrsSentTo[addr.PeerId] {
+			if !recipient.AddrsSentTo.Contains(addr.PeerId) {
 				filteredAddrs = append(filteredAddrs, addr)
-				recipient.AddrsSentTo[addr.PeerId] = true
+				recipient.AddrsSentTo.Add(addr.PeerId)
 			}
 		}
 		recipient.Unlock()

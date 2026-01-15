@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
+	"github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 )
 
@@ -24,7 +25,7 @@ type Peer struct {
 	LastSeen int64 // TODO anpassen wenn heartbeat fertig
 	// AddrsSentTo tracks PeerIds whose addresses have been sent to this peer.
 	// Prevents sending the same address twice to the same recipient.
-	AddrsSentTo map[common.PeerId]bool
+	AddrsSentTo mapset.Set[common.PeerId]
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.

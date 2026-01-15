@@ -121,6 +121,18 @@ func (m *mockDiscoveryPeerRetriever) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
+func (m *mockDiscoveryPeerRetriever) GetAllConnectedPeers() []common.PeerId {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	peerIds := make([]common.PeerId, 0, len(m.peers))
+	for id, p := range m.peers {
+		if p.State == common.StateConnected {
+			peerIds = append(peerIds, id)
+		}
+	}
+	return peerIds
+}
+
 func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
