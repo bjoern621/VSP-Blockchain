@@ -47,7 +47,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 // Forwarding rules:
 //   - Do not forward to the peer from which we received the addr
 //   - Do not forward an address to a peer that has already received it
-//   - Forward to 2 random peers of connected peers
+//   - For each address, independently select 2 random peers from connected peers to forward to
 func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
@@ -61,37 +61,33 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 		return
 	}
 
-	// Build set of addresses to forward
-	addrsToForward := mapset.NewSet[common.PeerId]()
+	// For each address, independently select 2 random peers and forward
 	for _, addr := range addrs {
-		addrsToForward.Add(addr.PeerId)
-	}
+		numPeers := min(len(eligiblePeers), 2)
+		selectedPeers := selectPeersForAddrForwarding(eligiblePeers, numPeers)
 
-	// Select 2 random peers to forward to
-	numPeers := min(len(eligiblePeers), 2)
-	selectedPeers := selectPeersForAddrForwarding(eligiblePeers, numPeers)
-
-	// Forward addresses to selected peers, filtering per-recipient
-	for _, recipientID := range selectedPeers {
-		recipient, exists := s.peerRetriever.GetPeer(recipientID)
-		if !exists {
-			continue
-		}
-
-		// Filter addresses that haven't been sent to this recipient yet
-		recipient.Lock()
-		filteredAddrs := make([]PeerAddress, 0, len(addrs))
-		for _, addr := range addrs {
-			if !recipient.AddrsSentTo.Contains(addr.PeerId) {
-				filteredAddrs = append(filteredAddrs, addr)
-				recipient.AddrsSentTo.Add(addr.PeerId)
+		// Forward this address to selected peers if they haven't received it yet
+		for _, recipientID := range selectedPeers {
+			recipient, exists := s.peerRetriever.GetPeer(recipientID)
+			if !exists {
+				continue
 			}
-		}
-		recipient.Unlock()
 
-		if len(filteredAddrs) > 0 {
-			logger.Infof("Forwarding %d addresses to peer %s", len(filteredAddrs), recipientID)
-			s.addrMsgSender.SendAddr(recipientID, filteredAddrs)
+			recipient.Lock()
+			if recipient.AddrsSentTo == nil {
+				recipient.AddrsSentTo = mapset.NewSet[common.PeerId]()
+			}
+
+			// Check if this recipient has already received this address
+			if !recipient.AddrsSentTo.Contains(addr.PeerId) {
+				recipient.AddrsSentTo.Add(addr.PeerId)
+				recipient.Unlock()
+
+				logger.Infof("Forwarding address %s to peer %s", addr.PeerId, recipientID)
+				s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
+			} else {
+				recipient.Unlock()
+			}
 		}
 	}
 }
