@@ -11,6 +11,7 @@ import (
 // Tx processes a transaction message
 // If the transaction is valid and not yet known, it is added to the mempool and broadcasted to other peers
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
+	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
 	if !isValid {
@@ -32,6 +33,4 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		invVectors = append(invVectors, &invVector)
 		b.blockchainMsgSender.BroadcastInvExclusionary(invVectors, peerID)
 	}
-
-	logger.Infof("Tx Message received: %v from %v", tx, peerID)
 }

@@ -1,0 +1,18 @@
+meta {
+  name: Mempool
+  type: grpc
+  seq: 1
+}
+
+grpc {
+  url: localhost:50051/blockchain.BlockchainService/Mempool
+  body: grpc
+  auth: inherit
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}
