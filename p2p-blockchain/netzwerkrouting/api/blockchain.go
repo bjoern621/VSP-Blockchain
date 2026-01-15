@@ -10,6 +10,9 @@ type BlockchainAPI interface {
 	// SendGetData sends a getdata message to the given peer
 	SendGetData(inventory []*inv.InvVector, peerId common.PeerId)
 
+	// SendInv sends an inv message to the given peer
+	SendInv(inventory []*inv.InvVector, peerId common.PeerId)
+
 	// BroadcastInvExclusionary propagates an inventory message to all outbound peers except the specified peer.
 	BroadcastInvExclusionary(inventory []*inv.InvVector, peerId common.PeerId)
 
@@ -22,4 +25,7 @@ type BlockchainAPI interface {
 	// The locator is built using Fibonacci series to exponentially go back through the chain,
 	// allowing efficient synchronization even when chains have diverged significantly.
 	RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerDd common.PeerId)
+
+	// SendHeaders sends a Headers message to the given peer
+	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 }

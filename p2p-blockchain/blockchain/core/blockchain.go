@@ -63,19 +63,12 @@ func (b *Blockchain) MerkleBlock(merkleBlock block.MerkleBlock, peerID common.Pe
 	logger.Infof("MerkleBlock Message received: %v from %v", merkleBlock, peerID)
 }
 
-func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
-	logger.Infof("GetHeaders Message received: %v from %v", locator, peerID)
-}
-
 func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
 	logger.Infof("Headers Message received: %v from %v", blockHeaders, peerID)
 }
 
 func (b *Blockchain) SetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
 	logger.Infof("setFilerRequest Message received: %v from %v", setFilterRequest, peerID)
-}
-func (b *Blockchain) Mempool(peerID common.PeerId) {
-	logger.Infof("Mempool Message received from %v", peerID)
 }
 
 func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {

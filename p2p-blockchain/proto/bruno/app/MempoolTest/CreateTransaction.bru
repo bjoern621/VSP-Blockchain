@@ -1,0 +1,40 @@
+meta {
+  name: CreateTransaction
+  type: grpc
+  seq: 1
+}
+
+grpc {
+  url: 172.28.1.13:50051
+  method: /blockchain.BlockchainService/Tx
+  body: grpc
+  protoPath: ../../blockchain.proto
+  auth: none
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {
+        "transaction": {
+          "inputs": [
+            {
+              "prevTxHash": "0000000000000000000000000000000000000000000000000000000000000001",
+              "outputIndex": 0,
+              "signature": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+              "publicKey": "0250863ad64a87ae8a2fe83c1af1a8403cb53f53e486d8511dad8a04887e5b2352",
+              "sequence": 4294967295
+            }
+          ],
+          "outputs": [
+            {
+              "value": 50000000,
+              "publicKeyHash": "1234567890123456789012345678901234567890"
+            }
+          ],
+          "lockTime": 0
+        }
+      }
+  '''
+}
