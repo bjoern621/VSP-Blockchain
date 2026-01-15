@@ -120,12 +120,12 @@ jobs:
                   kubectl -n "$NAMESPACE" set image deployment/rest-api rest-api="$REST_TAG"
                   kubectl -n "$NAMESPACE" set image deployment/registry registry-crawler="$REGISTRY_CRAWLER_TAG"
 
-            - name: Wait for resources to be ready
+            - name: Wait for pods to be ready
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  echo "Waiting for StatefulSet to be ready..."
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
+                  echo "Waiting for all miner pods to be ready..."
+                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=180s
 
                   echo "Waiting for deployments..."
                   kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s

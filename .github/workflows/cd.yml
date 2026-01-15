@@ -121,13 +121,17 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  # Restart the StatefulSet to ensure all miner pods start with the new image
-                  echo "Restarting miner StatefulSet..."
-                  kubectl -n "$NAMESPACE" rollout restart statefulset/miner
+                  # Scale down to 0 and back up to force parallel pod recreation
+                  echo "Scaling down miner StatefulSet..."
+                  kubectl -n "$NAMESPACE" scale statefulset/miner --replicas=0
+                  kubectl -n "$NAMESPACE" wait --for=jsonpath='{.status.replicas}'=0 statefulset/miner --timeout=180s
+
+                  echo "Scaling up miner StatefulSet..."
+                  kubectl -n "$NAMESPACE" scale statefulset/miner --replicas=45
 
                   # Wait for all pods to be ready
                   echo "Waiting for all miner pods to be ready..."
-                  kubectl -n "$NAMESPACE" rollout status statefulset/miner --timeout=180s
+                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=180s
 
             - name: Wait for rollout
               env:
