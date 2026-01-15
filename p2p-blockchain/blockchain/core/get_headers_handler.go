@@ -30,18 +30,9 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 
 	// If no common ancestor found in locator, use genesis
 	if commonAncestorHash == (common.Hash{}) {
-		tip := b.blockStore.GetMainChainTip()
-		genesisBlock, err := b.blockStore.GetBlockByHash(tip.Hash())
-		// Traverse to genesis
-		for err == nil && genesisBlock.Header.PreviousBlockHash != (common.Hash{}) {
-			genesisBlock, err = b.blockStore.GetBlockByHash(genesisBlock.Header.PreviousBlockHash)
-		}
-		if err == nil {
-			commonAncestorHeight = 0
-		} else {
-			logger.Warnf("Failed to find genesis block for GetHeaders response")
-			return
-		}
+		genesisHeader := blockchain.GenesisBlock().Header
+		b.sendHeadersBackToPeer([]*block.BlockHeader{&genesisHeader}, peerID, 0)
+		return
 	}
 
 	// Collect headers starting from the block after the common ancestor
