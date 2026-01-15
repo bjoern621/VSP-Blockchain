@@ -35,4 +35,38 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 		logger.Infof("Discovered peer from Addr msg: PeerId=%s, LastSeen=%v",
 			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
 	}
+
+	forwardAddrs(addrs, peerID)
+}
+
+// forwardAddrs forwards the given addrs to neighboring peers.
+// Forwarding rules:
+//   - Do not forward to the peer from which we received the addr.
+//   - Do not forward peers that were already known (how do we detect that? i think we need to change getorregisterpeer or so, so that peer store can distinguish between "created by infrastructure" and "really created"? but how should be do that? we want to keep a strong seperation between infrastructure and core/domain...).
+//   - ... more
+func forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
+}
+
+// selectPeersForAddrForwarding selects up to maxAddrs unique peers from the provided list for addr message forwarding.
+func selectPeersForAddrForwarding(peers []common.PeerId, maxAddrs int) []common.PeerId {
+	if len(peers) <= maxAddrs {
+		return peers
+	}
+
+	selected := make([]common.PeerId, 0, maxAddrs)
+	peerSet := make(map[common.PeerId]struct{})
+
+	for len(selected) < maxAddrs {
+		for _, peerID := range peers {
+			if len(selected) >= maxAddrs {
+				break
+			}
+			if _, exists := peerSet[peerID]; !exists {
+				peerSet[peerID] = struct{}{}
+				selected = append(selected, peerID)
+			}
+		}
+	}
+
+	return selected
 }
