@@ -43,24 +43,14 @@ func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	return p, exists
 }
 
-func (m *mockPeerRetriever) GetAllConnectedPeers() []common.PeerId {
+func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
-		if p.State == common.StateConnected {
+		if p.Direction == common.DirectionOutbound {
 			ids = append(ids, id)
 		}
 	}
 	return ids
-}
-
-func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
-	assert.Fail(nil, "not implemented")
-	return nil
-}
-
-func (m *mockPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
-	assert.Fail(nil, "not implemented")
-	return false
 }
 
 //
@@ -141,18 +131,18 @@ func TestHandleHeartbeatPingUnknownPeer(t *testing.T) {
 	assert.Equal(t, 0, len(mockSender.pongCalls))
 }
 
-func TestKeepaliveServiceSendsToConnectedPeers(t *testing.T) {
+func TestKeepaliveServiceSendsToOutboundPeers(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
-	// Create connected peers
+	// Create outbound peers
 	peerID1 := common.PeerId("peer-1")
 	peerID2 := common.PeerId("peer-2")
 	peerID3 := common.PeerId("peer-3")
 
-	peerRetriever.peers[peerID1] = &peer.Peer{State: common.StateConnected}
-	peerRetriever.peers[peerID2] = &peer.Peer{State: common.StateConnected}
-	peerRetriever.peers[peerID3] = &peer.Peer{State: common.StateNew} // Not connected
+	peerRetriever.peers[peerID1] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionOutbound}
+	peerRetriever.peers[peerID2] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionOutbound}
+	peerRetriever.peers[peerID3] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionInbound} // Inbound, not outbound
 
 	service := NewKeepaliveService(peerRetriever, mockSender)
 
@@ -166,8 +156,8 @@ func TestKeepaliveServiceSendsToConnectedPeers(t *testing.T) {
 	// Stop the service
 	service.Stop()
 
-	// Verify heartbeat pings were sent only to connected peers
-	assert.Equal(t, 2, len(mockSender.pingCalls), "should send to 2 connected peers")
+	// Verify heartbeat pings were sent only to outbound peers
+	assert.Equal(t, 2, len(mockSender.pingCalls), "should send to 2 outbound peers")
 	assert.Contains(t, mockSender.pingCalls, peerID1, "should send to peerID1")
 	assert.Contains(t, mockSender.pingCalls, peerID2, "should send to peerID2")
 	assert.NotContains(t, mockSender.pingCalls, peerID3, "should not send to peerID3")

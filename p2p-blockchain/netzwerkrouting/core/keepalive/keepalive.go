@@ -26,7 +26,7 @@ type HeartbeatMsgHandler interface {
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
 	GetPeer(id common.PeerId) (*peer.Peer, bool)
-	GetAllConnectedPeers() []common.PeerId
+	GetAllOutboundPeers() []common.PeerId
 }
 
 // KeepaliveService handles keepalive (heartbeat) functionality for peers.
@@ -78,10 +78,10 @@ func (s *KeepaliveService) Stop() {
 	close(s.stopChan)
 }
 
-// sendHeartbeats sends heartbeat ping messages to all connected peers.
+// sendHeartbeats sends heartbeat ping messages to all connected outbound peers.
 func (s *KeepaliveService) sendHeartbeats() {
-	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
-	logger.Debugf("Sending heartbeat pings to %d connected peers", len(connectedPeers))
+	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
+	logger.Debugf("Sending heartbeat pings to %d connected outbound peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {
 		go s.heartbeatSender.SendHeartbeatPing(peerID)
