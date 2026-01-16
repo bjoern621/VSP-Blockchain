@@ -265,3 +265,29 @@ func (c *Client) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 		}
 	}()
 }
+
+func (c *Client) SendBlock(block block.Block, peerId common.PeerId) {
+	pbBlockMsg, err := adapter.ToGrpcBlockMsg(&block)
+	if err != nil {
+		logger.Warnf("failed to create BlockMsg from DTO: %v", err)
+		return
+	}
+
+	SendHelper(c, peerId, "Block", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
+		_, err := client.Block(context.Background(), pbBlockMsg)
+		return err
+	})
+}
+
+func (c *Client) SendTx(transaction transaction.Transaction, peerId common.PeerId) {
+	pbTxMsg, err := adapter.ToGrpcTxMsg(&transaction)
+	if err != nil {
+		logger.Warnf("failed to create TxMsg from DTO: %v", err)
+		return
+	}
+
+	SendHelper(c, peerId, "Tx", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
+		_, err := client.Tx(context.Background(), pbTxMsg)
+		return err
+	})
+}

@@ -79,7 +79,7 @@ func main() {
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)

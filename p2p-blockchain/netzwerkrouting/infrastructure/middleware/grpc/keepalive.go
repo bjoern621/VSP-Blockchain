@@ -9,44 +9,44 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// HeartbeatPing handles incoming HeartbeatPing messages from peers.
-// This method is called when another peer sends a ping to check liveness.
-// It updates the peer's LastSeen timestamp and responds with HeartbeatPong.
-func (s *Server) HeartbeatPing(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+// HeartbeatBing handles incoming HeartbeatBing messages from peers.
+// This method is called when another peer sends a bing to check liveness.
+// It updates the peer's LastSeen timestamp and responds with HeartbeatBong.
+func (s *Server) HeartbeatBing(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
-	logger.Debugf("Received HeartbeatPing from peer %s", peerId)
+	logger.Debugf("Received HeartbeatBing from peer %s", peerId)
 
-	s.keepaliveService.HandleHeartbeatPing(peerId)
+	s.keepaliveService.HandleHeartbeatBing(peerId)
 
 	return &emptypb.Empty{}, nil
 }
 
-// HeartbeatPong handles incoming HeartbeatPong messages from peers.
-// This method is called when another peer responds to our HeartbeatPing.
+// HeartbeatBong handles incoming HeartbeatBong messages from peers.
+// This method is called when another peer responds to our HeartbeatBing.
 // It updates the peer's LastSeen timestamp.
-func (s *Server) HeartbeatPong(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *Server) HeartbeatBong(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
-	logger.Debugf("Received HeartbeatPong from peer %s", peerId)
+	logger.Debugf("Received HeartbeatBong from peer %s", peerId)
 
-	s.keepaliveService.HandleHeartbeatPong(peerId)
+	s.keepaliveService.HandleHeartbeatBong(peerId)
 
 	return &emptypb.Empty{}, nil
 }
 
-// SendHeartbeatPing sends a HeartbeatPing message to the specified peer and waits for a HeartbeatPong response.
+// SendHeartbeatBing sends a HeartbeatBing message to the specified peer and waits for a HeartbeatBong response.
 // This method is used as a keep-alive mechanism to check if a peer is still responsive.
-func (c *Client) SendHeartbeatPing(peerID common.PeerId) {
-	SendHelper(c, peerID, "HeartbeatPing", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
-		_, err := client.HeartbeatPing(context.Background(), &emptypb.Empty{})
+func (c *Client) SendHeartbeatBing(peerID common.PeerId) {
+	SendHelper(c, peerID, "HeartbeatBing", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
+		_, err := client.HeartbeatBing(context.Background(), &emptypb.Empty{})
 		return err
 	})
 }
 
-// SendHeartbeatPong sends a HeartbeatPong message to the specified peer.
-// This method is used to respond to a HeartbeatPing from another peer.
-func (c *Client) SendHeartbeatPong(peerID common.PeerId) {
-	SendHelper(c, peerID, "HeartbeatPong", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
-		_, err := client.HeartbeatPong(context.Background(), &emptypb.Empty{})
+// SendHeartbeatBong sends a HeartbeatBong message to the specified peer.
+// This method is used to respond to a HeartbeatBing from another peer.
+func (c *Client) SendHeartbeatBong(peerID common.PeerId) {
+	SendHelper(c, peerID, "HeartbeatBong", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
+		_, err := client.HeartbeatBong(context.Background(), &emptypb.Empty{})
 		return err
 	})
 }

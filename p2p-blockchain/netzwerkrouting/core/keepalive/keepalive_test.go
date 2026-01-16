@@ -19,11 +19,11 @@ type mockHeartbeatMsgSender struct {
 	pongCalls []common.PeerId
 }
 
-func (m *mockHeartbeatMsgSender) SendHeartbeatPing(peerID common.PeerId) {
+func (m *mockHeartbeatMsgSender) SendHeartbeatBing(peerID common.PeerId) {
 	m.pingCalls = append(m.pingCalls, peerID)
 }
 
-func (m *mockHeartbeatMsgSender) SendHeartbeatPong(peerID common.PeerId) {
+func (m *mockHeartbeatMsgSender) SendHeartbeatBong(peerID common.PeerId) {
 	m.pongCalls = append(m.pongCalls, peerID)
 }
 
@@ -57,7 +57,7 @@ func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
 // Tests
 //
 
-func TestHandleHeartbeatPing(t *testing.T) {
+func TestHandleHeartbeatBing(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
@@ -71,8 +71,8 @@ func TestHandleHeartbeatPing(t *testing.T) {
 	// Initially LastSeen should be 0
 	assert.Equal(t, int64(0), testPeer.LastSeen)
 
-	// Handle heartbeat ping
-	service.HandleHeartbeatPing(peerID)
+	// Handle heartbeat bing
+	service.HandleHeartbeatBing(peerID)
 
 	// LastSeen should be updated
 	assert.NotZero(t, testPeer.LastSeen)
@@ -89,7 +89,7 @@ func TestHandleHeartbeatPing(t *testing.T) {
 	assert.Equal(t, peerID, mockSender.pongCalls[0])
 }
 
-func TestHandleHeartbeatPong(t *testing.T) {
+func TestHandleHeartbeatBong(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
@@ -103,8 +103,8 @@ func TestHandleHeartbeatPong(t *testing.T) {
 	// Initially LastSeen should be 0
 	assert.Equal(t, int64(0), testPeer.LastSeen)
 
-	// Handle heartbeat pong
-	service.HandleHeartbeatPong(peerID)
+	// Handle heartbeat bong
+	service.HandleHeartbeatBong(peerID)
 
 	// LastSeen should be updated
 	assert.NotZero(t, testPeer.LastSeen)
@@ -117,15 +117,15 @@ func TestHandleHeartbeatPong(t *testing.T) {
 	assert.Equal(t, 0, len(mockSender.pongCalls))
 }
 
-func TestHandleHeartbeatPingUnknownPeer(t *testing.T) {
+func TestHandleHeartbeatBingUnknownPeer(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
 	service := NewKeepaliveService(peerRetriever, mockSender)
 
-	// Handle heartbeat ping for unknown peer - should not panic
+	// Handle heartbeat bing for unknown peer - should not panic
 	unknownPeerID := common.PeerId("unknown")
-	service.HandleHeartbeatPing(unknownPeerID)
+	service.HandleHeartbeatBing(unknownPeerID)
 
 	// No pong should be sent for unknown peer
 	assert.Equal(t, 0, len(mockSender.pongCalls))
