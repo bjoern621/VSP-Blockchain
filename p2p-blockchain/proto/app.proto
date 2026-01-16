@@ -51,7 +51,7 @@ service AppService {
     //  - Sends getaddr message to the specified peer.
     //  - Returns success/failure status.
     rpc SendGetAddr(SendGetAddrRequest) returns (SendGetAddrResponse);
-    
+
     // CreateTransaction creates and broadcasts a new transaction.
     //
     // Pre-conditions:
@@ -62,6 +62,15 @@ service AppService {
     //  - Transaction is created, signed, validated and broadcast to the network.
     //  - Returns success/failure status with error details.
     rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
+
+    // GetAssets returns the assets (UTXOs) for a given V$Address.
+    //
+    // Pre-conditions:
+    //  - V$Address must be a valid Base58Check encoded public key hash.
+    //
+    // Post-conditions:
+    //  - Returns list of assets (UTXO values) for the address.
+    rpc GetAssets(GetAssetsRequest) returns (GetAssetsResponse);
 }
 
 message ConnectToRequest {
@@ -163,6 +172,25 @@ message CreateTransactionRequest {
     uint64 amount = 2;
     // The sender's private key in WIF format (Base58Check encoded)
     string sender_private_key_wif = 3;
+}
+
+// GetAssetsRequest contains the V$Address to query the assets for.
+message GetAssetsRequest {
+    // The V$Address (Base58Check encoded) to query
+    string vs_address = 1;
+}
+
+// GetAssetsResponse contains the assets result.
+message GetAssetsResponse {
+    bool success = 1;
+    string error_message = 2;
+    // List of assets (UTXO values) belonging to the address
+    repeated Asset assets = 3;
+}
+
+// Asset represents a single unspent output value.
+message Asset {
+    uint64 value = 1;
 }
 
 // CreateTransactionResponse contains the result of the transaction creation.

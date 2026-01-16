@@ -96,12 +96,17 @@ func main() {
 		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
+
+		// Initialize konto API and handler
+		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
+		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
+
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
