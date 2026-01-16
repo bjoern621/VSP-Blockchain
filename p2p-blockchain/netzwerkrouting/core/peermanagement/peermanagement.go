@@ -7,10 +7,8 @@
 //  1. Periodic Check: Every `checkInterval`, the service checks the current peer count
 //  2. Threshold Evaluation: If count < `minPeers`, new connections are needed
 //  3. Peer Discovery: Queries the registry for available peer IDs
-//  4. Deduplication: Removes duplicate peer IDs from the list
-//  5. Connection Initiation: Attempts to establish connections up to `maxPeersPerAttempt`
-//  6. Handshake: For each peer, initiates the handshake process via HandshakeService
-//  7. Result Logging: Logs successful/failed connection attempts
+//  4. Connection Initiation: Attempts to establish connections up to `maxPeersPerAttempt`
+//  5. Handshake: For each peer, initiates the handshake process via HandshakeService
 package peermanagement
 
 import (
@@ -154,17 +152,14 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 		return
 	}
 
-	// Deduplicate peers (in case the registry returns duplicates)
-	uniquePeers := s.deduplicatePeers(registryPeers)
-
 	// Limit to the number of peers we need
-	if len(uniquePeers) > count {
-		uniquePeers = uniquePeers[:count]
+	if len(registryPeers) > count {
+		registryPeers = registryPeers[:count]
 	}
 
 	// Attempt to establish connections
 	successfulConnections := 0
-	for _, peerID := range uniquePeers {
+	for _, peerID := range registryPeers {
 		err := s.handshakeInitiator.InitiateHandshake(peerID)
 		if err != nil {
 			logger.Warnf("Failed to initiate handshake with peer %s: %v", peerID, err)
@@ -176,19 +171,4 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 	}
 
 	logger.Infof("Established %d/%d new peer connections", successfulConnections, count)
-}
-
-// deduplicatePeers removes duplicate peer IDs from the list.
-func (s *PeerManagementService) deduplicatePeers(peers []common.PeerId) []common.PeerId {
-	seen := make(map[common.PeerId]struct{})
-	unique := make([]common.PeerId, 0, len(peers))
-
-	for _, peerID := range peers {
-		if _, exists := seen[peerID]; !exists {
-			seen[peerID] = struct{}{}
-			unique = append(unique, peerID)
-		}
-	}
-
-	return unique
 }
