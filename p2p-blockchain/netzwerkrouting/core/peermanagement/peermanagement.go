@@ -1,4 +1,4 @@
-// Package peermanagement provides automatic peer connection management.
+// Package peermanagement watches active peer connection count.
 // It monitors the connected peer count and automatically establishes new connections
 // when the count falls below a configured threshold.
 // Works in conjunction with the connectioncheck and keepalive packages.
@@ -6,9 +6,8 @@
 // General Operation Flow:
 //  1. Periodic Check: Every `checkInterval`, the service checks the current peer count
 //  2. Threshold Evaluation: If count < `minPeers`, new connections are needed
-//  3. Peer Discovery: Queries the registry for available peer IDs
-//  4. Connection Initiation: Attempts to establish connections up to `maxPeersPerAttempt`
-//  5. Handshake: For each peer, initiates the handshake process via HandshakeService
+//  3. Connection Initiation: Attempts to establish connections up to `maxPeersPerAttempt` using `GetUnconnectedPeers()`
+//  4. Handshake: For each peer, initiates the handshake process via HandshakeService
 package peermanagement
 
 import (
@@ -36,7 +35,7 @@ type peerCounter interface {
 // peerDiscoverer is an interface for discovering new peers.
 type peerDiscoverer interface {
 	// GetPeers queries the registry for available peer IDs.
-	GetPeers(hostname string) ([]common.PeerId, error)
+	GetPeers()
 }
 
 // peerCreator is an interface for creating new peers.
@@ -51,12 +50,18 @@ type handshakeInitiator interface {
 	InitiateHandshake(peerID common.PeerId) error
 }
 
+type knownPeerRetriever interface {
+	// GetUnconnectedPeers retrieves peer IDs that are known but not currently connected.
+	GetUnconnectedPeers() []common.PeerId
+}
+
 // PeerManagementService manages automatic peer connections.
 type PeerManagementService struct {
 	peerCounter        peerCounter
 	peerDiscoverer     peerDiscoverer
 	peerCreator        peerCreator
 	handshakeInitiator handshakeInitiator
+	knownPeerRetriever knownPeerRetriever
 
 	minPeers           int
 	maxPeersPerAttempt int
@@ -72,12 +77,14 @@ func NewPeerManagementService(
 	peerDiscoverer peerDiscoverer,
 	peerCreator peerCreator,
 	handshakeInitiator handshakeInitiator,
+	knownPeerRetriever knownPeerRetriever,
 ) *PeerManagementService {
 	return &PeerManagementService{
 		peerCounter:        peerCounter,
 		peerDiscoverer:     peerDiscoverer,
 		peerCreator:        peerCreator,
 		handshakeInitiator: handshakeInitiator,
+		knownPeerRetriever: knownPeerRetriever,
 		minPeers:           DefaultMinPeers,
 		maxPeersPerAttempt: DefaultMaxPeersPerAttempt,
 		checkInterval:      DefaultPeerCheckInterval,
@@ -140,26 +147,22 @@ func (s *PeerManagementService) checkAndMaintainPeers() {
 
 // establishNewPeers attempts to establish connections to the specified number of peers.
 func (s *PeerManagementService) establishNewPeers(count int) {
-	// Query registry for available peers
-	registryPeers, err := s.peerDiscoverer.GetPeers("")
-	if err != nil {
-		logger.Errorf("Failed to query registry for peers: %v", err)
-		return
-	}
+	potentialPeers := s.knownPeerRetriever.GetUnconnectedPeers()
 
-	if len(registryPeers) == 0 {
-		logger.Warnf("No peers available in registry")
+	if len(potentialPeers) == 0 {
+		logger.Warnf("No unconnected peers available")
 		return
 	}
 
 	// Limit to the number of peers we need
-	if len(registryPeers) > count {
-		registryPeers = registryPeers[:count]
+	if len(potentialPeers) > count {
+		potentialPeers = potentialPeers[:count]
+		// TODO select random
 	}
 
 	// Attempt to establish connections
 	successfulConnections := 0
-	for _, peerID := range registryPeers {
+	for _, peerID := range potentialPeers {
 		err := s.handshakeInitiator.InitiateHandshake(peerID)
 		if err != nil {
 			logger.Warnf("Failed to initiate handshake with peer %s: %v", peerID, err)
@@ -172,3 +175,5 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 
 	logger.Infof("Established %d/%d new peer connections", successfulConnections, count)
 }
+
+// TODO recurring getaddr sending

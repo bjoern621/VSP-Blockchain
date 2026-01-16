@@ -58,7 +58,7 @@ func main() {
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
-	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService)
+	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
@@ -145,6 +145,10 @@ func main() {
 
 	// Start connection check service
 	connectionCheckService.Start()
+
+	// Bootstrap from registry
+	logger.Infof("Bootstrapping peers from registry...")
+	discoveryService.GetPeers()
 
 	// Start peer management service
 	peerManagementService.Start()
