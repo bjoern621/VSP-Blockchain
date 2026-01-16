@@ -43,7 +43,7 @@ func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	return p, exists
 }
 
-func (m *mockPeerRetriever) GetConnectedPeers() []common.PeerId {
+func (m *mockPeerRetriever) GetAllConnectedPeers() []common.PeerId {
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
 		if p.State == common.StateConnected {
@@ -56,6 +56,11 @@ func (m *mockPeerRetriever) GetConnectedPeers() []common.PeerId {
 func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
 	assert.Fail(nil, "not implemented")
 	return nil
+}
+
+func (m *mockPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
+	assert.Fail(nil, "not implemented")
+	return false
 }
 
 //

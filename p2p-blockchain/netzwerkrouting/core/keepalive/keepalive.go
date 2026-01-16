@@ -73,7 +73,7 @@ func (s *KeepaliveService) Stop() {
 
 // sendHeartbeats sends heartbeat ping messages to all connected peers.
 func (s *KeepaliveService) sendHeartbeats() {
-	connectedPeers := s.peerRetriever.GetConnectedPeers()
+	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 	logger.Debugf("Sending heartbeat pings to %d connected peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {
