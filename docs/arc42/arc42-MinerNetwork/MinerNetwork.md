@@ -43,22 +43,21 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Qualitätsziele
 
 | Priorität | Qualitätsziel          | Motivation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-|-----------|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1         | Skalierbarkeit         | Ein zentrales Ziel von verteilten Systemen ist die Skalierbarkeit der verfügbaren Ressourcen. Auf diese Ziele sollte ein besonderes Augenmerk gelegt werden. Das P2P-Netzwerk muss stabil bleiben, auch wenn bis zu 50 Akteure gleichzeitig dem Netzwerk beitreten, es verlassen oder aktiv minen.                                                                                                                                                                                                                                                   |
 | 2         | Verteilungstransparenz | Ein weiteres wichtiges Ziel ist die Einfachheit, mit welcher unser Service genutzt werden soll. Dies wird in dem P2P-Netzwerk durch die Verteilungstransparenz erreicht. Der Nutzer soll das System so nutzen können, als ob dieses nur aus ein Knoten bestehen würde. Auf die Zugangstransparenz, Replikationstransparenz und Skalierungstransparenz wird dafür ein besonderes Augenmerk gelegt.                                                                                                                                                    |
 | 3         | Offenheit              | Die Offenheit der Schnittstellen ist ein fundamentales Prinzip dieser Blockchain. Die wohl-definierten Schnittstellen zum Miner-Network sind leicht für jeden zugänglich und Applikationen lassen sich leicht drauf aufbauen (z.B. der Rest-Api-Service). Mit leicht ist gemeint, dass sich ein Bachelor Student der Informatik in maximal einem Tag in die Schnittstellen einlesen und erfolgreich nutzen kann. Der Unterpunkt der Anpassbarkeit für Benutzer und Entwickler (entnommen aus dem Skript) , wird in diesem Fall jedoch ausgeklammert. |
 | 4         | Verständlichkeit       | Die Konzepte von Blockchain und verteilten Systemen müssen bei dem Projekt leicht verständlich sein. Die Architektur und der Code müssen daher nachvollziehbar und gut dokumentiert sein. Es sollen Architekturmuster genutzt werden und [Go Best Practices](https://go.dev/doc/effective_go) angewandt. Dokumentation sollte kontinuierlich auf dem neuesten Stand gehalten werden.                                                                                                                                                                 |
 
-
 ## Stakeholder
 
-| Nummer | Rolle                            |                                                                                                                                                                                                                                                      |
-| ------ | -------------------------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Nummer | Rolle                            |                                                                                                                                                                                                                                                                                   |
+| ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1      | Entwickler                       | Lernen der Technologien und Verteilte Systeme bei akzeptablem Zeitaufwand (3+1 SWS). Der Featureumfang sollte entsprechend klein gewählt werden. Zudem sind die Überwindungskosten Geld auszegeben sehr hoch, wodurch eher Features entfallen, anstatt dass Geld ausgegeben wird. |
-| 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden.                                                                                                                             |
-| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Das Miner-Netzwerk ist zuverlässig erreichbar.                                                                                                                                                                      |
-| 4      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                                                                                                                                                       |
-| 5      | ICC                              | Das System muss in der ICC gehostet, deployed und getestet werden. Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/).                                       |
+| 2      | Kunde                            | Architektur nach wissenschaftlicher Praxis, Dokumentation und Code müssen zueinander passen und zugesagte Funktionalität sollte eingehalten werden.                                                                                                                               |
+| 3      | Öffentliche Nutzer des Netzwerks | Klare Dokumentation wie das Netzwerk genutzt werden sollte. Das Miner-Netzwerk ist zuverlässig erreichbar.                                                                                                                                                                        |
+| 4      | REST-API (Entwickler)            | Umsetzung der Händler-Aktivitäten ohne Miner-Aktivitäten.                                                                                                                                                                                                                         |
+| 5      | ICC                              | Das System muss in der ICC gehostet, deployed und getestet werden. Die Ressourcen der ICC sind begrenzt, siehe [Ressourcenquoten](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/).                                                                                    |
 
 <div align="center">
     <img src="images/stakeholder_quadrant.drawio.svg" alt="Stakeholder Quadrant"  height="400">
@@ -68,60 +67,55 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 ## Technische Randbedingungen
 
-| **Randbedingung**              | **Erläuterung**                                                                        |
-|--------------------------------|----------------------------------------------------------------------------------------|
-| **Blockchain-Technologie**     | Das System muss auf einer **Blockchain-basierten Infrastruktur** implementiert werden. |
-| **Deployment-Umgebung**        | Das System wird in der **Cloud-Umgebung** der HAW (ICC) betrieben.                     |
-| Loadsharing Unterstützung       | Das System muss in der Lage sein, Last zwischen mehreren Knoten zu verteilen. Das Konzept öffentliche Blockchain zielt bereits auf diese Eigenschaft ab, so dass diese Einschränkung keine weiteren Auswirkungen haben sollte.                                                                                                                                                                                                                                                                                                                                                                              |
-| Service Orchestrierung über RPC | Die einzelnen Services (Miner, Händler) müssen über RPC-Aufrufe untereinander koordiniert werden. Dies könnte z. B. Timeouts, Retries, ausführliches Logging und konsistente Fehlerbehandlung über Service-Grenzen hinweg erfordern.                                                                                                                                                                                                                                                                                                                                                                        |
+| **Randbedingung**               | **Erläuterung**                                                                                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Blockchain-Technologie**      | Das System muss auf einer **Blockchain-basierten Infrastruktur** implementiert werden.                                                                                                                                               |
+| **Deployment-Umgebung**         | Das System wird in der **Cloud-Umgebung** der HAW (ICC) betrieben.                                                                                                                                                                   |
+| Loadsharing Unterstützung       | Das System muss in der Lage sein, Last zwischen mehreren Knoten zu verteilen. Das Konzept öffentliche Blockchain zielt bereits auf diese Eigenschaft ab, so dass diese Einschränkung keine weiteren Auswirkungen haben sollte.       |
+| Service Orchestrierung über RPC | Die einzelnen Services (Miner, Händler) müssen über RPC-Aufrufe untereinander koordiniert werden. Dies könnte z. B. Timeouts, Retries, ausführliches Logging und konsistente Fehlerbehandlung über Service-Grenzen hinweg erfordern. |
 
 ---
 
 ## Organisatorische Randbedingungen
 
-| **Randbedingung** | **Erläuterung**                                                                                      |
-|--------------------|------------------------------------------------------------------------------------------------------|
-| **Entwicklungsteam** | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                             |
-| Zeit                            | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden.                                                                                                                                                                                                                                                                                                                                                                                    |
-| **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert. |
+| **Randbedingung**          | **Erläuterung**                                                                                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Entwicklungsteam**       | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                                                                                                                                                 |
+| Zeit                       | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
+| **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert.                                                                                                                     |
 
 ---
 
 ## Rechtliche und sicherheitsrelevante Randbedingungen
 
-| **Randbedingung** | **Erläuterung** |
-|--------------------|-----------------|
-| **Verschlüsselung** | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**. |
+| **Randbedingung**     | **Erläuterung**                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Verschlüsselung**   | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                                     |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
-
-
 
 # Kontextabgrenzung
 
 ## Fachlicher Kontext
 
-
 <div align="center">
     <img src="images/business_context_fachlich.drawio.svg" alt="Fachlicher Kontext"  height="250">
 </div>
 
-| Nachbar          | Beschreibung                                                                                                                                                                                                                 | Input                                                                                                             | Output                                                                                                   |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |-------------------------------------------------------------------------------------------------------------------| -------------------------------------------------------------------------------------------------------- |
-| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke \[[UC-7](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\]     | Blockchain \[[UC-5, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
+| Nachbar          | Beschreibung                                                                                                                                                                                                                 | Input                                                                                                          | Output                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke \[[UC-7](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\]  | Blockchain \[[UC-5, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\]    |
 | Externer Händler | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Handel der Kryptowährung beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
-| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                                                  | Siehe Externer Händler                                                                                            | Siehe Externer Händler                                                                       |
+| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                                                  | Siehe Externer Händler                                                                                         | Siehe Externer Händler                                                                   |
 
 Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich sein.
 
 ## Technischer Kontext
 
-| Nachbar            | Input technische Schnittstellen | Output technische Schnittstellen                                                         |
-| ------------------ |--------------------------------|------------------------------------------------------------------------------------------|
-| Externer Miner     | gRPC                           | gRPC                                                                                     |
-| Externer Händler   | gRPC                           | gRPC                                                                                     |
-| REST-API           | gRPC                           | gRPC                                                                                     |
-
-
+| Nachbar          | Input technische Schnittstellen | Output technische Schnittstellen |
+| ---------------- | ------------------------------- | -------------------------------- |
+| Externer Miner   | gRPC                            | gRPC                             |
+| Externer Händler | gRPC                            | gRPC                             |
+| REST-API         | gRPC                            | gRPC                             |
 
 # Lösungsstrategie
 
@@ -398,12 +392,21 @@ Using Upcalls, S. 8).
 
 # Laufzeitsicht
 
+## Background jobs
+
+TODO: Timing / funktionisweise von background services beschireben
+
+-   peermanagement
+-   keepalive (heartbeats)
+-   connectioncheck (clean old connections)
 
 ## State machine Miner: Allgemein
+
 Da unser System zustandslos- und asynchron arbeitet, sind die Sequenzen (Remote Procedure Calls) trivial. Diese werden
 hier nicht separat dargestellt. Ein Receive{Methoden Name} wird immer dann ausgeführt, wenn ein Remote Procedure Call empfangen wird.
-Ein Send{Methoden Name} bedeutet, dass ein Remote Procedure Call gesendet wird. In dem Diagramm wird dies nicht explizit dargestellt, 
+Ein Send{Methoden Name} bedeutet, dass ein Remote Procedure Call gesendet wird. In dem Diagramm wird dies nicht explizit dargestellt,
 da es sich um eine triviale Sequenz handelt.
+
 <div align="center">
 
 ```mermaid
@@ -445,6 +448,7 @@ stateDiagram-v2
     running --> mempool_received: ReceiveMempool()
     mempool_received --> running: HandleMempool()
 ```
+
 <p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
 </div>
 
@@ -467,50 +471,32 @@ stateDiagram-v2
     peer_check --> initiateHandshake : if len(peers) > 0
     no_peers --> initiateHandshake : getPeers()
     [*] --> handleHandshake: HandleHandshake()
-    
+
     state initiateHandshake {
         [*] --> new
         new --> awaiting_verack: SendVersion()
         awaiting_verack --> connected: ReceiveVerack()
         connected --> [*]: SendAck()
     }
-    
+
     state handleHandshake {
         [*] --> new_: ReceiveVersion()
         new_ --> awaiting_ack: SendVerack()
         awaiting_ack --> connected_: ReceiveAck()
         connected_ --> [*]
-        
+
     }
-    
+
     connected_: connected
     new_: new
-    
+
 ```
+
 <p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
 </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Verbindungsaufbau
+
 <div align="center">
 
 ```mermaid
@@ -927,22 +913,24 @@ Dabei steht long in unserem Fall, unabhängig von der Plattform eine vorzeichenb
 Ein UInt steht für eine positive 32-Bit-Ganzzahl.
 
 #### Keyset
+
 Ein Keyset hält alle notwendigen Schlüssel, welche zu einem Konto zugehörig sind.
 Es beinhaltet:
 
-| Name               | Datentyp |
-|--------------------|----------|
-| Private Key        | 32 Byte  |
-| Private Key WIF    | string   |
-| PubKey             | 33 Byte  |
-| V$Address          | string   |
-
+| Name            | Datentyp |
+| --------------- | -------- |
+| Private Key     | 32 Byte  |
+| Private Key WIF | string   |
+| PubKey          | 33 Byte  |
+| V$Address       | string   |
 
 #### Private Key
+
 Der Private Key ist ein SHA 256 von einer kryptografisch sicher generierten 256 bit Zufallszahl welche größer gleich 1 und kleiner gleich den generatorpunkt G der Secp256k1 Kurve ist.\
 Der private Schlüssel ermöglicht den Zugriff auf die VSGoins, die an die entsprechende V$Address gesendet werden.
 
 #### Private Key WIF
+
 Der Private Key im WIF Format ist ein Base58Check-codierter privater Schlüssel mit 0x80 als Präfix\
 Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Keys. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
 
@@ -966,9 +954,9 @@ Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Key
     -   Dient als vereinfachter `scriptPubKey`
 
 #### V$Address
+
 Die V$Address ist ein Base58Check-kodierter PubKeyHash mit 0x00 als präfix.
 Sie bietet eine fehlererkenende und klare Darstellung des PubKeyHashs. Die Nutzung bietet sich besonders bei dessen Austausch mit anderen Parteien an.
-
 
 #### UTXO (Unspent Transaction Output)
 
@@ -1249,17 +1237,19 @@ Ein Full Node muss das vollständige **UTXO-Set (Unspent Transaction Outputs)** 
 Die Datenmenge wächst kontinuierlich, kann beliebig groß werden und wird bei jeder Blockverarbeitung intensiv gelesen und geschrieben.
 
 Anforderungen:
-- Persistente Speicherung über Node-Neustarts hinweg
-- Sehr schnelle Key-Value-Lookups
-- Hohe Schreibperformance bei Blockverarbeitung
-- In-Prozess-Datenbank (kein externer DB-Server)
-- Gute Integration in eine Go-Codebasis
-- Möglichkeit zur späteren Erweiterung um Caching-Strategien
+
+-   Persistente Speicherung über Node-Neustarts hinweg
+-   Sehr schnelle Key-Value-Lookups
+-   Hohe Schreibperformance bei Blockverarbeitung
+-   In-Prozess-Datenbank (kein externer DB-Server)
+-   Gute Integration in eine Go-Codebasis
+-   Möglichkeit zur späteren Erweiterung um Caching-Strategien
 
 Alternativen:
-- In-Memory Maps (nicht persistent, nicht skalierbar)
-- BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
-- LevelDB (bewährt, aber nicht nativ in Go)
+
+-   In-Memory Maps (nicht persistent, nicht skalierbar)
+-   BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
+-   LevelDB (bewährt, aber nicht nativ in Go)
 
 ---
 
@@ -1268,9 +1258,10 @@ Alternativen:
 Für Full Nodes wird **BadgerDB** als persistente Key-Value-Datenbank zur Speicherung des vollständigen UTXO-Sets eingesetzt.
 
 BadgerDB wird genutzt als:
-- Disk-basierte, autoritative UTXO-Datenbank
-- Backend für `(TxID, OutputIndex) → Output` Lookups
-- Grundlage für spätere In-Memory-Caches
+
+-   Disk-basierte, autoritative UTXO-Datenbank
+-   Backend für `(TxID, OutputIndex) → Output` Lookups
+-   Grundlage für spätere In-Memory-Caches
 
 ---
 
@@ -1284,28 +1275,27 @@ Akzeptiert
 
 #### Positive Konsequenzen:
 
-- **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
-- **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
-- **Persistente Speicherung**, geeignet für große Datenmengen
-- **Transaktionen und Batches** ermöglichen atomare Block-Updates
-- Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
+-   **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
+-   **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
+-   **Persistente Speicherung**, geeignet für große Datenmengen
+-   **Transaktionen und Batches** ermöglichen atomare Block-Updates
+-   Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
 
 #### Negative Konsequenzen:
 
-- Komplexere API als einfache Maps oder bbolt
-- Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
-- Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
+-   Komplexere API als einfache Maps oder bbolt
+-   Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
+-   Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
 
 ---
 
 ### Auswirkung
 
-- Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
-- Full Nodes können Transaktionen vollständig und unabhängig validieren
-- SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
-- Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
-- Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
-
+-   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
+-   Full Nodes können Transaktionen vollständig und unabhängig validieren
+-   SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+-   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
+-   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
 # Qualitätsanforderungen
 
