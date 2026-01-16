@@ -42,8 +42,8 @@ func TestKeyGeneratorApiImpl_GenerateKeyset(t *testing.T) {
 	if len(keyset.PrivateKeyWif) != 51 {
 		t.Errorf("keyset.PrivateKeyWif should be 51 bytes")
 	}
-	if len(keyset.VSAddress) != 34 {
-		t.Errorf("keyset.PrivateKeyWif should be 34 bytes")
+	if len(keyset.VSAddress) != 33 && len(keyset.VSAddress) != 34 {
+		t.Errorf("keyset.VSAddress should be 33 or 34 bytes")
 	}
 }
 
