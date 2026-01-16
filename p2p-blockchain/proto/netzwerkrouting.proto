@@ -52,14 +52,24 @@ service PeerDiscovery {
     //  - New addresses added to known addresses list.
     rpc Addr(AddrList) returns (google.protobuf.Empty);
 
-    // Heartbeat is a periodically keep-alive message.
+    // HeartbeatBing is a keep-alive message sent to check if a peer is still active.
+    // The receiving peer should respond with a HeartbeatBong.
     //
     // Pre-conditions:
     //  - Connection established.
     //
     // Post-conditions:
-    //  - last_seen timestamp for the peer updated.
-    rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
+    //  - Receiver updates LastSeen timestamp and responds with HeartbeatBong.
+    rpc HeartbeatBing(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    // HeartbeatBong is the response to a HeartbeatBing message.
+    //
+    // Pre-conditions:
+    //  - Received a HeartbeatBing message.
+    //
+    // Post-conditions:
+    //  - Receiver updates LastSeen timestamp for the peer that sent the bing.
+    rpc HeartbeatBong(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 service ErrorHandling {

@@ -11,6 +11,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api/blockchain/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
 
@@ -34,14 +35,16 @@ type Server struct {
 
 	pb.UnimplementedPeerDiscoveryServer
 	discoveryService *discovery.DiscoveryService
+	keepaliveService *keepalive.KeepaliveService
 }
 
-func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, discoveryService *discovery.DiscoveryService) *Server {
+func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, discoveryService *discovery.DiscoveryService, keepaliveService *keepalive.KeepaliveService) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		discoveryService:    discoveryService,
+		keepaliveService:    keepaliveService,
 	}
 }
 

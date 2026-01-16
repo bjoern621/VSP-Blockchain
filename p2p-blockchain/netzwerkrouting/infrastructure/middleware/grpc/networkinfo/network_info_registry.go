@@ -6,7 +6,6 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"slices"
 	"sync"
 
@@ -22,6 +21,12 @@ type NetworkInfoEntry struct {
 	OutboundConn      *grpc.ClientConn // Our gRPC connection to the peer
 }
 
+// peerCreator is an interface for creating new peers.
+// It is implemented by the data layer's PeerStore.
+type peerCreator interface {
+	NewPeer() common.PeerId
+}
+
 // NetworkInfoRegistry maintains a registry of peers and their network addresses.
 // It allows representing peers by a generic ID and links:
 // - Listening endpoint (reachable address from VersionInfo)
@@ -33,10 +38,10 @@ type NetworkInfoRegistry struct {
 	listeningEndpointToPeer map[netip.AddrPort]common.PeerId
 	inboundAddrToPeer       map[netip.AddrPort]common.PeerId
 	networkInfoEntries      map[common.PeerId]*NetworkInfoEntry
-	peerCreator             peer.PeerCreator
+	peerCreator             peerCreator
 }
 
-func NewNetworkInfoRegistry(peerCreator peer.PeerCreator) *NetworkInfoRegistry {
+func NewNetworkInfoRegistry(peerCreator peerCreator) *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{
 		listeningEndpointToPeer: make(map[netip.AddrPort]common.PeerId),
 		inboundAddrToPeer:       make(map[netip.AddrPort]common.PeerId),

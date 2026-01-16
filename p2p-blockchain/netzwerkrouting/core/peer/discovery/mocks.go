@@ -147,21 +147,3 @@ func (m *mockDiscoveryPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
 	defer m.mu.RUnlock()
 	return peerID == m.localPeerID
 }
-
-type mockPeerCreator struct{}
-
-func newMockPeerCreator() *mockPeerCreator {
-	return &mockPeerCreator{}
-}
-
-func (m *mockPeerCreator) NewOutboundPeer() common.PeerId {
-	return ""
-}
-
-func (m *mockPeerCreator) NewInboundPeer() common.PeerId {
-	return ""
-}
-
-func (m *mockPeerCreator) NewPeer() common.PeerId {
-	return ""
-}
