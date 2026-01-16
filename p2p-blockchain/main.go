@@ -16,6 +16,8 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
+	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
@@ -24,6 +26,10 @@ import (
 	walletApi "s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 	walletcore "s3b/vsp-blockchain/p2p-blockchain/wallet/core"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
+
+	"os"
+	"os/signal"
+	"syscall"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -41,12 +47,14 @@ func main() {
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
-	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
+	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
+	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	discoveryService := discovery.NewDiscoveryService(registryQuerier, peerStore, grpcClient, peerStore, grpcClient)
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
+	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
@@ -108,7 +116,7 @@ func main() {
 
 	logger.Infof("Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
 
 	grpcServer.Attach(blockchain)
 
@@ -128,5 +136,15 @@ func main() {
 		logger.Infof("Local peer registered with ID %s", localPeerID)
 	}
 
-	select {}
+	// Start keepalive service after P2P server is ready
+	keepaliveService.Start()
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1) // TODO
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	<-sigChan
+
+	logger.Infof("Shutting down...")
+	keepaliveService.Stop()
+	logger.Infof("Shutdown complete")
 }

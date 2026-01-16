@@ -19,9 +19,8 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add some test peers
 	peer1 := &peer.Peer{
@@ -78,9 +77,8 @@ func TestHandleGetAddr_ExcludesRequesterPeer(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add the requesting peer itself to the store
 	requesterPeerID := common.PeerId("requester-peer")
@@ -127,9 +125,8 @@ func TestHandleGetAddr_DoesNotSendWhenNoPeers(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	requesterPeerID := common.PeerId("requester-peer")
 
@@ -149,9 +146,8 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add a peer with LastSeen set
 	testPeer := &peer.Peer{
@@ -189,9 +185,8 @@ func TestHandleGetAddr_SendsAsynchronously(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add a peer
 	testPeer := &peer.Peer{
@@ -223,9 +218,8 @@ func TestSendGetAddr_ForwardsToSender(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
-	peerCreator := newMockPeerCreator()
 
-	service := NewDiscoveryService(nil, peerCreator, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	targetPeerID := common.PeerId("target-peer")
 

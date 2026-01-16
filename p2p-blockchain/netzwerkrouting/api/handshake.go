@@ -4,7 +4,6 @@ import (
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 )
 
 // HandshakeAPI is the external API for initiating connections.
@@ -24,14 +23,20 @@ type OutboundPeerResolver interface {
 	RegisterPeer(peerID common.PeerId, listeningEndpoint netip.AddrPort)
 }
 
+// peerCreator is an interface for creating new peers.
+// It is implemented by the data layer's PeerStore.
+type peerCreator interface {
+	NewOutboundPeer() common.PeerId
+}
+
 // handshakeAPIService implements HandshakeAPI.
 type handshakeAPIService struct {
 	outboundPeerResolver OutboundPeerResolver
-	peerCreator          peer.PeerCreator
+	peerCreator          peerCreator
 	handshakeInitiator   handshake.HandshakeInitiator
 }
 
-func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peer.PeerCreator, handshakeService handshake.HandshakeInitiator) HandshakeAPI {
+func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreator peerCreator, handshakeService handshake.HandshakeInitiator) HandshakeAPI {
 	return &handshakeAPIService{
 		outboundPeerResolver: outboundPeerResolver,
 		peerCreator:          peerCreator,
