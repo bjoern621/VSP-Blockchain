@@ -87,6 +87,22 @@ func (s *peerStore) GetAllConnectedPeers() []common.PeerId {
 	return peerIds
 }
 
+// GetUnconnectedPeers retrieves peer IDs that are known but not currently connected.
+// Technically, these are peers with StateNew.
+func (s *peerStore) GetUnconnectedPeers() []common.PeerId {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerIds := make([]common.PeerId, 0)
+	for k, v := range s.peers {
+		if v.State == common.StateNew {
+			peerIds = append(peerIds, k)
+		}
+	}
+
+	return peerIds
+}
+
 func (s *peerStore) addPeer(peer *Peer) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -97,6 +113,10 @@ func (s *peerStore) RemovePeer(id common.PeerId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.peers, id)
+
+	if s.localPeerID == id {
+		s.localPeerID = ""
+	}
 }
 
 // NewInboundPeer creates a new peer for an inbound connection.

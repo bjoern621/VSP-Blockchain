@@ -1,3 +1,6 @@
+// Package keepalive implements the keepalive (heartbeat) functionality for peers in the P2P network.
+// It periodically sends heartbeat ping messages to connected peers and handles incoming heartbeat messages.
+// Related packages: connectioncheck for verifying peer connections based on heartbeat responses.
 package keepalive
 
 import (

@@ -15,10 +15,12 @@ import (
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/connectioncheck"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
 	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peermanagement"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc/networkinfo"
@@ -54,7 +56,10 @@ func main() {
 
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
+	gossipDiscoveryService := discovery.NewGossipDiscoveryService(peerStore, grpcClient)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
+	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
+	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
 	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
@@ -141,8 +146,21 @@ func main() {
 		logger.Infof("Local peer registered with ID %s", localPeerID)
 	}
 
-	// Start keepalive service after P2P server is ready
+	// Start keepalive service
 	keepaliveService.Start()
+
+	// Start connection check service
+	connectionCheckService.Start()
+
+	// Bootstrap from registry
+	logger.Infof("Bootstrapping peers from registry...")
+	discoveryService.GetPeers()
+
+	// Start gossip discovery service
+	gossipDiscoveryService.Start()
+
+	// Start peer management service
+	peerManagementService.Start()
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1) // TODO
@@ -151,5 +169,8 @@ func main() {
 
 	logger.Infof("Shutting down...")
 	keepaliveService.Stop()
+	connectionCheckService.Stop()
+	gossipDiscoveryService.Stop()
+	peerManagementService.Stop()
 	logger.Infof("Shutdown complete")
 }
