@@ -51,7 +51,7 @@ func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.P
 	m.lastPeerID = peerId
 }
 
-func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
+func (m *mockBlockchainSender) BroadcastInvExclusionary(_ []*inv.InvVector, _ common.PeerId) {}
 func (m *mockBlockchainSender) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
 	m.broadcastAddedBlocksCalled = true
 	m.broadcastAddedBlocksHashes = blockHashes
@@ -75,19 +75,26 @@ type mockBlockValidator struct {
 	sanityCheckCalled    bool
 	validateHeaderCalled bool
 	fullValidationCalled bool
+
+	headerValidateCalled bool
 }
 
-func (m *mockBlockValidator) SanityCheck(b block.Block) (bool, error) {
+func (m *mockBlockValidator) ValidateHeaderOnly(_ block.BlockHeader) (bool, error) {
+	m.headerValidateCalled = true
+	return true, nil
+}
+
+func (m *mockBlockValidator) SanityCheck(_ block.Block) (bool, error) {
 	m.sanityCheckCalled = true
 	return m.sanityCheckResult, m.sanityCheckErr
 }
 
-func (m *mockBlockValidator) ValidateHeader(b block.Block) (bool, error) {
+func (m *mockBlockValidator) ValidateHeader(_ block.Block) (bool, error) {
 	m.validateHeaderCalled = true
 	return m.validateHeaderResult, m.validateHeaderErr
 }
 
-func (m *mockBlockValidator) FullValidation(b block.Block) (bool, error) {
+func (m *mockBlockValidator) FullValidation(_ block.Block) (bool, error) {
 	m.fullValidationCalled = true
 	return m.fullValidationResult, m.fullValidationErr
 }
@@ -110,7 +117,7 @@ type mockBlockStore struct {
 	addBlockReturnValue []common.Hash
 }
 
-func (m *mockBlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+func (m *mockBlockStore) GetBlockByHash(_ common.Hash) (block.Block, error) {
 	return block.Block{}, nil
 }
 
@@ -122,7 +129,7 @@ func (m *mockBlockStore) AddBlock(b block.Block) []common.Hash {
 	return []common.Hash{b.Hash()}
 }
 
-func (m *mockBlockStore) IsOrphanBlock(b block.Block) (bool, error) {
+func (m *mockBlockStore) IsOrphanBlock(_ block.Block) (bool, error) {
 	m.isOrphanCalled = true
 	return m.isOrphanResult, m.isOrphanErr
 }
@@ -184,16 +191,16 @@ type mockLookupAPIImpl struct{}
 
 var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
 
-func (mockLookupAPIImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+func (mockLookupAPIImpl) GetUTXO(_ transaction.TransactionID, _ uint32) (transaction.Output, error) {
 	return transaction.Output{}, nil
 }
-func (mockLookupAPIImpl) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (mockLookupAPIImpl) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	return utxopool.UTXOEntry{}, nil
 }
-func (mockLookupAPIImpl) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+func (mockLookupAPIImpl) ContainsUTXO(_ utxopool.Outpoint) bool {
 	return true
 }
-func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
 	return []transaction.UTXO{}, nil
 }
 
