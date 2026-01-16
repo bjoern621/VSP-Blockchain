@@ -84,7 +84,7 @@ func (s *KeepaliveService) sendHeartbeats() {
 	logger.Debugf("Sending heartbeat pings to %d connected peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {
-		s.heartbeatSender.SendHeartbeatPing(peerID)
+		go s.heartbeatSender.SendHeartbeatPing(peerID)
 	}
 }
 
