@@ -171,6 +171,7 @@ components:
       example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
       description: |
         Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix.
+        Has a length of 33 or 34 characters.
         
         The VSAddress provides a point where VSGoins can be send to.
         It is public and can be freely shared with others.
