@@ -33,8 +33,6 @@ type PeerRetriever interface {
 	// GetAllConnectedPeers retrieves all connected peers' IDs (both inbound and outbound).
 	// All peers with StateConnected are considered connected.
 	GetAllConnectedPeers() []common.PeerId
-	// IsLocalPeerID checks if the given peer ID is the local/own peer ID.
-	IsLocalPeerID(peerID common.PeerId) bool
 }
 
 func NewPeerStore() *peerStore {
