@@ -24,6 +24,13 @@ func NewClient(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Client {
 // SendHelper is a generic helper to send gRPC messages to a peer.
 // It will retrieve peer connection, create specific gRPC client, and handle calling the grpc method.
 // Should generally be used to implement SendXXX methods on Client.
+//
+// Usage example:
+//
+//	SendHelper(c, peerID, "Ack", pb.NewConnectionEstablishmentClient, func(client pb.ConnectionEstablishmentClient) error {
+//		_, err := client.Ack(context.Background(), &emptypb.Empty{})
+//		return err
+//	})
 func SendHelper[T any](c *Client, peerID common.PeerId, method string, newClient func(grpc.ClientConnInterface) T, send func(T) error) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
 	if !ok {
