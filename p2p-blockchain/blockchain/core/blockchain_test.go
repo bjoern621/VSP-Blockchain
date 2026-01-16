@@ -73,25 +73,18 @@ type mockBlockValidator struct {
 	fullValidationErr    error
 
 	sanityCheckCalled    bool
-	validateHeaderCalled bool
 	fullValidationCalled bool
-
 	headerValidateCalled bool
 }
 
 func (m *mockBlockValidator) ValidateHeaderOnly(_ block.BlockHeader) (bool, error) {
 	m.headerValidateCalled = true
-	return true, nil
+	return m.validateHeaderResult, m.validateHeaderErr
 }
 
 func (m *mockBlockValidator) SanityCheck(_ block.Block) (bool, error) {
 	m.sanityCheckCalled = true
 	return m.sanityCheckResult, m.sanityCheckErr
-}
-
-func (m *mockBlockValidator) ValidateHeader(_ block.Block) (bool, error) {
-	m.validateHeaderCalled = true
-	return m.validateHeaderResult, m.validateHeaderErr
 }
 
 func (m *mockBlockValidator) FullValidation(_ block.Block) (bool, error) {
@@ -278,7 +271,7 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
 
 	// Assert: No further validation occurred
-	assert.False(t, validator.validateHeaderCalled, "ValidateHeader should not be called when SanityCheck fails")
+	assert.False(t, validator.headerValidateCalled, "ValidateHeader should not be called when SanityCheck fails")
 	assert.False(t, validator.fullValidationCalled, "FullValidation should not be called when SanityCheck fails")
 	assert.False(t, store.isOrphanCalled, "IsOrphanBlock should not be called when SanityCheck fails")
 	assert.False(t, reorg.checkAndReorganizeCalled, "CheckAndReorganize should not be called when SanityCheck fails")
@@ -303,6 +296,7 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -313,7 +307,7 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 
 	// Assert: Both sanity checks were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 
 	// Assert: No further processing occurred
 	assert.False(t, validator.fullValidationCalled, "FullValidation should not be called when ValidateHeader fails")
@@ -368,7 +362,7 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 
 	// Assert: Initial validations were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 
 	// Assert: Missing headers were requested
@@ -421,7 +415,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 
 	// Assert: All validations were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 	assert.True(t, validator.fullValidationCalled, "FullValidation should be called")
 
@@ -466,7 +460,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 
 	// Assert: All processing steps were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 	assert.True(t, validator.fullValidationCalled, "FullValidation should be called")
 	assert.True(t, store.getMainChainTipCalled, "GetMainChainTip should be called")

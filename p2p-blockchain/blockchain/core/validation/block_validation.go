@@ -20,8 +20,6 @@ const minutesAheadLimit = 5
 type BlockValidationAPI interface {
 	// SanityCheck Sanity Check: Basic checks on the block structure and content
 	SanityCheck(block block.Block) (bool, error)
-	// ValidateHeader Validates the block header (proof of work, timestamp, etc.)
-	ValidateHeader(block block.Block) (bool, error)
 	// ValidateHeaderOnly Validates a standalone block header (proof of work, timestamp)
 	ValidateHeaderOnly(header block.BlockHeader) (bool, error)
 	// FullValidation Comprehensive validation including transactions and UTXO set
@@ -44,10 +42,6 @@ func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) 
 	}
 
 	return true, nil
-}
-
-func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, error) {
-	return bvs.ValidateHeaderOnly(block.Header)
 }
 
 func (bvs *BlockValidationService) ValidateHeaderOnly(header block.BlockHeader) (bool, error) {

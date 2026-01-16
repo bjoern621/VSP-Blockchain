@@ -17,7 +17,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	if ok, err := b.blockValidator.ValidateHeader(receivedBlock); !ok {
+	if ok, err := b.blockValidator.ValidateHeaderOnly(receivedBlock.Header); !ok {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
