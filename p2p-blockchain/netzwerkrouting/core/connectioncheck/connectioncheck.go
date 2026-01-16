@@ -44,7 +44,11 @@ type ConnectionCheckService struct {
 }
 
 // NewConnectionCheckService creates a new ConnectionCheckService.
-func NewConnectionCheckService(peerRetriever peerRetriever, peerRemover peerRemover, networkInfoCleaner peerRemover) *ConnectionCheckService {
+func NewConnectionCheckService(
+	peerRetriever peerRetriever,
+	peerRemover peerRemover,
+	networkInfoCleaner peerRemover,
+) *ConnectionCheckService {
 	return &ConnectionCheckService{
 		peerRetriever:      peerRetriever,
 		storePeerRemover:   peerRemover,
