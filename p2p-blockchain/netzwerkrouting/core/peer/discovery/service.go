@@ -1,30 +1,23 @@
 package discovery
 
-import (
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
-)
-
 // DiscoveryService provides peer discovery functionality.
 // This includes (1) querying a registry for peers and (2) asking neighbors for their known peers.
 type DiscoveryService struct {
 	querier          RegistryQuerier
-	peerCreator      peer.PeerCreator
 	addrMsgSender    AddrMsgSender
-	peerRetriever    DiscoveryPeerRetriever
+	peerRetriever    peerRetriever
 	getAddrMsgSender GetAddrMsgSender
 }
 
 // NewDiscoveryService creates a new DiscoveryService.
 func NewDiscoveryService(
 	querier RegistryQuerier,
-	peerCreator peer.PeerCreator,
 	addrMsgSender AddrMsgSender,
-	peerRetriever DiscoveryPeerRetriever,
+	peerRetriever peerRetriever,
 	getAddrMsgSender GetAddrMsgSender,
 ) *DiscoveryService {
 	return &DiscoveryService{
 		querier:          querier,
-		peerCreator:      peerCreator,
 		addrMsgSender:    addrMsgSender,
 		peerRetriever:    peerRetriever,
 		getAddrMsgSender: getAddrMsgSender,

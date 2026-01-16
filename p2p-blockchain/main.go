@@ -17,6 +17,7 @@ import (
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
+	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer/discovery"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/infrastructure/middleware/grpc"
@@ -46,11 +47,12 @@ func main() {
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
-	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerStore)
+	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
+	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	discoveryService := discovery.NewDiscoveryService(registryQuerier, peerStore, grpcClient, peerStore, grpcClient)
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
 
