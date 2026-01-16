@@ -17,6 +17,7 @@
 package peermanagement
 
 import (
+	"math/rand"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"time"
 
@@ -162,8 +163,10 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 
 	// Limit to the number of peers we need
 	if len(potentialPeers) > count {
+		rand.Shuffle(len(potentialPeers), func(i, j int) {
+			potentialPeers[i], potentialPeers[j] = potentialPeers[j], potentialPeers[i]
+		})
 		potentialPeers = potentialPeers[:count]
-		// TODO select random
 	}
 
 	// Attempt to establish connections
