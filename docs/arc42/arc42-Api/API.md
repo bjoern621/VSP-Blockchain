@@ -474,7 +474,7 @@ Zuordnung von Bausteinen zu Infrastruktur
 Das System bildet ein vereinfachtes Blockchain-basiertes Zahlungssystem ab.  
 Zentrale fachliche Objekte sind:
 
-- V$Adresse (base 58 check kodierter doppelter SHA-256 Hash eines öffentlicher Schlüssel)
+- V$Adresse (base 58 check kodierter doppelter SHA-256 Hash eines öffentlicher Schlüssel) der Länge 33 oder 34 bytes
 - Private Key WIF (zur Signatur)
 - UTXO / Assets (nicht ausgegebene Transaktionseinheiten)
 - Transaktion (signiertes Transferobjekt, welches den Besitzwechsel von Währung repräsentiert)
@@ -498,7 +498,7 @@ Temporäre Daten:
 - JSON als API-Format, binäre Formate der V$Goin Blockchain
 
 ### 3.2 Formatkonzept
-- V$Adressen → String
+- V$Adressen → String (33 oder 34 bytes)
 - Private Key WIFs → String 
 - Transaktionen → binäre V$Goin-Formate, API JSON
 
