@@ -63,11 +63,6 @@ func (b *Blockchain) MerkleBlock(_ block.MerkleBlock, _ common.PeerId) {
 	panic("No longer supported and will be removed later")
 }
 
-func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
-	logger.Infof("Headers Message received: %v from %v", blockHeaders, peerID)
-
-}
-
 func (b *Blockchain) SetFilter(_ block.SetFilterRequest, _ common.PeerId) {
 	panic("No longer supported and will be removed later")
 }
