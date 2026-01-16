@@ -56,6 +56,7 @@ func main() {
 
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
+	gossipDiscoveryService := discovery.NewGossipDiscoveryService(peerStore, grpcClient)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
@@ -150,6 +151,9 @@ func main() {
 	logger.Infof("Bootstrapping peers from registry...")
 	discoveryService.GetPeers()
 
+	// Start gossip discovery service
+	gossipDiscoveryService.Start()
+
 	// Start peer management service
 	peerManagementService.Start()
 
@@ -161,6 +165,7 @@ func main() {
 	logger.Infof("Shutting down...")
 	keepaliveService.Stop()
 	connectionCheckService.Stop()
+	gossipDiscoveryService.Stop()
 	peerManagementService.Stop()
 	logger.Infof("Shutdown complete")
 }

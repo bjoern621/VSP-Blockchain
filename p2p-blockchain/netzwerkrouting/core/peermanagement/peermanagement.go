@@ -1,13 +1,19 @@
 // Package peermanagement watches active peer connection count.
 // It monitors the connected peer count and automatically establishes new connections
 // when the count falls below a configured threshold.
-// Works in conjunction with the connectioncheck and keepalive packages.
+// Works in conjunction with the connectioncheck and keepalive packages as well as the gossip discovery service.
 //
 // General Operation Flow:
 //  1. Periodic Check: Every `checkInterval`, the service checks the current peer count
 //  2. Threshold Evaluation: If count < `minPeers`, new connections are needed
 //  3. Connection Initiation: Attempts to establish connections up to `maxPeersPerAttempt` using `GetUnconnectedPeers()`
 //  4. Handshake: For each peer, initiates the handshake process via HandshakeService
+//
+// Note: Peer discovery is handled separately:
+//   - Bootstrap: Registry query at startup (discovery.GetPeers)
+//   - Gossip: Periodic getaddr to peers (discovery.GossipDiscoveryService)
+//
+// This service focuses only on connections to already discovered peers.
 package peermanagement
 
 import (
@@ -175,5 +181,3 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 
 	logger.Infof("Established %d/%d new peer connections", successfulConnections, count)
 }
-
-// TODO recurring getaddr sending

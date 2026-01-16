@@ -399,6 +399,7 @@ TODO: Timing / funktionisweise von background services beschireben
 -   peermanagement
 -   keepalive (heartbeats)
 -   connectioncheck (clean old connections)
+-   gossip background job
 
 ## State machine Miner: Allgemein
 

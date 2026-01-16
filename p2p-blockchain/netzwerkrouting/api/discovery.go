@@ -11,6 +11,14 @@ type DiscoveryAPI interface {
 	SendGetAddr(peerID common.PeerId)
 }
 
+// GossipAPI is the external API for gossip-based peer discovery.
+type GossipAPI interface {
+	// Start begins the periodic gossip discovery.
+	Start()
+	// Stop halts the periodic gossip discovery.
+	Stop()
+}
+
 // discoveryAPIService implements DiscoveryAPI.
 type discoveryAPIService struct {
 	discoveryService *discovery.DiscoveryService
@@ -24,4 +32,23 @@ func NewDiscoveryAPIService(discoveryService *discovery.DiscoveryService) Discov
 
 func (s *discoveryAPIService) SendGetAddr(peerID common.PeerId) {
 	s.discoveryService.SendGetAddr(peerID)
+}
+
+// gossipAPIService implements GossipAPI.
+type gossipAPIService struct {
+	gossipDiscoveryService *discovery.GossipDiscoveryService
+}
+
+func NewGossipAPIService(gossipDiscoveryService *discovery.GossipDiscoveryService) GossipAPI {
+	return &gossipAPIService{
+		gossipDiscoveryService: gossipDiscoveryService,
+	}
+}
+
+func (s *gossipAPIService) Start() {
+	s.gossipDiscoveryService.Start()
+}
+
+func (s *gossipAPIService) Stop() {
+	s.gossipDiscoveryService.Stop()
 }
