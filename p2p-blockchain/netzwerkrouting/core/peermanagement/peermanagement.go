@@ -145,9 +145,7 @@ func (s *PeerManagementService) checkAndMaintainPeers() {
 	logger.Infof("Peer count check: %d connected peers, need %d more", peerCount, peersNeeded)
 
 	// Limit the number of new connections per attempt
-	if peersNeeded > s.maxPeersPerAttempt {
-		peersNeeded = s.maxPeersPerAttempt
-	}
+	peersNeeded = min(peersNeeded, s.maxPeersPerAttempt)
 
 	s.establishNewPeers(peersNeeded)
 }
