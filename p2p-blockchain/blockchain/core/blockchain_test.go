@@ -200,7 +200,7 @@ func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash)
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
-	bc := NewBlockchain(sender, validation.NewValidationService(mockLookupAPIImpl{}), nil, nil, nil)
+	bc := NewBlockchain(sender, nil, validation.NewValidationService(mockLookupAPIImpl{}), nil, nil, nil)
 
 	peerID := common.PeerId("peer-1")
 

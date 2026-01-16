@@ -27,5 +27,5 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 		}
 	}
 
-	b.requestData(unknownData, peerID)
+	b.blockchainMsgSender.SendGetData(unknownData, peerID)
 }

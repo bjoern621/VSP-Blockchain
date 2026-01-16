@@ -89,13 +89,15 @@ func (m *mockGetAddrMsgSender) getLastSendGetAddrCall() *common.PeerId {
 }
 
 type mockDiscoveryPeerRetriever struct {
-	mu    sync.RWMutex
-	peers map[common.PeerId]*peer.Peer
+	mu          sync.RWMutex
+	peers       map[common.PeerId]*peer.Peer
+	localPeerID common.PeerId
 }
 
 func newMockDiscoveryPeerRetriever() *mockDiscoveryPeerRetriever {
 	return &mockDiscoveryPeerRetriever{
-		peers: make(map[common.PeerId]*peer.Peer),
+		peers:       make(map[common.PeerId]*peer.Peer),
+		localPeerID: "local-peer",
 	}
 }
 
@@ -121,6 +123,18 @@ func (m *mockDiscoveryPeerRetriever) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
+func (m *mockDiscoveryPeerRetriever) GetAllConnectedPeers() []common.PeerId {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	peerIds := make([]common.PeerId, 0, len(m.peers))
+	for id, p := range m.peers {
+		if p.State == common.StateConnected {
+			peerIds = append(peerIds, id)
+		}
+	}
+	return peerIds
+}
+
 func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -128,20 +142,8 @@ func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool
 	return p, exists
 }
 
-type mockPeerCreator struct{}
-
-func newMockPeerCreator() *mockPeerCreator {
-	return &mockPeerCreator{}
-}
-
-func (m *mockPeerCreator) NewOutboundPeer() common.PeerId {
-	return ""
-}
-
-func (m *mockPeerCreator) NewInboundPeer() common.PeerId {
-	return ""
-}
-
-func (m *mockPeerCreator) NewPeer() common.PeerId {
-	return ""
+func (m *mockDiscoveryPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return peerID == m.localPeerID
 }

@@ -132,3 +132,14 @@ func getTransactionIdFromHash(hash common.Hash) transaction.TransactionID {
 	copy(transactionId[:], hash[:])
 	return transactionId
 }
+
+// GetTransactionByHash retrieves the transaction with the given hash from the mempool.
+// Returns the transaction and true if found, or false if not found.
+func (m *Mempool) GetTransactionByHash(hash common.Hash) (transaction.Transaction, bool) {
+	txId := getTransactionIdFromHash(hash)
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	tx, ok := m.transactions[txId]
+	return tx, ok
+}

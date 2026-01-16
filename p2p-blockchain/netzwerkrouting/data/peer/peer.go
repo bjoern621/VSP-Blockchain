@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +22,10 @@ type Peer struct {
 	// LastSeen is a Unix timestamp indicating the last time the peer was seen active.
 	// Seen active means, that a heartbeat message was received from the peer.
 	// It's not updated on every interaction with the peer.
-	LastSeen int64 // TODO anpassen wenn heartbeat fertig
+	LastSeen int64
+	// AddrsSentTo tracks PeerIds whose addresses have been sent to this peer.
+	// Prevents sending the same address twice to the same recipient.
+	AddrsSentTo mapset.Set[common.PeerId]
 }
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
@@ -29,9 +33,10 @@ type Peer struct {
 func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
-		id:        peerID,
-		State:     common.StateNew,
-		Direction: direction,
+		id:          peerID,
+		State:       common.StateNew,
+		Direction:   direction,
+		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created (direction: %v)", peerID, direction)
@@ -43,8 +48,9 @@ func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 func (s *peerStore) newGenericPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
-		id:    peerID,
-		State: common.StateNew,
+		id:          peerID,
+		State:       common.StateNew,
+		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
 	logger.Debugf("new peer %v created", peerID)
