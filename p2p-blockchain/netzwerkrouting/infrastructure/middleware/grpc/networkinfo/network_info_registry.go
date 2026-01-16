@@ -225,6 +225,42 @@ func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureI
 	return result
 }
 
+// RemovePeer removes a peer from the network info registry and closes its gRPC connection.
+func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	entry, exists := r.networkInfoEntries[peerID]
+	if !exists {
+		return
+	}
+
+	// Close the gRPC connection if it exists
+	if entry.OutboundConn != nil {
+		err := entry.OutboundConn.Close()
+		if err != nil {
+			logger.Warnf("Failed to close gRPC connection for peer %s: %v", peerID, err)
+		} else {
+			logger.Debugf("Closed gRPC connection for peer %s", peerID)
+		}
+	}
+
+	// Remove listening endpoint mapping
+	if entry.ListeningEndpoint != (netip.AddrPort{}) {
+		delete(r.listeningEndpointToPeer, entry.ListeningEndpoint)
+	}
+
+	// Remove inbound address mappings
+	for _, addr := range entry.InboundAddresses {
+		delete(r.inboundAddrToPeer, addr)
+	}
+
+	// Remove the entry itself
+	delete(r.networkInfoEntries, peerID)
+
+	logger.Debugf("Removed peer %s from network info registry", peerID)
+}
+
 // formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.
 func formatAddrPortsAsAny(addrs []netip.AddrPort) []any {
 	result := make([]any, len(addrs))

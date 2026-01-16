@@ -97,6 +97,10 @@ func (s *peerStore) RemovePeer(id common.PeerId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.peers, id)
+
+	if s.localPeerID == id {
+		s.localPeerID = ""
+	}
 }
 
 // NewInboundPeer creates a new peer for an inbound connection.
