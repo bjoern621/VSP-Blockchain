@@ -121,6 +121,11 @@ func main() {
 		common.SetP2PPort(addrPort.Port())
 		common.SetP2PListeningIpAddr(addrPort.Addr())
 		logger.Infof("P2P server started on port %v", addrPort)
+
+		localPeerID := peerStore.NewPeer()
+		networkInfoRegistry.RegisterPeer(localPeerID, addrPort)
+		peerStore.SetLocalPeerID(localPeerID)
+		logger.Infof("Local peer registered with ID %s", localPeerID)
 	}
 
 	select {}
