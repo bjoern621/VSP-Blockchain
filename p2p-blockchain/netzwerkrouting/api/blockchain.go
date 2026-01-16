@@ -4,6 +4,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 type BlockchainAPI interface {
@@ -28,4 +29,16 @@ type BlockchainAPI interface {
 
 	// SendHeaders sends a Headers message to the given peer
 	SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
+}
+
+// FullInventoryInformationMsgSenderAPI defines methods to send full inventory information messages.
+// Used by the blockchain to send full block and transaction data to peers in response to getdata requests.
+// This interface is separate from BlockchainAPI to adhere to the single responsibility principle and avoid bloating the interface.
+// Implemented by the infrastructure layer to handle serialization and network transmission of full inventory messages.
+type FullInventoryInformationMsgSenderAPI interface {
+	// SendBlock sends a Block message to the given peer
+	SendBlock(block block.Block, peerId common.PeerId)
+
+	// SendTx sends a Tx message to the given peer
+	SendTx(tx transaction.Transaction, peerId common.PeerId)
 }
