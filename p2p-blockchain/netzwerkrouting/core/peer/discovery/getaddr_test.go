@@ -6,6 +6,8 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
+
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // Test file for getaddr functionality
@@ -62,12 +64,12 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	}
 
 	// Verify peer IDs are correct
-	sentPeerIds := make(map[common.PeerId]bool)
+	sentPeerIds := mapset.NewSet[common.PeerId]()
 	for _, addr := range call.addrs {
-		sentPeerIds[addr.PeerId] = true
+		sentPeerIds.Add(addr.PeerId)
 	}
 
-	if !sentPeerIds["peer-1"] || !sentPeerIds["peer-2"] {
+	if !sentPeerIds.Contains("peer-1") || !sentPeerIds.Contains("peer-2") {
 		t.Error("expected both peer-1 and peer-2 to be in addresses")
 	}
 }
