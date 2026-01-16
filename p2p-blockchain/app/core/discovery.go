@@ -20,24 +20,3 @@ func (s *DiscoveryService) SendGetAddr(peerID string) error {
 	s.discoveryAPI.SendGetAddr(pid)
 	return nil
 }
-
-// GossipService handles periodic gossip-based peer discovery.
-type GossipService struct {
-	gossipAPI api.GossipAPI
-}
-
-func NewGossipService(gossipAPI api.GossipAPI) *GossipService {
-	return &GossipService{
-		gossipAPI: gossipAPI,
-	}
-}
-
-// Start begins the gossip discovery process.
-func (s *GossipService) Start() {
-	s.gossipAPI.Start()
-}
-
-// Stop halts the gossip discovery process.
-func (s *GossipService) Stop() {
-	s.gossipAPI.Stop()
-}
