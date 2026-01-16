@@ -22,21 +22,6 @@ type mockBlockchainMsgSender struct {
 	lastTxPeerID common.PeerId
 }
 
-func (m *mockBlockchainMsgSender) SendGetData(inventory []*inv.InvVector, peerId common.PeerId) {}
-
-func (m *mockBlockchainMsgSender) SendInv(inventory []*inv.InvVector, peerId common.PeerId) {}
-
-func (m *mockBlockchainMsgSender) BroadcastInvExclusionary(inventory []*inv.InvVector, peerId common.PeerId) {
-}
-
-func (m *mockBlockchainMsgSender) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
-}
-
-func (m *mockBlockchainMsgSender) RequestMissingBlockHeaders(blockLocator block.BlockLocator, peerId common.PeerId) {
-}
-
-func (m *mockBlockchainMsgSender) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {}
-
 func (m *mockBlockchainMsgSender) SendBlock(b block.Block, peerId common.PeerId) {
 	m.sendBlockCalled = true
 	m.lastBlock = b
@@ -147,12 +132,12 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 	}
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	inventory := []*inv.InvVector{
@@ -186,12 +171,12 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 	}
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	var missingHash common.Hash
@@ -226,12 +211,12 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 	mempool.AddTransaction(testTx)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	txId := testTx.TransactionId()
@@ -266,12 +251,12 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 	mempool := NewMempool(txValidator, store)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	var missingHash common.Hash
@@ -303,12 +288,12 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 	mempool := NewMempool(txValidator, store)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	var hash common.Hash
@@ -350,12 +335,12 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 	mempool.AddTransaction(testTx)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	txId := testTx.TransactionId()
@@ -401,12 +386,12 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 	mempool := NewMempool(txValidator, store)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	var missingTxHash common.Hash
@@ -442,12 +427,12 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 	mempool := NewMempool(txValidator, store)
 
 	bc := &Blockchain{
-		mempool:              mempool,
-		blockchainMsgSender:  sender,
-		transactionValidator: txValidator,
-		blockValidator:       blockValidator,
-		blockStore:           store,
-		chainReorganization:  reorg,
+		mempool:                mempool,
+		fullInventoryMsgSender: sender,
+		transactionValidator:   txValidator,
+		blockValidator:         blockValidator,
+		blockStore:             store,
+		chainReorganization:    reorg,
 	}
 
 	inventory := []*inv.InvVector{}
