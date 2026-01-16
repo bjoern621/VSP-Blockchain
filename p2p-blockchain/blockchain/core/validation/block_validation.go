@@ -20,8 +20,8 @@ const minutesAheadLimit = 5
 type BlockValidationAPI interface {
 	// SanityCheck Sanity Check: Basic checks on the block structure and content
 	SanityCheck(block block.Block) (bool, error)
-	// ValidateHeader Validates the block header (proof of work, timestamp, etc.)
-	ValidateHeader(block block.Block) (bool, error)
+	// ValidateHeaderOnly Validates a standalone block header (proof of work, timestamp)
+	ValidateHeaderOnly(header block.BlockHeader) (bool, error)
 	// FullValidation Comprehensive validation including transactions and UTXO set
 	FullValidation(block block.Block) (bool, error)
 }
@@ -44,23 +44,34 @@ func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) 
 	return true, nil
 }
 
-func (bvs *BlockValidationService) ValidateHeader(block block.Block) (bool, error) {
-	if !hashSmallerThanTarget(block) {
-		return false, fmt.Errorf("block hash is not smaller than target")
+func (bvs *BlockValidationService) ValidateHeaderOnly(header block.BlockHeader) (bool, error) {
+	if !headerHashSmallerThanTarget(header) {
+		return false, fmt.Errorf("header hash does not meet difficulty target")
 	}
-	if timeIsTooFarInFuture(block) {
-		return false, fmt.Errorf("block timestamp is too far in the future")
+	if headerTimeIsTooFarInFuture(header) {
+		return false, fmt.Errorf("header timestamp is too far in the future")
 	}
 
 	return true, nil
 }
 
-func timeIsTooFarInFuture(b block.Block) bool {
+func headerTimeIsTooFarInFuture(h block.BlockHeader) bool {
 	currentTime := time.Now()
 	limit := currentTime.Add(time.Minute * minutesAheadLimit)
 
-	blockTime := time.Unix(b.Header.Timestamp, 0)
+	blockTime := time.Unix(h.Timestamp, 0)
 	return blockTime.After(limit)
+}
+
+func headerHashSmallerThanTarget(header block.BlockHeader) bool {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-uint(header.DifficultyTarget)))
+
+	hash := header.Hash()
+	var intHash big.Int
+	intHash.SetBytes(hash[:])
+
+	return intHash.Cmp(target) < 0
 }
 
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
@@ -88,15 +99,4 @@ func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, erro
 func isMerkleRootValid(b block.Block) bool {
 	merkleRoot := b.MerkleRoot()
 	return bytes.Equal(merkleRoot[:], b.Header.MerkleRoot[:])
-}
-
-func hashSmallerThanTarget(block block.Block) bool {
-	target := big.NewInt(1)
-	target.Lsh(target, uint(256-uint(block.Header.DifficultyTarget)))
-
-	hash := block.Hash()
-	var intHash big.Int
-	intHash.SetBytes(hash[:])
-
-	return target.Cmp(&intHash) == -1
 }

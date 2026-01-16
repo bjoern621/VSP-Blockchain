@@ -30,6 +30,7 @@ type Server struct {
 	discoveryService     *core.DiscoveryService
 	keysApi              api.KeyGeneratorApi
 	transactionHandler   *adapters.TransactionHandlerAdapter
+	kontoHandler         *adapters.KontoHandlerAdapter
 }
 
 // NewServer creates a new external API server.
@@ -40,6 +41,7 @@ func NewServer(
 	keysApi api.KeyGeneratorApi,
 	transactionHandler *adapters.TransactionHandlerAdapter,
 	discoveryService *core.DiscoveryService,
+	kontoHandler *adapters.KontoHandlerAdapter,
 ) *Server {
 	return &Server{
 		connService:          connService,
@@ -48,6 +50,7 @@ func NewServer(
 		discoveryService:     discoveryService,
 		keysApi:              keysApi,
 		transactionHandler:   transactionHandler,
+		kontoHandler:         kontoHandler,
 	}
 }
 
@@ -225,4 +228,8 @@ func (s *Server) SendGetAddr(ctx context.Context, req *pb.SendGetAddrRequest) (*
 		Success:      true,
 		ErrorMessage: "",
 	}, nil
+}
+
+func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
+	return s.kontoHandler.GetAssets(req), nil
 }

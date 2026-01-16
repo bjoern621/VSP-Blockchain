@@ -51,7 +51,7 @@ func (m *mockBlockchainSender) SendGetData(msg []*inv.InvVector, peerId common.P
 	m.lastPeerID = peerId
 }
 
-func (m *mockBlockchainSender) BroadcastInvExclusionary(msg []*inv.InvVector, peerId common.PeerId) {}
+func (m *mockBlockchainSender) BroadcastInvExclusionary(_ []*inv.InvVector, _ common.PeerId) {}
 func (m *mockBlockchainSender) BroadcastAddedBlocks(blockHashes []common.Hash, excludedPeerId common.PeerId) {
 	m.broadcastAddedBlocksCalled = true
 	m.broadcastAddedBlocksHashes = blockHashes
@@ -73,21 +73,21 @@ type mockBlockValidator struct {
 	fullValidationErr    error
 
 	sanityCheckCalled    bool
-	validateHeaderCalled bool
 	fullValidationCalled bool
+	headerValidateCalled bool
 }
 
-func (m *mockBlockValidator) SanityCheck(b block.Block) (bool, error) {
+func (m *mockBlockValidator) ValidateHeaderOnly(_ block.BlockHeader) (bool, error) {
+	m.headerValidateCalled = true
+	return m.validateHeaderResult, m.validateHeaderErr
+}
+
+func (m *mockBlockValidator) SanityCheck(_ block.Block) (bool, error) {
 	m.sanityCheckCalled = true
 	return m.sanityCheckResult, m.sanityCheckErr
 }
 
-func (m *mockBlockValidator) ValidateHeader(b block.Block) (bool, error) {
-	m.validateHeaderCalled = true
-	return m.validateHeaderResult, m.validateHeaderErr
-}
-
-func (m *mockBlockValidator) FullValidation(b block.Block) (bool, error) {
+func (m *mockBlockValidator) FullValidation(_ block.Block) (bool, error) {
 	m.fullValidationCalled = true
 	return m.fullValidationResult, m.fullValidationErr
 }
@@ -110,7 +110,7 @@ type mockBlockStore struct {
 	addBlockReturnValue []common.Hash
 }
 
-func (m *mockBlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+func (m *mockBlockStore) GetBlockByHash(_ common.Hash) (block.Block, error) {
 	return block.Block{}, nil
 }
 
@@ -122,7 +122,7 @@ func (m *mockBlockStore) AddBlock(b block.Block) []common.Hash {
 	return []common.Hash{b.Hash()}
 }
 
-func (m *mockBlockStore) IsOrphanBlock(b block.Block) (bool, error) {
+func (m *mockBlockStore) IsOrphanBlock(_ block.Block) (bool, error) {
 	m.isOrphanCalled = true
 	return m.isOrphanResult, m.isOrphanErr
 }
@@ -184,16 +184,16 @@ type mockLookupAPIImpl struct{}
 
 var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
 
-func (mockLookupAPIImpl) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
+func (mockLookupAPIImpl) GetUTXO(_ transaction.TransactionID, _ uint32) (transaction.Output, error) {
 	return transaction.Output{}, nil
 }
-func (mockLookupAPIImpl) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (mockLookupAPIImpl) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	return utxopool.UTXOEntry{}, nil
 }
-func (mockLookupAPIImpl) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+func (mockLookupAPIImpl) ContainsUTXO(_ utxopool.Outpoint) bool {
 	return true
 }
-func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
 	return []transaction.UTXO{}, nil
 }
 
@@ -271,7 +271,7 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
 
 	// Assert: No further validation occurred
-	assert.False(t, validator.validateHeaderCalled, "ValidateHeader should not be called when SanityCheck fails")
+	assert.False(t, validator.headerValidateCalled, "ValidateHeader should not be called when SanityCheck fails")
 	assert.False(t, validator.fullValidationCalled, "FullValidation should not be called when SanityCheck fails")
 	assert.False(t, store.isOrphanCalled, "IsOrphanBlock should not be called when SanityCheck fails")
 	assert.False(t, reorg.checkAndReorganizeCalled, "CheckAndReorganize should not be called when SanityCheck fails")
@@ -296,6 +296,7 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
+		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -306,7 +307,7 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 
 	// Assert: Both sanity checks were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 
 	// Assert: No further processing occurred
 	assert.False(t, validator.fullValidationCalled, "FullValidation should not be called when ValidateHeader fails")
@@ -361,7 +362,7 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 
 	// Assert: Initial validations were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 
 	// Assert: Missing headers were requested
@@ -414,7 +415,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 
 	// Assert: All validations were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 	assert.True(t, validator.fullValidationCalled, "FullValidation should be called")
 
@@ -459,7 +460,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 
 	// Assert: All processing steps were called
 	assert.True(t, validator.sanityCheckCalled, "SanityCheck should be called")
-	assert.True(t, validator.validateHeaderCalled, "ValidateHeader should be called")
+	assert.True(t, validator.headerValidateCalled, "ValidateHeader should be called")
 	assert.True(t, store.isOrphanCalled, "IsOrphanBlock should be called")
 	assert.True(t, validator.fullValidationCalled, "FullValidation should be called")
 	assert.True(t, store.getMainChainTipCalled, "GetMainChainTip should be called")
