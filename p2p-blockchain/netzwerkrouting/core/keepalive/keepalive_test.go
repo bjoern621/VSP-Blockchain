@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//
+// Mocks
+//
+
 // mockHeartbeatMsgSender is a mock implementation of HeartbeatMsgSender for testing.
 type mockHeartbeatMsgSender struct {
 	pingCalls []common.PeerId
@@ -48,6 +52,15 @@ func (m *mockPeerRetriever) GetConnectedPeers() []common.PeerId {
 	}
 	return ids
 }
+
+func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
+	assert.Fail(nil, "not implemented")
+	return nil
+}
+
+//
+// Tests
+//
 
 func TestHandleHeartbeatPing(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()

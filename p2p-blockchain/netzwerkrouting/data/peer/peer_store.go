@@ -29,15 +29,9 @@ type PeerRetriever interface {
 	GetPeer(id common.PeerId) (*Peer, bool)
 	// GetAllOutboundPeers retrieves all outbound peers' IDs.
 	GetAllOutboundPeers() []common.PeerId
-}
-
-// ConnectedPeerRetriever is an interface for retrieving connected peers.
-// It extends PeerRetriever with methods for getting connected peers.
-type ConnectedPeerRetriever interface {
-	PeerRetriever
 	// GetConnectedPeers retrieves all peers that are in Connected state.
 	GetConnectedPeers() []common.PeerId
-} // TODO
+}
 
 func NewPeerStore() *peerStore {
 	return &peerStore{

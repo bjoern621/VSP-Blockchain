@@ -2,7 +2,7 @@ package keepalive
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -22,18 +22,10 @@ type HeartbeatMsgHandler interface {
 	HandleHeartbeatPong(peerID common.PeerId)
 }
 
-// PeerRetriever is an interface for retrieving peers for keepalive purposes.
-type PeerRetriever interface {
-	// GetPeer retrieves a peer by its ID.
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
-	// GetConnectedPeers retrieves all peers that are in Connected state.
-	GetConnectedPeers() []common.PeerId
-}
-
 // KeepaliveService handles keepalive (heartbeat) functionality for peers.
 // It maintains peer liveness through periodic ping/pong messages.
 type KeepaliveService struct {
-	peerRetriever     PeerRetriever
+	peerRetriever     peer.PeerRetriever
 	heartbeatSender   HeartbeatMsgSender
 	stopChan          chan struct{}
 	ticker            *time.Ticker
@@ -42,7 +34,7 @@ type KeepaliveService struct {
 
 // NewKeepaliveService creates a new KeepaliveService with a 5-minute interval.
 func NewKeepaliveService(
-	peerRetriever PeerRetriever,
+	peerRetriever peer.PeerRetriever,
 	heartbeatSender HeartbeatMsgSender,
 ) *KeepaliveService {
 	return &KeepaliveService{
