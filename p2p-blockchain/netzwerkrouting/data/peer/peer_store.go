@@ -31,6 +31,14 @@ type PeerRetriever interface {
 	GetAllOutboundPeers() []common.PeerId
 }
 
+// ConnectedPeerRetriever is an interface for retrieving connected peers.
+// It extends PeerRetriever with methods for getting connected peers.
+type ConnectedPeerRetriever interface {
+	PeerRetriever
+	// GetConnectedPeers retrieves all peers that are in Connected state.
+	GetConnectedPeers() []common.PeerId
+} // TODO
+
 func NewPeerStore() *peerStore {
 	return &peerStore{
 		peers: make(map[common.PeerId]*Peer),
@@ -63,6 +71,22 @@ func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 
 	for k, v := range s.peers {
 		if v.Direction == common.DirectionOutbound {
+			peerIds = append(peerIds, k)
+		}
+	}
+
+	return peerIds
+}
+
+// GetConnectedPeers retrieves all peers that are in Connected state.
+func (s *peerStore) GetConnectedPeers() []common.PeerId {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerIds := make([]common.PeerId, 0)
+
+	for k, v := range s.peers {
+		if v.State == common.StateConnected {
 			peerIds = append(peerIds, k)
 		}
 	}

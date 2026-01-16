@@ -5,7 +5,7 @@ import (
 )
 
 // DiscoveryService provides peer discovery functionality.
-// This includes (1) querying a registry for peers, (2) asking neighbors for their known peers as well as (3) keeping track of active peers through heartbeats.
+// This includes (1) querying a registry for peers and (2) asking neighbors for their known peers.
 type DiscoveryService struct {
 	querier          RegistryQuerier
 	peerCreator      peer.PeerCreator
