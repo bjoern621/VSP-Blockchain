@@ -36,6 +36,6 @@ func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.Pe
 
 	if len(unknownValidHeaders) > 0 {
 		logger.Infof("Requesting %d unknown blocks from %v", len(unknownValidHeaders), peerID)
-		b.requestData(unknownValidHeaders, peerID)
+		b.blockchainMsgSender.SendGetData(unknownValidHeaders, peerID)
 	}
 }

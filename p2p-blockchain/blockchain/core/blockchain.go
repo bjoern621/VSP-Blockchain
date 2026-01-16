@@ -9,7 +9,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
-	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -58,6 +57,10 @@ func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
 }
 
 func (b *Blockchain) SetFilter(_ block.SetFilterRequest, _ common.PeerId) {
+	panic("No longer supported and will be removed later")
+}
+
+func (b *Blockchain) MerkleBlock(_ block.MerkleBlock, _ common.PeerId) {
 	panic("No longer supported and will be removed later")
 }
 
