@@ -2,7 +2,7 @@ package api
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
+	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
 	"slices"
 )
 
@@ -37,12 +37,17 @@ type NetworkInfoAPI interface {
 	GetInternalPeerInfo() []PeerInfo
 }
 
-type networkRegistryService struct {
-	networkInfoProvider InfrastructureInfoProvider
-	peerRetriever       peer.PeerRetriever
+// peerRetriever is an interface for retrieving peers.
+type peerRetriever interface {
+	GetPeer(id common.PeerId) (corepeer.PeerData, bool)
 }
 
-func NewNetworkRegistryService(networkInfoProvider InfrastructureInfoProvider, peerRetriever peer.PeerRetriever) NetworkInfoAPI {
+type networkRegistryService struct {
+	networkInfoProvider InfrastructureInfoProvider
+	peerRetriever       peerRetriever
+}
+
+func NewNetworkRegistryService(networkInfoProvider InfrastructureInfoProvider, peerRetriever peerRetriever) NetworkInfoAPI {
 	return &networkRegistryService{
 		networkInfoProvider: networkInfoProvider,
 		peerRetriever:       peerRetriever,
@@ -62,11 +67,11 @@ func (s *networkRegistryService) GetInternalPeerInfo() []PeerInfo {
 
 		if p, exists := s.peerRetriever.GetPeer(peerID); exists {
 			p.Lock()
-			pInfo.Version = p.Version
-			pInfo.ConnectionState = p.State
-			pInfo.Direction = p.Direction
+			pInfo.Version = p.GetVersion()
+			pInfo.ConnectionState = p.GetState()
+			pInfo.Direction = p.GetDirection()
 
-			pInfo.SupportedServices = slices.Clone(p.SupportedServices)
+			pInfo.SupportedServices = slices.Clone(p.GetSupportedServices())
 			p.Unlock()
 		}
 
