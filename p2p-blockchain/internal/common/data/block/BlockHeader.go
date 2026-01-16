@@ -1,6 +1,11 @@
 package block
 
-import "s3b/vsp-blockchain/p2p-blockchain/internal/common"
+import (
+	"crypto/sha256"
+	"encoding/binary"
+
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+)
 
 // BlockHeader represents the header of a block in the blockchain.
 type BlockHeader struct {
@@ -16,3 +21,19 @@ type BlockHeader struct {
 }
 
 const StandardDifficultyTarget uint8 = 28 // ~100 seconds per block
+
+// Hash computes the double SHA-256 hash of the block header.
+func (h *BlockHeader) Hash() common.Hash {
+	var buffer = make([]byte, 0)
+	buffer = append(buffer, h.PreviousBlockHash[:]...)
+	buffer = append(buffer, h.MerkleRoot[:]...)
+	buffer = binary.LittleEndian.AppendUint64(buffer, uint64(h.Timestamp))
+	buffer = binary.LittleEndian.AppendUint32(buffer, h.Nonce)
+	buffer = append(buffer, h.DifficultyTarget)
+
+	first := sha256.Sum256(buffer)
+	second := sha256.Sum256(first[:])
+	var hash common.Hash
+	copy(hash[:], second[:])
+	return hash
+}
