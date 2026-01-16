@@ -2,7 +2,6 @@ package block
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
@@ -60,14 +59,7 @@ func countLeadingZeroBits(hash common.Hash) uint8 {
 }
 
 func (b *Block) Hash() common.Hash {
-	var buffer = make([]byte, 0)
-	buffer = append(buffer, b.Header.PreviousBlockHash[:]...)
-	buffer = append(buffer, b.Header.MerkleRoot[:]...)
-	buffer = binary.LittleEndian.AppendUint64(buffer, uint64(b.Header.Timestamp))
-	buffer = binary.LittleEndian.AppendUint32(buffer, b.Header.Nonce)
-	buffer = append(buffer, b.Header.DifficultyTarget)
-
-	return doubleSHA256(buffer)
+	return b.Header.Hash()
 }
 
 // MerkleRoot calculates and returns the Merkle root of the block's transactions.
