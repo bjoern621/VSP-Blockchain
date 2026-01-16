@@ -130,16 +130,8 @@ func (c *Client) SendVerack(peerID common.PeerId, localInfo handshake.VersionInf
 }
 
 func (c *Client) SendAck(peerID common.PeerId) {
-	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
-	if !ok {
-		logger.Warnf("failed to send Ack: no connection for peer %s", peerID)
-		return
-	}
-
-	client := pb.NewConnectionEstablishmentClient(conn)
-
-	_, err := client.Ack(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		logger.Warnf("failed to send Ack to peer %s: %v", peerID, err)
-	}
+	SendHelper(c, peerID, "Ack", pb.NewConnectionEstablishmentClient, func(client pb.ConnectionEstablishmentClient) error {
+		_, err := client.Ack(context.Background(), &emptypb.Empty{})
+		return err
+	})
 }
