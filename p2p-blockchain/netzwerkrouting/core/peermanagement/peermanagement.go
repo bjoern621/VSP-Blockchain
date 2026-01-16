@@ -168,7 +168,7 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 	}
 
 	// Attempt to establish connections
-	successfulConnections := 0
+	handshakesSent := 0
 	for _, peerID := range potentialPeers {
 		err := s.handshakeInitiator.InitiateHandshake(peerID)
 		if err != nil {
@@ -176,9 +176,9 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 			continue
 		}
 
-		successfulConnections++
+		handshakesSent++
 		logger.Infof("Successfully initiated handshake with peer %s", peerID)
 	}
 
-	logger.Infof("Established %d/%d new peer connections", successfulConnections, count)
+	logger.Infof("Sent %d/%d handshakes to new peers", handshakesSent, count)
 }
