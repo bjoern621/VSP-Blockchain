@@ -121,9 +121,13 @@ jobs:
               env:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
-                  # Delete all miner pods at once - they will be recreated in parallel
-                  echo "Deleting all miner pods..."
-                  kubectl -n "$NAMESPACE" delete pods -l app=miner --wait=false
+                  # Scale down to 0 and back up to force parallel pod recreation
+                  echo "Scaling down miner StatefulSet..."
+                  kubectl -n "$NAMESPACE" scale statefulset/miner --replicas=0
+                  kubectl -n "$NAMESPACE" wait --for=jsonpath='{.status.replicas}'=0 statefulset/miner --timeout=180s
+
+                  echo "Scaling up miner StatefulSet..."
+                  kubectl -n "$NAMESPACE" scale statefulset/miner --replicas=45
 
                   # Wait for all pods to be ready
                   echo "Waiting for all miner pods to be ready..."
