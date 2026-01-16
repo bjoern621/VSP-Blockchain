@@ -74,7 +74,7 @@ func main() {
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	blockchain := core.NewBlockchain(blockchainMsgService, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
@@ -96,12 +96,17 @@ func main() {
 		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
+
+		// Initialize konto API and handler
+		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
+		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
+
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

@@ -6,7 +6,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
@@ -17,8 +16,9 @@ import (
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
 
 type Blockchain struct {
-	mempool             *Mempool
-	blockchainMsgSender api.BlockchainAPI
+	mempool                *Mempool
+	blockchainMsgSender    api.BlockchainAPI
+	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI
 
 	transactionValidator validation.ValidationAPI
 	blockValidator       validation.BlockValidationAPI
@@ -31,6 +31,7 @@ type Blockchain struct {
 
 func NewBlockchain(
 	blockchainMsgSender api.BlockchainAPI,
+	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI,
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
 	blockStore blockchain.BlockStoreAPI,
@@ -38,8 +39,9 @@ func NewBlockchain(
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator, blockStore)
 	return &Blockchain{
-		mempool:             mempool,
-		blockchainMsgSender: blockchainMsgSender,
+		mempool:                mempool,
+		blockchainMsgSender:    blockchainMsgSender,
+		fullInventoryMsgSender: fullInventoryMsgSender,
 
 		transactionValidator: transactionValidator,
 		blockValidator:       blockValidator,
@@ -55,20 +57,8 @@ func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
 	b.Block(selfMinedBlock, "")
 }
 
-func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
-	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
-}
-
-func (b *Blockchain) MerkleBlock(_ block.MerkleBlock, _ common.PeerId) {
-	panic("No longer supported and will be removed later")
-}
-
 func (b *Blockchain) SetFilter(_ block.SetFilterRequest, _ common.PeerId) {
 	panic("No longer supported and will be removed later")
-}
-
-func (b *Blockchain) requestData(missingData []*inv.InvVector, id common.PeerId) {
-	b.blockchainMsgSender.SendGetData(missingData, id)
 }
 
 func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {

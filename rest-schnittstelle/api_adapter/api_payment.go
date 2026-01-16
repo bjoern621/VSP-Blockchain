@@ -10,8 +10,10 @@
 package openapi
 
 import (
+	"errors"
 	"net/http"
 	"s3b/vsp-blockchain/rest-api/internal/common"
+	"s3b/vsp-blockchain/rest-api/konto"
 	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -20,20 +22,43 @@ import (
 
 type PaymentAPI struct {
 	transactionService *transactionapi.TransaktionAPI
+	kontostandService  *konto.KontostandService
 }
 
-// NewPaymentAPI creates a new PaymentAPI with the given transaction service.
-func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI) *PaymentAPI {
+// NewPaymentAPI creates a new PaymentAPI with the given services.
+func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostandService *konto.KontostandService) *PaymentAPI {
 	return &PaymentAPI{
 		transactionService: transactionService,
+		kontostandService:  kontostandService,
 	}
 }
 
 // Get /balance
 // Returns the balance tied to the given public key hash
 func (api *PaymentAPI) BalanceGet(c *gin.Context) {
-	// Your handler implementation
-	c.JSON(200, gin.H{"status": "OK"})
+	// Extract VSAddress from query parameter
+	vsAddress := c.Query("vsAddress")
+	// Call the domain service
+	result, err := api.kontostandService.GetBalance(vsAddress)
+	if errors.Is(err, common.ErrInvalidAddress) {
+		logger.Warnf("Balance request validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	var assetErr *common.AssetError
+	if errors.As(err, &assetErr) {
+		logger.Warnf("Balance request asset error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	if err != nil {
+		logger.Errorf("Failed to get balance: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	// Return successful response
+	c.JSON(http.StatusOK, BalanceGet200Response{Balance: int32(result)})
 }
 
 // Get /history
