@@ -105,10 +105,21 @@ jobs:
               run: |
                   export KUBECONFIG="${HOME}/.kube/config"
 
-                  # Delete all resources
-                  kubectl delete -f kubernetes-miner.yaml --ignore-not-found=true --wait=true
-                  kubectl delete -f kubernetes-registry.yaml --ignore-not-found=true --wait=true
-                  kubectl delete -f kubernetes-rest_api.yaml --ignore-not-found=true --wait=true
+                  # INSTANT FORCE DELETE ALL PODS - no waiting, no graceful shutdown
+                  echo "=== INSTANT FORCE DELETE ALL PODS ==="
+                  kubectl -n "$NAMESPACE" get pods -o name | xargs -r kubectl -n "$NAMESPACE" delete --force --grace-period=0 --ignore-not-found=true 2>/dev/null || true
+
+                  # Also delete resources (no wait)
+                  kubectl delete -f kubernetes-miner.yaml --ignore-not-found=true --timeout=5s || true
+                  kubectl delete -f kubernetes-registry.yaml --ignore-not-found=true --timeout=5s || true
+                  kubectl delete -f kubernetes-rest_api.yaml --ignore-not-found=true --timeout=5s || true
+
+                  # One more force delete to ensure everything is gone
+                  echo "=== SECOND FORCE DELETE PASS ==="
+                  kubectl -n "$NAMESPACE" get pods -o name | xargs -r kubectl -n "$NAMESPACE" delete --force --grace-period=0 --ignore-not-found=true 2>/dev/null || true
+
+                  # Brief pause
+                  sleep 2
 
                   # Apply with new image tags inline
                   kubectl apply -f kubernetes-miner.yaml
@@ -130,3 +141,19 @@ jobs:
                   echo "Waiting for deployments..."
                   kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
                   kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
+
+            - name: Show pods overview
+              env:
+                  NAMESPACE: ${{ env.NAMESPACE }}
+              run: |
+                  echo "=== ALL PODS OVERVIEW ==="
+                  echo ""
+                  echo "Namespace: $NAMESPACE"
+                  echo ""
+                  kubectl -n "$NAMESPACE" get pods -o wide
+                  echo ""
+                  echo "=== POD DETAILS ==="
+                  kubectl -n "$NAMESPACE" get pods -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,READY:.status.readyReplicas,RESTARTS:.status.containerStatuses[0].restartCount,AGE:.metadata.creationTimestamp --no-headers
+                  echo ""
+                  echo "=== EVENTS (Last 20) ==="
+                  kubectl -n "$NAMESPACE" get events --sort-by='.lastTimestamp' | tail -20

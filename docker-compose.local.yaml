@@ -26,7 +26,7 @@ services:
             APP_PORT: "50050"
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, registry-crawler technically only needs 127.0.0.1
-            P2P_LISTEN_ADDR: "172.28.1.10"
+            P2P_LISTEN_ADDR: "172.28.1.11"
             ADDITIONAL_SERVICES: "app"
             LOG_LEVEL: "DEBUG"
 
@@ -58,7 +58,7 @@ services:
             - registry-hosts:/seed
         networks:
             vsp-net:
-                ipv4_address: 172.28.1.10
+                ipv4_address: 172.28.1.11
 
     miner2:
         build:
@@ -132,7 +132,7 @@ services:
             APP_PORT: "50050"
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, rest-api technically only needs 127.0.0.1
-            P2P_LISTEN_ADDR: "172.28.1.20"
+            P2P_LISTEN_ADDR: "172.28.1.15"
             ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
             LOG_LEVEL: "DEBUG"
 
@@ -151,7 +151,7 @@ services:
             - "20005:50050"
         networks:
             vsp-net:
-                ipv4_address: 172.28.1.20
+                ipv4_address: 172.28.1.15
 
     registry:
         image: coredns/coredns:1.11.3

@@ -2,7 +2,9 @@ package transaction
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
@@ -207,21 +209,19 @@ func (tx *Transaction) IsCoinbase() bool {
 //   - One input with PrevTxID = 0, OutputIndex = 0xFFFFFFFF (coinbase specific)
 //   - One or more outputs paying to the miner's address
 //   - No signature verification needed (it's newly created coins)
-func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, coinbaseData ...[]byte) Transaction {
+func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, height uint64) Transaction {
 	// Build coinbase data (signature field can contain arbitrary data in coinbase)
-	var signature []byte
-	if len(coinbaseData) > 0 && len(coinbaseData[0]) > 0 {
-		signature = coinbaseData[0]
-	} else {
-		signature = []byte("VSP-Blockchain Coinbase")
-	}
+	var signature [100]byte
+	binary.LittleEndian.PutUint64(signature[:], height)
+
+	rand.Read(signature[8:]) //nolint:errcheck
 
 	return Transaction{
 		Inputs: []Input{
 			{
 				PrevTxID:    TransactionID{},
 				OutputIndex: 0xFFFFFFFF,
-				Signature:   signature,
+				Signature:   signature[:],
 				PubKey:      PubKey{},
 				Sequence:    0xFFFFFFFF,
 			},

@@ -17,8 +17,8 @@ type transactionWithFee struct {
 
 const TxPerBlock = 100
 
-func (m *minerService) createCandidateBlock(transactions []transaction.Transaction) (block.Block, error) {
-	tx, err := m.buildTransactions(transactions)
+func (m *minerService) createCandidateBlock(transactions []transaction.Transaction, height uint64) (block.Block, error) {
+	tx, err := m.buildTransactions(transactions, height)
 	if err != nil {
 		return block.Block{}, err
 	}
@@ -36,7 +36,7 @@ func (m *minerService) createCandidateBlockHeader(transactions []transaction.Tra
 	previousBlockHash := tip.Hash()
 
 	merkleRoot := block.MerkleRootFromTransactions(transactions)
-	logger.Debugf("[miner] Calculated merkle root: %v", merkleRoot)
+	logger.Tracef("[miner] Calculated merkle root: %v", merkleRoot)
 
 	targetBits, err := GetCurrentTargetBits()
 	if err != nil {
@@ -53,7 +53,7 @@ func (m *minerService) createCandidateBlockHeader(transactions []transaction.Tra
 	return blockHeader, nil
 }
 
-func (m *minerService) buildTransactions(transactions []transaction.Transaction) ([]transaction.Transaction, error) {
+func (m *minerService) buildTransactions(transactions []transaction.Transaction, height uint64) ([]transaction.Transaction, error) {
 	transactionsWithFees, err := m.getTransactionWithFee(transactions)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (m *minerService) buildTransactions(transactions []transaction.Transaction)
 
 	transactionsSorted := m.sortAndReversedTransactions(transactionsWithFees)
 
-	coinbaseTx, err := m.createCoinbaseTransaction(transactionsWithFees)
+	coinbaseTx, err := m.createCoinbaseTransaction(transactionsWithFees, height)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (m *minerService) sortAndReversedTransactions(transactionsWithFees []transa
 	return transactionsSorted
 }
 
-func (m *minerService) createCoinbaseTransaction(transactions []transactionWithFee) (transaction.Transaction, error) {
+func (m *minerService) createCoinbaseTransaction(transactions []transactionWithFee, height uint64) (transaction.Transaction, error) {
 	var sumOfFees uint64
 	for _, tx := range transactions {
 		sumOfFees += tx.Fee
@@ -97,7 +97,7 @@ func (m *minerService) createCoinbaseTransaction(transactions []transactionWithF
 		return transaction.Transaction{}, err
 	}
 
-	coinbaseTransaction := transaction.NewCoinbaseTransaction(ownPubKeyHash, sumOfFees+reward, []byte("Hello World"))
+	coinbaseTransaction := transaction.NewCoinbaseTransaction(ownPubKeyHash, sumOfFees+reward, height)
 
 	return coinbaseTransaction, nil
 }

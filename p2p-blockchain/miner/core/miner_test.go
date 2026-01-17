@@ -30,31 +30,31 @@ type mockUTXOLookupService struct {
 	utxos map[utxoOutpoint]transaction.Output
 }
 
-func (m *mockUTXOLookupService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+func (m *mockUTXOLookupService) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
 	return utxopool.UTXOEntry{}, nil
 }
 
-func (m *mockUTXOLookupService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
+func (m *mockUTXOLookupService) ContainsUTXO(_ utxopool.Outpoint) bool {
 	return true
 }
 
-func (m *mockUTXOLookupService) AddUTXO(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
+func (m *mockUTXOLookupService) AddUTXO(_ utxopool.Outpoint, _ utxopool.UTXOEntry) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) SpendUTXO(outpoint utxopool.Outpoint) error {
+func (m *mockUTXOLookupService) SpendUTXO(_ utxopool.Outpoint) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) Remove(outpoint utxopool.Outpoint) error {
+func (m *mockUTXOLookupService) Remove(_ utxopool.Outpoint) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) ApplyTransaction(tx *transaction.Transaction, txID transaction.TransactionID, blockHeight uint64, isCoinbase bool) error {
+func (m *mockUTXOLookupService) ApplyTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ uint64, _ bool) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) RevertTransaction(tx *transaction.Transaction, txID transaction.TransactionID, inputUTXOs []utxopool.UTXOEntry) error {
+func (m *mockUTXOLookupService) RevertTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ []utxopool.UTXOEntry) error {
 	return nil
 }
 
@@ -79,7 +79,7 @@ func (m *mockUTXOLookupService) GetUTXO(txID transaction.TransactionID, outputIn
 	return transaction.Output{}, &utxoNotFoundError{}
 }
 
-func (m *mockUTXOLookupService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+func (m *mockUTXOLookupService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
 	return nil, nil
 }
 
@@ -94,23 +94,23 @@ type mockBlockStore struct {
 	tip block.Block
 }
 
-func (m *mockBlockStore) AddBlock(b block.Block) []common.Hash {
+func (m *mockBlockStore) AddBlock(_ block.Block) []common.Hash {
 	return nil
 }
 
-func (m *mockBlockStore) IsOrphanBlock(b block.Block) (bool, error) {
+func (m *mockBlockStore) IsOrphanBlock(_ block.Block) (bool, error) {
 	return false, nil
 }
 
-func (m *mockBlockStore) IsPartOfMainChain(b block.Block) bool {
+func (m *mockBlockStore) IsPartOfMainChain(_ block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+func (m *mockBlockStore) GetBlockByHash(_ common.Hash) (block.Block, error) {
 	return block.Block{}, nil
 }
 
-func (m *mockBlockStore) GetBlocksByHeight(height uint64) []block.Block {
+func (m *mockBlockStore) GetBlocksByHeight(_ uint64) []block.Block {
 	return nil
 }
 
@@ -140,7 +140,7 @@ func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.
 }
 
 // Helper function to create a test transaction
-func createTestTransaction(inputValue uint64, outputValue uint64) transaction.Transaction {
+func createTestTransaction(_ uint64, outputValue uint64) transaction.Transaction {
 	prevTxID := transaction.TransactionID{}
 	prevTxID[0] = 0xAA
 
@@ -166,7 +166,7 @@ func createTestTransaction(inputValue uint64, outputValue uint64) transaction.Tr
 
 // Helper function to create a genesis block
 func createGenesisBlock() block.Block {
-	genesisTx := transaction.NewCoinbaseTransaction(transaction.PubKeyHash{}, 50, []byte("Genesis"))
+	genesisTx := transaction.NewCoinbaseTransaction(transaction.PubKeyHash{}, 50, 0)
 
 	return block.Block{
 		Header: block.BlockHeader{
@@ -427,7 +427,7 @@ func TestCreateCoinbaseTransaction(t *testing.T) {
 	txFee1 := transactionWithFee{Fee: 10, tx: transaction.Transaction{}}
 	txFee2 := transactionWithFee{Fee: 20, tx: transaction.Transaction{}}
 
-	coinbase, err := miner.createCoinbaseTransaction([]transactionWithFee{txFee1, txFee2})
+	coinbase, err := miner.createCoinbaseTransaction([]transactionWithFee{txFee1, txFee2}, 1)
 	if err != nil {
 		t.Fatalf("createCoinbaseTransaction() returned error: %v", err)
 	}
@@ -462,7 +462,7 @@ func TestBuildTransactions(t *testing.T) {
 		createTestTransaction(100, 90), // fee 10
 	}
 
-	builtTxs, err := miner.buildTransactions(txs)
+	builtTxs, err := miner.buildTransactions(txs, 1)
 	if err != nil {
 		t.Fatalf("buildTransactions() returned error: %v", err)
 	}
@@ -494,7 +494,7 @@ func TestBuildTransactions_LimitToTxPerBlock(t *testing.T) {
 		txs[i] = createTestTransaction(100, 90)
 	}
 
-	builtTxs, err := miner.buildTransactions(txs)
+	builtTxs, err := miner.buildTransactions(txs, 1)
 	if err != nil {
 		t.Fatalf("buildTransactions() returned error: %v", err)
 	}
@@ -521,7 +521,7 @@ func TestCreateCandidateBlock(t *testing.T) {
 		createTestTransaction(100, 90),
 	}
 
-	candidateBlock, err := miner.createCandidateBlock(txs)
+	candidateBlock, err := miner.createCandidateBlock(txs, 1)
 	if err != nil {
 		t.Fatalf("createCandidateBlock() returned error: %v", err)
 	}

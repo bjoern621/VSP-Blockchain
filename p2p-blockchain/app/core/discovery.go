@@ -17,6 +17,6 @@ func NewDiscoveryService(discoveryAPI api.DiscoveryAPI) *DiscoveryService {
 
 func (s *DiscoveryService) SendGetAddr(peerID string) error {
 	pid := common.PeerId(peerID)
-	s.discoveryAPI.SendGetAddr(pid)
+	go s.discoveryAPI.SendGetAddr(pid)
 	return nil
 }

@@ -69,7 +69,7 @@ func (m *mockUTXOService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
 	return ok
 }
 
-func (m *mockUTXOService) GetUTXOsByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]transaction.UTXO, error) {
+func (m *mockUTXOService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
 	return []transaction.UTXO{}, nil
 }
 
@@ -159,7 +159,7 @@ func (m *mockUTXOService) Close() error {
 // mockValidatorForMempool is a mock that always validates successfully
 type mockValidatorForMempool struct{}
 
-func (m *mockValidatorForMempool) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
+func (m *mockValidatorForMempool) ValidateTransaction(_ *transaction.Transaction) (bool, error) {
 	return true, nil
 }
 
@@ -186,7 +186,7 @@ func createBlockWithDifficulty(prevHash common.Hash, nonce uint32, difficulty ui
 	}
 
 	// Create a coinbase transaction
-	tx := transaction.NewCoinbaseTransaction(transaction.PubKeyHash{1, 2, 3}, 50)
+	tx := transaction.NewCoinbaseTransaction(transaction.PubKeyHash{1, 2, 3}, 50, 1)
 
 	return block.Block{
 		Header:       header,
@@ -326,7 +326,7 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 			Nonce:             1,
 		},
 		Transactions: []transaction.Transaction{
-			transaction.NewCoinbaseTransaction(pubKeyHash1, 50),
+			transaction.NewCoinbaseTransaction(pubKeyHash1, 50, 1),
 		},
 	}
 	store.AddBlock(block1)
@@ -358,7 +358,7 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 			Nonce:             10,
 		},
 		Transactions: []transaction.Transaction{
-			transaction.NewCoinbaseTransaction(pubKeyHash2, 50),
+			transaction.NewCoinbaseTransaction(pubKeyHash2, 50, 1),
 		},
 	}
 	store.AddBlock(side1)

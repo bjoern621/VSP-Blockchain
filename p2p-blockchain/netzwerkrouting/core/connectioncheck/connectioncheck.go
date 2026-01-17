@@ -22,8 +22,8 @@ const (
 
 // peerRetriever is an interface for retrieving peer information.
 type peerRetriever interface {
-	// GetAllConnectedPeers retrieves all connected peers' IDs (both inbound and outbound).
-	GetAllConnectedPeers() []common.PeerId
+	// GetPeersWithHandshakeStarted retrieves all peers' IDs that have started the handshake process.
+	GetPeersWithHandshakeStarted() []common.PeerId
 	// GetPeer retrieves a peer by its ID.
 	GetPeer(id common.PeerId) (*peer.Peer, bool)
 }
@@ -94,7 +94,7 @@ func (s *ConnectionCheckService) Stop() {
 func (s *ConnectionCheckService) checkConnections() {
 	logger.Debugf("[conn-check] Running periodic connection check")
 
-	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
+	connectedPeers := s.peerRetriever.GetPeersWithHandshakeStarted()
 	logger.Debugf("[conn-check] Checking %d connected peers", len(connectedPeers))
 
 	now := time.Now()

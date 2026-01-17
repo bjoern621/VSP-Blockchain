@@ -30,7 +30,7 @@ func (b *Blockchain) handleBlockRequest(blockHash common.Hash, peerID common.Pee
 		return
 	}
 
-	b.fullInventoryMsgSender.SendBlock(block, peerID)
+	go b.fullInventoryMsgSender.SendBlock(block, peerID)
 }
 
 func (b *Blockchain) handleTransactionRequest(txHash common.Hash, peerID common.PeerId) {
@@ -40,5 +40,5 @@ func (b *Blockchain) handleTransactionRequest(txHash common.Hash, peerID common.
 		return
 	}
 
-	b.fullInventoryMsgSender.SendTx(transaction, peerID)
+	go b.fullInventoryMsgSender.SendTx(transaction, peerID)
 }
