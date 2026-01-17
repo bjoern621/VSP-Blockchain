@@ -59,7 +59,7 @@ func NewConnectionCheckService(
 
 // Start begins the periodic connection check loop.
 func (s *ConnectionCheckService) Start() {
-	logger.Infof("Starting connection check service with interval: %v", ConnectionCheckInterval)
+	logger.Infof("[conn-check] Starting connection check service with interval: %v", ConnectionCheckInterval)
 
 	s.ticker = time.NewTicker(ConnectionCheckInterval)
 
@@ -77,7 +77,7 @@ func (s *ConnectionCheckService) Start() {
 
 // Stop stops the periodic connection check loop.
 func (s *ConnectionCheckService) Stop() {
-	logger.Infof("Stopping connection check service")
+	logger.Infof("[conn-check] Stopping connection check service")
 	if s.ticker != nil {
 		s.ticker.Stop()
 		s.ticker = nil
@@ -92,10 +92,10 @@ func (s *ConnectionCheckService) Stop() {
 
 // checkConnections checks all connected peers and removes those that haven't been seen recently.
 func (s *ConnectionCheckService) checkConnections() {
-	logger.Debugf("Running periodic connection check")
+	logger.Debugf("[conn-check] Running periodic connection check")
 
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
-	logger.Debugf("Checking %d connected peers", len(connectedPeers))
+	logger.Debugf("[conn-check] Checking %d connected peers", len(connectedPeers))
 
 	now := time.Now()
 	removedCount := 0
@@ -103,7 +103,7 @@ func (s *ConnectionCheckService) checkConnections() {
 	for _, peerID := range connectedPeers {
 		p, exists := s.peerRetriever.GetPeer(peerID)
 		if !exists {
-			logger.Warnf("Peer %s not found in store during connection check", peerID)
+			logger.Warnf("[conn-check] Peer %s not found in store during connection check", peerID)
 			continue
 		}
 
@@ -114,7 +114,7 @@ func (s *ConnectionCheckService) checkConnections() {
 
 		// Check if peer is considered unreachable
 		if lastSeen == 0 {
-			logger.Warnf("Peer %s (state: %s) has LastSeen=0, removing", peerID, peerState)
+			logger.Warnf("[conn-check] Peer %s (state: %s) has LastSeen=0, removing", peerID, peerState)
 			s.removePeer(peerID)
 			removedCount++
 			continue
@@ -124,19 +124,19 @@ func (s *ConnectionCheckService) checkConnections() {
 		timeSinceLastSeen := now.Sub(lastSeenTime)
 
 		if timeSinceLastSeen >= PeerTimeout {
-			logger.Infof("Removing unreachable peer %s: last seen %v ago (threshold: %v)",
+			logger.Infof("[conn-check] Removing unreachable peer %s: last seen %v ago (threshold: %v)",
 				peerID, timeSinceLastSeen.Round(time.Second), PeerTimeout)
 			s.removePeer(peerID)
 			removedCount++
 		} else {
-			logger.Tracef("Peer %s is healthy: last seen %v ago", peerID, timeSinceLastSeen.Round(time.Second))
+			logger.Tracef("[conn-check] Peer %s is healthy: last seen %v ago", peerID, timeSinceLastSeen.Round(time.Second))
 		}
 	}
 
 	if removedCount > 0 {
-		logger.Infof("Connection check completed: removed %d unreachable peers", removedCount)
+		logger.Infof("[conn-check] Connection check completed: removed %d unreachable peers", removedCount)
 	} else {
-		logger.Debugf("Connection check completed: all peers healthy")
+		logger.Debugf("[conn-check] Connection check completed: all peers healthy")
 	}
 }
 
