@@ -151,8 +151,15 @@ paths:
   /blockchain/visualization:
     get:
       summary: Returns a URL to the visualization of the current blockchain.
+      description: If includeDetails is set to true, the result includes more details in node labels (height, accumulated work).
       tags:
         - DevTools
+      parameters:
+        - name: includeDetails
+          required: true
+          in: header
+          schema:
+            type: boolean
       responses:
         '200':
           description: Successful response with the corresponding URL
