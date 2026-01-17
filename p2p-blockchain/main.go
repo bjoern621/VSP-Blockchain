@@ -108,9 +108,9 @@ func main() {
 		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
-		// Initialize visualization API and handler
-		visualizationAPI := blockapi.NewVisualizationAPI(blockStore)
-		visualizationHandler := adapters.NewVisualizationAdapter(visualizationAPI)
+		// Initialize visualization service and handler
+		visualizationService := appcore.NewVisualizationService(blockStore)
+		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
