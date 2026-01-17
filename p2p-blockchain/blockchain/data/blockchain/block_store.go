@@ -2,6 +2,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
@@ -443,8 +444,12 @@ func (s *BlockStore) generateDotForNode(sb *strings.Builder, node *blockNode, ma
 	}
 
 	// Generate node label
-	hashStr := fmt.Sprintf("%x", blockHash)
-	shortHash := hashStr[:8] // First 8 characters of hash for readability
+	hashStr := hex.EncodeToString(blockHash[:])
+	shortHash := hashStr
+	const n = 10
+	if len(hashStr) > n {
+		shortHash = hashStr[:n] // first n characters of hash for readability and differentiation
+	}
 
 	var label string
 	if includeDetails {
@@ -458,7 +463,8 @@ func (s *BlockStore) generateDotForNode(sb *strings.Builder, node *blockNode, ma
 
 	// Write edge from parent to this node
 	if node.Parent != nil {
-		parentHashStr := fmt.Sprintf("%x", node.Parent.Block.Hash())
+		parentHash := node.Parent.Block.Hash()
+		parentHashStr := hex.EncodeToString(parentHash[:])
 		sb.WriteString(fmt.Sprintf("    \"%s\" -> \"%s\";\n", hashStr, parentHashStr))
 	}
 
