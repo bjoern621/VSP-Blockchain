@@ -32,6 +32,7 @@ type Server struct {
 	transactionHandler   *adapters.TransactionHandlerAdapter
 	kontoHandler         *adapters.KontoHandlerAdapter
 	visualizationHandler *adapters.VisualizationHandlerAdapter
+	miningService        *core.MiningService
 }
 
 // NewServer creates a new external API server.
@@ -44,6 +45,7 @@ func NewServer(
 	discoveryService *core.DiscoveryService,
 	kontoHandler *adapters.KontoHandlerAdapter,
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
+	miningService *core.MiningService,
 ) *Server {
 	return &Server{
 		connService:          connService,
@@ -54,6 +56,7 @@ func NewServer(
 		transactionHandler:   transactionHandler,
 		kontoHandler:         kontoHandler,
 		visualizationHandler: visualizationHandler,
+		miningService:        miningService,
 	}
 }
 
@@ -239,4 +242,34 @@ func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.Get
 
 func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockchainVisualizationRequest) (*pb.GetBlockchainVisualizationResponse, error) {
 	return s.visualizationHandler.GetBlockchainVisualization(req), nil
+}
+
+func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMiningResponse, error) {
+	err := s.miningService.StartMining(nil)
+	if err != nil {
+		return &pb.StartMiningResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to start mining: %v", err),
+		}, nil
+	}
+
+	return &pb.StartMiningResponse{
+		Success:      true,
+		ErrorMessage: "",
+	}, nil
+}
+
+func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMiningResponse, error) {
+	err := s.miningService.StopMining()
+	if err != nil {
+		return &pb.StopMiningResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to stop mining: %v", err),
+		}, nil
+	}
+
+	return &pb.StopMiningResponse{
+		Success:      true,
+		ErrorMessage: "",
+	}, nil
 }

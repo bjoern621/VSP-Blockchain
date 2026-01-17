@@ -1,0 +1,21 @@
+meta {
+  name: Start
+  type: grpc
+  seq: 1
+}
+
+grpc {
+  url: localhost:20004
+  method: /app.AppService/StartMining
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {}
+  '''
+}

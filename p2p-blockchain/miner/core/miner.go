@@ -8,16 +8,14 @@ import (
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-type MinerAPI interface {
-	StartMining(transactions []transaction.Transaction)
-	StopMining()
-}
-
 type minerService struct {
+	mu           sync.RWMutex
+	isMining     bool
 	cancelMining context.CancelFunc
 	blockchain   blockchainApi.BlockchainAPI
 	utxoService  blockchainApi.UtxoServiceAPI
@@ -28,7 +26,7 @@ func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
 	utxoServiceAPI blockchainApi.UtxoServiceAPI,
 	blockStore blockchainApi.BlockStoreAPI,
-) MinerAPI {
+) *minerService {
 	return &minerService{
 		blockchain:  blockchain,
 		utxoService: utxoServiceAPI,
@@ -37,6 +35,14 @@ func NewMinerService(
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.isMining {
+		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
+		return
+	}
+
 	tip := m.blockStore.GetMainChainTip()
 	previousBlockHash := tip.Hash()
 	logger.Infof("[miner] Started mining new block with %d transactions and PrevBlockHash %v", len(transactions), previousBlockHash)
@@ -48,8 +54,16 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
+	m.isMining = true
 
 	go func() {
+		defer func() {
+			m.mu.Lock()
+			m.isMining = false
+			m.cancelMining = nil
+			m.mu.Unlock()
+		}()
+
 		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
 		if err != nil {
 			logger.Infof("[miner] Mining stopped: %v", err)
@@ -63,7 +77,17 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 }
 
 func (m *minerService) StopMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if !m.isMining || m.cancelMining == nil {
+		logger.Infof("[miner] Not currently mining, ignoring StopMining request")
+		return
+	}
+
+	logger.Infof("[miner] Stopping mining")
 	m.cancelMining()
+	m.cancelMining = nil
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
