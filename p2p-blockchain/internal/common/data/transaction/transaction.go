@@ -214,7 +214,7 @@ func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, h
 	var signature [100]byte
 	binary.LittleEndian.PutUint64(signature[:], height)
 
-	rand.Read(signature[8:]) //NoLint:errcheck
+	rand.Read(signature[8:]) //nolint:errcheck
 
 	return Transaction{
 		Inputs: []Input{
