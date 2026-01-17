@@ -184,6 +184,63 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 	}
 }
 
+// mockEntryDAO implements utxopool.EntryDAO for testing
+type mockEntryDAO struct {
+	entries map[string]utxopool.UTXOEntry
+	index   map[transaction.PubKeyHash][]utxopool.Outpoint
+}
+
+func newMockEntryDAO() *mockEntryDAO {
+	return &mockEntryDAO{
+		entries: make(map[string]utxopool.UTXOEntry),
+		index:   make(map[transaction.PubKeyHash][]utxopool.Outpoint),
+	}
+}
+
+func (m *mockEntryDAO) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
+	key := string(outpoint.Key())
+	if entry, ok := m.entries[key]; ok {
+		return entry, nil
+	}
+	return utxopool.UTXOEntry{}, utxo.ErrUTXONotFound
+}
+
+func (m *mockEntryDAO) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
+	key := string(outpoint.Key())
+	m.entries[key] = entry
+	m.index[entry.Output.PubKeyHash] = append(m.index[entry.Output.PubKeyHash], outpoint)
+	return nil
+}
+
+func (m *mockEntryDAO) Delete(outpoint utxopool.Outpoint) error {
+	key := string(outpoint.Key())
+	delete(m.entries, key)
+	return nil
+}
+
+func (m *mockEntryDAO) FindByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]utxopool.Outpoint, error) {
+	return m.index[pubKeyHash], nil
+}
+
+func (m *mockEntryDAO) Close() error {
+	return nil
+}
+
+func (m *mockEntryDAO) Persist() error {
+	return nil
+}
+
+// createTestMultiChainServiceWithStore creates a MultiChainUTXOService for testing
+func createTestMultiChainServiceWithStore(store *mockBlockStore) *utxo.MultiChainUTXOService {
+	mempool := utxo.NewMemUTXOPoolService()
+	chainstate, _ := utxo.NewChainStateService(
+		utxo.ChainStateConfig{CacheSize: 100},
+		newMockEntryDAO(),
+	)
+	fullNode := utxo.NewFullNodeUTXOService(mempool, chainstate)
+	return utxo.NewMultiChainUTXOService(fullNode, store)
+}
+
 type mockLookupAPIImpl struct{}
 
 var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
@@ -401,6 +458,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		mainChainTip:   createTestBlock(common.Hash{}, 1),
 	}
 	reorg := &mockChainReorganization{}
+	multiChainService := createTestMultiChainServiceWithStore(store)
 
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
@@ -408,6 +466,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		mempool:             NewMempool(nil, nil),
+		multiChainService:   multiChainService,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -438,14 +497,20 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		validateHeaderResult: true,
 		fullValidationResult: true,
 	}
+
+	// Create main chain tip block - new test block will extend this
+	mainChainTipBlock := createTestBlock(common.Hash{}, 1)
+	mainChainTipHash := mainChainTipBlock.Hash()
+
 	store := &mockBlockStore{
 		isOrphanResult: false,
 		currentHeight:  5,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		mainChainTip:   mainChainTipBlock,
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	multiChainService := createTestMultiChainServiceWithStore(store)
 
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
@@ -453,10 +518,12 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		mempool:             NewMempool(nil, nil),
+		multiChainService:   multiChainService,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
-	testBlock := createTestBlock(common.Hash{}, 123)
+	// Create test block that extends the main chain tip
+	testBlock := createTestBlock(mainChainTipHash, 123)
 	peerID := common.PeerId("peer-valid")
 
 	// Act
@@ -491,13 +558,19 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		validateHeaderResult: true,
 		fullValidationResult: true,
 	}
+
+	// Create main chain tip block
+	mainChainTipBlock := createTestBlock(common.Hash{}, 1)
+	mainChainTipHash := mainChainTipBlock.Hash()
+
 	store := &mockBlockStore{
 		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		mainChainTip:   mainChainTipBlock,
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: true, // Reorganization occurred
 	}
+	multiChainService := createTestMultiChainServiceWithStore(store)
 
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
@@ -505,10 +578,12 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		mempool:             NewMempool(nil, nil),
+		multiChainService:   multiChainService,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
-	testBlock := createTestBlock(common.Hash{}, 123)
+	// Create test block that extends main chain tip
+	testBlock := createTestBlock(mainChainTipHash, 123)
 	peerID := common.PeerId("peer-reorg")
 
 	// Act
@@ -532,12 +607,17 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		fullValidationResult: true,
 	}
 
-	testBlock := createTestBlock(common.Hash{}, 123)
+	// Create main chain tip block
+	mainChainTipBlock := createTestBlock(common.Hash{}, 1)
+	mainChainTipHash := mainChainTipBlock.Hash()
+
+	// Create test block that extends main chain tip
+	testBlock := createTestBlock(mainChainTipHash, 123)
 	expectedHash := testBlock.Hash()
 
 	store := &mockBlockStore{
 		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		mainChainTip:   mainChainTipBlock,
 		// Simulate multiple blocks being added (e.g., connecting orphans)
 		addBlockReturnValue: []common.Hash{expectedHash, {1, 2, 3}},
 	}
@@ -545,6 +625,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	multiChainService := createTestMultiChainServiceWithStore(store)
 
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
@@ -552,6 +633,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		mempool:             NewMempool(nil, nil),
+		multiChainService:   multiChainService,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
@@ -576,13 +658,19 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		validateHeaderResult: true,
 		fullValidationResult: true,
 	}
+
+	// Create main chain tip block
+	mainChainTipBlock := createTestBlock(common.Hash{}, 1)
+	mainChainTipHash := mainChainTipBlock.Hash()
+
 	store := &mockBlockStore{
 		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		mainChainTip:   mainChainTipBlock,
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	multiChainService := createTestMultiChainServiceWithStore(store)
 
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
@@ -590,10 +678,12 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		mempool:             NewMempool(nil, nil),
+		multiChainService:   multiChainService,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 	}
 
-	testBlock := createTestBlock(common.Hash{}, 123)
+	// Create test block that extends main chain tip
+	testBlock := createTestBlock(mainChainTipHash, 123)
 	senderPeerID := common.PeerId("peer-sender")
 
 	// Act

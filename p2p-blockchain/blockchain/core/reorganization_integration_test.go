@@ -16,53 +16,8 @@ import (
 // Mock Implementations for Integration Testing
 // =========================================================================
 
-// mockEntryDAO implements utxopool.EntryDAO for testing
-type mockEntryDAO struct {
-	entries map[string]utxopool.UTXOEntry
-	index   map[transaction.PubKeyHash][]utxopool.Outpoint
-}
-
-func newMockEntryDAO() *mockEntryDAO {
-	return &mockEntryDAO{
-		entries: make(map[string]utxopool.UTXOEntry),
-		index:   make(map[transaction.PubKeyHash][]utxopool.Outpoint),
-	}
-}
-
-func (m *mockEntryDAO) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	key := string(outpoint.Key())
-	if entry, ok := m.entries[key]; ok {
-		return entry, nil
-	}
-	return utxopool.UTXOEntry{}, utxo.ErrUTXONotFound
-}
-
-func (m *mockEntryDAO) Update(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
-	key := string(outpoint.Key())
-	m.entries[key] = entry
-	m.index[entry.Output.PubKeyHash] = append(m.index[entry.Output.PubKeyHash], outpoint)
-	return nil
-}
-
-func (m *mockEntryDAO) Delete(outpoint utxopool.Outpoint) error {
-	key := string(outpoint.Key())
-	delete(m.entries, key)
-	return nil
-}
-
-func (m *mockEntryDAO) FindByPubKeyHash(pubKeyHash transaction.PubKeyHash) ([]utxopool.Outpoint, error) {
-	return m.index[pubKeyHash], nil
-}
-
-func (m *mockEntryDAO) Close() error {
-	return nil
-}
-
-func (m *mockEntryDAO) Persist() error {
-	return nil
-}
-
 // createTestMultiChainService creates a MultiChainUTXOService for testing
+// NOTE: Uses mockEntryDAO and newMockEntryDAO from blockchain_test.go
 func createTestMultiChainService(blockStore blockchain.BlockStoreAPI) *utxo.MultiChainUTXOService {
 	mempool := utxo.NewMemUTXOPoolService()
 	chainstate, _ := utxo.NewChainStateService(

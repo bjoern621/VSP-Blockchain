@@ -3,14 +3,12 @@ package core
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // ChainReorganizationAPI defines the interface for chain reorganization handling.
-// This is afaik the only place, where the tx-mempool is directly manipulated
+// This is the only place where the tx-mempool is directly manipulated during reorgs.
 type ChainReorganizationAPI interface {
 	// CheckAndReorganize checks if the new tip is different from the last known tip
 	// and triggers reorganization if necessary.
@@ -42,14 +40,19 @@ func NewChainReorganization(
 
 // CheckAndReorganize checks if the new tip is different from the last known tip
 // and triggers reorganization if necessary.
+//
+// This method uses MultiChainUTXOService to:
+// - Promote side chains to main chain (with proper delta handling)
+// - Preserve old main chain as a side chain (for potential future reorgs)
+// - Clear and rebuild mempool after reorg
+//
 // Returns true if a reorganization was performed (i.e., part of the old chain was disconnected).
 // Returns false if no change occurred or if the new blocks are a simple extension of the current chain.
-// This includes updating the UTXO set and mempool accordingly in both cases.
-// This is usually called after one or more blocks are added to the block store.
 func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, error) {
 	// First time initialization
 	if cr.lastKnownTip == (common.Hash{}) {
 		cr.updateLastKnownTip(newTip)
+		cr.multiChainService.SetMainChainTip(newTip)
 		return false, nil
 	}
 
@@ -59,7 +62,6 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 	}
 
 	// Check if newTip is a direct extension of the current chain
-	// (i.e., newTip's previous block is our current tip or points to it)
 	newBlock, err := cr.blockStore.GetBlockByHash(newTip)
 	if err != nil {
 		return false, err
@@ -67,12 +69,8 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 
 	// Case 1: Simple chain extension - NOT a reorganization
 	// The new block(s) build directly on top of our current tip
+	// NOTE: Block handler already applied the UTXO changes and updated the tip
 	if newBlock.Header.PreviousBlockHash == cr.lastKnownTip {
-		// Just apply the new block(s) to UTXO set and mempool
-		err := cr.connectNewChain(newTip)
-		if err != nil {
-			return false, err
-		}
 		cr.updateLastKnownTip(newTip)
 		return false, nil // NO reorg occurred, just chain extension
 	}
@@ -84,26 +82,41 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 		return false, err
 	}
 
-	// Phase 1: Disconnect old chain
-	disconnectedBlocks, err := cr.disconnectBlocks(cr.lastKnownTip, forkPoint)
+	// Collect blocks to disconnect and connect
+	disconnectedBlocks, err := cr.collectBlocksToDisconnect(cr.lastKnownTip, forkPoint)
 	if err != nil {
 		return false, err
 	}
 
-	// Phase 2: Connect new chain
-	newChainPath, err := cr.getNewChainPath(forkPoint, newTip)
+	connectedBlocks, err := cr.collectBlocksToConnect(forkPoint, newTip)
 	if err != nil {
 		return false, err
 	}
 
-	err = cr.connectBlocks(newChainPath)
+	// Use MultiChainUTXOService to perform the reorganization
+	err = cr.multiChainService.PromoteSideChainToMain(
+		newTip,
+		forkPoint,
+		disconnectedBlocks,
+		connectedBlocks,
+	)
 	if err != nil {
 		return false, err
 	}
 
-	// Cleanup mempool - remove confirmed transactions and re-validate remaining ones
-	allAffectedBlocks := append(disconnectedBlocks, cr.blockHashesFromBlocks(newChainPath)...)
-	cr.cleanMempool(allAffectedBlocks)
+	// Clear mempool - after reorg, all unconfirmed txs need re-validation
+	// Transactions from disconnected blocks that are still valid will be re-relayed
+	cr.multiChainService.ClearMempool()
+
+	// Move transactions from disconnected blocks back to mempool
+	for _, blk := range disconnectedBlocks {
+		cr.moveTransactionsToMempool(blk)
+	}
+
+	// Remove transactions that are now confirmed in the new chain
+	for _, blk := range connectedBlocks {
+		cr.removeConfirmedFromMempool(blk)
+	}
 
 	// Update the tip
 	cr.updateLastKnownTip(newTip)
@@ -112,7 +125,50 @@ func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, err
 }
 
 // =========================================================================
-// Phase 1: Disconnect (Rollback)
+// Block Collection
+// =========================================================================
+
+// collectBlocksToDisconnect collects blocks from tip to fork point (exclusive).
+// Returns blocks in reverse order (tip first, fork point not included).
+func (cr *ChainReorganization) collectBlocksToDisconnect(fromTip, toForkPoint common.Hash) ([]block.Block, error) {
+	blocks := make([]block.Block, 0)
+	currentHash := fromTip
+
+	for currentHash != toForkPoint {
+		blk, err := cr.blockStore.GetBlockByHash(currentHash)
+		if err != nil {
+			return nil, err
+		}
+
+		blocks = append(blocks, blk)
+		currentHash = blk.Header.PreviousBlockHash
+	}
+
+	return blocks, nil
+}
+
+// collectBlocksToConnect collects blocks from fork point to new tip.
+// Returns blocks in forward order (fork point + 1 first, new tip last).
+func (cr *ChainReorganization) collectBlocksToConnect(forkPoint, newTip common.Hash) ([]block.Block, error) {
+	blocks := make([]block.Block, 0)
+	currentHash := newTip
+
+	for currentHash != forkPoint {
+		blk, err := cr.blockStore.GetBlockByHash(currentHash)
+		if err != nil {
+			return nil, err
+		}
+
+		// Prepend to get forward order
+		blocks = append([]block.Block{blk}, blocks...)
+		currentHash = blk.Header.PreviousBlockHash
+	}
+
+	return blocks, nil
+}
+
+// =========================================================================
+// Fork Point Detection
 // =========================================================================
 
 // findForkPoint finds the common ancestor (fork point) between the current tip
@@ -162,84 +218,12 @@ func (cr *ChainReorganization) findForkPoint(oldTip, newTip common.Hash) (common
 	}
 }
 
-// disconnectBlocks rolls back blocks from the current tip to the fork point.
-// Returns the list of disconnected block hashes.
-func (cr *ChainReorganization) disconnectBlocks(fromTip, toForkPoint common.Hash) ([]common.Hash, error) {
-	disconnectedHashes := make([]common.Hash, 0)
-	currentHash := fromTip
-
-	// Walk backwards from tip to fork point
-	for currentHash != toForkPoint {
-		// Disconnect the current block
-		err := cr.disconnectBlock(currentHash)
-		if err != nil {
-			return nil, err
-		}
-
-		disconnectedHashes = append(disconnectedHashes, currentHash)
-
-		// Move to previous block
-		currentBlock, err := cr.blockStore.GetBlockByHash(currentHash)
-		if err != nil {
-			return nil, err
-		}
-
-		currentHash = currentBlock.Header.PreviousBlockHash
-	}
-
-	return disconnectedHashes, nil
-}
-
-// disconnectBlock performs rollback operations for a single block:
-// - Reverts UTXO state changes
-// - Moves transactions back to mempool
-func (cr *ChainReorganization) disconnectBlock(blockHash common.Hash) error {
-	blk, err := cr.blockStore.GetBlockByHash(blockHash)
-	if err != nil {
-		return err
-	}
-
-	// First, undo the UTXO state changes
-	err = cr.undoBlockState(blk)
-	if err != nil {
-		return err
-	}
-
-	// Then, move transactions back to mempool
-	cr.moveTransactionsToMempool(blk)
-
-	return nil
-}
-
-// undoBlockState reverts the UTXO state changes made by the given block.
-// This includes:
-// - Removing UTXOs created by the block's transactions
-// - Restoring UTXOs that were spent by the block's transactions
-func (cr *ChainReorganization) undoBlockState(blk block.Block) error {
-	// Process transactions in reverse order
-	for i := len(blk.Transactions) - 1; i >= 0; i-- {
-		tx := blk.Transactions[i]
-		txID := tx.TransactionId()
-
-		// Save input UTXOs before reverting (needed for restoration)
-		inputUTXOs, err := cr.saveInputUTXOs(&tx)
-		if err != nil {
-			// For coinbase transactions, there are no inputs to save
-			inputUTXOs = []utxopool.UTXOEntry{}
-		}
-
-		// Revert the transaction (removes outputs, restores inputs)
-		err = cr.multiChainService.GetMainChain().RevertTransaction(&tx, txID, inputUTXOs)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
+// =========================================================================
+// Mempool Management
+// =========================================================================
 
 // moveTransactionsToMempool moves all non-coinbase transactions from a block
-// back to the mempool.
+// back to the mempool for re-validation.
 func (cr *ChainReorganization) moveTransactionsToMempool(blk block.Block) {
 	for _, tx := range blk.Transactions {
 		// Skip coinbase transactions (they are block-specific and cannot be in mempool)
@@ -252,178 +236,18 @@ func (cr *ChainReorganization) moveTransactionsToMempool(blk block.Block) {
 	}
 }
 
-// =========================================================================
-// Phase 2: Connect (Roll Forward)
-// =========================================================================
-
-// connectNewChain applies new blocks that extend the current chain.
-// This is NOT a reorganization - the new blocks build directly on top of the current tip.
-// This method is called when newTip.PreviousBlockHash == lastKnownTip.
-func (cr *ChainReorganization) connectNewChain(newTip common.Hash) error {
-	// Walk backwards from new tip to lastKnownTip, collecting blocks
-	// We need to collect them first so we can apply them in forward order
-	var blocksToApply []block.Block
-	currentHash := newTip
-
-	for currentHash != cr.lastKnownTip {
-		blk, err := cr.blockStore.GetBlockByHash(currentHash)
-		if err != nil {
-			return err
-		}
-
-		// Prepend to list so we apply in correct order
-		blocksToApply = append([]block.Block{blk}, blocksToApply...)
-
-		currentHash = blk.Header.PreviousBlockHash
-	}
-
-	// Apply all blocks to UTXO set and mempool
-	for _, blk := range blocksToApply {
-		err := cr.connectBlock(blk)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// getNewChainPath returns the list of blocks from the fork point to the new tip.
-// The blocks are returned in the order they should be applied (fork point + 1 to new tip).
-func (cr *ChainReorganization) getNewChainPath(forkPoint, newTip common.Hash) ([]block.Block, error) {
-	path := make([]block.Block, 0)
-
-	// Walk backwards from new tip to fork point, collecting blocks
-	currentHash := newTip
-	for currentHash != forkPoint {
-		blk, err := cr.blockStore.GetBlockByHash(currentHash)
-		if err != nil {
-			return nil, err
-		}
-
-		// Prepend to path (so we end up with fork point+1 -> new tip order)
-		path = append([]block.Block{blk}, path...)
-
-		currentHash = blk.Header.PreviousBlockHash
-	}
-
-	return path, nil
-}
-
-// connectBlocks applies blocks from the new chain path.
-func (cr *ChainReorganization) connectBlocks(blocks []block.Block) error {
-	for _, blk := range blocks {
-		err := cr.connectBlock(blk)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// connectBlock performs operations to apply a single block:
-// - Applies transactions (updates UTXO set)
-// - Removes confirmed transactions from mempool
-func (cr *ChainReorganization) connectBlock(blk block.Block) error {
-	// Apply the block's transactions to the UTXO set
-	err := cr.applyBlock(blk)
-	if err != nil {
-		return err
-	}
-
-	// Clean mempool of confirmed transactions
-	cr.cleanMempool([]common.Hash{blk.Hash()})
-
-	return nil
-}
-
-// applyBlock applies all transactions in the block to the UTXO set.
-func (cr *ChainReorganization) applyBlock(blk block.Block) error {
-	// Get block height from blockStore
-	// We need this to properly mark UTXOs as confirmed
-	blockHeight := cr.getBlockHeight(blk)
-
+// removeConfirmedFromMempool removes transactions that are confirmed in a block.
+func (cr *ChainReorganization) removeConfirmedFromMempool(blk block.Block) {
 	for _, tx := range blk.Transactions {
-		txID := tx.TransactionId()
-		isCoinbase := tx.IsCoinbase()
-
-		// Apply the transaction to the UTXO set
-		err := cr.multiChainService.GetMainChain().ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
-		if err != nil {
-			return err
+		if !tx.IsCoinbase() {
+			cr.mempool.RemoveTransaction(tx.TransactionId())
 		}
 	}
-
-	return nil
-}
-
-// cleanMempool removes confirmed transactions from the mempool.
-// Also re-validates remaining transactions to remove conflicts.
-func (cr *ChainReorganization) cleanMempool(blockHashes []common.Hash) {
-	// Use the existing mempool Remove method which handles:
-	// 1. Removing confirmed transactions
-	// 2. Removing transactions that conflict with confirmed ones
-	// 3. Re-validating remaining transactions
-	cr.mempool.Remove(blockHashes)
 }
 
 // =========================================================================
-// Helper methods
+// Helper Methods
 // =========================================================================
-
-// saveInputUTXOs retrieves and saves the input UTXOs of a transaction
-// before they are spent. This is needed for later rollback.
-func (cr *ChainReorganization) saveInputUTXOs(tx *transaction.Transaction) ([]utxopool.UTXOEntry, error) {
-	inputUTXOs := make([]utxopool.UTXOEntry, 0, len(tx.Inputs))
-
-	for _, input := range tx.Inputs {
-		outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
-
-		// Retrieve the UTXO entry from the UTXO set
-		entry, err := cr.multiChainService.GetMainChain().GetUTXOEntry(outpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		inputUTXOs = append(inputUTXOs, entry)
-	}
-
-	return inputUTXOs, nil
-}
-
-// blockHashesFromBlocks extracts block hashes from a list of blocks.
-func (cr *ChainReorganization) blockHashesFromBlocks(blocks []block.Block) []common.Hash {
-	hashes := make([]common.Hash, len(blocks))
-	for i, blk := range blocks {
-		hashes[i] = blk.Hash()
-	}
-	return hashes
-}
-
-// getBlockHeight retrieves the height of a block from the blockStore.
-func (cr *ChainReorganization) getBlockHeight(blk block.Block) uint64 {
-	// Walk backwards to genesis counting blocks
-	// This is a simple implementation - could be optimized by caching heights
-	height := uint64(0)
-	currentHash := blk.Hash()
-
-	for {
-		currentBlock, err := cr.blockStore.GetBlockByHash(currentHash)
-		if err != nil {
-			break
-		}
-
-		// Stop at genesis (no previous block)
-		if currentBlock.Header.PreviousBlockHash == (common.Hash{}) {
-			break
-		}
-
-		height++
-		currentHash = currentBlock.Header.PreviousBlockHash
-	}
-
-	return height
-}
 
 // updateLastKnownTip updates the last known chain tip.
 func (cr *ChainReorganization) updateLastKnownTip(newTip common.Hash) {

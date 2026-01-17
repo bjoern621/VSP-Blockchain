@@ -10,6 +10,17 @@ import (
 
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
 
+// Block handles incoming block messages from the network or self-mined blocks.
+// This is the main entry point for new blocks into the blockchain.
+//
+// Flow:
+// 1. Basic validation (sanity check, header validation)
+// 2. Add block to store
+// 3. Handle orphan blocks
+// 4. Full validation (PoW, merkle root)
+// 5. UTXO validation using MultiChainUTXOService
+// 6. Check for chain reorganization
+// 7. Broadcast to peers
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	logger.Infof("[block_handler] Block Message %v received from %v with %d transactions", &receivedBlock.Header,
 		peerID, len(receivedBlock.Transactions))
@@ -26,24 +37,47 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	b.NotifyStopMining()
-	// 2. Add block to store
-	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
-	// 3. Handle orphans
+	// 2. Handle orphans first - if parent doesn't exist, we can't validate UTXOs
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
+		// Add as orphan to store
+		b.blockStore.AddBlock(receivedBlock)
 		logger.Debugf("[block_handler] Block is Orphan %v  with error: %v", &receivedBlock.Header, err)
 		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
 	}
 
-	// 4. Full validation BEFORE applying to UTXO set
-	if ok, _ := b.blockValidator.FullValidation(receivedBlock); !ok {
-		// An invalid block will be "removed" in the block store in form of not beeing available for retreval
+	// 3. Full header validation (PoW, merkle root)
+	if ok, err := b.blockValidator.FullValidation(receivedBlock); !ok {
+		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
-	// 5. Check if chain reorganization is needed
+	// 4. Determine if this is a main chain or side chain block
+	blockHash := receivedBlock.Hash()
+	parentHash := receivedBlock.Header.PreviousBlockHash
+	mainChainTip := b.multiChainService.GetMainChainTip()
+
+	// 5. UTXO validation and application
+	if parentHash == mainChainTip {
+		// Block extends main chain - validate and apply to main chain
+		if err := b.handleMainChainBlock(receivedBlock); err != nil {
+			logger.Warnf("Failed to handle main chain block %x: %v", blockHash[:4], err)
+			return
+		}
+	} else {
+		// Block creates or extends a side chain - validate using ephemeral view
+		if err := b.handleSideChainBlock(receivedBlock); err != nil {
+			logger.Warnf("Failed to handle side chain block %x: %v", blockHash[:4], err)
+			return
+		}
+	}
+
+	// 6. Add block to store (after UTXO validation passed)
+	addedBlocks := b.blockStore.AddBlock(receivedBlock)
+
+	// 7. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
@@ -53,13 +87,100 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	if reorganized {
-		logger.Debugf("[block_handler] Chain reorganization performed")
+		logger.Debugf("[block_handler] Chain reorganization performed, new tip: %x", tipHash[:4])
 	}
 
-	// 6. Broadcast new blocks
+	// 8. Broadcast new blocks
 	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
 
 	b.NotifyStartMining()
+}
+
+// handleMainChainBlock validates and applies a block that extends the main chain.
+// The block's parent is the current main chain tip.
+func (b *Blockchain) handleMainChainBlock(blk block.Block) error {
+	blockHash := blk.Hash()
+	blockHeight := b.blockStore.GetCurrentHeight() + 1
+
+	// Validate all transactions using an ephemeral UTXO view
+	// This ensures inputs exist and aren't double-spent
+	view, err := b.multiChainService.ValidateBlock(blk, blockHeight)
+	if err != nil {
+		logger.Warnf("Block %x failed UTXO validation: %v", blockHash[:4], err)
+		return err
+	}
+
+	// Block is valid - apply transactions to main chain UTXO set
+	for i, tx := range blk.Transactions {
+		txID := tx.TransactionId()
+		isCoinbase := i == 0 && tx.IsCoinbase()
+
+		err := b.multiChainService.GetMainChain().ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
+		if err != nil {
+			logger.Errorf("Failed to apply transaction %x to main chain: %v", txID[:4], err)
+			return err
+		}
+	}
+
+	// Update main chain tip
+	b.multiChainService.SetMainChainTip(blockHash)
+
+	// Remove confirmed transactions from mempool
+	for _, tx := range blk.Transactions {
+		if !tx.IsCoinbase() {
+			b.mempool.RemoveTransaction(tx.TransactionId())
+		}
+	}
+
+	logger.Debugf("Applied main chain block %x at height %d, view had %d added UTXOs",
+		blockHash[:4], blockHeight, len(view.GetAddedUTXOs()))
+
+	return nil
+}
+
+// handleSideChainBlock validates a block that creates or extends a side chain.
+// The block's parent is NOT the current main chain tip.
+func (b *Blockchain) handleSideChainBlock(blk block.Block) error {
+	blockHash := blk.Hash()
+	parentHash := blk.Header.PreviousBlockHash
+
+	// Calculate block height by walking back to find height
+	blockHeight := b.calculateBlockHeight(parentHash) + 1
+
+	// Validate and store delta for the side chain block
+	delta, err := b.multiChainService.ValidateAndApplySideChainBlock(blk, blockHeight)
+	if err != nil {
+		logger.Warnf("Side chain block %x failed UTXO validation: %v", blockHash[:4], err)
+		return err
+	}
+
+	logger.Debugf("Validated side chain block %x at height %d, delta has %d added UTXOs, fork point: %x",
+		blockHash[:4], blockHeight, len(delta.AddedUTXOs), delta.ForkPoint[:4])
+
+	return nil
+}
+
+// calculateBlockHeight calculates the height of a block by walking back to genesis.
+func (b *Blockchain) calculateBlockHeight(blockHash common.Hash) uint64 {
+	height := uint64(0)
+	currentHash := blockHash
+
+	for {
+		currentBlock, err := b.blockStore.GetBlockByHash(currentHash)
+		if err != nil {
+			break
+		}
+
+		if currentBlock.Header.PreviousBlockHash == (common.Hash{}) {
+			// Reached genesis
+			break
+		}
+
+		height++
+		currentHash = currentBlock.Header.PreviousBlockHash
+	}
+
+	return height
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {

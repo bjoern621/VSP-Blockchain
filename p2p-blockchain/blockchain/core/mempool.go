@@ -143,3 +143,17 @@ func (m *Mempool) GetTransactionByHash(hash common.Hash) (transaction.Transactio
 	tx, ok := m.transactions[txId]
 	return tx, ok
 }
+
+// RemoveTransaction removes a single transaction from the mempool by its ID.
+func (m *Mempool) RemoveTransaction(txId transaction.TransactionID) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	delete(m.transactions, txId)
+}
+
+// Clear removes all transactions from the mempool.
+func (m *Mempool) Clear() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	clear(m.transactions)
+}
