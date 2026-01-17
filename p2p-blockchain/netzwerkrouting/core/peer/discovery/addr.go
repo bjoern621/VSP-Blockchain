@@ -21,23 +21,8 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 	// There is not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.
 	// With other words, the peers are already known to the PeerStore.
 
-	// Filter out local peer address - we don't need to process our own address
-	filteredAddrs := make([]PeerAddress, 0, len(addrs))
-	for _, addr := range addrs {
-		if s.peerRetriever.IsLocalPeerID(addr.PeerId) {
-			logger.Debugf("Skipping local peer address %s", addr.PeerId)
-			continue
-		}
-		filteredAddrs = append(filteredAddrs, addr)
-	}
-
-	if len(filteredAddrs) == 0 {
-		logger.Debugf("No new peer addresses to process after filtering")
-		return
-	}
-
 	// Update last seen timestamps for received addresses
-	for _, addr := range filteredAddrs {
+	for _, addr := range addrs {
 		peer, exists := s.peerRetriever.GetPeer(addr.PeerId)
 		assert.Assert(exists, "peer should already be registered by infrastructure layer")
 
