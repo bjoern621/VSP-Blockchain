@@ -138,6 +138,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 			Version:            p.Version,
 			ConnectionState:    p.ConnectionState.String(),
 			Direction:          p.Direction.String(),
+			LastSeen:           p.LastSeen,
 		}
 
 		for _, svc := range p.SupportedServices {

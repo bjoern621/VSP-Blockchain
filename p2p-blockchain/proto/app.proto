@@ -115,6 +115,7 @@ message InternalPeerInfoEntry {
     repeated string supported_services = 4;
     string connection_state = 5;
     string direction = 6;
+    int64 last_seen = 7; // Unix timestamp when the peer was last seen active
 }
 
 message QueryRegistryRequest {
