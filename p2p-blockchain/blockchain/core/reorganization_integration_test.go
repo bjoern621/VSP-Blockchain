@@ -174,7 +174,7 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 
 	// Manually apply the coinbase transaction to UTXO set
 	block1TxID := block1.Transactions[0].TransactionId()
-	err := multiChainService.GetMainChain().ApplyTransaction(&block1.Transactions[0], block1TxID, 1, true)
+	err := multiChainService.GetMainChain().ApplyTransaction(&block1.Transactions[0], block1TxID, 1, 1, true)
 	if err != nil {
 		assert.Fail(t, "Should not happen in test")
 		return

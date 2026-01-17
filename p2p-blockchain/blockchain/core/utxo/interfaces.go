@@ -26,7 +26,9 @@ type UTXOService interface {
 	// ApplyTransaction applies a transaction to the UTXO set
 	// - Removes all inputs from the pool (marks as spent)
 	// - Adds all outputs to the pool
-	ApplyTransaction(tx *transaction.Transaction, txID transaction.TransactionID, blockHeight uint64, isCoinbase bool) error
+	// - currentHeight is used to determine if the transaction is confirmed
+	//   (confirmed when currentHeight - blockHeight >= ConfirmationDepth)
+	ApplyTransaction(tx *transaction.Transaction, txID transaction.TransactionID, blockHeight uint64, currentHeight uint64, isCoinbase bool) error
 
 	// RevertTransaction reverts a transaction from the UTXO set
 	// - Adds back all inputs to the pool

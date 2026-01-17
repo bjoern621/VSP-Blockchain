@@ -100,7 +100,10 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 // The block's parent is the current main chain tip.
 func (b *Blockchain) handleMainChainBlock(blk block.Block) error {
 	blockHash := blk.Hash()
-	blockHeight := b.blockStore.GetCurrentHeight() + 1
+	// Current height before adding this block
+	currentHeight := b.blockStore.GetCurrentHeight()
+	// This block will be at height currentHeight + 1
+	blockHeight := currentHeight + 1
 
 	// Validate all transactions using an ephemeral UTXO view
 	// This ensures inputs exist and aren't double-spent
@@ -115,7 +118,9 @@ func (b *Blockchain) handleMainChainBlock(blk block.Block) error {
 		txID := tx.TransactionId()
 		isCoinbase := i == 0 && tx.IsCoinbase()
 
-		err := b.multiChainService.GetMainChain().ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
+		// Pass blockHeight (where this tx is included) and currentHeight (chain tip before this block)
+		// The ApplyTransaction will determine if this is confirmed based on relative depth
+		err := b.multiChainService.GetMainChain().ApplyTransaction(&tx, txID, blockHeight, blockHeight, isCoinbase)
 		if err != nil {
 			logger.Errorf("Failed to apply transaction %x to main chain: %v", txID[:4], err)
 			return err

@@ -87,9 +87,10 @@ func (c *FullNodeUTXOService) Remove(outpoint utxopool.Outpoint) error {
 }
 
 // AddUTXO adds a new UTXO to the appropriate pool
-// If blockHeight > 0, it goes to chainstate, otherwise to mempool
+// UTXOs from blocks (BlockHeight > 0) go to chainstate for persistence
+// UTXOs from pending transactions (BlockHeight == 0) go to mempool
 func (c *FullNodeUTXOService) AddUTXO(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
-	if entry.IsConfirmed() {
+	if entry.BlockHeight > 0 {
 		return c.chainstate.Add(outpoint, entry)
 	}
 	return c.mempool.Add(outpoint, entry)
@@ -114,33 +115,39 @@ func (c *FullNodeUTXOService) SpendUTXO(outpoint utxopool.Outpoint) error {
 }
 
 // ApplyTransaction applies a transaction to the UTXO set
-// For unconfirmed transactions (blockHeight <= 5), changes go to mempool
-// For confirmed transactions (blockHeight > 5), changes go to chainstate
+// For block transactions (blockHeight > 0), changes go to chainstate for persistence
+// For mempool transactions (blockHeight == 0), changes go to mempool
+// The currentHeight parameter is kept for API consistency but storage is based on blockHeight > 0
 func (c *FullNodeUTXOService) ApplyTransaction(
 	tx *transaction.Transaction,
 	txID transaction.TransactionID,
 	blockHeight uint64,
+	currentHeight uint64,
 	isCoinbase bool,
 ) error {
-	isConfirmed := blockHeight > 5
+	// Transactions in blocks go to chainstate, pending transactions go to mempool
+	isInBlock := blockHeight > 0
 
-	// Spend inputs
-	for _, input := range tx.Inputs {
-		outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
+	// Skip input spending for coinbase transactions
+	if !isCoinbase {
+		// Spend inputs
+		for _, input := range tx.Inputs {
+			outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
 
-		if isConfirmed {
-			// For confirmed transactions:
-			// 1. Remove from chainstate
-			// 2. Remove spent marker from mempool
-			if err := c.chainstate.Remove(outpoint); err != nil {
-				return err
+			if isInBlock {
+				// For block transactions:
+				// 1. Remove from chainstate (the input was in a previous block)
+				// 2. Remove spent marker from mempool
+				if err := c.chainstate.Remove(outpoint); err != nil {
+					// Input might be in mempool if it was from a recent unconfirmed block
+					// that was just confirmed, or from a pending transaction
+					_ = c.mempool.Remove(outpoint)
+				}
+				c.mempool.UnmarkSpent(outpoint)
+			} else {
+				// For mempool transactions, mark as spent (don't remove yet)
+				c.mempool.MarkSpent(outpoint)
 			}
-			c.mempool.UnmarkSpent(outpoint)
-			// Also remove from mempool if it was an unconfirmed UTXO
-			_ = c.mempool.Remove(outpoint)
-		} else {
-			// For unconfirmed transactions, mark as spent
-			c.mempool.MarkSpent(outpoint)
 		}
 	}
 
@@ -149,11 +156,11 @@ func (c *FullNodeUTXOService) ApplyTransaction(
 		outpoint := utxopool.NewOutpoint(txID, uint32(i))
 		entry := utxopool.NewUTXOEntry(output, blockHeight, isCoinbase && i == 0)
 
-		if isConfirmed {
+		if isInBlock {
 			if err := c.chainstate.Add(outpoint, entry); err != nil {
 				return err
 			}
-			// Remove from mempool if it existed there (transaction was confirmed)
+			// Remove from mempool if it was a pending transaction that got confirmed
 			_ = c.mempool.Remove(outpoint)
 		} else {
 			if err := c.mempool.Add(outpoint, entry); err != nil {
