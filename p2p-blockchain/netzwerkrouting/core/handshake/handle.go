@@ -59,7 +59,6 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	}
 
 	p.Lock()
-	defer p.Unlock()
 
 	if p.State != common.StateAwaitingVerack {
 		logger.Warnf("[handshake_handler] peer %s sent Verack message in invalid state %v", peerID, p.State)
@@ -79,6 +78,10 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 
 	go h.handshakeMsgSender.SendAck(peerID)
 
+	// Unlock manually here, to avoid deadlocks caused, by the notification callbacks
+	// which might try to access the peer again
+	p.Unlock()
+
 	// Notify observers that outbound connection is established (isOutbound=true)
 	// Only outbound connections trigger the Initial Block Download (IBD) process
 	h.notifyPeerConnected(peerID, true)
@@ -92,7 +95,6 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	}
 
 	p.Lock()
-	defer p.Unlock()
 
 	if p.State != common.StateAwaitingAck {
 		logger.Warnf("[handshake_handler] peer %s sent Ack message in invalid state %v", peerID, p.State)
@@ -100,6 +102,10 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	}
 
 	p.State = common.StateConnected
+
+	// Unlock manually here, to avoid deadlocks caused, by the notification callbacks
+	// which might try to access the peer again
+	p.Unlock()
 
 	// Notify observers that inbound connection is established (isOutbound=false)
 	// Inbound connections do NOT trigger IBD - only the initiating node syncs
