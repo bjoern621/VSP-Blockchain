@@ -90,8 +90,7 @@ func (v *ephemeralUTXOView) IsSpent(outpoint utxopool.Outpoint) bool {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
 
-	key := string(outpoint.Key())
-	_, isSpent := v.spent[key]
+	_, isSpent := v.spent[string(outpoint.Key())]
 	return isSpent
 }
 

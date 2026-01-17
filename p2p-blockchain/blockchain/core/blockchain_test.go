@@ -198,8 +198,7 @@ func newMockEntryDAO() *mockEntryDAO {
 }
 
 func (m *mockEntryDAO) Find(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	key := string(outpoint.Key())
-	if entry, ok := m.entries[key]; ok {
+	if entry, ok := m.entries[string(outpoint.Key())]; ok {
 		return entry, nil
 	}
 	return utxopool.UTXOEntry{}, utxo.ErrUTXONotFound
