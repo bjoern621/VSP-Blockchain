@@ -339,3 +339,149 @@ func TestInitiateHandshake_BothDirectionRejectsInitiation(t *testing.T) {
 		t.Errorf("expected state StateNew, got %v", p.State)
 	}
 }
+
+// mockConnectionObserver is a mock for ConnectionObserver
+type mockConnectionObserver struct {
+	mu             sync.Mutex
+	connectedPeers []struct {
+		peerID     common.PeerId
+		isOutbound bool
+	}
+}
+
+func newMockConnectionObserver() *mockConnectionObserver {
+	return &mockConnectionObserver{
+		connectedPeers: make([]struct {
+			peerID     common.PeerId
+			isOutbound bool
+		}, 0),
+	}
+}
+
+func (m *mockConnectionObserver) OnPeerConnected(peerID common.PeerId, isOutbound bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.connectedPeers = append(m.connectedPeers, struct {
+		peerID     common.PeerId
+		isOutbound bool
+	}{peerID, isOutbound})
+}
+
+func (m *mockConnectionObserver) getConnectedPeerCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.connectedPeers)
+}
+
+func (m *mockConnectionObserver) getLastConnectedPeer() common.PeerId {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if len(m.connectedPeers) == 0 {
+		return ""
+	}
+	return m.connectedPeers[len(m.connectedPeers)-1].peerID
+}
+
+func (m *mockConnectionObserver) wasLastConnectionOutbound() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if len(m.connectedPeers) == 0 {
+		return false
+	}
+	return m.connectedPeers[len(m.connectedPeers)-1].isOutbound
+}
+
+func TestHandleVerack_NotifiesObserverOnConnection(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	observer := newMockConnectionObserver()
+	service.Attach(observer)
+
+	// Create peer and initiate handshake (sets state to StateAwaitingVerack)
+	peerID := peerStore.NewPeer()
+	err := service.InitiateHandshake(peerID)
+	if err != nil {
+		t.Fatalf("unexpected error initiating handshake: %v", err)
+	}
+
+	// Simulate receiving Verack
+	versionInfo := VersionInfo{Version: "1.0.0"}
+	service.HandleVerack(peerID, versionInfo)
+	time.Sleep(20 * time.Millisecond) // Wait for async notification
+
+	// Verify observer was notified
+	if observer.getConnectedPeerCount() != 1 {
+		t.Errorf("expected 1 OnPeerConnected call, got %d", observer.getConnectedPeerCount())
+	}
+
+	if observer.getLastConnectedPeer() != peerID {
+		t.Errorf("expected peerID %s, got %s", peerID, observer.getLastConnectedPeer())
+	}
+
+	// HandleVerack is called for outbound connections (we initiated)
+	if !observer.wasLastConnectionOutbound() {
+		t.Error("expected isOutbound=true for HandleVerack (outbound connection)")
+	}
+}
+
+func TestHandleAck_NotifiesObserverOnConnection(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	observer := newMockConnectionObserver()
+	service.Attach(observer)
+
+	// Create inbound peer (simulates receiving Version)
+	peerID := peerStore.NewInboundPeer()
+	versionInfo := VersionInfo{Version: "1.0.0"}
+	service.HandleVersion(peerID, versionInfo)
+	time.Sleep(10 * time.Millisecond)
+
+	// Verify state is StateAwaitingAck
+	p, _ := peerStore.GetPeer(peerID)
+	if p.State != common.StateAwaitingAck {
+		t.Fatalf("expected state StateAwaitingAck, got %v", p.State)
+	}
+
+	// Simulate receiving Ack
+	service.HandleAck(peerID)
+	time.Sleep(20 * time.Millisecond) // Wait for async notification
+
+	// Verify observer was notified
+	if observer.getConnectedPeerCount() != 1 {
+		t.Errorf("expected 1 OnPeerConnected call, got %d", observer.getConnectedPeerCount())
+	}
+
+	if observer.getLastConnectedPeer() != peerID {
+		t.Errorf("expected peerID %s, got %s", peerID, observer.getLastConnectedPeer())
+	}
+
+	// HandleAck is called for inbound connections (peer initiated)
+	if observer.wasLastConnectionOutbound() {
+		t.Error("expected isOutbound=false for HandleAck (inbound connection)")
+	}
+}
+
+func TestDetach_StopsNotifications(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	observer := newMockConnectionObserver()
+	service.Attach(observer)
+	service.Detach(observer)
+
+	// Create peer and complete handshake
+	peerID := peerStore.NewPeer()
+	_ = service.InitiateHandshake(peerID)
+	service.HandleVerack(peerID, VersionInfo{Version: "1.0.0"})
+	time.Sleep(20 * time.Millisecond)
+
+	// Observer should NOT be notified after detach
+	if observer.getConnectedPeerCount() != 0 {
+		t.Errorf("expected 0 OnPeerConnected calls after detach, got %d", observer.getConnectedPeerCount())
+	}
+}
