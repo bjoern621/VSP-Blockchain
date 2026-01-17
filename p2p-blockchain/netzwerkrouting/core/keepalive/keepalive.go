@@ -11,7 +11,7 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-const DefaultHeartbeatInterval = 5 * time.Minute
+const DefaultHeartbeatInterval = 4 * time.Minute
 
 // HeartbeatMsgSender defines an interface for sending heartbeat messages to peers.
 type HeartbeatMsgSender interface {

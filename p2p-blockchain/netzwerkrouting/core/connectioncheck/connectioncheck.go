@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	// ConnectionCheckInterval is the interval at which we check peer connections (16 minutes).
-	ConnectionCheckInterval = 16 * time.Minute
+	// ConnectionCheckInterval is the interval at which we check peer connections (8 minutes).
+	ConnectionCheckInterval = 8 * time.Minute
 	// PeerTimeout is the duration after which a peer is considered unreachable if no heartbeat received.
-	// Using the same interval as the check (16 minutes) means a peer that hasn't responded to
-	// at least 3 heartbeat messages (5-minute intervals) will be removed.
+	// Using the same interval as the check (8 minutes) means a peer that hasn't responded to
+	// at least 2 heartbeat messages (4-minutes intervals) will be removed.
 	PeerTimeout = ConnectionCheckInterval
 )
 
