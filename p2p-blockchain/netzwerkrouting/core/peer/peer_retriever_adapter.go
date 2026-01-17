@@ -14,6 +14,7 @@ type PeerData interface {
 	GetState() common.PeerConnectionState
 	GetDirection() common.Direction
 	GetSupportedServices() []common.ServiceType
+	GetLastSeen() int64
 }
 
 // dataPeerRetriever is the interface that the data layer's PeerStore implements.
@@ -48,6 +49,10 @@ func (a *peerDataAdapter) GetDirection() common.Direction {
 
 func (a *peerDataAdapter) GetSupportedServices() []common.ServiceType {
 	return a.peer.SupportedServices
+}
+
+func (a *peerDataAdapter) GetLastSeen() int64 {
+	return a.peer.LastSeen
 }
 
 // PeerRetrieverAdapter adapts the data layer's peer store to the API layer's PeerRetriever interface.
