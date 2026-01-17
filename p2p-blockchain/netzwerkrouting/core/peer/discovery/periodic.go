@@ -15,12 +15,19 @@ const (
 	DefaultGossipDiscoveryPeers = 3
 )
 
-// GossipDiscoveryService manages periodic gossip-based peer discovery.
+type registryQuerier interface {
+	// GetPeers queries the registry for available peer IDs.
+	GetPeers()
+}
+
+// PeriodicDiscoveryService manages periodic peer discovery.
+// This includes gossip as well as querying the registry.
 // It periodically sends getaddr messages to random connected peers to discover new peers.
-// This follows Bitcoin's approach where peers continuously share known addresses with each other.
-type GossipDiscoveryService struct {
+type PeriodicDiscoveryService struct {
 	peerRetriever    peerRetriever
 	getAddrMsgSender GetAddrMsgSender
+
+	registryQuerier registryQuerier
 
 	discoveryInterval time.Duration
 	discoveryPeers    int
@@ -30,14 +37,16 @@ type GossipDiscoveryService struct {
 	lastDiscovery time.Time
 }
 
-// NewGossipDiscoveryService creates a new GossipDiscoveryService.
-func NewGossipDiscoveryService(
+// NewPeriodicDiscoveryService creates a new GossipDiscoveryService.
+func NewPeriodicDiscoveryService(
 	peerRetriever peerRetriever,
 	getAddrMsgSender GetAddrMsgSender,
-) *GossipDiscoveryService {
-	return &GossipDiscoveryService{
+	registryQuerier registryQuerier,
+) *PeriodicDiscoveryService {
+	return &PeriodicDiscoveryService{
 		peerRetriever:     peerRetriever,
 		getAddrMsgSender:  getAddrMsgSender,
+		registryQuerier:   registryQuerier,
 		discoveryInterval: DefaultGossipDiscoveryInterval,
 		discoveryPeers:    DefaultGossipDiscoveryPeers,
 		stopChan:          make(chan struct{}),
@@ -45,13 +54,13 @@ func NewGossipDiscoveryService(
 }
 
 // Start begins the periodic gossip discovery.
-func (s *GossipDiscoveryService) Start() {
+func (s *PeriodicDiscoveryService) Start() {
 	s.ticker = time.NewTicker(s.discoveryInterval)
 	go s.run()
 }
 
 // Stop halts the periodic gossip discovery.
-func (s *GossipDiscoveryService) Stop() {
+func (s *PeriodicDiscoveryService) Stop() {
 	if s.ticker != nil {
 		s.ticker.Stop()
 		select {
@@ -65,19 +74,25 @@ func (s *GossipDiscoveryService) Stop() {
 }
 
 // run periodically performs gossip discovery.
-func (s *GossipDiscoveryService) run() {
+func (s *PeriodicDiscoveryService) run() {
 	for {
 		select {
 		case <-s.ticker.C:
 			s.performGossipDiscovery()
+			s.performRegistryDiscovery()
 		case <-s.stopChan:
 			return
 		}
 	}
 }
 
+// performRegistryDiscovery queries the registry for new peers.
+func (s *PeriodicDiscoveryService) performRegistryDiscovery() {
+	s.registryQuerier.GetPeers()
+}
+
 // performGossipDiscovery sends getaddr to random connected peers to discover new peers.
-func (s *GossipDiscoveryService) performGossipDiscovery() {
+func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 	if s.lastDiscovery.IsZero() {
 		// First run, skip to allow time for initial connections
 		s.lastDiscovery = time.Now()
@@ -92,10 +107,7 @@ func (s *GossipDiscoveryService) performGossipDiscovery() {
 	}
 
 	// Select random peers to query for gossip discovery
-	numToQuery := len(connectedPeers)
-	if numToQuery > s.discoveryPeers {
-		numToQuery = s.discoveryPeers
-	}
+	numToQuery := min(len(connectedPeers), s.discoveryPeers)
 
 	// Shuffle and select random peers
 	shuffled := make([]common.PeerId, len(connectedPeers))
