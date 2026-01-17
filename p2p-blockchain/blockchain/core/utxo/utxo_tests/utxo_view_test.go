@@ -22,16 +22,14 @@ func newMockBaseProvider() *mockBaseProvider {
 }
 
 func (m *mockBaseProvider) Get(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	key := string(outpoint.Key())
-	if entry, ok := m.utxos[key]; ok {
+	if entry, ok := m.utxos[string(outpoint.Key())]; ok {
 		return entry, nil
 	}
 	return utxopool.UTXOEntry{}, utxo.ErrUTXONotFound
 }
 
 func (m *mockBaseProvider) Contains(outpoint utxopool.Outpoint) bool {
-	key := string(outpoint.Key())
-	_, ok := m.utxos[key]
+	_, ok := m.utxos[string(outpoint.Key())]
 	return ok
 }
 
