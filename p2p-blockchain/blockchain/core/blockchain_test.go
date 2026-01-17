@@ -150,7 +150,7 @@ func (m *mockBlockStore) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStore) GetVisualizationDot(includeDetails bool) string {
+func (m *mockBlockStore) GetVisualizationURL(includeDetails bool) string {
 	return ""
 }
 

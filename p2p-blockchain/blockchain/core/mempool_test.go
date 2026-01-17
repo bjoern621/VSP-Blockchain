@@ -52,7 +52,7 @@ func (m *mockBlockStore2) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
-func (m *mockBlockStore2) GetVisualizationDot(includeDetails bool) string {
+func (m *mockBlockStore2) GetVisualizationURL(includeDetails bool) string {
 	return ""
 }
 

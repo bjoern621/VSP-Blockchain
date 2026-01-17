@@ -81,7 +81,7 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStoreGetData) GetVisualizationDot(includeDetails bool) string {
+func (m *mockBlockStoreGetData) GetVisualizationURL(includeDetails bool) string {
 	return ""
 }
 
