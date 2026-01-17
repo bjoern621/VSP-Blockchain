@@ -140,7 +140,6 @@ func (s *Server) GetInternalPeerInfo(_ context.Context, _ *pb.GetInternalPeerInf
 			InfrastructureData: infraStruct,
 			Version:            p.Version,
 			ConnectionState:    p.ConnectionState.String(),
-			Direction:          p.Direction.String(),
 			LastSeen:           p.LastSeen,
 		}
 
