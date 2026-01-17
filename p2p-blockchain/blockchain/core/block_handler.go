@@ -43,8 +43,6 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 2. Handle orphans first - if parent doesn't exist, we can't validate UTXOs
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
-		// Add as orphan to store
-		b.blockStore.AddBlock(receivedBlock)
 		logger.Debugf("[block_handler] Block is Orphan %v  with error: %v", &receivedBlock.Header, err)
 		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
