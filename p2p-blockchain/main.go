@@ -56,60 +56,88 @@ func main() {
 
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
+
+	// Background services
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
-	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
-	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
-	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
-	assert.IsNil(err, "couldn't create UTXOEntryDAO")
-	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
-	assert.IsNil(err, "couldn't create chainStateService")
-	// Initialize UTXO lookup service and API
-	memPoolService := utxo.NewMemUTXOPoolService()
-	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
+	var chainStateService *utxo.ChainStateService
+	var memPoolService *utxo.MemUTXOPoolService
+	var fullNodeUtxoService *utxo.FullNodeUTXOService
+	var blockStore *blockchainData.BlockStore
+	var blockchainMsgService *networkBlockchain.BlockchainService
+	var transactionValidator *validation.ValidationService
+	var blockValidator *validation.BlockValidationService
+	var blockchain *core.Blockchain
 
-	genesisBlock := blockchainData.GenesisBlock()
-	blockStore := blockchainData.NewBlockStore(genesisBlock)
+	if common.BlockchainFullEnabled() || common.BlockchainSimpleEnabled() {
+		chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
+		utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
+		dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
+		assert.IsNil(err, "couldn't create UTXOEntryDAO")
+		chainStateService, err = utxo.NewChainStateService(chainStateConfig, dao)
+		assert.IsNil(err, "couldn't create chainStateService")
+		// Initialize UTXO lookup service and API
+		memPoolService = utxo.NewMemUTXOPoolService()
+		fullNodeUtxoService = utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
 
-	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
+		genesisBlock := blockchainData.GenesisBlock()
+		blockStore = blockchainData.NewBlockStore(genesisBlock)
 
-	transactionValidator := validation.NewValidationService(chainStateService)
-	blockValidator := validation.NewBlockValidationService()
+		blockchainMsgService = networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+		transactionValidator = validation.NewValidationService(chainStateService)
+		blockValidator = validation.NewBlockValidationService()
 
-	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
-	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
-	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+		blockchain = core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	}
 
-	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+	var keyEncodingsImpl *keys.KeyEncodingsImpl
+	var keyGeneratorImpl *keys.KeyGeneratorImpl
+	var keyGeneratorApiImpl *walletApi.KeyGeneratorApiImpl
 
-	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
-	blockchain.Attach(minerImpl)
+	if common.WalletEnabled() {
+		keyEncodingsImpl = keys.NewKeyEncodingsImpl()
+		keyGeneratorImpl = keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
+		keyGeneratorApiImpl = walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
+	}
+
+	var utxoAPI *blockapi.UtxoAPI
+	if common.BlockchainFullEnabled() || common.WalletEnabled() {
+		utxoAPI = blockapi.NewUtxoAPI(fullNodeUtxoService)
+	}
+
+	var minerImpl minerCore.MinerAPI
+	if common.MinerEnabled() {
+		minerImpl = minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
+		blockchain.Attach(minerImpl)
+	}
 
 	if common.AppEnabled() {
 		logger.Infof("Starting App server...")
-		// Intialize Transaction Creation API
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
-		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
-
-		// Initialize transaction service and API
-		transactionService := appcore.NewTransactionService(transactionCreationAPI)
-		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
-
-		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
-
-		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
-		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+
+		var transactionHandler *adapters.TransactionHandlerAdapter
+		var kontoHandler *adapters.KontoHandlerAdapter
+
+		if common.WalletEnabled() {
+			transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
+			transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
+
+			transactionService := appcore.NewTransactionService(transactionCreationAPI)
+			transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+
+			transactionHandler = adapters.NewTransactionAdapter(transactionAPI)
+
+			kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
+			kontoHandler = adapters.NewKontoAdapter(kontoAPI)
+		}
 
 		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler)
 
@@ -128,9 +156,11 @@ func main() {
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
 
-	grpcServer.Attach(blockchain)
+	if common.BlockchainFullEnabled() || common.BlockchainSimpleEnabled() {
+		grpcServer.Attach(blockchain)
+	}
 
-	err = grpcServer.Start(common.P2PPort())
+	err := grpcServer.Start(common.P2PPort())
 	if err != nil {
 		logger.Warnf("couldn't start P2P server: %v", err)
 	} else {
