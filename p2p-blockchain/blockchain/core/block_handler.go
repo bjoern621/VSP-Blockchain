@@ -38,6 +38,9 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	b.NotifyStopMining()
 
+	//Add block to store
+	addedBlocks := b.blockStore.AddBlock(receivedBlock)
+
 	// 2. Handle orphans first - if parent doesn't exist, we can't validate UTXOs
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
 		// Add as orphan to store
@@ -53,8 +56,6 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
-	// 6. Add block to store (after UTXO validation passed)
-	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 	// 4. Determine if this is a main chain or side chain block
 	blockHash := receivedBlock.Hash()
 	parentHash := receivedBlock.Header.PreviousBlockHash
@@ -75,7 +76,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		}
 	}
 
-	// 7. Check if chain reorganization is needed
+	// 6. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
