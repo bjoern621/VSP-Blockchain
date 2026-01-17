@@ -3,6 +3,7 @@ package block
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
@@ -20,8 +21,6 @@ type BlockHeader struct {
 	Nonce uint32
 }
 
-const StandardDifficultyTarget uint8 = 28 // ~100 seconds per block
-
 // Hash computes the double SHA-256 hash of the block header.
 func (h *BlockHeader) Hash() common.Hash {
 	var buffer = make([]byte, 0)
@@ -36,4 +35,9 @@ func (h *BlockHeader) Hash() common.Hash {
 	var hash common.Hash
 	copy(hash[:], second[:])
 	return hash
+}
+
+func (h *BlockHeader) String() string {
+	hash := h.Hash()
+	return hex.EncodeToString(hash[:])
 }
