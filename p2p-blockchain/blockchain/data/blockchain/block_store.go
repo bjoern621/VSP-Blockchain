@@ -57,6 +57,10 @@ type BlockStoreAPI interface {
 	// The main chain is defined as the chain with the highest accumulated work.
 	// In case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
 	GetMainChainTip() block.Block
+
+	// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
+	// Returns a slice of BlockWithMetadata containing each block and its position in the chain.
+	GetAllBlocksWithMetadata() []block.BlockWithMetadata
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -367,4 +371,71 @@ func copyOfBlock(node *blockNode) block.Block {
 	}
 
 	return copiedBlock
+}
+
+// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
+func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	// Get main chain hashes for marking blocks
+	mainChainHashes := s.getMainChainHashes()
+
+	result := make([]block.BlockWithMetadata, 0, len(s.hashToHeaders))
+
+	// Traverse all blocks starting from roots
+	visited := mapset.NewSet[common.Hash]()
+	for _, root := range s.blockForest.Roots {
+		s.collectBlocksWithMetadata(root, mainChainHashes, visited, &result)
+	}
+
+	return result
+}
+
+// getMainChainHashes returns a set of all block hashes that are part of the main chain.
+func (s *BlockStore) getMainChainHashes() mapset.Set[common.Hash] {
+	mainChainHashes := mapset.NewSet[common.Hash]()
+
+	mainChainTip := s.GetMainChainTip()
+	mainChainTipNode := s.hashToHeaders[mainChainTip.Hash()]
+
+	// Traverse from tip to genesis
+	currentNode := mainChainTipNode
+	for currentNode != nil {
+		mainChainHashes.Add(currentNode.Block.Hash())
+		currentNode = currentNode.Parent
+	}
+
+	return mainChainHashes
+}
+
+// collectBlocksWithMetadata recursively collects blocks with their metadata.
+func (s *BlockStore) collectBlocksWithMetadata(node *blockNode, mainChainHashes mapset.Set[common.Hash], visited mapset.Set[common.Hash], result *[]block.BlockWithMetadata) {
+	blockHash := node.Block.Hash()
+
+	if visited.Contains(blockHash) {
+		return
+	}
+	visited.Add(blockHash)
+
+	isOrphan, _ := s.IsOrphanBlock(*node.Block)
+	isMainChain := mainChainHashes.Contains(blockHash)
+
+	var parentHash *common.Hash
+	if node.Parent != nil {
+		h := node.Parent.Block.Hash()
+		parentHash = &h
+	}
+
+	metadata := block.BlockWithMetadata{
+		Block:           copyOfBlock(node),
+		Height:          node.Height,
+		AccumulatedWork: node.AccumulatedWork,
+		ParentHash:      parentHash,
+		IsOrphan:        isOrphan,
+		IsMainChain:     isMainChain,
+	}
+
+	*result = append(*result, metadata)
+
+	for _, child := range node.Children {
+		s.collectBlocksWithMetadata(child, mainChainHashes, visited, result)
+	}
 }

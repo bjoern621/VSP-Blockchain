@@ -1,15 +1,15 @@
 meta {
-  name: ConnectTo 3 To 1
+  name: GetVisualization Node 3
   type: grpc
-  seq: 10
+  seq: 3
 }
 
 grpc {
   url: localhost:20003
-  method: /app.AppService/ConnectTo
+  method: /app.AppService/GetBlockchainVisualization
   body: grpc
   protoPath: ../../app.proto
-  auth: inherit
+  auth: none
   methodType: unary
 }
 
@@ -17,8 +17,7 @@ body:grpc {
   name: message 1
   content: '''
     {
-      "ip_address": "rBwBCg==", 
-      "port": 50051
+      "include_details": true
     }
   '''
 }

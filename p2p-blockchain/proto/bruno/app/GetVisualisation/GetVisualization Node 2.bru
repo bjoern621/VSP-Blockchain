@@ -1,12 +1,12 @@
 meta {
-  name: GetAddr 1 To 2
+  name: GetVisualization Node 2
   type: grpc
-  seq: 17
+  seq: 2
 }
 
 grpc {
-  url: localhost:20001
-  method: /app.AppService/SendGetAddr
+  url: localhost:20002
+  method: /app.AppService/GetBlockchainVisualization
   body: grpc
   protoPath: ../../app.proto
   auth: none
@@ -17,7 +17,7 @@ body:grpc {
   name: message 1
   content: '''
     {
-      "peer_id": "8738c416-8069-4cb8-b8de-47c52da98206"
+      "include_details": true
     }
   '''
 }

@@ -71,6 +71,14 @@ service AppService {
     // Post-conditions:
     //  - Returns list of assets (UTXO values) for the address.
     rpc GetAssets(GetAssetsRequest) returns (GetAssetsResponse);
+
+    // GetBlockchainVisualization returns a DOT file representation of the blockchain structure.
+    // This can be used with Graphviz to visualize the blockchain including the main chain,
+    // side chains, and orphan blocks.
+    //
+    // Post-conditions:
+    //  - Returns a DOT format string that can be rendered with Graphviz.
+    rpc GetBlockchainVisualization(GetBlockchainVisualizationRequest) returns (GetBlockchainVisualizationResponse);
 }
 
 message ConnectToRequest {
@@ -211,5 +219,18 @@ enum TransactionErrorCode {
     INSUFFICIENT_FUNDS = 2;
     VALIDATION_FAILED = 3;
     BROADCAST_FAILED = 4;
+}
+
+// GetBlockchainVisualizationRequest contains options for generating the DOT visualization.
+message GetBlockchainVisualizationRequest {
+    // Optional: If true, includes more details in node labels (height, accumulated work)
+    bool include_details = 1;
+}
+
+// GetBlockchainVisualizationResponse contains a URL to visualize the blockchain.
+message GetBlockchainVisualizationResponse {
+    // A URL to GraphvizOnline that displays the blockchain visualization.
+    // Can be opened directly in a browser.
+    string visualization_url = 1;
 }
 

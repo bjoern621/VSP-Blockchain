@@ -31,6 +31,7 @@ type Server struct {
 	keysApi              api.KeyGeneratorApi
 	transactionHandler   *adapters.TransactionHandlerAdapter
 	kontoHandler         *adapters.KontoHandlerAdapter
+	visualizationHandler *adapters.VisualizationHandlerAdapter
 }
 
 // NewServer creates a new external API server.
@@ -42,6 +43,7 @@ func NewServer(
 	transactionHandler *adapters.TransactionHandlerAdapter,
 	discoveryService *core.DiscoveryService,
 	kontoHandler *adapters.KontoHandlerAdapter,
+	visualizationHandler *adapters.VisualizationHandlerAdapter,
 ) *Server {
 	return &Server{
 		connService:          connService,
@@ -51,6 +53,7 @@ func NewServer(
 		keysApi:              keysApi,
 		transactionHandler:   transactionHandler,
 		kontoHandler:         kontoHandler,
+		visualizationHandler: visualizationHandler,
 	}
 }
 
@@ -233,4 +236,8 @@ func (s *Server) SendGetAddr(ctx context.Context, req *pb.SendGetAddrRequest) (*
 
 func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
 	return s.kontoHandler.GetAssets(req), nil
+}
+
+func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockchainVisualizationRequest) (*pb.GetBlockchainVisualizationResponse, error) {
+	return s.visualizationHandler.GetBlockchainVisualization(req), nil
 }

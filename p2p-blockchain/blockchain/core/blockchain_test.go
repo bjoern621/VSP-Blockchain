@@ -150,6 +150,10 @@ func (m *mockBlockStore) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
+func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
+}
+
 // mockChainReorganization is a mock for ChainReorganization
 type mockChainReorganization struct {
 	checkAndReorganizeResult bool

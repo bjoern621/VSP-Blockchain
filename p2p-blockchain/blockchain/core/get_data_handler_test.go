@@ -81,6 +81,10 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
+func (m *mockBlockStoreGetData) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
+}
+
 func createTestBlockForGetData(nonce uint32) block.Block {
 	var merkleRoot common.Hash
 	for i := range 32 {
