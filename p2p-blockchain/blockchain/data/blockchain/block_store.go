@@ -4,6 +4,7 @@ package blockchain
 import (
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -61,10 +62,10 @@ type BlockStoreAPI interface {
 	// In case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
 	GetMainChainTip() block.Block
 
-	// GetVisualizationDot returns a Graphviz DOT format string representing the blockchain structure.
+	// GetVisualizationURL returns a URL to GraphvizOnline that displays the blockchain structure.
 	// This includes the main chain, side chains, and orphan blocks.
 	// If includeDetails is true, nodes will include height and accumulated work information.
-	GetVisualizationDot(includeDetails bool) string
+	GetVisualizationURL(includeDetails bool) string
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -377,10 +378,20 @@ func copyOfBlock(node *blockNode) block.Block {
 	return copiedBlock
 }
 
-// GetVisualizationDot returns a Graphviz DOT format string representing the blockchain structure.
+// GetVisualizationURL returns a URL to GraphvizOnline that displays the blockchain structure.
 // This includes the main chain, side chains, and orphan blocks.
 // If includeDetails is true, nodes will include height and accumulated work information.
-func (s *BlockStore) GetVisualizationDot(includeDetails bool) string {
+func (s *BlockStore) GetVisualizationURL(includeDetails bool) string {
+	dotContent := s.generateDotContent(includeDetails)
+
+	// URL-encode the DOT content and create the GraphvizOnline URL
+	// The format is: https://dreampuf.github.io/GraphvizOnline/?engine=dot#<url-encoded-dot-content>
+	encodedDot := url.PathEscape(dotContent)
+	return "https://dreampuf.github.io/GraphvizOnline/?engine=dot#" + encodedDot
+}
+
+// generateDotContent generates the raw DOT format string for the blockchain.
+func (s *BlockStore) generateDotContent(includeDetails bool) string {
 	var sb strings.Builder
 
 	sb.WriteString("digraph Blockchain {\n")

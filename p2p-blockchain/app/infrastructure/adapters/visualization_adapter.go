@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"encoding/base64"
 	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
@@ -25,10 +24,9 @@ func (v *VisualizationHandlerAdapter) GetBlockchainVisualization(req *pb.GetBloc
 		includeDetails = req.IncludeDetails
 	}
 
-	dotContent := v.visualizationAPI.GetVisualizationDot(includeDetails)
-	encoded := base64.StdEncoding.EncodeToString([]byte(dotContent))
+	visualizationURL := v.visualizationAPI.GetVisualizationURL(includeDetails)
 
 	return &pb.GetBlockchainVisualizationResponse{
-		DotContentBase64: encoded,
+		VisualizationUrl: visualizationURL,
 	}
 }

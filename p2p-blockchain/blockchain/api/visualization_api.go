@@ -6,9 +6,9 @@ import (
 
 // VisualizationAPI provides access to blockchain visualization functionality.
 type VisualizationAPI interface {
-	// GetVisualizationDot returns a Graphviz DOT format string representing the blockchain structure.
+	// GetVisualizationURL returns a URL to GraphvizOnline that displays the blockchain structure.
 	// If includeDetails is true, nodes will include height and accumulated work information.
-	GetVisualizationDot(includeDetails bool) string
+	GetVisualizationURL(includeDetails bool) string
 }
 
 // VisualizationAPIImpl implements VisualizationAPI using the BlockStore.
@@ -23,7 +23,7 @@ func NewVisualizationAPI(blockStore core.BlockStoreAPI) *VisualizationAPIImpl {
 	}
 }
 
-// GetVisualizationDot implements VisualizationAPI.GetVisualizationDot.
-func (v *VisualizationAPIImpl) GetVisualizationDot(includeDetails bool) string {
-	return v.blockStore.GetVisualizationDot(includeDetails)
+// GetVisualizationURL implements VisualizationAPI.GetVisualizationURL.
+func (v *VisualizationAPIImpl) GetVisualizationURL(includeDetails bool) string {
+	return v.blockStore.GetVisualizationURL(includeDetails)
 }
