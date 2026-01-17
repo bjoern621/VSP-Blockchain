@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: V$-GOIN API
-  version: 1.0.0
+  version: 1.1.0
   description: |-
     This is the official API for the interaction with the VS-Blockchain.
     This API focuses on payment-related use cases in the most easy and feasible way.
@@ -12,6 +12,8 @@ tags:
     description: Every endpoint for actual payment.
   - name: KeyTools
     description: Tools for generating or getting the needed Keys for the payment
+  - name: DevTools
+    description: Tools for developing purposes
 
 paths:
   /transaction:
@@ -146,6 +148,23 @@ paths:
                 required:
                   - address
                   - privateKeyWIF
+  /blockchain/visualization:
+    get:
+      summary: Returns a URL to the visualization of the current blockchain.
+      tags:
+        - DevTools
+      responses:
+        '200':
+          description: Successful response with the corresponding URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  URL:
+                    type: string
+                    example: "https://dreampuf.github.io/GraphvizOnline/"
+
 
 components:
   schemas:
@@ -171,6 +190,7 @@ components:
       example: 1BLRMuPN13ouhRWhnKCjth1ZcGYfeJHEzR
       description: |
         Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix.
+        Has a length of 33 or 34 characters.
         
         The VSAddress provides a point where VSGoins can be send to.
         It is public and can be freely shared with others.
