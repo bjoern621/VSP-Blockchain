@@ -37,9 +37,10 @@ func NewMinerService(
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
+	logger.Infof("[miner] Started mining new block with %d transactions", len(transactions))
 	candidateBlock, err := m.createCandidateBlock(transactions)
 	if err != nil {
-		logger.Errorf("Failed to create candidate block: %v", err)
+		logger.Errorf("[miner] Failed to create candidate block: %v", err)
 		return
 	}
 
@@ -49,12 +50,12 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	go func() {
 		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
 		if err != nil {
-			logger.Infof("Mining stopped: %v", err)
+			logger.Infof("[miner] Mining stopped: %v", err)
 			return
 		}
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
-		logger.Infof("Mined new block: %v", candidateBlock.Header)
+		logger.Infof("[miner] Mined new block: %v", candidateBlock.Header)
 		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
@@ -75,7 +76,7 @@ func (m *minerService) mineBlock(candidateBlock block.Block, ctx context.Context
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Infof("Mining cancelled")
+			logger.Infof("[miner] Mining cancelled")
 			return 0, 0, fmt.Errorf("mining cancelled")
 		default:
 			if counter > uint64(^uint32(0)) {
