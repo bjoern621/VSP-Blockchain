@@ -51,7 +51,7 @@ type PeerManager struct {
 
 // NewPeerManager creates a new PeerManager with the specified TTL for known peers.
 func NewPeerManager(knownTTL time.Duration) *PeerManager {
-	logger.Debugf("[peer_manager] creating peer manager with TTL=%s", knownTTL)
+	logger.Debugf("creating peer manager with TTL=%s", knownTTL)
 	return &PeerManager{
 		peers:    make(map[string]*PeerInfo),
 		knownTTL: knownTTL,
@@ -87,7 +87,7 @@ func (pm *PeerManager) addPeer(ip string, port int32) bool {
 		State:        StateNew,
 		DiscoveredAt: now,
 	}
-	logger.Debugf("[peer_manager] added new peer %s:%d", ip, port)
+	logger.Debugf("added new peer %s:%d", ip, port)
 	return true
 }
 
@@ -119,7 +119,7 @@ func (pm *PeerManager) GetNextUnverifiedPeer() *PeerInfo {
 			}
 		}
 	}
-	logger.Tracef("[peer_manager] no new peers available for connection")
+	logger.Tracef("no new peers available for connection")
 	return nil
 }
 
@@ -133,7 +133,7 @@ func (pm *PeerManager) GetExpiredKnownPeer() *PeerInfo {
 	for _, peer := range pm.peers {
 		if peer.State == StateKnown && now.Sub(peer.LastSeen) >= pm.knownTTL {
 			peer.State = StateConnecting
-			logger.Debugf("[peer_manager] peer %s TTL expired (last seen %s ago), re-verifying", peer.IP, now.Sub(peer.LastSeen))
+			logger.Debugf("peer %s TTL expired (last seen %s ago), re-verifying", peer.IP, now.Sub(peer.LastSeen))
 			return &PeerInfo{
 				IP:       peer.IP,
 				Port:     peer.Port,
@@ -161,7 +161,7 @@ func (pm *PeerManager) MarkFailed(ip string) {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
 
-	logger.Debugf("[peer_manager] peer %s failed verification, removing", ip)
+	logger.Debugf("peer %s failed verification, removing", ip)
 	delete(pm.peers, ip)
 }
 
@@ -219,13 +219,13 @@ func (pm *PeerManager) CleanupExpired() int {
 	removed := 0
 	for ip, peer := range pm.peers {
 		if peer.State == StateKnown && now.Sub(peer.LastSeen) >= 2*pm.knownTTL {
-			logger.Debugf("[peer_manager] cleaning up expired peer %s (last seen %s ago)", ip, now.Sub(peer.LastSeen))
+			logger.Debugf("cleaning up expired peer %s (last seen %s ago)", ip, now.Sub(peer.LastSeen))
 			delete(pm.peers, ip)
 			removed++
 		}
 	}
 	if removed > 0 {
-		logger.Infof("[peer_manager] cleaned up %d expired peers", removed)
+		logger.Infof("cleaned up %d expired peers", removed)
 	}
 	return removed
 }
