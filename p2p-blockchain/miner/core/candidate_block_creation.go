@@ -36,7 +36,7 @@ func (m *minerService) createCandidateBlockHeader(transactions []transaction.Tra
 	previousBlockHash := tip.Hash()
 
 	merkleRoot := block.MerkleRootFromTransactions(transactions)
-	logger.Debugf("[miner] Calculated merkle root: %v", merkleRoot)
+	logger.Tracef("[miner] Calculated merkle root: %v", merkleRoot)
 
 	targetBits, err := GetCurrentTargetBits()
 	if err != nil {
