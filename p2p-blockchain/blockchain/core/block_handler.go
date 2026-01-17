@@ -9,16 +9,16 @@ import (
 )
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
-	logger.Infof("Block Message received: %v from %v", receivedBlock, peerID)
+	logger.Infof("[block_handler] Block Message received from %v with %d transactions", peerID, len(receivedBlock.Transactions))
 
 	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
-		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
 	if ok, err := b.blockValidator.ValidateHeaderOnly(receivedBlock.Header); !ok {
-		logger.Warnf(invalidBlockMessageFormat, peerID, err)
+		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
 		return
 	}
 
@@ -28,7 +28,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 3. Handle orphans
 	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
-		logger.Debugf("Block is Orphan: %v", err)
+		logger.Debugf("[block_handler] Block is Orphan: %v", err)
 		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
@@ -45,12 +45,12 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
 	if err != nil {
-		logger.Errorf("Chain reorganization failed: %v", err)
+		logger.Errorf("[block_handler] Chain reorganization failed: %v", err)
 		return
 	}
 
 	if reorganized {
-		logger.Debugf("Chain reorganization performed")
+		logger.Debugf("[block_handler] Chain reorganization performed")
 	}
 
 	// 6. Broadcast new blocks
