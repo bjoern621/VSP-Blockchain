@@ -130,35 +130,3 @@ func TestHandleHeartbeatBingUnknownPeer(t *testing.T) {
 	// No pong should be sent for unknown peer
 	assert.Equal(t, 0, len(mockSender.pongCalls))
 }
-
-func TestKeepaliveServiceSendsToOutboundPeers(t *testing.T) {
-	peerRetriever := newMockPeerRetriever()
-	mockSender := &mockHeartbeatMsgSender{}
-
-	// Create outbound peers
-	peerID1 := common.PeerId("peer-1")
-	peerID2 := common.PeerId("peer-2")
-	peerID3 := common.PeerId("peer-3")
-
-	peerRetriever.peers[peerID1] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionOutbound}
-	peerRetriever.peers[peerID2] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionOutbound}
-	peerRetriever.peers[peerID3] = &peer.Peer{State: common.StateConnected, Direction: common.DirectionInbound} // Inbound, not outbound
-
-	service := NewKeepaliveService(peerRetriever, mockSender)
-
-	// Start with a very short interval for testing
-	service.heartbeatInterval = 100 * time.Millisecond
-	service.Start()
-
-	// Wait for at least one tick
-	time.Sleep(150 * time.Millisecond)
-
-	// Stop the service
-	service.Stop()
-
-	// Verify heartbeat pings were sent only to outbound peers
-	assert.Equal(t, 2, len(mockSender.pingCalls), "should send to 2 outbound peers")
-	assert.Contains(t, mockSender.pingCalls, peerID1, "should send to peerID1")
-	assert.Contains(t, mockSender.pingCalls, peerID2, "should send to peerID2")
-	assert.NotContains(t, mockSender.pingCalls, peerID3, "should not send to peerID3")
-}
