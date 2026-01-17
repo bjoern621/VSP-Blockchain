@@ -68,27 +68,32 @@ func main() {
 	assert.IsNil(err, "couldn't create UTXOEntryDAO")
 	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 	assert.IsNil(err, "couldn't create chainStateService")
-	// Initialize UTXO lookup service and API
+	// Initialize UTXO services
 	memPoolService := utxo.NewMemUTXOPoolService()
 	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
 
 	genesisBlock := blockchainData.GenesisBlock()
 	blockStore := blockchainData.NewBlockStore(genesisBlock)
 
+	// Create multi-chain UTXO service for side chain support
+	multiChainUtxoService := utxo.NewMultiChainUTXOService(fullNodeUtxoService, blockStore)
+	// Create lookup service that wraps multi-chain service
+	multiChainLookupService := utxo.NewMultiChainLookupService(multiChainUtxoService)
+
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, multiChainUtxoService)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
+	utxoAPI := blockapi.NewUtxoAPI(multiChainLookupService)
 
-	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
+	minerImpl := minerCore.NewMinerService(blockchain, multiChainLookupService, blockStore)
 	blockchain.Attach(minerImpl)
 	minerImpl.StartMining(make([]transaction.Transaction, 0))
 

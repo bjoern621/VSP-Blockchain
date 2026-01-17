@@ -22,21 +22,21 @@ type ChainReorganizationAPI interface {
 }
 
 type ChainReorganization struct {
-	lastKnownTip common.Hash
-	blockStore   blockchain.BlockStoreAPI
-	utxoService  utxo.UTXOService
-	mempool      *Mempool
+	lastKnownTip      common.Hash
+	blockStore        blockchain.BlockStoreAPI
+	multiChainService *utxo.MultiChainUTXOService
+	mempool           *Mempool
 }
 
 func NewChainReorganization(
 	blockStore blockchain.BlockStoreAPI,
-	utxoService utxo.UTXOService,
+	multiChainService *utxo.MultiChainUTXOService,
 	mempool *Mempool,
 ) *ChainReorganization {
 	return &ChainReorganization{
-		blockStore:  blockStore,
-		utxoService: utxoService,
-		mempool:     mempool,
+		blockStore:        blockStore,
+		multiChainService: multiChainService,
+		mempool:           mempool,
 	}
 }
 
@@ -229,7 +229,7 @@ func (cr *ChainReorganization) undoBlockState(blk block.Block) error {
 		}
 
 		// Revert the transaction (removes outputs, restores inputs)
-		err = cr.utxoService.RevertTransaction(&tx, txID, inputUTXOs)
+		err = cr.multiChainService.GetMainChain().RevertTransaction(&tx, txID, inputUTXOs)
 		if err != nil {
 			return err
 		}
@@ -348,7 +348,7 @@ func (cr *ChainReorganization) applyBlock(blk block.Block) error {
 		isCoinbase := tx.IsCoinbase()
 
 		// Apply the transaction to the UTXO set
-		err := cr.utxoService.ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
+		err := cr.multiChainService.GetMainChain().ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
 		if err != nil {
 			return err
 		}
@@ -380,7 +380,7 @@ func (cr *ChainReorganization) saveInputUTXOs(tx *transaction.Transaction) ([]ut
 		outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
 
 		// Retrieve the UTXO entry from the UTXO set
-		entry, err := cr.utxoService.GetUTXOEntry(outpoint)
+		entry, err := cr.multiChainService.GetMainChain().GetUTXOEntry(outpoint)
 		if err != nil {
 			return nil, err
 		}

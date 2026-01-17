@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -25,45 +23,9 @@ func (m *mockBlockchainAPI) AddSelfMinedBlock(selfMinedBlock block.Block) {
 	m.selfMinedBlock = selfMinedBlock
 }
 
-// mockUTXOLookupService is a mock implementation of utxo.LookupAPI
+// mockUTXOLookupService is a mock implementation of api.UtxoLookupAPI
 type mockUTXOLookupService struct {
 	utxos map[utxoOutpoint]transaction.Output
-}
-
-func (m *mockUTXOLookupService) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	return utxopool.UTXOEntry{}, nil
-}
-
-func (m *mockUTXOLookupService) ContainsUTXO(_ utxopool.Outpoint) bool {
-	return true
-}
-
-func (m *mockUTXOLookupService) AddUTXO(_ utxopool.Outpoint, _ utxopool.UTXOEntry) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) SpendUTXO(_ utxopool.Outpoint) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) Remove(_ utxopool.Outpoint) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) ApplyTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ uint64, _ bool) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) RevertTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ []utxopool.UTXOEntry) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) Flush() error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) Close() error {
-	return nil
 }
 
 type utxoOutpoint struct {
@@ -133,9 +95,9 @@ func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.
 	mockBlockStore := &mockBlockStore{tip: tip}
 
 	return &minerService{
-		blockchain:  mockBlockchain,
-		utxoService: mockUTXO,
-		blockStore:  mockBlockStore,
+		blockchain: mockBlockchain,
+		utxoLookup: mockUTXO,
+		blockStore: mockBlockStore,
 	}
 }
 
@@ -659,9 +621,9 @@ func TestStartMining_StopsMining(t *testing.T) {
 	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
 
 	miner := &minerService{
-		blockchain:  mockBlockchain,
-		utxoService: mockUTXO,
-		blockStore:  mockBlockStore,
+		blockchain: mockBlockchain,
+		utxoLookup: mockUTXO,
+		blockStore: mockBlockStore,
 	}
 
 	// Start mining
@@ -698,8 +660,8 @@ func TestNewMinerService(t *testing.T) {
 		t.Error("Blockchain not set correctly")
 	}
 
-	if minerService.utxoService != mockUTXO {
-		t.Error("UTXO service not set correctly")
+	if minerService.utxoLookup != mockUTXO {
+		t.Error("UTXO lookup not set correctly")
 	}
 
 	if minerService.blockStore != mockBlockStore {
@@ -718,8 +680,8 @@ func TestMinerBlockchainAPI_Interface(t *testing.T) {
 }
 
 func TestMinerUTXOService_Interface(t *testing.T) {
-	// Compile-time check that mockUTXOLookupService implements utxo.LookupAPI
-	var _ utxo.UTXOService = &mockUTXOLookupService{}
+	// Compile-time check that mockUTXOLookupService implements api.UtxoLookupAPI
+	var _ api.UtxoLookupAPI = &mockUTXOLookupService{}
 }
 
 func TestMinerBlockStoreAPI_Interface(t *testing.T) {

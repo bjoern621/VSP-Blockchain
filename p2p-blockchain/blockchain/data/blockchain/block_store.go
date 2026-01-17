@@ -342,11 +342,13 @@ func (s *BlockStore) GetCurrentHeight() uint64 {
 func (s *BlockStore) GetMainChainTip() block.Block {
 	var mainChainTip *blockNode
 	var maxAccumulatedWork uint64
+	first := true
 
 	for _, leaf := range s.blockForest.Leaves {
-		if leaf.AccumulatedWork > maxAccumulatedWork {
+		if first || leaf.AccumulatedWork > maxAccumulatedWork {
 			maxAccumulatedWork = leaf.AccumulatedWork
 			mainChainTip = leaf
+			first = false
 		}
 	}
 

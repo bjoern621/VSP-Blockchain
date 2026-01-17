@@ -23,6 +23,9 @@ type Blockchain struct {
 	blockStore          blockchain.BlockStoreAPI
 	chainReorganization ChainReorganizationAPI
 
+	// multiChainService provides side chain UTXO handling
+	multiChainService *utxo.MultiChainUTXOService
+
 	observers mapset.Set[observer.BlockchainObserverAPI]
 }
 
@@ -32,7 +35,7 @@ func NewBlockchain(
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
 	blockStore blockchain.BlockStoreAPI,
-	utxoService utxo.UTXOService,
+	multiChainService *utxo.MultiChainUTXOService,
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator, blockStore)
 	return &Blockchain{
@@ -44,7 +47,8 @@ func NewBlockchain(
 		blockValidator:       blockValidator,
 
 		blockStore:          blockStore,
-		chainReorganization: NewChainReorganization(blockStore, utxoService, mempool),
+		chainReorganization: NewChainReorganization(blockStore, multiChainService, mempool),
+		multiChainService:   multiChainService,
 
 		observers: mapset.NewSet[observer.BlockchainObserverAPI](),
 	}

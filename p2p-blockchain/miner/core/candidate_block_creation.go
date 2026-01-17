@@ -122,7 +122,7 @@ func (m *minerService) getTransactionWithFee(transactions []transaction.Transact
 
 func (m *minerService) getInputSum(tx transaction.Transaction) (inputSum uint64, err error) {
 	for _, input := range tx.Inputs {
-		utxoResult, err := m.utxoService.GetUTXO(input.PrevTxID, input.OutputIndex)
+		utxoResult, err := m.utxoLookup.GetUTXO(input.PrevTxID, input.OutputIndex)
 		if err != nil {
 			return 0, err
 		}
