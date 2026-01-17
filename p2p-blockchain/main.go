@@ -63,13 +63,9 @@ func main() {
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
-	var chainStateService *utxo.ChainStateService
-	var memPoolService *utxo.MemUTXOPoolService
 	var fullNodeUtxoService *utxo.FullNodeUTXOService
 	var blockStore *blockchainData.BlockStore
 	var blockchainMsgService *networkBlockchain.BlockchainService
-	var transactionValidator *validation.ValidationService
-	var blockValidator *validation.BlockValidationService
 	var blockchain *core.Blockchain
 
 	if common.BlockchainFullEnabled() || common.BlockchainSimpleEnabled() {
@@ -77,10 +73,10 @@ func main() {
 		utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
 		dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
 		assert.IsNil(err, "couldn't create UTXOEntryDAO")
-		chainStateService, err = utxo.NewChainStateService(chainStateConfig, dao)
+		chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
 		assert.IsNil(err, "couldn't create chainStateService")
 		// Initialize UTXO lookup service and API
-		memPoolService = utxo.NewMemUTXOPoolService()
+		memPoolService := utxo.NewMemUTXOPoolService()
 		fullNodeUtxoService = utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
 
 		genesisBlock := blockchainData.GenesisBlock()
@@ -88,8 +84,8 @@ func main() {
 
 		blockchainMsgService = networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-		transactionValidator = validation.NewValidationService(chainStateService)
-		blockValidator = validation.NewBlockValidationService()
+		transactionValidator := validation.NewValidationService(chainStateService)
+		blockValidator := validation.NewBlockValidationService()
 
 		blockchain = core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
 	}
