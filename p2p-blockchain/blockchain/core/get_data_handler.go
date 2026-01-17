@@ -9,7 +9,7 @@ import (
 )
 
 func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
-	logger.Infof("GetData Message received: %v from %v", inventory, peerID)
+	logger.Infof("[get_data_handler] GetData Message received: %v from %v", inventory, peerID)
 
 	for _, invVector := range inventory {
 		switch invVector.InvType {
@@ -26,7 +26,7 @@ func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
 func (b *Blockchain) handleBlockRequest(blockHash common.Hash, peerID common.PeerId) {
 	block, err := b.blockStore.GetBlockByHash(blockHash)
 	if err != nil {
-		logger.Warnf("Requested block %v not found for GetData from peer %v", blockHash, peerID)
+		logger.Warnf("[get_data_handler] Requested block %v not found for GetData from peer %v", blockHash, peerID)
 		return
 	}
 
@@ -36,7 +36,7 @@ func (b *Blockchain) handleBlockRequest(blockHash common.Hash, peerID common.Pee
 func (b *Blockchain) handleTransactionRequest(txHash common.Hash, peerID common.PeerId) {
 	transaction, found := b.mempool.GetTransactionByHash(txHash)
 	if !found {
-		logger.Warnf("Requested transaction %v not found for GetData from peer %v", txHash, peerID)
+		logger.Warnf("[get_data_handler] Requested transaction %v not found for GetData from peer %v", txHash, peerID)
 		return
 	}
 

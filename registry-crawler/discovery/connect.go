@@ -23,12 +23,12 @@ func ConnectToPeer(ctx context.Context, client pb.AppServiceClient, ip string, p
 		Port:      uint32(port),
 	})
 	if connectErr != nil {
-		logger.Debugf("ConnectTo %s:%d failed: %v", ip, port, connectErr)
+		logger.Debugf("[discovery] ConnectTo %s:%d failed: %v", ip, port, connectErr)
 		return false, connectErr
 	}
 
 	if resp != nil && resp.Success {
-		logger.Debugf("ConnectTo %s:%d result: success=true", ip, port)
+		logger.Debugf("[discovery] ConnectTo %s:%d result: success=true", ip, port)
 		return true, nil
 	}
 
@@ -38,11 +38,11 @@ func ConnectToPeer(ctx context.Context, client pb.AppServiceClient, ip string, p
 	}
 
 	if isAlreadyConnectedError(errorMsg) {
-		logger.Debugf("ConnectTo %s:%d result: peer already connected (treating as success)", ip, port)
+		logger.Debugf("[discovery] ConnectTo %s:%d result: peer already connected (treating as success)", ip, port)
 		return true, nil
 	}
 
-	logger.Debugf("ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
+	logger.Debugf("[discovery] ConnectTo %s:%d result: success=false reason=%q", ip, port, errorMsg)
 	return false, fmt.Errorf("connect_to failed: %s", errorMsg)
 }
 

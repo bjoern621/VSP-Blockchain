@@ -182,7 +182,7 @@ func (s *Server) NotifyMempool(peerID common.PeerId) {
 func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 	pbMsg, err := adapter.ToGrpcGetDataMsg(inv)
 	if err != nil {
-		logger.Warnf("failed to create GetDataMessage from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create GetDataMessage from DTO: %v", err)
 		return
 	}
 
@@ -196,7 +196,7 @@ func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 	pbInvMsg, err := adapter.ToGrpcGetInvMsg(inv)
 	if err != nil {
-		logger.Warnf("failed to create InvMessage from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create InvMessage from DTO: %v", err)
 		return
 	}
 
@@ -210,7 +210,7 @@ func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId) {
 	pbLocator, err := adapter.ToGrpcBlockLocator(locator)
 	if err != nil {
-		logger.Warnf("failed to create BlockLocator from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create BlockLocator from DTO: %v", err)
 		return
 	}
 
@@ -224,7 +224,7 @@ func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId
 func (c *Client) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId) {
 	pbHeaders, err := adapter.ToGrpcHeadersMsg(headers)
 	if err != nil {
-		logger.Warnf("failed to create HeadersMsg from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create HeadersMsg from DTO: %v", err)
 		return
 	}
 
@@ -237,7 +237,7 @@ func (c *Client) SendHeaders(headers []*block.BlockHeader, peerId common.PeerId)
 func (c *Client) SendBlock(block block.Block, peerId common.PeerId) {
 	pbBlockMsg, err := adapter.ToGrpcBlockMsg(&block)
 	if err != nil {
-		logger.Warnf("failed to create BlockMsg from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create BlockMsg from DTO: %v", err)
 		return
 	}
 
@@ -250,7 +250,7 @@ func (c *Client) SendBlock(block block.Block, peerId common.PeerId) {
 func (c *Client) SendTx(transaction transaction.Transaction, peerId common.PeerId) {
 	pbTxMsg, err := adapter.ToGrpcTxMsg(&transaction)
 	if err != nil {
-		logger.Warnf("failed to create TxMsg from DTO: %v", err)
+		logger.Warnf("[blockchain_grpc] failed to create TxMsg from DTO: %v", err)
 		return
 	}
 

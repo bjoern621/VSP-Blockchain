@@ -20,6 +20,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const internalServerError = "Internal server error"
+
 type PaymentAPI struct {
 	transactionService *transactionapi.TransaktionAPI
 	kontostandService  *konto.KontostandService
@@ -41,19 +43,19 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 	// Call the domain service
 	result, err := api.kontostandService.GetBalance(vsAddress)
 	if errors.Is(err, common.ErrInvalidAddress) {
-		logger.Warnf("Balance request validation failed: %v", err)
+		logger.Warnf("[api_payment] Balance request validation failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 	var assetErr *common.AssetError
 	if errors.As(err, &assetErr) {
-		logger.Warnf("Balance request asset error: %v", err)
+		logger.Warnf("[api_payment] Balance request asset error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 	if err != nil {
-		logger.Errorf("Failed to get balance: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		logger.Errorf("[api_payment] Failed to get balance: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}
 
@@ -74,7 +76,7 @@ func (api *PaymentAPI) TransactionPost(c *gin.Context) {
 	// Parse request body
 	var req TransactionPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Warnf("Failed to decode transaction request: %v", err)
+		logger.Warnf("[api_payment] Failed to decode transaction request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON request body"})
 		return
 	}
@@ -89,7 +91,7 @@ func (api *PaymentAPI) TransactionPost(c *gin.Context) {
 	// Call the domain service
 	result, validationErr := api.transactionService.CreateTransaction(domainReq)
 	if validationErr != nil {
-		logger.Warnf("Transaction request validation failed: %v", validationErr)
+		logger.Warnf("[api_payment] Transaction request validation failed: %v", validationErr)
 		if validationErr.IsAuthError {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": validationErr.Message})
 		} else {
@@ -107,7 +109,7 @@ func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionR
 	if result.Success {
 		// 201 Created - Transaction successfully executed
 		c.Status(http.StatusCreated)
-		logger.Infof("Transaction created successfully: %s", result.TransactionID)
+		logger.Infof("[api_payment] Transaction created successfully: %s", result.TransactionID)
 		return
 	}
 
@@ -123,11 +125,11 @@ func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionR
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.ErrorMessage})
 	case common.ErrorCodeBroadcastFailed:
 		// 500 Internal Server Error - Broadcast failed
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 	default:
 		// 500 Internal Server Error - Unexpected error
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 	}
 
-	logger.Warnf("Transaction failed: code=%d, message=%s", result.ErrorCode, result.ErrorMessage)
+	logger.Warnf("[api_payment] Transaction failed: code=%d, message=%s", result.ErrorCode, result.ErrorMessage)
 }

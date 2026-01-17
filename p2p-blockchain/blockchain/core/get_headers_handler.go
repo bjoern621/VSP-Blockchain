@@ -10,7 +10,7 @@ import (
 )
 
 func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
-	logger.Infof("GetHeaders Message received: %v from %v", locator, peerID)
+	logger.Infof("[get_headers_handler] GetHeaders Message received: %v from %v", locator, peerID)
 
 	// Find the common ancestor by checking the block locator hashes
 	// The locator hashes are ordered from newest to oldest
@@ -83,10 +83,10 @@ func (b *Blockchain) collectBlockHeaders(locator block.BlockLocator, commonAnces
 
 func (b *Blockchain) sendHeadersBackToPeer(headers []*block.BlockHeader, peerID common.PeerId, commonAncestorHeight uint64) {
 	if len(headers) > 0 {
-		logger.Infof("Sending %d headers to peer %s, starting from height %d", len(headers), peerID, commonAncestorHeight+1)
+		logger.Infof("[get_headers_handler] Sending %d headers to peer %s, starting from height %d", len(headers), peerID, commonAncestorHeight+1)
 		b.blockchainMsgSender.SendHeaders(headers, peerID)
 	} else {
-		logger.Infof("No headers to send to peer %s", peerID)
+		logger.Infof("[get_headers_handler] No headers to send to peer %s", peerID)
 	}
 }
 

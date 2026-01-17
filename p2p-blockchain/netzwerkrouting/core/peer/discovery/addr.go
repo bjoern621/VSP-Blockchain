@@ -16,7 +16,7 @@ type AddrMsgHandler interface {
 }
 
 func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress) {
-	logger.Infof("Received addr message from peer %s with %d addresses", peerID, len(addrs))
+	logger.Infof("[peer_discovery] Received addr message from peer %s with %d addresses", peerID, len(addrs))
 
 	// There is not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.
 	// With other words, the peers are already known to the PeerStore.
@@ -24,7 +24,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 	// Update last seen timestamps for received addresses
 	for _, addr := range addrs {
 		peer, exists := s.peerRetriever.GetPeer(addr.PeerId)
-		assert.Assert(exists, "peer should already be registered by infrastructure layer")
+		assert.Assert(exists, "[peer_discovery] peer should already be registered by infrastructure layer")
 
 		if peer.LastSeen < addr.LastActiveTimestamp {
 			peer.Lock()
@@ -32,7 +32,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 			peer.Unlock()
 		}
 
-		logger.Infof("Discovered peer from Addr msg: PeerId=%s, LastSeen=%v",
+		logger.Infof("[peer_discovery] Discovered peer from Addr msg: PeerId=%s, LastSeen=%v",
 			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
 	}
 
@@ -55,7 +55,7 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 	})
 
 	if len(eligiblePeers) == 0 {
-		logger.Debugf("No eligible peers for addr forwarding")
+		logger.Debugf("[peer_discovery] No eligible peers for addr forwarding")
 		return
 	}
 
@@ -83,7 +83,7 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 				recipient.AddrsSentTo.Add(addr.PeerId)
 				recipient.Unlock()
 
-				logger.Tracef("Forwarding address %s to peer %s", addr.PeerId, recipientID)
+				logger.Tracef("[peer_discovery] Forwarding address %s to peer %s", addr.PeerId, recipientID)
 				go s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
 			} else {
 				recipient.Unlock()

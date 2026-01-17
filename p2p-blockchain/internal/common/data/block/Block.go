@@ -70,7 +70,7 @@ func (b *Block) MerkleRoot() common.Hash {
 
 // MerkleRootFromTransactions calculates the Merkle root from a list of transactions.
 func MerkleRootFromTransactions(txs []transaction.Transaction) common.Hash {
-	logger.Infof("Calculating merkle root for %d transactions", len(txs))
+	logger.Tracef("[block] Calculating merkle root for %d transactions", len(txs))
 	tmpTransactions := make([]transaction.Transaction, len(txs))
 	copy(tmpTransactions, txs)
 

@@ -57,13 +57,13 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 	}
 
 	if len(peerAddresses) > 0 {
-		logger.Infof("Sending addr message to peer %s with %d peer addresses", peerID, len(peerAddresses))
+		logger.Infof("[peer_discovery] Sending addr message to peer %s with %d peer addresses", peerID, len(peerAddresses))
 		go s.addrMsgSender.SendAddr(peerID, peerAddresses)
 	}
 }
 
 func (s *DiscoveryService) SendGetAddr(peerID common.PeerId) {
-	logger.Infof("Sending getaddr message to peer %s", peerID)
+	logger.Infof("[peer_discovery] Sending getaddr message to peer %s", peerID)
 	go s.getAddrMsgSender.SendGetAddr(peerID)
 }
 

@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const mustExists = "network info entry must exist for peer %s"
+
 // NetworkInfoEntry holds network-level information for a peer.
 type NetworkInfoEntry struct {
 	ListeningEndpoint netip.AddrPort   // The port we can reach them on (from VersionInfo)
@@ -83,7 +85,7 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID common.PeerId, listeningEndpoi
 		r.listeningEndpointToPeer[listeningEndpoint] = peerID
 	}
 
-	logger.Debugf("registered peer %s in network info registry infrastructure: listening=%s", peerID, listeningEndpoint)
+	logger.Debugf("[network_info_registry] registered peer %s in network info registry infrastructure: listening=%s", peerID, listeningEndpoint)
 }
 
 // GetOrRegisterPeer atomically looks up a peer by addresses, or registers a new one if not found.
@@ -121,7 +123,7 @@ func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, list
 		r.listeningEndpointToPeer[listeningEndpoint] = peerID
 	}
 
-	logger.Debugf("registered new peer %s in network info registry: listening=%s", peerID, listeningEndpoint)
+	logger.Debugf("[network_info_registry] registered new peer %s in network info registry: listening=%s", peerID, listeningEndpoint)
 	return peerID
 }
 
@@ -132,7 +134,7 @@ func (r *NetworkInfoRegistry) AddInboundAddress(peerID common.PeerId, addr netip
 	defer r.mu.Unlock()
 
 	entry, exists := r.networkInfoEntries[peerID]
-	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
+	assert.Assert(exists, mustExists, peerID)
 
 	if slices.Contains(entry.InboundAddresses, addr) {
 		return
@@ -148,7 +150,7 @@ func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID common.PeerId, listeni
 	defer r.mu.Unlock()
 
 	entry, exists := r.networkInfoEntries[peerID]
-	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
+	assert.Assert(exists, mustExists, peerID)
 
 	if entry.ListeningEndpoint == listeningEndpoint {
 		return
@@ -171,7 +173,7 @@ func (r *NetworkInfoRegistry) SetConnection(peerID common.PeerId, conn *grpc.Cli
 	defer r.mu.Unlock()
 
 	entry, exists := r.networkInfoEntries[peerID]
-	assert.Assert(exists, "network info entry must exist for peer %s", peerID)
+	assert.Assert(exists, mustExists, peerID)
 
 	assert.Assert(entry.OutboundConn == nil, "outbound connection already set for peer %s", peerID)
 
@@ -239,9 +241,9 @@ func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
 	if entry.OutboundConn != nil {
 		err := entry.OutboundConn.Close()
 		if err != nil {
-			logger.Warnf("Failed to close gRPC connection for peer %s: %v", peerID, err)
+			logger.Warnf("[network_info_registry] Failed to close gRPC connection for peer %s: %v", peerID, err)
 		} else {
-			logger.Debugf("Closed gRPC connection for peer %s", peerID)
+			logger.Debugf("[network_info_registry] Closed gRPC connection for peer %s", peerID)
 		}
 	}
 
@@ -258,7 +260,7 @@ func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
 	// Remove the entry itself
 	delete(r.networkInfoEntries, peerID)
 
-	logger.Debugf("Removed peer %s from network info registry", peerID)
+	logger.Debugf("[network_info_registry] Removed peer %s from network info registry", peerID)
 }
 
 // formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.
