@@ -59,6 +59,7 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	}
 
 	p.Lock()
+	defer p.Unlock()
 
 	if p.State != common.StateAwaitingVerack {
 		logger.Warnf("[handshake_handler] peer %s sent Verack message in invalid state %v", peerID, p.State)
@@ -95,6 +96,7 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	}
 
 	p.Lock()
+	defer p.Unlock()
 
 	if p.State != common.StateAwaitingAck {
 		logger.Warnf("[handshake_handler] peer %s sent Ack message in invalid state %v", peerID, p.State)
