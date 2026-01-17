@@ -227,10 +227,10 @@ message GetBlockchainVisualizationRequest {
     bool include_details = 1;
 }
 
-// GetBlockchainVisualizationResponse contains the DOT file representation.
+// GetBlockchainVisualizationResponse contains the DOT file representation in base64.
 message GetBlockchainVisualizationResponse {
-    // The DOT format string representing the blockchain structure.
-    // Can be rendered using Graphviz tools like `dot -Tpng output.dot -o output.png`
-    string dot_content = 1;
+    // The DOT format string representing the blockchain structure in base64.
+    // Can be rendered using Graphviz tools like `dot -Tpng output.dot -o output.png` after decoding.
+    string dot_content_base64 = 1;
 }
 
