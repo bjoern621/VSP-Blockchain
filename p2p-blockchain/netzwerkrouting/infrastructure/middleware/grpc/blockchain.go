@@ -186,7 +186,7 @@ func (c *Client) SendGetData(inv []*inv.InvVector, peerId common.PeerId) {
 		return
 	}
 
-	SendHelper(c, peerId, "GetData", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
+	go SendHelper(c, peerId, "GetData", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
 		_, err := client.GetData(context.Background(), pbMsg)
 		return err
 	})
@@ -200,7 +200,7 @@ func (c *Client) SendInv(inv []*inv.InvVector, peerId common.PeerId) {
 		return
 	}
 
-	SendHelper(c, peerId, "Inv", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
+	go SendHelper(c, peerId, "Inv", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
 		_, err := client.Inv(context.Background(), pbInvMsg)
 		return err
 	})
@@ -214,7 +214,7 @@ func (c *Client) SendGetHeaders(locator block.BlockLocator, peerId common.PeerId
 		return
 	}
 
-	SendHelper(c, peerId, "GetHeaders", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
+	go SendHelper(c, peerId, "GetHeaders", pb.NewBlockchainServiceClient, func(client pb.BlockchainServiceClient) error {
 		_, err := client.GetHeaders(context.Background(), pbLocator)
 		return err
 	})
