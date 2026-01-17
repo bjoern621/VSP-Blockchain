@@ -205,3 +205,37 @@ func TestHandleAck(t *testing.T) {
 		t.Errorf("expected state StateConnected, got %v", p.State)
 	}
 }
+
+func TestHandleVerack_OutboundPeerMaintainsDirection(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	peerID := peerStore.NewOutboundPeer()
+
+	p, _ := peerStore.GetPeer(peerID)
+	p.Lock()
+	p.State = common.StateAwaitingVerack
+	p.Unlock()
+
+	versionInfo := VersionInfo{
+		Version: "1.5.0",
+	}
+	versionInfo.AddService(common.ServiceType_BlockchainFull, common.ServiceType_Netzwerkrouting, common.ServiceType_Miner)
+
+	service.HandleVerack(peerID, versionInfo)
+	time.Sleep(10 * time.Millisecond)
+
+	if p.State != common.StateConnected {
+		t.Errorf("expected state StateConnected, got %v", p.State)
+	}
+	if p.Version != "1.5.0" {
+		t.Errorf("expected version 1.5.0, got %s", p.Version)
+	}
+	if len(p.SupportedServices) != 3 {
+		t.Errorf("expected 3 supported service, got %d", len(p.SupportedServices))
+	}
+	if p.Direction != common.DirectionOutbound {
+		t.Errorf("expected direction DirectionOutbound, got %v", p.Direction)
+	}
+}
