@@ -55,7 +55,7 @@ func NewPeriodicDiscoveryService(
 
 // Start begins the periodic gossip discovery.
 func (s *PeriodicDiscoveryService) Start() {
-	logger.Infof("Starting periodic discovery service with interval: %v", s.discoveryInterval)
+	logger.Infof("[peer-discovery] Starting periodic discovery service with interval: %v", s.discoveryInterval)
 	s.ticker = time.NewTicker(s.discoveryInterval)
 	go s.run()
 }
@@ -103,7 +103,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
 	if len(connectedPeers) == 0 {
-		logger.Debugf("No connected peers for gossip discovery")
+		logger.Debugf("[peer-discovery] No connected peers for gossip discovery")
 		return
 	}
 
@@ -122,7 +122,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 	// Send getaddr to selected peers
 	for _, peerID := range selectedPeers {
 		s.getAddrMsgSender.SendGetAddr(peerID)
-		logger.Infof("Sent getaddr to peer %s for gossip discovery", peerID)
+		logger.Infof("[peer-discovery] Sent getaddr to peer %s for gossip discovery", peerID)
 	}
 
 	s.lastDiscovery = time.Now()
