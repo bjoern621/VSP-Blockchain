@@ -103,7 +103,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 
 	logger.Debugf("[peer-discovery] Performing gossip discovery")
 
-	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
+	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
 
 	if len(connectedPeers) == 0 {
 		logger.Debugf("[peer-discovery] No connected peers for gossip discovery")
@@ -124,7 +124,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 
 	// Send getaddr to selected peers
 	for _, peerID := range selectedPeers {
-		s.getAddrMsgSender.SendGetAddr(peerID)
+		go s.getAddrMsgSender.SendGetAddr(peerID)
 		logger.Infof("[peer-discovery] Sent getaddr to peer %s for gossip discovery", peerID)
 	}
 

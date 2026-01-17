@@ -406,6 +406,7 @@ func TestForwardAddrs_DoesNotForwardToSender(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -487,6 +488,7 @@ func TestForwardAddrs_DoesNotForwardToPeersThatAlreadyReceived(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -570,6 +572,7 @@ func TestForwardAddrs_ForwardsToRandomPeers(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -606,6 +609,7 @@ func TestForwardAddrs_ForwardsToRandomPeers(t *testing.T) {
 	}
 
 	service.HandleAddr(senderPeerID, addresses)
+	addrSender.waitForCalls(6)
 
 	// Each address should be forwarded to exactly 2 peers
 	// Collect forwarding counts per address
@@ -661,6 +665,7 @@ func TestForwardAddrs_WithLimitedPeers(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -686,6 +691,7 @@ func TestForwardAddrs_WithLimitedPeers(t *testing.T) {
 	}
 
 	service.HandleAddr(senderPeerID, addresses)
+	addrSender.waitForCalls(1)
 
 	// The address should be forwarded to exactly 1 peer (peer-1)
 	sendAddrCalls := addrSender.sendAddrCalls
@@ -731,6 +737,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	senderPeer := &peer.Peer{
 		Version:     "1.0.0",
 		State:       common.StateConnected,
+		Direction:   common.DirectionOutbound,
 		LastSeen:    now,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -755,6 +762,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	}
 
 	service.HandleAddr(senderPeerID, addresses)
+	// No need to wait - no goroutines are spawned when there are no eligible peers
 
 	// No forwarding should occur
 	sendAddrCalls := addrSender.sendAddrCalls
@@ -763,7 +771,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	}
 
 	// Verify that no peers have the discovered-peer in AddrsSentTo (except the discovered peer itself)
-	allPeers := peerStore.GetAllConnectedPeers()
+	allPeers := peerStore.GetAllOutboundPeers()
 	for _, peerID := range allPeers {
 		if peerID == "discovered-peer" {
 			continue // Skip the discovered peer itself
@@ -796,6 +804,7 @@ func TestForwardAddrs_IndependentPeerSelection(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -825,6 +834,7 @@ func TestForwardAddrs_IndependentPeerSelection(t *testing.T) {
 	}
 
 	service.HandleAddr(senderPeerID, addresses)
+	addrSender.waitForCalls(10)
 
 	// Verify that different addresses can be forwarded to different peers
 	// Collect which peers received which addresses

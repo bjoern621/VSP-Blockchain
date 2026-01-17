@@ -39,10 +39,10 @@ func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	return p, exists
 }
 
-func (m *mockPeerRetriever) GetAllConnectedPeers() []common.PeerId {
+func (m *mockPeerRetriever) GetPeersWithHandshakeStarted() []common.PeerId {
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
-		if p.State == common.StateConnected {
+		if p.State == common.StateAwaitingVerack || p.State == common.StateAwaitingAck || p.State == common.StateConnected {
 			ids = append(ids, id)
 		}
 	}

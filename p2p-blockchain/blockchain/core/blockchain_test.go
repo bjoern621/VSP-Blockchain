@@ -179,7 +179,7 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 			Nonce:             nonce,
 		},
 		Transactions: []transaction.Transaction{
-			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 100),
+			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 100, 1),
 		},
 	}
 }

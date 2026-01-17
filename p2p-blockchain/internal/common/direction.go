@@ -5,13 +5,16 @@ import "bjoernblessin.de/go-utils/util/assert"
 type Direction int
 
 const (
-	DirectionInbound Direction = iota
+	DirectionUnknown Direction = iota
+	DirectionInbound
 	DirectionOutbound
 	DirectionBoth
 )
 
 func (d Direction) String() string {
 	switch d {
+	case DirectionUnknown:
+		return "unknown"
 	case DirectionInbound:
 		return "inbound"
 	case DirectionOutbound:

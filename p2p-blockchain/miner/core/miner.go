@@ -38,7 +38,7 @@ func NewMinerService(
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	logger.Infof("[miner] Started mining new block with %d transactions", len(transactions))
-	candidateBlock, err := m.createCandidateBlock(transactions)
+	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1)
 	if err != nil {
 		logger.Errorf("[miner] Failed to create candidate block: %v", err)
 		return

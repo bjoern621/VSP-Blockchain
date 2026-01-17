@@ -7,12 +7,14 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type mockBlockchainMsgSender struct {
+	mu              sync.RWMutex
 	sendBlockCalled bool
 	lastBlock       block.Block
 	lastBlockPeerID common.PeerId
@@ -20,18 +22,31 @@ type mockBlockchainMsgSender struct {
 	sendTxCalled bool
 	lastTx       transaction.Transaction
 	lastTxPeerID common.PeerId
+
+	blockDone chan int
+	txDone    chan int
 }
 
 func (m *mockBlockchainMsgSender) SendBlock(b block.Block, peerId common.PeerId) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.sendBlockCalled = true
 	m.lastBlock = b
 	m.lastBlockPeerID = peerId
+	if m.blockDone != nil {
+		m.blockDone <- 1
+	}
 }
 
 func (m *mockBlockchainMsgSender) SendTx(tx transaction.Transaction, peerId common.PeerId) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.sendTxCalled = true
 	m.lastTx = tx
 	m.lastTxPeerID = peerId
+	if m.txDone != nil {
+		m.txDone <- 1
+	}
 }
 
 type mockBlockStoreGetData struct {
@@ -61,7 +76,7 @@ func (m *mockBlockStoreGetData) AddBlock(b block.Block) []common.Hash {
 	return []common.Hash{b.Hash()}
 }
 
-func (m *mockBlockStoreGetData) IsOrphanBlock(b block.Block) (bool, error) {
+func (m *mockBlockStoreGetData) IsOrphanBlock(_ block.Block) (bool, error) {
 	return false, nil
 }
 
@@ -73,11 +88,11 @@ func (m *mockBlockStoreGetData) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
-func (m *mockBlockStoreGetData) GetBlocksByHeight(height uint64) []block.Block {
+func (m *mockBlockStoreGetData) GetBlocksByHeight(_ uint64) []block.Block {
 	return nil
 }
 
-func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
+func (m *mockBlockStoreGetData) IsPartOfMainChain(_ block.Block) bool {
 	return true
 }
 
@@ -100,7 +115,7 @@ func createTestBlockForGetData(nonce uint32) block.Block {
 			Nonce:             nonce,
 		},
 		Transactions: []transaction.Transaction{
-			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 50),
+			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 50, 1),
 		},
 	}
 }
@@ -119,7 +134,9 @@ func createTestTransactionForGetData() transaction.Transaction {
 }
 
 func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing.T) {
-	sender := &mockBlockchainMsgSender{}
+	sender := &mockBlockchainMsgSender{
+		blockDone: make(chan int, 1),
+	}
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
@@ -153,6 +170,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 	peerID := common.PeerId("peer-1")
 
 	bc.GetData(inventory, peerID)
+	<-sender.blockDone
 
 	assert.True(t, sender.sendBlockCalled, "SendBlock should be called")
 	assert.Equal(t, testBlock, sender.lastBlock, "Sent block should match requested block")
@@ -201,7 +219,9 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 }
 
 func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFound(t *testing.T) {
-	sender := &mockBlockchainMsgSender{}
+	sender := &mockBlockchainMsgSender{
+		txDone: make(chan int, 1),
+	}
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
@@ -236,6 +256,7 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 	peerID := common.PeerId("peer-1")
 
 	bc.GetData(inventory, peerID)
+	<-sender.txDone
 
 	assert.True(t, sender.sendTxCalled, "SendTx should be called")
 	assert.Equal(t, testTx, sender.lastTx, "Sent transaction should match requested transaction")
@@ -320,7 +341,10 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 }
 
 func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
-	sender := &mockBlockchainMsgSender{}
+	sender := &mockBlockchainMsgSender{
+		blockDone: make(chan int, 2),
+		txDone:    make(chan int, 1),
+	}
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
@@ -368,6 +392,9 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 	peerID := common.PeerId("peer-1")
 
 	bc.GetData(inventory, peerID)
+	<-sender.txDone
+	<-sender.blockDone
+	<-sender.blockDone
 
 	assert.True(t, sender.sendBlockCalled, "SendBlock should be called")
 	assert.True(t, sender.sendTxCalled, "SendTx should be called")
@@ -376,7 +403,9 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 }
 
 func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) {
-	sender := &mockBlockchainMsgSender{}
+	sender := &mockBlockchainMsgSender{
+		blockDone: make(chan int, 1),
+	}
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
@@ -414,6 +443,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 	peerID := common.PeerId("peer-1")
 
 	bc.GetData(inventory, peerID)
+	<-sender.blockDone
 
 	assert.True(t, sender.sendBlockCalled, "SendBlock should be called for found block")
 	assert.False(t, sender.sendTxCalled, "SendTx should not be called for missing transaction")
