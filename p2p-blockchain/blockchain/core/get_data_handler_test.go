@@ -81,6 +81,10 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
+func (m *mockBlockStoreGetData) GetVisualizationDot(includeDetails bool) string {
+	return ""
+}
+
 func createTestBlockForGetData(nonce uint32) block.Block {
 	var merkleRoot common.Hash
 	for i := range 32 {

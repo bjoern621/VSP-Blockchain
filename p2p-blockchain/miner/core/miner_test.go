@@ -122,6 +122,10 @@ func (m *mockBlockStore) GetMainChainTip() block.Block {
 	return m.tip
 }
 
+func (m *mockBlockStore) GetVisualizationDot(includeDetails bool) string {
+	return ""
+}
+
 // Helper function to create a test miner service
 func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.Output) *minerService {
 	mockBlockchain := &mockBlockchainAPI{}

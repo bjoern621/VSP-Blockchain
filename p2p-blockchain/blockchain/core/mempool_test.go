@@ -52,6 +52,10 @@ func (m *mockBlockStore2) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
+func (m *mockBlockStore2) GetVisualizationDot(includeDetails bool) string {
+	return ""
+}
+
 func newMockBlockStore() BlockStoreAPI {
 	return &mockBlockStore2{}
 }
