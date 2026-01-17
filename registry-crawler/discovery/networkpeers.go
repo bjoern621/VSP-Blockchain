@@ -22,12 +22,12 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 		return nil, 0, err
 	}
 
-	logger.Tracef("fetched %d peers from app service total", len(entries))
+	logger.Tracef("[networkpeers] fetched %d peers from app service total", len(entries))
 
 	acceptedPort := uint16(cfg.AcceptedP2PPort)
 	ips := extractValidPeerIPs(entries, acceptedPort)
 
-	logger.Tracef("fetched %d usable network peers from app service: %v", len(ips), ips)
+	logger.Tracef("[networkpeers] fetched %d usable network peers from app service: %v", len(ips), ips)
 
 	return ips, int32(cfg.AcceptedP2PPort), nil
 }

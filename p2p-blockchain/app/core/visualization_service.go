@@ -169,7 +169,7 @@ func formatTransaction(sb *strings.Builder, tx *transaction.Transaction, isCoinb
 			prevTxIDStr := hex.EncodeToString(input.PrevTxID[:])
 			bytesWrote, err := fmt.Fprintf(sb, "%s(%d)", shortenHash(prevTxIDStr), input.OutputIndex)
 			if err != nil {
-				logger.Warnf("Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
+				logger.Warnf("[visualization] Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
 			}
 		} else {
 			sb.WriteString("         ")
@@ -183,7 +183,7 @@ func formatTransaction(sb *strings.Builder, tx *transaction.Transaction, isCoinb
 			pubKeyHashStr := hex.EncodeToString(output.PubKeyHash[:])
 			bytesWrote, err := fmt.Fprintf(sb, "%s(%d)", shortenHash(pubKeyHashStr), output.Value)
 			if err != nil {
-				logger.Warnf("Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
+				logger.Warnf("[visualization] Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
 			}
 		}
 

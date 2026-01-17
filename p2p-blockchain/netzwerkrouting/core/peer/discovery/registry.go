@@ -19,7 +19,7 @@ type RegistryQuerier interface {
 func (s *DiscoveryService) GetPeers() {
 	peers, err := s.querier.QueryPeers()
 	if err != nil {
-		logger.Warnf("Failed to query registry for peers: %v", err)
+		logger.Warnf("[peer_discovery] Failed to query registry for peers: %v", err)
 		return
 	}
 

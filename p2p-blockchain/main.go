@@ -41,9 +41,9 @@ import (
 func main() {
 	common.Init()
 
-	logger.Infof("Running...")
+	logger.Infof("[main] Running...")
 
-	logger.Infof("Loglevel set to %v", logger.CurrentLevel())
+	logger.Infof("[main] Loglevel set to %v", logger.CurrentLevel())
 
 	peerStore := peer.NewPeerStore()
 	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
@@ -93,7 +93,7 @@ func main() {
 	minerImpl.StartMining(make([]transaction.Transaction, 0))
 
 	if common.AppEnabled() {
-		logger.Infof("Starting App server...")
+		logger.Infof("[main] Starting App server...")
 		// Intialize Transaction Creation API
 		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
 		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
@@ -121,16 +121,16 @@ func main() {
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
-			logger.Warnf("couldn't start App server: %v", err)
+			logger.Warnf("[main] couldn't start App server: %v", err)
 		} else {
 			addrPort, err := appServer.ListeningEndpoint()
 			assert.IsNil(err)
 			common.SetAppPort(addrPort.Port())
-			logger.Infof("App server started on port %v", addrPort)
+			logger.Infof("[main] App server started on port %v", addrPort)
 		}
 	}
 
-	logger.Infof("Starting P2P server...")
+	logger.Infof("[main] Starting P2P server...")
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
 
@@ -138,13 +138,13 @@ func main() {
 
 	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
-		logger.Warnf("couldn't start P2P server: %v", err)
+		logger.Warnf("[main] couldn't start P2P server: %v", err)
 	} else {
 		addrPort, err := grpcServer.ListeningEndpoint()
 		assert.IsNil(err)
 		common.SetP2PPort(addrPort.Port())
 		common.SetP2PListeningIpAddr(addrPort.Addr())
-		logger.Infof("P2P server started on port %v", addrPort)
+		logger.Infof("[main] P2P server started on port %v", addrPort)
 	}
 
 	// Start keepalive service
@@ -164,10 +164,10 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
-	logger.Infof("Shutting down...")
+	logger.Infof("[main] Shutting down...")
 	keepaliveService.Stop()
 	connectionCheckService.Stop()
 	periodicDiscoveryService.Stop()
 	peerManagementService.Stop()
-	logger.Infof("Shutdown complete")
+	logger.Infof("[main] Shutdown complete")
 }

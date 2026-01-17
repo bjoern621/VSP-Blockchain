@@ -71,7 +71,7 @@ func (s *Server) Start(port uint16) error {
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
-			logger.Warnf("App gRPC server stopped with error: %v", err)
+			logger.Warnf("[app server] App gRPC server stopped with error: %v", err)
 		}
 	}()
 
@@ -86,7 +86,7 @@ func (s *Server) Stop() {
 }
 
 // ConnectTo handles the ConnectTo RPC call from external local systems.
-func (s *Server) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToResponse, error) {
+func (s *Server) ConnectTo(_ context.Context, req *pb.ConnectToRequest) (*pb.ConnectToResponse, error) {
 	if req.Port > 65535 {
 		return &pb.ConnectToResponse{
 			Success:      false,
@@ -121,7 +121,7 @@ func (s *Server) ListeningEndpoint() (netip.AddrPort, error) {
 }
 
 // GetPeerRegistry returns the current peer registry for debugging purposes.
-func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPeerInfoRequest) (*pb.GetInternalPeerInfoResponse, error) {
+func (s *Server) GetInternalPeerInfo(_ context.Context, _ *pb.GetInternalPeerInfoRequest) (*pb.GetInternalPeerInfoResponse, error) {
 	peers := s.regService.GetInternalPeerInfo()
 
 	response := &pb.GetInternalPeerInfoResponse{
@@ -131,7 +131,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 	for _, p := range peers {
 		infraStruct, err := structpb.NewStruct(p.PeerInfrastructureData)
 		if err != nil {
-			logger.Warnf("failed to create structpb from infra data: %v", err)
+			logger.Warnf("[app server] failed to create structpb from infra data: %v", err)
 			infraStruct, _ = structpb.NewStruct(nil)
 		}
 
@@ -155,7 +155,7 @@ func (s *Server) GetInternalPeerInfo(ctx context.Context, req *pb.GetInternalPee
 }
 
 // QueryRegistry queries the DNS seed registry for available peer addresses.
-func (s *Server) QueryRegistry(ctx context.Context, req *pb.QueryRegistryRequest) (*pb.QueryRegistryResponse, error) {
+func (s *Server) QueryRegistry(_ context.Context, _ *pb.QueryRegistryRequest) (*pb.QueryRegistryResponse, error) {
 	entries, err := s.queryRegistryService.QueryRegistry()
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func (s *Server) GenerateKeyset(context.Context, *emptypb.Empty) (*pb.GenerateKe
 	return response, nil
 }
 
-func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFRequest) (*pb.GetKeysetFromWIFResponse, error) {
+func (s *Server) GetKeysetFromWIF(_ context.Context, wif *pb.GetKeysetFromWIFRequest) (*pb.GetKeysetFromWIFResponse, error) {
 	keyset, err := s.keysApi.GetKeysetFromWIF(wif.PrivateKeyWif)
 
 	if err != nil {
@@ -219,7 +219,7 @@ func (s *Server) GetKeysetFromWIF(ctx context.Context, wif *pb.GetKeysetFromWIFR
 
 // SendGetAddr handles the SendGetAddr RPC call from external local systems.
 // This allows manual triggering of getaddr requests to specific peers.
-func (s *Server) SendGetAddr(ctx context.Context, req *pb.SendGetAddrRequest) (*pb.SendGetAddrResponse, error) {
+func (s *Server) SendGetAddr(_ context.Context, req *pb.SendGetAddrRequest) (*pb.SendGetAddrResponse, error) {
 	err := s.discoveryService.SendGetAddr(req.PeerId)
 	if err != nil {
 		return &pb.SendGetAddrResponse{

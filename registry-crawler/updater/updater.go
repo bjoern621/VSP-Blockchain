@@ -27,7 +27,7 @@ func initPeerManager(cfg common.Config) {
 // RunPeerDiscoveryLoop runs the peer discovery loop in the background.
 // Every PeerDiscoveryInterval, it attempts to connect to one new peer.
 func RunPeerDiscoveryLoop(cfg common.Config) {
-	logger.Infof("starting peer discovery loop interval: %s, known TTL: %s, registry subset size: %d",
+	logger.Infof("[peer_discovery] starting peer discovery loop interval: %s, known TTL: %s, registry subset size: %d",
 		cfg.PeerDiscoveryInterval, cfg.PeerKnownTTL, cfg.PeerRegistrySubsetSize)
 
 	initPeerManager(cfg)
@@ -36,7 +36,7 @@ func RunPeerDiscoveryLoop(cfg common.Config) {
 	defer ticker.Stop()
 
 	for {
-		logger.Tracef("=== peer discovery tick ===")
+		logger.Tracef("[peer_discovery] === peer discovery tick ===")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		discoverOnePeer(ctx, cfg)
 		cancel()
@@ -56,19 +56,19 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	if len(bootstrapPeers) > 0 {
 		added := peerManager.AddPeers(bootstrapPeers, port)
 		if added > 0 {
-			logger.Infof("discovered %d new bootstrap peers", added)
+			logger.Infof("[peer_discovery] discovered %d new bootstrap peers", added)
 		}
 	}
 
 	networkPeers, port, err := discovery.FetchNetworkPeers(ctx, cfg)
 	if err != nil {
-		logger.Warnf("failed to fetch network peers: %v", err)
+		logger.Warnf("[peer_discovery] failed to fetch network peers: %v", err)
 	}
 
 	if len(networkPeers) > 0 {
 		added := peerManager.AddPeers(networkPeers, port)
 		if added > 0 {
-			logger.Infof("discovered %d new network peers", added)
+			logger.Infof("[peer_discovery] discovered %d new network peers", added)
 		}
 	}
 
@@ -77,23 +77,23 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 		peer = peerManager.GetExpiredKnownPeer()
 	}
 	if peer == nil {
-		logger.Tracef("no peers to (re-)verify this cycle")
+		logger.Tracef("[peer_discovery] no peers to (re-)verify this cycle")
 		return
 	}
 
-	logger.Tracef("attempting to verify peer %s:%d", peer.IP, peer.Port)
+	logger.Tracef("[peer_discovery] attempting to verify peer %s:%d", peer.IP, peer.Port)
 
 	success := verifyPeer(ctx, cfg, peer.IP, peer.Port)
 	if success {
 		peerManager.MarkConnected(peer.IP)
-		logger.Debugf("peer verified and marked as known: %s", peer.IP)
+		logger.Debugf("[peer_discovery] peer verified and marked as known: %s", peer.IP)
 	} else {
 		peerManager.MarkFailed(peer.IP)
-		logger.Warnf("peer verification failed, removed: %s", peer.IP)
+		logger.Warnf("[peer_discovery] peer verification failed, removed: %s", peer.IP)
 	}
 
 	total, newCount, connecting, known := peerManager.Stats()
-	logger.Infof("peer stats: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
+	logger.Infof("[peer_discovery] peer stats: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
 }
 
 // verifyPeer attempts to connect to a peer to verify it is reachable.
@@ -101,7 +101,7 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) bool {
 	conn, err := discovery.DialAppGRPC(ctx, cfg.AppAddr)
 	if err != nil {
-		logger.Warnf("failed to dial app service: %v", err)
+		logger.Warnf("[peer_discovery] failed to dial app service: %v", err)
 		return false
 	}
 
@@ -109,7 +109,7 @@ func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) b
 
 	success, err := discovery.ConnectToPeer(ctx, client, ip, port)
 	if err != nil {
-		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
+		logger.Warnf("[peer_discovery] peer verification failed for %s:%d: %v", ip, port, err)
 	}
 	return success
 }
@@ -117,7 +117,7 @@ func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) b
 // RunSeedUpdaterLoop periodically fetches seed targets and writes the DNS hosts file.
 // This loop runs indefinitely, updating the hosts file at the configured interval.
 func RunSeedUpdaterLoop(cfg common.Config) {
-	logger.Infof("starting seed updater loop with interval=%s", cfg.UpdateEvery)
+	logger.Infof("[peer_discovery] starting seed updater loop with interval=%s", cfg.UpdateEvery)
 	initPeerManager(cfg)
 
 	ticker := time.NewTicker(cfg.UpdateEvery)
@@ -125,12 +125,12 @@ func RunSeedUpdaterLoop(cfg common.Config) {
 
 	for {
 
-		logger.Tracef("=== seed updater tick ===")
+		logger.Tracef("[peer_discovery] === seed updater tick ===")
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		err := updateSeedHostsOnce(ctx, cfg)
 		cancel()
 		if err != nil {
-			logger.Warnf("seed update failed: %v", err)
+			logger.Warnf("[peer_discovery] seed update failed: %v", err)
 		}
 
 		<-ticker.C
@@ -143,9 +143,9 @@ func updateSeedHostsOnce(ctx context.Context, cfg common.Config) error {
 	seedPort := int32(cfg.AcceptedP2PPort)
 
 	seedIPs = peerManager.GetRandomKnownPeerIPsFilteredByPort(seedPort, cfg.PeerRegistrySubsetSize)
-	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
+	logger.Debugf("[peer_discovery] selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
 	if len(seedIPs) == 0 {
-		logger.Debugf("no known peers, falling back to bootstrap targets")
+		logger.Debugf("[peer_discovery] no known peers, falling back to bootstrap targets")
 		bootstrapIPs, _ := discovery.ResolveBootstrapEndpoints(ctx, cfg)
 		for ip := range bootstrapIPs {
 			seedIPs[ip] = struct{}{}
@@ -179,7 +179,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg common.Config) error {
 		return err
 	}
 
-	logger.Infof("seed targets updated: port=%d source=%s addrs=%s file=%s", seedPort, source, strings.Join(addresses, ","), cfg.SeedHostsFile)
+	logger.Infof("[peer_discovery] seed targets updated: port=%d source=%s addrs=%s file=%s", seedPort, source, strings.Join(addresses, ","), cfg.SeedHostsFile)
 
 	return nil
 }

@@ -73,7 +73,7 @@ func (s *TransactionCreationService) handleSuccess(tx *transaction.Transaction) 
 	}
 	s.blockchainAPI.BroadcastInvExclusionary(invVectors, "") // TODO: Replace with broadcast to all when implemented
 
-	logger.Infof("Transaction created and broadcast successfully: %s", txIDHex)
+	logger.Infof("[wallet] Transaction created and broadcast successfully: %s", txIDHex)
 
 	return transaction.TransactionResult{
 		Success:       true,
@@ -84,7 +84,7 @@ func (s *TransactionCreationService) handleSuccess(tx *transaction.Transaction) 
 }
 
 func (s *TransactionCreationService) handleTransactionCreationError(err error) transaction.TransactionResult {
-	logger.Warnf("Failed to create transaction: %v", err)
+	logger.Warnf("[wallet] Failed to create transaction: %v", err)
 	if errors.Is(err, transaction.ErrInsufficientFunds) {
 		return s.handleInsufficientFunds(err)
 	}
@@ -96,7 +96,7 @@ func (s *TransactionCreationService) handleTransactionCreationError(err error) t
 }
 
 func (s *TransactionCreationService) handleInvalidPrivateKey(err error) transaction.TransactionResult {
-	logger.Warnf("Failed to decode sender private key WIF: %v", err)
+	logger.Warnf("[wallet] Failed to decode sender private key WIF: %v", err)
 	return transaction.TransactionResult{
 		Success:      false,
 		ErrorCode:    transaction.ErrorCodeInvalidPrivateKey,
@@ -105,7 +105,7 @@ func (s *TransactionCreationService) handleInvalidPrivateKey(err error) transact
 }
 
 func (s *TransactionCreationService) handleInsufficientFunds(err error) transaction.TransactionResult {
-	logger.Warnf("Insufficient funds found for sender address")
+	logger.Warnf("[wallet] Insufficient funds found for sender address")
 	return transaction.TransactionResult{
 		Success:      false,
 		ErrorCode:    transaction.ErrorCodeInsufficientFunds,
@@ -114,7 +114,7 @@ func (s *TransactionCreationService) handleInsufficientFunds(err error) transact
 }
 
 func (s *TransactionCreationService) handleInvalidAddress(err error) transaction.TransactionResult {
-	logger.Warnf("Failed to decode recipient V$Address: %v", err)
+	logger.Warnf("[wallet] Failed to decode recipient V$Address: %v", err)
 	return transaction.TransactionResult{
 		Success:      false,
 		ErrorCode:    transaction.ErrorCodeValidationFailed,

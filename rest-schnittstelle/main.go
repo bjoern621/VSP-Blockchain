@@ -24,7 +24,7 @@ import (
 var swaggerContent embed.FS
 
 func main() {
-	logger.Infof("Running...")
+	logger.Infof("[rest_schnittstelle] Running...")
 
 	// gRPC Client Setup
 
@@ -35,12 +35,12 @@ func main() {
 
 	conn, err := grpc.NewClient(grpcAddrPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Errorf("failed to create connection to gRPC server: %v", err)
+		logger.Errorf("[rest_schnittstelle] failed to create connection to gRPC server: %v", err)
 	}
 	defer func(conn *grpc.ClientConn) {
 		err := conn.Close()
 		if err != nil {
-			logger.Errorf("failed to close gRPC connection: %v", err)
+			logger.Errorf("[rest_schnittstelle] failed to close gRPC connection: %v", err)
 		}
 	}(conn)
 
@@ -59,7 +59,7 @@ func main() {
 		PaymentAPI:  *sw.NewPaymentAPI(transactionApi, kontostandService),
 	}
 
-	log.Printf("Server started")
+	logger.Infof("[rest_schnittstelle] Server started")
 
 	router := sw.NewRouter(routes)
 

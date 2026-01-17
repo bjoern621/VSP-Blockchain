@@ -64,7 +64,7 @@ func (s *Server) Start(port uint16) error {
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
-			logger.Warnf("gRPC server stopped with error: %v", err)
+			logger.Warnf("[blockchain_grpc_server] gRPC server stopped with error: %v", err)
 		}
 	}()
 

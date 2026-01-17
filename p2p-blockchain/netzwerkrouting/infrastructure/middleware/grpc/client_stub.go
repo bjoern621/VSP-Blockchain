@@ -34,12 +34,12 @@ func NewClient(networkInfoRegistry *networkinfo.NetworkInfoRegistry) *Client {
 func SendHelper[T any](c *Client, peerID common.PeerId, method string, newClient func(grpc.ClientConnInterface) T, send func(T) error) {
 	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
 	if !ok {
-		logger.Warnf("failed to send %s: no connection for peer %s", method, peerID)
+		logger.Warnf("[client_stub] failed to send %s: no connection for peer %s", method, peerID)
 		return
 	}
 
 	client := newClient(conn)
 	if err := send(client); err != nil {
-		logger.Warnf("failed to send %s to peer %s: %v", method, peerID, err)
+		logger.Warnf("[client_stub] failed to send %s to peer %s: %v", method, peerID, err)
 	}
 }

@@ -8,13 +8,13 @@ import (
 )
 
 func (b *Blockchain) Mempool(peerID common.PeerId) {
-	logger.Infof("Mempool Message received from %v", peerID)
+	logger.Infof("[mempool_handler] Message received from %v", peerID)
 
 	// Get all transaction hashes from the mempool
 	txHashes := b.mempool.GetAllTransactionHashes()
 
 	if len(txHashes) == 0 {
-		logger.Debugf("No transactions in mempool to announce to %v", peerID)
+		logger.Debugf("[mempool_handler] No transactions in mempool to announce to %v", peerID)
 	}
 
 	// Create InvVectors for each transaction
@@ -28,5 +28,5 @@ func (b *Blockchain) Mempool(peerID common.PeerId) {
 
 	// Send Inv message to the requesting peer
 	b.blockchainMsgSender.SendInv(inventory, peerID)
-	logger.Infof("Sent %d transaction hashes from mempool to %v", len(inventory), peerID)
+	logger.Infof("[mempool_handler] Sent %d transaction hashes from mempool to %v", len(inventory), peerID)
 }

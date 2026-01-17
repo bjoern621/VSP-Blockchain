@@ -21,7 +21,7 @@ func checkVersionCompatibility(string) bool {
 func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerRetriever.GetPeer(peerID)
 	if !ok {
-		logger.Warnf("unknown peer %s sent Version message", peerID)
+		logger.Warnf("[handshake_handler] unknown peer %s sent Version message", peerID)
 		return
 	}
 
@@ -29,12 +29,12 @@ func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 	defer p.Unlock()
 
 	if p.State != common.StateNew {
-		logger.Warnf("peer %s sent Version message in invalid state %v", peerID, p.State)
+		logger.Warnf("[handshake_handler] peer %s sent Version message in invalid state %v", peerID, p.State)
 		return
 	}
 
 	if !checkVersionCompatibility(info.Version) {
-		logger.Warnf("peer %s has incompatible version %s", peerID, info.Version)
+		logger.Warnf("[handshake_handler] peer %s has incompatible version %s", peerID, info.Version)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) {
 	p, ok := h.peerRetriever.GetPeer(peerID)
 	if !ok {
-		logger.Warnf("unknown peer %s sent Verack message", peerID)
+		logger.Warnf("[handshake_handler] unknown peer %s sent Verack message", peerID)
 		return
 	}
 
@@ -62,12 +62,12 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	defer p.Unlock()
 
 	if p.State != common.StateAwaitingVerack {
-		logger.Warnf("peer %s sent Verack message in invalid state %v", peerID, p.State)
+		logger.Warnf("[handshake_handler] peer %s sent Verack message in invalid state %v", peerID, p.State)
 		return
 	}
 
 	if !checkVersionCompatibility(info.Version) {
-		logger.Warnf("peer %s has incompatible version %s", peerID, info.Version)
+		logger.Warnf("[handshake_handler] peer %s has incompatible version %s", peerID, info.Version)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	p, ok := h.peerRetriever.GetPeer(peerID)
 	if !ok {
-		logger.Warnf("unknown peer %s sent Ack message", peerID)
+		logger.Warnf("[handshake_handler] unknown peer %s sent Ack message", peerID)
 		return
 	}
 
@@ -91,7 +91,7 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	defer p.Unlock()
 
 	if p.State != common.StateAwaitingAck {
-		logger.Warnf("peer %s sent Ack message in invalid state %v", peerID, p.State)
+		logger.Warnf("[handshake_handler] peer %s sent Ack message in invalid state %v", peerID, p.State)
 		return
 	}
 

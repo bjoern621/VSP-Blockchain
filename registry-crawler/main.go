@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	logger.Infof("Running registry crawler...")
+	logger.Infof("[registry_crawler] Running registry crawler...")
 
 	cfg := common.CurrentConfig()
 

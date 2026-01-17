@@ -20,7 +20,7 @@ import (
 func getPeerAddr(ctx context.Context) netip.AddrPort {
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
-		logger.Errorf("could not get peer from context")
+		logger.Errorf("[handshake_grpc] could not get peer from context")
 	}
 
 	addrStr := p.Addr.String()
@@ -32,7 +32,7 @@ func getPeerAddr(ctx context.Context) netip.AddrPort {
 func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(remoteAddrPort.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Warnf("failed to connect to %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("[handshake_grpc] failed to connect to %s: %v", remoteAddrPort.String(), err)
 		return nil, err
 	}
 	return conn, nil
@@ -68,7 +68,7 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *Server) Ack(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
 	s.handshakeMsgHandler.HandleAck(peerId)
@@ -78,13 +78,13 @@ func (s *Server) Ack(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, e
 func (c *Client) SendVersion(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
-		logger.Warnf("failed to send Version: no listening endpoint for peer %s", peerID)
+		logger.Warnf("[handshake_grpc] failed to send Version: no listening endpoint for peer %s", peerID)
 		return
 	}
 
 	conn, err := createGRPCClient(remoteAddrPort)
 	if err != nil {
-		logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("[handshake_grpc] failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
 		return
 	}
 
@@ -98,20 +98,20 @@ func (c *Client) SendVersion(peerID common.PeerId, localInfo handshake.VersionIn
 
 	_, err = client.Version(context.Background(), pbInfo)
 	if err != nil {
-		logger.Warnf("failed to send Version to %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("[handshake_grpc] failed to send Version to %s: %v", remoteAddrPort.String(), err)
 	}
 }
 
 func (c *Client) SendVerack(peerID common.PeerId, localInfo handshake.VersionInfo) {
 	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
 	if !ok {
-		logger.Warnf("failed to send Verack: no listening endpoint for peer %s", peerID)
+		logger.Warnf("[handshake_grpc] failed to send Verack: no listening endpoint for peer %s", peerID)
 		return
 	}
 
 	conn, err := createGRPCClient(remoteAddrPort)
 	if err != nil {
-		logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
+		logger.Warnf("[handshake_grpc] failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
 		return
 	}
 
@@ -125,7 +125,7 @@ func (c *Client) SendVerack(peerID common.PeerId, localInfo handshake.VersionInf
 
 	_, err = client.Verack(context.Background(), pbInfo)
 	if err != nil {
-		logger.Warnf("failed to send Verack to %s: %v", peerID, err)
+		logger.Warnf("[handshake_grpc] failed to send Verack to %s: %v", peerID, err)
 	}
 }
 

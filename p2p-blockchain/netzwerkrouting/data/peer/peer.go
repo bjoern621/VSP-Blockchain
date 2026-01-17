@@ -40,7 +40,7 @@ func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
-	logger.Debugf("new peer %v created (direction: %v)", peerID, direction)
+	logger.Debugf("[peer] new peer %v created (direction: %v)", peerID, direction)
 	return peerID
 }
 
@@ -54,7 +54,7 @@ func (s *peerStore) newGenericPeer() common.PeerId {
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
-	logger.Debugf("new peer %v created", peerID)
+	logger.Debugf("[peer] new peer %v created", peerID)
 	return peerID
 }
 

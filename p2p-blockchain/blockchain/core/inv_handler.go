@@ -8,7 +8,7 @@ import (
 )
 
 func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
-	logger.Infof("Inv Message received: %v from %v", inventory, peerID)
+	logger.Infof("[inv_handler] Inv Message received: %v from %v", inventory, peerID)
 
 	unknownData := make([]*inv.InvVector, 0)
 
