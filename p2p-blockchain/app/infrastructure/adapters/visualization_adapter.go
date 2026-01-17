@@ -1,19 +1,19 @@
 package adapters
 
 import (
-	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
+	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
 
 // VisualizationHandlerAdapter handles blockchain visualization requests from gRPC.
 type VisualizationHandlerAdapter struct {
-	visualizationAPI blockapi.VisualizationAPI
+	visualizationService *core.VisualizationService
 }
 
-// NewVisualizationAdapter creates a new VisualizationHandlerAdapter with the given visualization API.
-func NewVisualizationAdapter(api blockapi.VisualizationAPI) *VisualizationHandlerAdapter {
+// NewVisualizationAdapter creates a new VisualizationHandlerAdapter with the given visualization service.
+func NewVisualizationAdapter(service *core.VisualizationService) *VisualizationHandlerAdapter {
 	return &VisualizationHandlerAdapter{
-		visualizationAPI: api,
+		visualizationService: service,
 	}
 }
 
@@ -24,7 +24,7 @@ func (v *VisualizationHandlerAdapter) GetBlockchainVisualization(req *pb.GetBloc
 		includeDetails = req.IncludeDetails
 	}
 
-	visualizationURL := v.visualizationAPI.GetVisualizationURL(includeDetails)
+	visualizationURL := v.visualizationService.GetVisualizationURL(includeDetails)
 
 	return &pb.GetBlockchainVisualizationResponse{
 		VisualizationUrl: visualizationURL,
