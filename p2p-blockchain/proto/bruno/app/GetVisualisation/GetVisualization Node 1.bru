@@ -1,0 +1,23 @@
+meta {
+  name: GetVisualization Node 1
+  type: grpc
+  seq: 1
+}
+
+grpc {
+  url: localhost:20001
+  method: /app.AppService/GetBlockchainVisualization
+  body: grpc
+  protoPath: ../../app.proto
+  auth: none
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {
+      "include_details": true
+    }
+  '''
+}
