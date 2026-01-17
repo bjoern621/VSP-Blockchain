@@ -37,7 +37,7 @@ func (bvs *BlockValidationService) SanityCheck(block block.Block) (bool, error) 
 	if len(block.Transactions) < 1 {
 		return false, fmt.Errorf("block must contain at least one transaction")
 	}
-	if block.Transactions[0].IsCoinbase() {
+	if !block.Transactions[0].IsCoinbase() {
 		return false, fmt.Errorf("first transaction must be the coinbase transaction")
 	}
 

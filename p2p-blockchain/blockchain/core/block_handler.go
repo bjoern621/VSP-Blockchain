@@ -8,8 +8,11 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
+const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
+
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
-	logger.Infof("[block_handler] Block Message received from %v with %d transactions", peerID, len(receivedBlock.Transactions))
+	logger.Infof("[block_handler] Block Message %v received from %v with %d transactions", &receivedBlock.Header,
+		peerID, len(receivedBlock.Transactions))
 
 	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {

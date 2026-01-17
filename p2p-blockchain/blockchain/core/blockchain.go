@@ -12,8 +12,6 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
-
 type Blockchain struct {
 	mempool                *Mempool
 	blockchainMsgSender    api.BlockchainAPI
