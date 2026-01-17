@@ -20,6 +20,10 @@ type mockBlockStore struct {
 	mainChain    map[common.Hash]bool
 }
 
+func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	panic("implement me")
+}
+
 func newMockBlockStore() *mockBlockStore {
 	return &mockBlockStore{
 		blocks:    make(map[common.Hash]block.Block),
