@@ -53,7 +53,8 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		logger.Warnf(invalidBlockMessageFormat, peerID, err)
 		return
 	}
-
+	// 6. Add block to store (after UTXO validation passed)
+	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 	// 4. Determine if this is a main chain or side chain block
 	blockHash := receivedBlock.Hash()
 	parentHash := receivedBlock.Header.PreviousBlockHash
@@ -73,9 +74,6 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 			return
 		}
 	}
-
-	// 6. Add block to store (after UTXO validation passed)
-	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
 	// 7. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
@@ -138,7 +136,7 @@ func (b *Blockchain) handleMainChainBlock(blk block.Block) error {
 	}
 
 	logger.Debugf("Applied main chain block %x at height %d, view had %d added UTXOs",
-		blockHash[:4], blockHeight, len(view.GetAddedUTXOs()))
+		blockHash[:], blockHeight, len(view.GetAddedUTXOs()))
 
 	return nil
 }
@@ -155,12 +153,12 @@ func (b *Blockchain) handleSideChainBlock(blk block.Block) error {
 	// Validate and store delta for the side chain block
 	delta, err := b.multiChainService.ValidateAndApplySideChainBlock(blk, blockHeight)
 	if err != nil {
-		logger.Warnf("Side chain block %x failed UTXO validation: %v", blockHash[:4], err)
+		logger.Warnf("Side chain block %x failed UTXO validation: %v", blockHash[:], err)
 		return err
 	}
 
 	logger.Debugf("Validated side chain block %x at height %d, delta has %d added UTXOs, fork point: %x",
-		blockHash[:4], blockHeight, len(delta.AddedUTXOs), delta.ForkPoint[:4])
+		blockHash[:], blockHeight, len(delta.AddedUTXOs), delta.ForkPoint[:])
 
 	return nil
 }
