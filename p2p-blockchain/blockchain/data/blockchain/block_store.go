@@ -2,17 +2,13 @@
 package blockchain
 
 import (
-	"encoding/hex"
 	"fmt"
-	"net/url"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"slices"
-	"strings"
 
 	"bjoernblessin.de/go-utils/util/assert"
-	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -62,10 +58,9 @@ type BlockStoreAPI interface {
 	// In case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
 	GetMainChainTip() block.Block
 
-	// GetVisualizationURL returns a URL to GraphvizOnline that displays the blockchain structure.
-	// This includes the main chain, side chains, and orphan blocks.
-	// If includeDetails is true, nodes will include height and accumulated work information.
-	GetVisualizationURL(includeDetails bool) string
+	// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
+	// Returns a slice of BlockWithMetadata containing each block and its position in the chain.
+	GetAllBlocksWithMetadata() []block.BlockWithMetadata
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -378,41 +373,20 @@ func copyOfBlock(node *blockNode) block.Block {
 	return copiedBlock
 }
 
-// GetVisualizationURL returns a URL to GraphvizOnline that displays the blockchain structure.
-// This includes the main chain, side chains, and orphan blocks.
-// If includeDetails is true, nodes will include height and accumulated work information.
-func (s *BlockStore) GetVisualizationURL(includeDetails bool) string {
-	dotContent := s.generateDotContent(includeDetails)
-
-	// URL-encode the DOT content and create the GraphvizOnline URL
-	// The format is: https://dreampuf.github.io/GraphvizOnline/?engine=dot#<url-encoded-dot-content>
-	encodedDot := url.PathEscape(dotContent)
-	return "https://dreampuf.github.io/GraphvizOnline/?engine=dot#" + encodedDot
-}
-
-// generateDotContent generates the raw DOT format string for the blockchain.
-func (s *BlockStore) generateDotContent(includeDetails bool) string {
-	var sb strings.Builder
-
-	sb.WriteString("digraph Blockchain {\n")
-	sb.WriteString("    rankdir=TB;\n")
-	sb.WriteString("    node [shape=box, style=filled];\n")
-	sb.WriteString("    edge [dir=back];\n\n")
-
-	// Get main chain blocks for highlighting
+// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
+func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	// Get main chain hashes for marking blocks
 	mainChainHashes := s.getMainChainHashes()
 
-	// Track visited nodes to avoid duplicates
-	visited := mapset.NewSet[common.Hash]()
+	result := make([]block.BlockWithMetadata, 0, len(s.hashToHeaders))
 
-	// Process all nodes starting from roots
+	// Traverse all blocks starting from roots
+	visited := mapset.NewSet[common.Hash]()
 	for _, root := range s.blockForest.Roots {
-		s.generateDotForNode(&sb, root, mainChainHashes, visited, includeDetails)
+		s.collectBlocksWithMetadata(root, mainChainHashes, visited, &result)
 	}
 
-	sb.WriteString("}\n")
-
-	return sb.String()
+	return result
 }
 
 // getMainChainHashes returns a set of all block hashes that are part of the main chain.
@@ -432,64 +406,36 @@ func (s *BlockStore) getMainChainHashes() mapset.Set[common.Hash] {
 	return mainChainHashes
 }
 
-// generateDotForNode recursively generates DOT format output for a node and its children.
-func (s *BlockStore) generateDotForNode(sb *strings.Builder, node *blockNode, mainChainHashes mapset.Set[common.Hash], visited mapset.Set[common.Hash], includeDetails bool) {
+// collectBlocksWithMetadata recursively collects blocks with their metadata.
+func (s *BlockStore) collectBlocksWithMetadata(node *blockNode, mainChainHashes mapset.Set[common.Hash], visited mapset.Set[common.Hash], result *[]block.BlockWithMetadata) {
 	blockHash := node.Block.Hash()
 
-	// Skip if already visited
 	if visited.Contains(blockHash) {
 		return
 	}
 	visited.Add(blockHash)
 
-	// Determine node color based on type
-	isMainChain := mainChainHashes.Contains(blockHash)
 	isOrphan, _ := s.IsOrphanBlock(*node.Block)
+	isMainChain := mainChainHashes.Contains(blockHash)
 
-	var fillColor string
-	if isOrphan {
-		fillColor = "#ffcccc" // Light red for orphans
-	} else if isMainChain {
-		fillColor = "#90EE90" // Light green for main chain
-	} else {
-		fillColor = "#ffffcc" // Light yellow for side chain
-	}
-
-	// Generate node label
-	hashStr := hex.EncodeToString(blockHash[:])
-	shortHash := hashStr
-	const n = 10
-	if len(hashStr) > n {
-		shortHash = hashStr[:n] // first n characters of hash for readability and differentiation
-	}
-
-	var label string
-	if includeDetails {
-		label = fmt.Sprintf("%s\\nH:%d W:%d", shortHash, node.Height, node.AccumulatedWork)
-	} else {
-		label = shortHash
-	}
-
-	// Write node definition
-	wroteBytes, err := fmt.Fprintf(sb, "    \"%s\" [label=\"%s\", fillcolor=\"%s\"];\n", hashStr, label, fillColor)
-	if err != nil {
-		logger.Warnf("Failed to write to buffer. Wrote %d bytes. Error: %v", wroteBytes, err)
-		return
-	}
-
-	// Write edge from parent to this node
+	var parentHash *common.Hash
 	if node.Parent != nil {
-		parentHash := node.Parent.Block.Hash()
-		parentHashStr := hex.EncodeToString(parentHash[:])
-		wroteBytes, err := fmt.Fprintf(sb, "    \"%s\" -> \"%s\";\n", hashStr, parentHashStr)
-		if err != nil {
-			logger.Warnf("Failed to write to buffer. Wrote %d bytes. Error: %v", wroteBytes, err)
-			return
-		}
+		h := node.Parent.Block.Hash()
+		parentHash = &h
 	}
 
-	// Process children
+	metadata := block.BlockWithMetadata{
+		Block:           copyOfBlock(node),
+		Height:          node.Height,
+		AccumulatedWork: node.AccumulatedWork,
+		ParentHash:      parentHash,
+		IsOrphan:        isOrphan,
+		IsMainChain:     isMainChain,
+	}
+
+	*result = append(*result, metadata)
+
 	for _, child := range node.Children {
-		s.generateDotForNode(sb, child, mainChainHashes, visited, includeDetails)
+		s.collectBlocksWithMetadata(child, mainChainHashes, visited, result)
 	}
 }
