@@ -38,7 +38,7 @@ func (s *peerStore) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
-// GetAllOutboundPeers retrieves all outbound peers' IDs.
+// GetAllOutboundPeers retrieves all connected outbound peers' IDs.
 func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -46,7 +46,7 @@ func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	peerIds := make([]common.PeerId, 0)
 
 	for k, v := range s.peers {
-		if v.Direction == common.DirectionOutbound {
+		if v.Direction == common.DirectionOutbound && v.State == common.StateConnected {
 			peerIds = append(peerIds, k)
 		}
 	}
@@ -54,16 +54,16 @@ func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
 	return peerIds
 }
 
-// GetAllConnectedPeers retrieves all connected peers' IDs (both inbound and outbound).
-// All peers with StateConnected are considered connected.
-func (s *peerStore) GetAllConnectedPeers() []common.PeerId {
+// GetPeersWithHandshakeStarted retrieves all peers' IDs that have started the handshake process.
+// These are peers that are in StateAwaitingVerack, StateAwaitingAck, or StateConnected.
+func (s *peerStore) GetPeersWithHandshakeStarted() []common.PeerId {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	peerIds := make([]common.PeerId, 0)
 
 	for k, v := range s.peers {
-		if v.State == common.StateConnected {
+		if v.State == common.StateAwaitingVerack || v.State == common.StateAwaitingAck || v.State == common.StateConnected {
 			peerIds = append(peerIds, k)
 		}
 	}

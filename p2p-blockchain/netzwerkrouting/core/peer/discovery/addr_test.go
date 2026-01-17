@@ -406,6 +406,7 @@ func TestForwardAddrs_DoesNotForwardToSender(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -487,6 +488,7 @@ func TestForwardAddrs_DoesNotForwardToPeersThatAlreadyReceived(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -570,6 +572,7 @@ func TestForwardAddrs_ForwardsToRandomPeers(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -661,6 +664,7 @@ func TestForwardAddrs_WithLimitedPeers(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}
@@ -731,6 +735,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	senderPeer := &peer.Peer{
 		Version:     "1.0.0",
 		State:       common.StateConnected,
+		Direction:   common.DirectionOutbound,
 		LastSeen:    now,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -763,7 +768,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	}
 
 	// Verify that no peers have the discovered-peer in AddrsSentTo (except the discovered peer itself)
-	allPeers := peerStore.GetAllConnectedPeers()
+	allPeers := peerStore.GetAllOutboundPeers()
 	for _, peerID := range allPeers {
 		if peerID == "discovered-peer" {
 			continue // Skip the discovered peer itself
@@ -796,6 +801,7 @@ func TestForwardAddrs_IndependentPeerSelection(t *testing.T) {
 		testPeer := &peer.Peer{
 			Version:     "1.0.0",
 			State:       common.StateConnected,
+			Direction:   common.DirectionOutbound,
 			LastSeen:    now,
 			AddrsSentTo: mapset.NewSet[common.PeerId](),
 		}

@@ -47,7 +47,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 //   - Do not forward an address to a peer that has already received it
 //   - For each address, independently select 2 random peers from connected peers to forward to
 func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
-	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
+	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
 
 	// Filter out the sender
 	eligiblePeers := slices.DeleteFunc(connectedPeers, func(peerID common.PeerId) bool {
