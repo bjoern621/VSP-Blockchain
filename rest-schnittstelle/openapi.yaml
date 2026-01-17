@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: V$-GOIN API
-  version: 1.0.0
+  version: 1.1.0
   description: |-
     This is the official API for the interaction with the VS-Blockchain.
     This API focuses on payment-related use cases in the most easy and feasible way.
