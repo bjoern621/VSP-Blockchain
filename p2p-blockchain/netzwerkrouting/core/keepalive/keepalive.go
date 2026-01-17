@@ -105,7 +105,7 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer.LastSeen = now
 	peer.Unlock()
 
-	logger.Debugf("[heartbeat] Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
+	logger.Tracef("[heartbeat] Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 
 	// Send HeartbeatBong back to the peer
 	go s.heartbeatSender.SendHeartbeatBong(peerID)
