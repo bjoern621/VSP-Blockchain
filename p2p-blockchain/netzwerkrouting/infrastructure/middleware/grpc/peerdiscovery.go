@@ -51,55 +51,15 @@ func (s *Server) Addr(ctx context.Context, req *pb.AddrList) (*emptypb.Empty, er
 // SendGetAddr sends a GetAddr request to the specified peer.
 // This method is used to request known peer addresses from a specific peer.
 func (c *Client) SendGetAddr(peerID common.PeerId) {
-	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
-	if !ok {
-		logger.Warnf("failed to send GetAddr: no listening endpoint for peer %s", peerID)
-		return
-	}
-
-	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
-	if !ok {
-		// Create a new connection if one doesn't exist
-		newConn, err := createGRPCClient(remoteAddrPort)
-		if err != nil {
-			logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
-			return
-		}
-		c.networkInfoRegistry.SetConnection(peerID, newConn)
-		conn = newConn
-	}
-
-	client := pb.NewPeerDiscoveryClient(conn)
-
-	_, err := client.GetAddr(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		logger.Warnf("failed to send GetAddr to %s: %v", peerID, err)
-	}
+	SendHelper(c, peerID, "GetAddr", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
+		_, err := client.GetAddr(context.Background(), &emptypb.Empty{})
+		return err
+	})
 }
 
 // SendAddr sends an Addr message containing known peer addresses to the specified peer.
 // This method is used to share known peer addresses with a specific peer.
 func (c *Client) SendAddr(peerID common.PeerId, peerAddresses []discovery.PeerAddress) {
-	remoteAddrPort, ok := c.networkInfoRegistry.GetListeningEndpoint(peerID)
-	if !ok {
-		logger.Warnf("failed to send Addr: no listening endpoint for peer %s", peerID)
-		return
-	}
-
-	conn, ok := c.networkInfoRegistry.GetConnection(peerID)
-	if !ok {
-		// Create a new connection if one doesn't exist
-		newConn, err := createGRPCClient(remoteAddrPort)
-		if err != nil {
-			logger.Warnf("failed to create gRPC client for %s: %v", remoteAddrPort.String(), err)
-			return
-		}
-		c.networkInfoRegistry.SetConnection(peerID, newConn)
-		conn = newConn
-	}
-
-	client := pb.NewPeerDiscoveryClient(conn)
-
 	// Convert domain model (PeerId + timestamp) to protobuf addresses (IP + port + timestamp)
 	// The infrastructure layer looks up listening endpoints for PeerIds
 	pbPeers := make([]*pb.PeerAddress, 0, len(peerAddresses))
@@ -112,17 +72,12 @@ func (c *Client) SendAddr(peerID common.PeerId, peerAddresses []discovery.PeerAd
 		pbPeers = append(pbPeers, pbPeer)
 	}
 
-	if len(pbPeers) == 0 {
-		logger.Warnf("No peers with listening endpoints to send to %s", peerID)
-		return
-	}
-
 	addrList := &pb.AddrList{
 		Peers: pbPeers,
 	}
 
-	_, err := client.Addr(context.Background(), addrList)
-	if err != nil {
-		logger.Warnf("failed to send Addr to %s: %v", peerID, err)
-	}
+	SendHelper(c, peerID, "Addr", pb.NewPeerDiscoveryClient, func(client pb.PeerDiscoveryClient) error {
+		_, err := client.Addr(context.Background(), addrList)
+		return err
+	})
 }
