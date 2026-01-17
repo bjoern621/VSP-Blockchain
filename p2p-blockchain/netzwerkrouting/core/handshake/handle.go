@@ -78,6 +78,10 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	p.SupportedServices = info.SupportedServices()
 
 	go h.handshakeMsgSender.SendAck(peerID)
+
+	// Notify observers that outbound connection is established (isOutbound=true)
+	// Only outbound connections trigger the Initial Block Download (IBD) process
+	h.notifyPeerConnected(peerID, true)
 }
 
 func (h *handshakeService) HandleAck(peerID common.PeerId) {
@@ -96,4 +100,8 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 	}
 
 	p.State = common.StateConnected
+
+	// Notify observers that inbound connection is established (isOutbound=false)
+	// Inbound connections do NOT trigger IBD - only the initiating node syncs
+	h.notifyPeerConnected(peerID, false)
 }
