@@ -58,7 +58,7 @@ func NewKeepaliveService(
 // Start begins the keepalive service.
 // It runs in a goroutine and sends heartbeat pings to all connected peers at regular intervals.
 func (s *KeepaliveService) Start() {
-	logger.Infof("Starting KeepaliveService with %s interval", s.heartbeatInterval)
+	logger.Infof("[heartbeat] Starting keepalive service with %s interval", s.heartbeatInterval)
 
 	s.ticker = time.NewTicker(s.heartbeatInterval)
 
@@ -69,7 +69,7 @@ func (s *KeepaliveService) Start() {
 				s.sendHeartbeats()
 			case <-s.stopChan:
 				s.ticker.Stop()
-				logger.Infof("KeepaliveService stopped")
+				logger.Infof("[heartbeat] Keepalive service stopped")
 				return
 			}
 		}
@@ -84,7 +84,7 @@ func (s *KeepaliveService) Stop() {
 // sendHeartbeats sends heartbeat ping messages to all connected outbound peers.
 func (s *KeepaliveService) sendHeartbeats() {
 	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
-	logger.Debugf("Sending heartbeat bings to %d connected outbound peers", len(connectedPeers))
+	logger.Debugf("[heartbeat] Sending heartbeat bings to %d connected outbound peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {
 		go s.heartbeatSender.SendHeartbeatBing(peerID)
@@ -96,7 +96,7 @@ func (s *KeepaliveService) sendHeartbeats() {
 func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
-		logger.Warnf("Received HeartbeatBing from unknown peer %s", peerID)
+		logger.Warnf("[heartbeat] Received HeartbeatBing from unknown peer %s", peerID)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer.LastSeen = now
 	peer.Unlock()
 
-	logger.Debugf("Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
+	logger.Debugf("[heartbeat] Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 
 	// Send HeartbeatBong back to the peer
 	go s.heartbeatSender.SendHeartbeatBong(peerID)
@@ -116,7 +116,7 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
-		logger.Warnf("Received HeartbeatBong from unknown peer %s", peerID)
+		logger.Warnf("[heartbeat] Received HeartbeatBong from unknown peer %s", peerID)
 		return
 	}
 
@@ -125,5 +125,5 @@ func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	peer.LastSeen = now
 	peer.Unlock()
 
-	logger.Debugf("Received HeartbeatBong from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
+	logger.Debugf("[heartbeat] Received HeartbeatBong from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 }

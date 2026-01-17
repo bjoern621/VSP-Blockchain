@@ -101,7 +101,7 @@ func NewPeerManagementService(
 
 // Start begins the periodic peer count monitoring.
 func (s *PeerManagementService) Start() {
-	logger.Infof("PeerManagementService started with interval: %v", s.checkInterval)
+	logger.Infof("[peer-count-checker] Starting peer management service with interval: %v", s.checkInterval)
 	s.ticker = time.NewTicker(s.checkInterval)
 	go s.run()
 }
@@ -138,12 +138,12 @@ func (s *PeerManagementService) checkAndMaintainPeers() {
 	peerCount := len(currentPeers)
 
 	if peerCount >= s.minPeers {
-		logger.Infof("Peer count check: %d connected peers (sufficient)", peerCount)
+		logger.Infof("[peer-count-checker] Peer count check: %d connected peers (sufficient)", peerCount)
 		return
 	}
 
 	peersNeeded := s.minPeers - peerCount
-	logger.Infof("Peer count check: %d connected peers, need %d more", peerCount, peersNeeded)
+	logger.Infof("[peer-count-checker] Peer count check: %d connected peers, need %d more", peerCount, peersNeeded)
 
 	// Limit the number of new connections per attempt
 	peersNeeded = min(peersNeeded, s.maxPeersPerAttempt)
@@ -156,7 +156,7 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 	potentialPeers := s.knownPeerRetriever.GetUnconnectedPeers()
 
 	if len(potentialPeers) == 0 {
-		logger.Warnf("No unconnected peers available")
+		logger.Warnf("[peer-count-checker] No unconnected peers available")
 		return
 	}
 
@@ -173,13 +173,13 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 	for _, peerID := range potentialPeers {
 		err := s.handshakeInitiator.InitiateHandshake(peerID)
 		if err != nil {
-			logger.Warnf("Failed to initiate handshake with peer %s: %v", peerID, err)
+			logger.Warnf("[peer-count-checker] Failed to initiate handshake with peer %s: %v", peerID, err)
 			continue
 		}
 
 		handshakesSent++
-		logger.Infof("Successfully initiated handshake with peer %s", peerID)
+		logger.Infof("[peer-count-checker] Successfully initiated handshake with peer %s", peerID)
 	}
 
-	logger.Infof("Sent %d/%d handshakes to new peers", handshakesSent, count)
+	logger.Infof("[peer-count-checker] Sent %d/%d handshakes to new peers", handshakesSent, count)
 }
