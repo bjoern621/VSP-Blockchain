@@ -26,7 +26,7 @@ type OutboundPeerResolver interface {
 // peerCreator is an interface for creating new peers.
 // It is implemented by the data layer's PeerStore.
 type peerCreator interface {
-	NewOutboundPeer() common.PeerId
+	NewPeer() common.PeerId
 }
 
 // handshakeAPIService implements HandshakeAPI.
@@ -47,7 +47,7 @@ func NewHandshakeAPIService(outboundPeerResolver OutboundPeerResolver, peerCreat
 func (s *handshakeAPIService) InitiateHandshake(addrPort netip.AddrPort) error {
 	peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort)
 	if !exists {
-		peerID = s.peerCreator.NewOutboundPeer()
+		peerID = s.peerCreator.NewPeer()
 		s.outboundPeerResolver.RegisterPeer(peerID, addrPort)
 	}
 

@@ -75,7 +75,7 @@ func TestInitiateHandshake(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore)
 
-	peerID := peerStore.NewOutboundPeer()
+	peerID := peerStore.NewPeer()
 
 	err := service.InitiateHandshake(peerID)
 	if err != nil {
@@ -94,6 +94,9 @@ func TestInitiateHandshake(t *testing.T) {
 
 	if p.State != common.StateAwaitingVerack {
 		t.Errorf("expected state StateAwaitingVerack, got %v", p.State)
+	}
+	if p.Direction != common.DirectionOutbound {
+		t.Errorf("expected direction DirectionOutbound, got %v", p.Direction)
 	}
 }
 
@@ -237,5 +240,95 @@ func TestHandleVerack_OutboundPeerMaintainsDirection(t *testing.T) {
 	}
 	if p.Direction != common.DirectionOutbound {
 		t.Errorf("expected direction DirectionOutbound, got %v", p.Direction)
+	}
+}
+
+func TestInitiateHandshake_InboundPeerChangesDirectionToBoth(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	peerID := peerStore.NewInboundPeer()
+
+	p, _ := peerStore.GetPeer(peerID)
+	if p.Direction != common.DirectionInbound {
+		t.Fatalf("expected direction DirectionInbound, got %v", p.Direction)
+	}
+
+	err := service.InitiateHandshake(peerID)
+	if err != nil {
+		t.Fatalf("unexpected error initiating handshake with inbound peer: %v", err)
+	}
+	time.Sleep(10 * time.Millisecond)
+
+	if sender.getVersionCallCount() != 1 {
+		t.Errorf("expected 1 SendVersion call, got %d", sender.getVersionCallCount())
+	}
+
+	p, _ = peerStore.GetPeer(peerID)
+
+	if p.State != common.StateAwaitingVerack {
+		t.Errorf("expected state StateAwaitingVerack, got %v", p.State)
+	}
+	if p.Direction != common.DirectionBoth {
+		t.Errorf("expected direction DirectionBoth, got %v", p.Direction)
+	}
+}
+
+func TestInitiateHandshake_OutboundPeerRejectsInitiation(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	peerID := peerStore.NewOutboundPeer()
+
+	p, _ := peerStore.GetPeer(peerID)
+	if p.Direction != common.DirectionOutbound {
+		t.Fatalf("expected direction DirectionOutbound, got %v", p.Direction)
+	}
+
+	err := service.InitiateHandshake(peerID)
+	if err == nil {
+		t.Fatal("expected error initiating handshake with outbound peer, got nil")
+	}
+	time.Sleep(10 * time.Millisecond)
+
+	if sender.getVersionCallCount() != 0 {
+		t.Errorf("expected 0 SendVersion calls for outbound peer, got %d", sender.getVersionCallCount())
+	}
+
+	p, _ = peerStore.GetPeer(peerID)
+
+	if p.State != common.StateNew {
+		t.Errorf("expected state StateNew, got %v", p.State)
+	}
+}
+
+func TestInitiateHandshake_BothDirectionRejectsInitiation(t *testing.T) {
+	peerStore := peer.NewPeerStore()
+	sender := newMockHandshakeMsgSender()
+	service := NewHandshakeService(sender, peerStore)
+
+	peerID := peerStore.NewInboundPeer()
+
+	p, _ := peerStore.GetPeer(peerID)
+	p.Lock()
+	p.Direction = common.DirectionBoth
+	p.Unlock()
+
+	err := service.InitiateHandshake(peerID)
+	if err == nil {
+		t.Fatal("expected error initiating handshake with both direction peer, got nil")
+	}
+	time.Sleep(10 * time.Millisecond)
+
+	if sender.getVersionCallCount() != 0 {
+		t.Errorf("expected 0 SendVersion calls for both direction peer, got %d", sender.getVersionCallCount())
+	}
+
+	p, _ = peerStore.GetPeer(peerID)
+
+	if p.State != common.StateNew {
+		t.Errorf("expected state StateNew, got %v", p.State)
 	}
 }

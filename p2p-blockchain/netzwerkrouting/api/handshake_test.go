@@ -10,14 +10,20 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
+type mockPeerRetriever interface {
+	GetPeer(id common.PeerId) (*peer.Peer, bool)
+}
+
 type mockHandshakeInitiator struct {
 	mu                     sync.Mutex
 	initiateHandshakeCalls []common.PeerId
+	peerStore              mockPeerRetriever
 }
 
-func newMockHandshakeInitiator() *mockHandshakeInitiator {
+func newMockHandshakeInitiator(peerStore mockPeerRetriever) *mockHandshakeInitiator {
 	return &mockHandshakeInitiator{
 		initiateHandshakeCalls: make([]common.PeerId, 0),
+		peerStore:              peerStore,
 	}
 }
 
@@ -25,6 +31,25 @@ func (m *mockHandshakeInitiator) InitiateHandshake(peerID common.PeerId) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.initiateHandshakeCalls = append(m.initiateHandshakeCalls, peerID)
+
+	// Mock the behavior of the real handshake initiator
+	p, ok := m.peerStore.GetPeer(peerID)
+	if ok {
+		p.Lock()
+		if p.State == common.StateNew {
+			switch p.Direction {
+			case common.DirectionInbound:
+				p.Direction = common.DirectionBoth
+			case common.DirectionUnknown:
+				p.Direction = common.DirectionOutbound
+			case common.DirectionOutbound, common.DirectionBoth:
+				// These cases would return an error in the real implementation
+			}
+			p.State = common.StateAwaitingVerack
+		}
+		p.Unlock()
+	}
+
 	return nil
 }
 
@@ -70,7 +95,7 @@ func (m *mockOutboundPeerResolver) getRegisteredPeerCount() int {
 func TestNewHandshakeAPIService(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -82,7 +107,7 @@ func TestNewHandshakeAPIService(t *testing.T) {
 func TestInitiateHandshake_SuccessfulFlow(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -105,7 +130,7 @@ func TestInitiateHandshake_SuccessfulFlow(t *testing.T) {
 func TestInitiateHandshake_SameAddressAndPort(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -150,7 +175,7 @@ func TestInitiateHandshake_SameAddressAndPort(t *testing.T) {
 func TestInitiateHandshake_MultipleDistinctPeers(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -181,7 +206,7 @@ func TestInitiateHandshake_MultipleDistinctPeers(t *testing.T) {
 func TestInitiateHandshake_CreatesNewPeerBeforeRegistering(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -208,7 +233,7 @@ func TestInitiateHandshake_CreatesNewPeerBeforeRegistering(t *testing.T) {
 func TestInitiateHandshake_ConcurrentCalls(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -244,7 +269,7 @@ func TestInitiateHandshake_ConcurrentCalls(t *testing.T) {
 func TestInitiateHandshake_FullChain_CreationToInitiation(t *testing.T) {
 	resolver := newMockOutboundPeerResolver()
 	peerStore := peer.NewPeerStore()
-	initiator := newMockHandshakeInitiator()
+	initiator := newMockHandshakeInitiator(peerStore)
 
 	api := NewHandshakeAPIService(resolver, peerStore, initiator)
 
@@ -275,7 +300,7 @@ func TestInitiateHandshake_FullChain_CreationToInitiation(t *testing.T) {
 	if peerObj.Direction != common.DirectionOutbound {
 		t.Errorf("expected peer direction OutBound, got %v", peerObj.Direction)
 	}
-	if peerObj.State != common.StateNew {
-		t.Errorf("expected peer state New, got %v", peerObj.State)
+	if peerObj.State != common.StateAwaitingVerack {
+		t.Errorf("expected peer state StateAwaitingVerack, got %v", peerObj.State)
 	}
 }
