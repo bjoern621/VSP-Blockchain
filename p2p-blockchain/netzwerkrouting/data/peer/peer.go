@@ -21,7 +21,8 @@ type Peer struct {
 	Direction         common.Direction
 	// LastSeen is a Unix timestamp indicating the last time the peer was seen active.
 	// Seen active means, that a heartbeat message was received from the peer.
-	// It's not updated on every interaction with the peer.
+	// It's not updated on every interaction with the peer,
+	// instead it's updated on discovery (gossip or registry) and heartbeat messages.
 	LastSeen int64
 	// AddrsSentTo tracks PeerIds whose addresses have been sent to this peer.
 	// Prevents sending the same address twice to the same recipient.

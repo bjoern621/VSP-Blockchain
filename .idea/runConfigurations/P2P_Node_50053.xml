@@ -1,0 +1,20 @@
+<!-- .idea/runConfigurations/P2P_Node_50053.xml -->
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="P2P Node 50053" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="PROJECT_MODULE_NAME" />
+    <working_directory value="$PROJECT_DIR$" />
+    <kind value="DIRECTORY" />
+    <filePath value="$PROJECT_DIR$/p2p-blockchain" />
+    <package value="" />
+    <directory value="$PROJECT_DIR$/p2p-blockchain" />
+    <envs>
+      <env name="LOG_LEVEL" value="DEBUG" />
+      <env name="APP_PORT" value="20003" />
+      <env name="P2P_PORT" value="50053" />
+      <env name="APP_LISTEN_ADDR" value="127.0.0.1" />
+      <env name="P2P_LISTEN_ADDR" value="127.0.0.1" />
+      <env name="ADDITIONAL_SERVICES" value="app,miner,blockchain_full" />
+    </envs>
+    <methods v="2" />
+  </configuration>
+</component>

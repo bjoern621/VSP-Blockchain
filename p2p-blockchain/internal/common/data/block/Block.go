@@ -120,3 +120,13 @@ func doubleSHA256(data []byte) common.Hash {
 	copy(hash[:], second[:])
 	return hash
 }
+
+// BlockWithMetadata contains a block and its metadata for visualization purposes.
+type BlockWithMetadata struct {
+	Block           Block
+	Height          uint64
+	AccumulatedWork uint64
+	ParentHash      *common.Hash // nil if no parent (genesis or orphan root)
+	IsOrphan        bool
+	IsMainChain     bool
+}

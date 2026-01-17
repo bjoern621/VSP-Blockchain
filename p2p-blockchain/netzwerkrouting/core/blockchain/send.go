@@ -41,7 +41,9 @@ func (b *BlockchainService) SendInv(inventory []*inv.InvVector, peerId common.Pe
 func (b *BlockchainService) BroadcastInvExclusionary(inventory []*inv.InvVector, excludedPeerId common.PeerId) {
 	ids := b.peerRetriever.GetAllOutboundPeers()
 	ownIndex := slices.Index(ids, excludedPeerId)
-	ids = slices.Delete(ids, ownIndex, ownIndex+1)
+	if ownIndex != -1 {
+		ids = slices.Delete(ids, ownIndex, ownIndex+1)
+	}
 	for _, id := range ids {
 		b.blockchainMsgSender.SendInv(inventory, id)
 	}
