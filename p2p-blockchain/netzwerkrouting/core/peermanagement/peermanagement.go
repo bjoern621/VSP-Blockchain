@@ -26,7 +26,7 @@ import (
 
 const (
 	// DefaultPeerCheckInterval is how often to check the peer count.
-	DefaultPeerCheckInterval = 2 * time.Minute
+	DefaultPeerCheckInterval = 1*time.Minute + 30*time.Second
 	// DefaultMinPeers is the minimum number of peers to maintain.
 	DefaultMinPeers = 8
 	// DefaultMaxPeersPerAttempt is the maximum number of new connections to establish in a single check.

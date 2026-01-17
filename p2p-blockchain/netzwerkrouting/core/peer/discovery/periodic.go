@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// DefaultGossipDiscoveryInterval is how often to send getaddr to connected peers.
-	DefaultGossipDiscoveryInterval = 5 * time.Minute
+	// DefaultDiscoveryInterval is how often to send getaddr and getpeers.
+	DefaultDiscoveryInterval = 1 * time.Minute
 	// DefaultGossipDiscoveryPeers is the number of peers to query during gossip discovery.
 	DefaultGossipDiscoveryPeers = 3
 )
@@ -47,7 +47,7 @@ func NewPeriodicDiscoveryService(
 		peerRetriever:     peerRetriever,
 		getAddrMsgSender:  getAddrMsgSender,
 		registryQuerier:   registryQuerier,
-		discoveryInterval: DefaultGossipDiscoveryInterval,
+		discoveryInterval: DefaultDiscoveryInterval,
 		discoveryPeers:    DefaultGossipDiscoveryPeers,
 		stopChan:          make(chan struct{}),
 	}
