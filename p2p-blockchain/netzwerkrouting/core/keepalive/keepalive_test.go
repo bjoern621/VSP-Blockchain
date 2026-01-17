@@ -43,10 +43,10 @@ func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
 	return p, exists
 }
 
-func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId {
+func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId { // TODO
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
-		if p.Direction == common.DirectionOutbound {
+		if p.State == common.StateConnected {
 			ids = append(ids, id)
 		}
 	}

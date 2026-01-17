@@ -91,8 +91,7 @@ func (s *Server) Detach(o observer.BlockchainObserverAPI) {
 
 // GetPeerId retrieves the PeerId associated with the incoming gRPC context.
 // It registers the peer if it is not already known.
-// The registed / created peer will be available in data layers PeerStore.
-// The peer will have no direction assigned yet.
+// The registered / created peer will be available in data layers PeerStore.
 func (s *Server) GetPeerId(ctx context.Context) common.PeerId {
 	inboundAddr := getPeerAddr(ctx)
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, netip.AddrPort{})

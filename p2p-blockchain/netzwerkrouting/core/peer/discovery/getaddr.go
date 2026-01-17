@@ -2,8 +2,6 @@ package discovery
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-
-	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // GetAddrMsgHandler defines the interface for handling incoming getaddr messages.
@@ -57,13 +55,11 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 	}
 
 	if len(peerAddresses) > 0 {
-		logger.Infof("[peer_discovery] Sending addr message to peer %s with %d peer addresses", peerID, len(peerAddresses))
 		go s.addrMsgSender.SendAddr(peerID, peerAddresses)
 	}
 }
 
 func (s *DiscoveryService) SendGetAddr(peerID common.PeerId) {
-	logger.Infof("[peer_discovery] Sending getaddr message to peer %s", peerID)
 	go s.getAddrMsgSender.SendGetAddr(peerID)
 }
 

@@ -11,7 +11,7 @@ import (
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
-const DefaultHeartbeatInterval = 5 * time.Minute
+const DefaultHeartbeatInterval = 4 * time.Minute
 
 // HeartbeatMsgSender defines an interface for sending heartbeat messages to peers.
 type HeartbeatMsgSender interface {
@@ -105,7 +105,7 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer.LastSeen = now
 	peer.Unlock()
 
-	logger.Debugf("[heartbeat] Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
+	logger.Tracef("[heartbeat] Received HeartbeatBing from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 
 	// Send HeartbeatBong back to the peer
 	go s.heartbeatSender.SendHeartbeatBong(peerID)
@@ -124,6 +124,4 @@ func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	now := time.Now().Unix()
 	peer.LastSeen = now
 	peer.Unlock()
-
-	logger.Debugf("[heartbeat] Received HeartbeatBong from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 }

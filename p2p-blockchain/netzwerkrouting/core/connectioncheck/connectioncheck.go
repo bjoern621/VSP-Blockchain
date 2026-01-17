@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	// ConnectionCheckInterval is the interval at which we check peer connections (16 minutes).
-	ConnectionCheckInterval = 16 * time.Minute
+	// ConnectionCheckInterval is the interval at which we check peer connections.
+	ConnectionCheckInterval = 10 * time.Minute
 	// PeerTimeout is the duration after which a peer is considered unreachable if no heartbeat received.
-	// Using the same interval as the check (16 minutes) means a peer that hasn't responded to
-	// at least 3 heartbeat messages (5-minute intervals) will be removed.
-	PeerTimeout = ConnectionCheckInterval
+	// Using 9 minutes means a peer that hasn't responded to
+	// at least 2 heartbeat messages (4-minutes intervals) will be removed.
+	PeerTimeout = 9 * time.Minute
 )
 
 // peerRetriever is an interface for retrieving peer information.
@@ -129,7 +129,7 @@ func (s *ConnectionCheckService) checkConnections() {
 			s.removePeer(peerID)
 			removedCount++
 		} else {
-			logger.Tracef("[conn-check] Peer %s is healthy: last seen %v ago", peerID, timeSinceLastSeen.Round(time.Second))
+			logger.Debugf("[conn-check] Peer %s is healthy: last seen %v ago", peerID, timeSinceLastSeen.Round(time.Second))
 		}
 	}
 
