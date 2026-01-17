@@ -1,15 +1,13 @@
-<!-- .idea/runConfigurations/Launch_REST_Schnittstelle.xml -->
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Launch REST-Schnittstelle" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="PROJECT_MODULE_NAME" />
+    <module name="VSP-Blockchain" />
     <working_directory value="$PROJECT_DIR$" />
-    <kind value="DIRECTORY" />
-    <filePath value="$PROJECT_DIR$/rest-schnittstelle" />
-    <package value="" />
-    <directory value="$PROJECT_DIR$/rest-schnittstelle" />
     <envs>
       <env name="LOG_LEVEL" value="DEBUG" />
     </envs>
-    <methods v="2" />
+    <kind value="DIRECTORY" />
+    <directory value="$PROJECT_DIR$/rest-schnittstelle" />
+    <filePath value="$PROJECT_DIR$/rest-schnittstelle" />
+    <method v="2" />
   </configuration>
 </component>
