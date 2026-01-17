@@ -124,6 +124,4 @@ func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	now := time.Now().Unix()
 	peer.LastSeen = now
 	peer.Unlock()
-
-	logger.Debugf("[heartbeat] Received HeartbeatBong from peer %s, updated LastSeen to %v", peerID, time.Unix(now, 0))
 }
