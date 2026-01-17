@@ -84,7 +84,7 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 				recipient.Unlock()
 
 				logger.Tracef("Forwarding address %s to peer %s", addr.PeerId, recipientID)
-				s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
+				go s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
 			} else {
 				recipient.Unlock()
 			}

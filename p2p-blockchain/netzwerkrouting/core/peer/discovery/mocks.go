@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"sync"
+	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
@@ -12,6 +13,7 @@ import (
 type mockAddrMsgSender struct {
 	mu            sync.Mutex
 	sendAddrCalls []sendAddrCall
+	wg            sync.WaitGroup
 }
 
 type sendAddrCall struct {
@@ -26,12 +28,30 @@ func newMockAddrMsgSender() *mockAddrMsgSender {
 }
 
 func (m *mockAddrMsgSender) SendAddr(peerID common.PeerId, addrs []PeerAddress) {
+	m.wg.Add(1)
+	defer m.wg.Done()
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.sendAddrCalls = append(m.sendAddrCalls, sendAddrCall{
 		peerID: peerID,
 		addrs:  addrs,
 	})
+}
+
+func (m *mockAddrMsgSender) waitForCalls(expectedCalls int) {
+	for i := 0; i < 100; i++ {
+		m.mu.Lock()
+		count := len(m.sendAddrCalls)
+		m.mu.Unlock()
+
+		if count >= expectedCalls {
+			m.wg.Wait()
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	m.wg.Wait()
 }
 
 func (m *mockAddrMsgSender) getSendAddrCallCount() int {
