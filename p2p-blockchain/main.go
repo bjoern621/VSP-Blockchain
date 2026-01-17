@@ -82,6 +82,10 @@ func main() {
 
 	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
 
+	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
+	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
+	handshakeService.Attach(blockchain)
+
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
