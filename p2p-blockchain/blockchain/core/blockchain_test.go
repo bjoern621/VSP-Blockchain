@@ -150,8 +150,8 @@ func (m *mockBlockStore) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStore) GetVisualizationURL(includeDetails bool) string {
-	return ""
+func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
 }
 
 // mockChainReorganization is a mock for ChainReorganization

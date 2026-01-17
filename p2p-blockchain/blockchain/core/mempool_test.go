@@ -52,8 +52,8 @@ func (m *mockBlockStore2) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
-func (m *mockBlockStore2) GetVisualizationURL(includeDetails bool) string {
-	return ""
+func (m *mockBlockStore2) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
 }
 
 func newMockBlockStore() BlockStoreAPI {

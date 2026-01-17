@@ -122,8 +122,8 @@ func (m *mockBlockStore) GetMainChainTip() block.Block {
 	return m.tip
 }
 
-func (m *mockBlockStore) GetVisualizationURL(includeDetails bool) string {
-	return ""
+func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
 }
 
 // Helper function to create a test miner service

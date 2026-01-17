@@ -81,8 +81,8 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStoreGetData) GetVisualizationURL(includeDetails bool) string {
-	return ""
+func (m *mockBlockStoreGetData) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	return nil
 }
 
 func createTestBlockForGetData(nonce uint32) block.Block {
