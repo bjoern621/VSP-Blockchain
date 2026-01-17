@@ -112,5 +112,4 @@ func (t *TransactionAdapterImpl) GetBlockchainVisualization(includeDetails bool)
 	}
 
 	return result.VisualizationUrl, nil
-	return "", nil
 }

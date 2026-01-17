@@ -31,10 +31,8 @@ func NewDevToolsAPI(transactionService *transactionapi.TransaktionAPI) *DevTools
 // Returns a URL to the visualization of the current blockchain.
 func (api *DevToolsAPI) BlockchainVisualizationGet(c *gin.Context) {
 	includeDetailsString := c.GetHeader("includeDetails")
-	includeDetails := false
-	if includeDetailsString == "true" {
-		includeDetails = true
-	}
+	includeDetails := includeDetailsString == "true"
+
 	url, err := api.transactionService.GetBlockchainVisualization(includeDetails)
 
 	if err != nil {
