@@ -21,7 +21,7 @@ func (m *minerService) createCandidateBlock(transactions []transaction.Transacti
 		return block.Block{}, err
 	}
 
-	header, err := m.createCandidateBlockHeader(transactions)
+	header, err := m.createCandidateBlockHeader(tx)
 	if err != nil {
 		return block.Block{}, err
 	}
