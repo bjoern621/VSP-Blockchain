@@ -43,6 +43,11 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 			continue
 		}
 
+		if pID == peerID {
+			// Don't send the requesting peer's own address back
+			continue
+		}
+
 		// The infrastructure layer will map PeerId to IP address
 		// Core layer only tracks peer IDs and timestamps
 		peerAddresses = append(peerAddresses, PeerAddress{

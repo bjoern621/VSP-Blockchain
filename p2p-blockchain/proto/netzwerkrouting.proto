@@ -43,6 +43,7 @@ service PeerDiscovery {
     rpc GetAddr(google.protobuf.Empty) returns (google.protobuf.Empty);
 
     // Addr shares addresses of known peers.
+    // The AddrList NEVER includes the receiving peer's address.
     //
     // Pre-conditions:
     //  - Connection established.
