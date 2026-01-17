@@ -71,6 +71,11 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 				continue
 			}
 
+			if recipientID == addr.PeerId {
+				// Don't forward the address back to the peer itself
+				continue
+			}
+
 			recipient.Lock()
 
 			// Check if this recipient has already received this address
@@ -78,8 +83,8 @@ func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerI
 				recipient.AddrsSentTo.Add(addr.PeerId)
 				recipient.Unlock()
 
-				logger.Infof("Forwarding address %s to peer %s", addr.PeerId, recipientID)
-				s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
+				logger.Tracef("Forwarding address %s to peer %s", addr.PeerId, recipientID)
+				go s.addrMsgSender.SendAddr(recipientID, []PeerAddress{addr})
 			} else {
 				recipient.Unlock()
 			}

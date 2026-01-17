@@ -124,7 +124,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 
 	// Send getaddr to selected peers
 	for _, peerID := range selectedPeers {
-		s.getAddrMsgSender.SendGetAddr(peerID)
+		go s.getAddrMsgSender.SendGetAddr(peerID)
 		logger.Infof("[peer-discovery] Sent getaddr to peer %s for gossip discovery", peerID)
 	}
 
