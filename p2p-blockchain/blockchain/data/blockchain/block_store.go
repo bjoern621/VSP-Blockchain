@@ -425,6 +425,8 @@ func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 		s.collectBlocksWithMetadata(root, mainChainHashes, visited, &result)
 	}
 
+	assert.Assert(len(result) == len(s.hashToHeaders))
+
 	return result
 }
 
