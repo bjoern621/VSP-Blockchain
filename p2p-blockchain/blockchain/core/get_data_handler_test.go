@@ -76,7 +76,7 @@ func (m *mockBlockStoreGetData) AddBlock(b block.Block) []common.Hash {
 	return []common.Hash{b.Hash()}
 }
 
-func (m *mockBlockStoreGetData) IsOrphanBlock(b block.Block) (bool, error) {
+func (m *mockBlockStoreGetData) IsOrphanBlock(_ block.Block) (bool, error) {
 	return false, nil
 }
 
@@ -88,11 +88,11 @@ func (m *mockBlockStoreGetData) GetMainChainTip() block.Block {
 	return block.Block{}
 }
 
-func (m *mockBlockStoreGetData) GetBlocksByHeight(height uint64) []block.Block {
+func (m *mockBlockStoreGetData) GetBlocksByHeight(_ uint64) []block.Block {
 	return nil
 }
 
-func (m *mockBlockStoreGetData) IsPartOfMainChain(b block.Block) bool {
+func (m *mockBlockStoreGetData) IsPartOfMainChain(_ block.Block) bool {
 	return true
 }
 
@@ -115,7 +115,7 @@ func createTestBlockForGetData(nonce uint32) block.Block {
 			Nonce:             nonce,
 		},
 		Transactions: []transaction.Transaction{
-			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 50),
+			transaction.NewCoinbaseTransaction([20]byte{1, 2, 3}, 50, 1),
 		},
 	}
 }
