@@ -12,6 +12,8 @@ tags:
     description: Every endpoint for actual payment.
   - name: KeyTools
     description: Tools for generating or getting the needed Keys for the payment
+  - name: DevTools
+    description: Tools for developing purposes
 
 paths:
   /transaction:
@@ -146,6 +148,23 @@ paths:
                 required:
                   - address
                   - privateKeyWIF
+  /blockchain/visualization:
+    get:
+      summary: Returns a URL to the visualization of the current blockchain.
+      tags:
+        - DevTools
+      responses:
+        '200':
+          description: Successful response with the corresponding URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  URL:
+                    type: string
+                    example: "https://dreampuf.github.io/GraphvizOnline/"
+
 
 components:
   schemas:
