@@ -102,28 +102,31 @@ func (v *ephemeralUTXOView) ApplyTx(tx *transaction.Transaction, txID transactio
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	// First, validate and mark inputs as spent
-	for _, input := range tx.Inputs {
-		outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
-		key := string(outpoint.Key())
+	// Coinbase transactions have no real inputs to spend - skip input validation
+	if !isCoinbase {
+		// First, validate and mark inputs as spent
+		for _, input := range tx.Inputs {
+			outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
+			key := string(outpoint.Key())
 
-		// Check if already spent in this view
-		if _, isSpent := v.spent[key]; isSpent {
-			return ErrUTXOAlreadySpent
-		}
-
-		// Check if it exists (either in added or base)
-		_, existsInAdded := v.added[key]
-		if !existsInAdded {
-			if !v.base.Contains(outpoint) {
-				return ErrUTXONotFound
+			// Check if already spent in this view
+			if _, isSpent := v.spent[key]; isSpent {
+				return ErrUTXOAlreadySpent
 			}
-			// Mark as spent only if it was from base (not created in this view)
-			v.spent[key] = struct{}{}
-		} else {
-			// Remove from added if it was added in this view
-			// (net effect: created and consumed within same view = nothing)
-			delete(v.added, key)
+
+			// Check if it exists (either in added or base)
+			_, existsInAdded := v.added[key]
+			if !existsInAdded {
+				if !v.base.Contains(outpoint) {
+					return ErrUTXONotFound
+				}
+				// Mark as spent only if it was from base (not created in this view)
+				v.spent[key] = struct{}{}
+			} else {
+				// Remove from added if it was added in this view
+				// (net effect: created and consumed within same view = nothing)
+				delete(v.added, key)
+			}
 		}
 	}
 
