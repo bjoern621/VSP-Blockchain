@@ -22,7 +22,8 @@ func FetchNetworkPeers(ctx context.Context, cfg common.Config) (map[string]struc
 		return nil, 0, err
 	}
 
-	logger.Tracef("[networkpeers] fetched %d peers from app service total", len(entries))
+	ipAddrs := extractIPAddrsPort(entries)
+	logger.Tracef("[networkpeers] fetched %d peers from app service total: %v", len(ipAddrs), ipAddrs)
 
 	acceptedPort := uint16(cfg.AcceptedP2PPort)
 	ips := extractValidPeerIPs(entries, acceptedPort)
@@ -46,6 +47,21 @@ func fetchPeerEntries(ctx context.Context, appAddr string) ([]*pb.InternalPeerIn
 	}
 
 	return resp.GetEntries(), nil
+}
+
+// extractIPAddrsPort extracts IP addresses and ports from peer entries for logging purposes.
+func extractIPAddrsPort(entries []*pb.InternalPeerInfoEntry) []string {
+	var ips []string
+	for _, entry := range entries {
+		endpoint, ok := getListeningEndpoint(entry)
+		if ok {
+			ap, err := netip.ParseAddrPort(strings.TrimSpace(endpoint))
+			if err == nil {
+				ips = append(ips, ap.String())
+			}
+		}
+	}
+	return ips
 }
 
 // extractValidPeerIPs filters peer entries and extracts IP addresses of valid peers.
