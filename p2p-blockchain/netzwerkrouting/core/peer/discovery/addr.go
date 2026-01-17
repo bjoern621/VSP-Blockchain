@@ -32,7 +32,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 			peer.Unlock()
 		}
 
-		logger.Infof("[peer_discovery] Discovered peer from Addr msg: PeerId=%s, LastSeen=%v",
+		logger.Tracef("[peer_discovery] Discovered peer from Addr msg: PeerId=%s, LastSeen=%v",
 			addr.PeerId, time.Unix(addr.LastActiveTimestamp, 0))
 	}
 

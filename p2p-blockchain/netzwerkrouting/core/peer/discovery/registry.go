@@ -32,6 +32,6 @@ func (s *DiscoveryService) GetPeers() {
 		peer.Lock()
 		peer.LastSeen = time.Now().Unix()
 		peer.Unlock()
-		logger.Debugf("[peer-discovery] Discovered peer from registry: %v", peerID)
+		logger.Tracef("[peer-discovery] Discovered peer from registry: %v", peerID)
 	}
 }
