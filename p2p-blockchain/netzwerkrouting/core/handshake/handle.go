@@ -76,7 +76,6 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 	p.State = common.StateConnected
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices()
-	p.Direction = common.DirectionInbound
 
 	go h.handshakeMsgSender.SendAck(peerID)
 }
