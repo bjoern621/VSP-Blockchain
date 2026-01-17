@@ -104,11 +104,6 @@ func (s *peerStore) NewInboundPeer() common.PeerId {
 	return s.newPeer(common.DirectionInbound)
 }
 
-// NewOutboundPeer creates a new peer for an outbound connection.
-func (s *peerStore) NewOutboundPeer() common.PeerId {
-	return s.newPeer(common.DirectionOutbound)
-}
-
 // NewPeer creates a new peer without a specified direction.
 func (s *peerStore) NewPeer() common.PeerId {
 	return s.newGenericPeer()

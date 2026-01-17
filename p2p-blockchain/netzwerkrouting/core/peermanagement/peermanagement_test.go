@@ -34,7 +34,7 @@ type mockPeerCreator struct {
 	peerIDs       []common.PeerId
 }
 
-func (m *mockPeerCreator) NewOutboundPeer() common.PeerId {
+func (m *mockPeerCreator) NewPeer() common.PeerId {
 	peerID := common.PeerId("mock-peer-" + string(rune(m.peerIDCounter)))
 	m.peerIDs = append(m.peerIDs, peerID)
 	m.peerIDCounter++

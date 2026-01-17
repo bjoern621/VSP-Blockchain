@@ -105,10 +105,11 @@ func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore)
 
-	peerID := peerStore.NewOutboundPeer()
+	peerID := peerStore.NewPeer()
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
+	p.Direction = common.DirectionOutbound
 	p.State = common.StateConnected
 	p.Unlock()
 
@@ -160,10 +161,11 @@ func TestHandleVerack(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore)
 
-	peerID := peerStore.NewOutboundPeer()
+	peerID := peerStore.NewPeer()
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
+	p.Direction = common.DirectionOutbound
 	p.State = common.StateAwaitingVerack
 	p.Unlock()
 
@@ -214,10 +216,11 @@ func TestHandleVerack_OutboundPeerMaintainsDirection(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore)
 
-	peerID := peerStore.NewOutboundPeer()
+	peerID := peerStore.NewPeer()
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()
+	p.Direction = common.DirectionOutbound
 	p.State = common.StateAwaitingVerack
 	p.Unlock()
 
@@ -280,9 +283,13 @@ func TestInitiateHandshake_OutboundPeerRejectsInitiation(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore)
 
-	peerID := peerStore.NewOutboundPeer()
+	peerID := peerStore.NewPeer()
 
 	p, _ := peerStore.GetPeer(peerID)
+	p.Lock()
+	p.Direction = common.DirectionOutbound
+	p.Unlock()
+
 	if p.Direction != common.DirectionOutbound {
 		t.Fatalf("expected direction DirectionOutbound, got %v", p.Direction)
 	}

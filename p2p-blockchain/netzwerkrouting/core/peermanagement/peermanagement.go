@@ -46,8 +46,8 @@ type peerDiscoverer interface {
 
 // peerCreator is an interface for creating new peers.
 type peerCreator interface {
-	// NewOutboundPeer creates a new outbound peer and returns its ID.
-	NewOutboundPeer() common.PeerId
+	// NewPeer creates a new peer and returns its ID.
+	NewPeer() common.PeerId
 }
 
 // handshakeInitiator is an interface for initiating connections to peers.
