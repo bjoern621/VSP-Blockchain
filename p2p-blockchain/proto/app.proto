@@ -221,3 +221,16 @@ enum TransactionErrorCode {
     BROADCAST_FAILED = 4;
 }
 
+// GetBlockchainVisualizationRequest contains options for generating the DOT visualization.
+message GetBlockchainVisualizationRequest {
+    // Optional: If true, includes more details in node labels (height, accumulated work)
+    bool include_details = 1;
+}
+
+// GetBlockchainVisualizationResponse contains the DOT file representation.
+message GetBlockchainVisualizationResponse {
+    // The DOT format string representing the blockchain structure.
+    // Can be rendered using Graphviz tools like `dot -Tpng output.dot -o output.png`
+    string dot_content = 1;
+}
+
