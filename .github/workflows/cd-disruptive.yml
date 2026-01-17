@@ -136,11 +136,11 @@ jobs:
                   NAMESPACE: ${{ env.NAMESPACE }}
               run: |
                   echo "Waiting for all miner pods to be ready..."
-                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=50s
+                  kubectl -n "$NAMESPACE" wait --for=condition=Ready pods -l app=miner --timeout=180s
 
                   echo "Waiting for deployments..."
-                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=50s
-                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=50s
+                  kubectl -n "$NAMESPACE" rollout status deployment/rest-api --timeout=180s
+                  kubectl -n "$NAMESPACE" rollout status deployment/registry --timeout=180s
 
             - name: Show pods overview
               env:
