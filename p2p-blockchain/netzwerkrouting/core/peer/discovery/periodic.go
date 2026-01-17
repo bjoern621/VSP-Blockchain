@@ -55,6 +55,7 @@ func NewPeriodicDiscoveryService(
 
 // Start begins the periodic gossip discovery.
 func (s *PeriodicDiscoveryService) Start() {
+	logger.Infof("Starting periodic discovery service with interval: %v", s.discoveryInterval)
 	s.ticker = time.NewTicker(s.discoveryInterval)
 	go s.run()
 }

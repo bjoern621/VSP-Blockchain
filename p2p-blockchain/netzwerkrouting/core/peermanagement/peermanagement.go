@@ -101,6 +101,7 @@ func NewPeerManagementService(
 
 // Start begins the periodic peer count monitoring.
 func (s *PeerManagementService) Start() {
+	logger.Infof("PeerManagementService started with interval: %v", s.checkInterval)
 	s.ticker = time.NewTicker(s.checkInterval)
 	go s.run()
 }
