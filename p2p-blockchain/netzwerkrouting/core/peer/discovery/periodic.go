@@ -79,8 +79,8 @@ func (s *PeriodicDiscoveryService) run() {
 	for {
 		select {
 		case <-s.ticker.C:
-			s.performGossipDiscovery()
-			s.performRegistryDiscovery()
+			go s.performGossipDiscovery()
+			go s.performRegistryDiscovery()
 		case <-s.stopChan:
 			return
 		}
@@ -89,6 +89,7 @@ func (s *PeriodicDiscoveryService) run() {
 
 // performRegistryDiscovery queries the registry for new peers.
 func (s *PeriodicDiscoveryService) performRegistryDiscovery() {
+	logger.Debugf("[peer-discovery] Performing registry discovery")
 	s.registryQuerier.GetPeers()
 }
 
@@ -99,6 +100,8 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 		s.lastDiscovery = time.Now()
 		return
 	}
+
+	logger.Debugf("[peer-discovery] Performing gossip discovery")
 
 	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
