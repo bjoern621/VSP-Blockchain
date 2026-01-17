@@ -7,7 +7,7 @@ metadata:
 spec:
     serviceName: miner-headless
     podManagementPolicy: Parallel
-    replicas: 30
+    replicas: 25
     selector:
         matchLabels:
             app: miner
