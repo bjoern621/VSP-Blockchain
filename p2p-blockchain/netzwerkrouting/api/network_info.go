@@ -30,6 +30,7 @@ type PeerInfo struct {
 	ConnectionState   common.PeerConnectionState
 	Direction         common.Direction
 	SupportedServices []common.ServiceType
+	LastSeen          int64
 }
 
 // NetworkInfoAPI provides access to peer information.
@@ -72,6 +73,7 @@ func (s *networkRegistryService) GetInternalPeerInfo() []PeerInfo {
 			pInfo.Direction = p.GetDirection()
 
 			pInfo.SupportedServices = slices.Clone(p.GetSupportedServices())
+			pInfo.LastSeen = p.GetLastSeen()
 			p.Unlock()
 		}
 
