@@ -9,6 +9,8 @@ import (
 	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 const (
@@ -165,7 +167,10 @@ func formatTransaction(sb *strings.Builder, tx *transaction.Transaction, isCoinb
 		if row < len(tx.Inputs) {
 			input := &tx.Inputs[row]
 			prevTxIDStr := hex.EncodeToString(input.PrevTxID[:])
-			sb.WriteString(fmt.Sprintf("%s(%d)", shortenHash(prevTxIDStr), input.OutputIndex))
+			bytesWrote, err := fmt.Fprintf(sb, "%s(%d)", shortenHash(prevTxIDStr), input.OutputIndex)
+			if err != nil {
+				logger.Warnf("Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
+			}
 		} else {
 			sb.WriteString("         ")
 		}
@@ -176,7 +181,10 @@ func formatTransaction(sb *strings.Builder, tx *transaction.Transaction, isCoinb
 		if row < len(tx.Outputs) {
 			output := &tx.Outputs[row]
 			pubKeyHashStr := hex.EncodeToString(output.PubKeyHash[:])
-			sb.WriteString(fmt.Sprintf("%s(%d)", shortenHash(pubKeyHashStr), output.Value))
+			bytesWrote, err := fmt.Fprintf(sb, "%s(%d)", shortenHash(pubKeyHashStr), output.Value)
+			if err != nil {
+				logger.Warnf("Wrote %d bytes. Failed to format transaction input: %v", bytesWrote, err)
+			}
 		}
 
 		sb.WriteString("\\n")
