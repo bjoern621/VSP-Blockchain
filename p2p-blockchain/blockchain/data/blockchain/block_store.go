@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -459,13 +460,21 @@ func (s *BlockStore) generateDotForNode(sb *strings.Builder, node *blockNode, ma
 	}
 
 	// Write node definition
-	sb.WriteString(fmt.Sprintf("    \"%s\" [label=\"%s\", fillcolor=\"%s\"];\n", hashStr, label, fillColor))
+	wroteBytes, err := fmt.Fprintf(sb, "    \"%s\" [label=\"%s\", fillcolor=\"%s\"];\n", hashStr, label, fillColor)
+	if err != nil {
+		logger.Warnf("Failed to write to buffer. Wrote %d bytes. Error: %v", wroteBytes, err)
+		return
+	}
 
 	// Write edge from parent to this node
 	if node.Parent != nil {
 		parentHash := node.Parent.Block.Hash()
 		parentHashStr := hex.EncodeToString(parentHash[:])
-		sb.WriteString(fmt.Sprintf("    \"%s\" -> \"%s\";\n", hashStr, parentHashStr))
+		wroteBytes, err := fmt.Fprintf(sb, "    \"%s\" -> \"%s\";\n", hashStr, parentHashStr)
+		if err != nil {
+			logger.Warnf("Failed to write to buffer. Wrote %d bytes. Error: %v", wroteBytes, err)
+			return
+		}
 	}
 
 	// Process children
