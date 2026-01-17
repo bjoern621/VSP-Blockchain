@@ -6,6 +6,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // Block represents a block in the blockchain.
@@ -69,6 +70,7 @@ func (b *Block) MerkleRoot() common.Hash {
 
 // MerkleRootFromTransactions calculates the Merkle root from a list of transactions.
 func MerkleRootFromTransactions(txs []transaction.Transaction) common.Hash {
+	logger.Infof("Calculating merkle root for %d transactions", len(txs))
 	tmpTransactions := make([]transaction.Transaction, len(txs))
 	copy(tmpTransactions, txs)
 

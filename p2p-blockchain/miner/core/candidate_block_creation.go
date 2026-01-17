@@ -6,6 +6,8 @@ import (
 	"slices"
 	"sort"
 	"time"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type transactionWithFee struct {
@@ -34,6 +36,7 @@ func (m *minerService) createCandidateBlockHeader(transactions []transaction.Tra
 	previousBlockHash := tip.Hash()
 
 	merkleRoot := block.MerkleRootFromTransactions(transactions)
+	logger.Debugf("[miner] Calculated merkle root: %v", merkleRoot)
 
 	targetBits, err := GetCurrentTargetBits()
 	if err != nil {
