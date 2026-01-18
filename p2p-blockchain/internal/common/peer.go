@@ -20,6 +20,11 @@ type Peer struct {
 	// It's not updated on every interaction with the peer,
 	// instead it's updated on discovery (gossip or registry) and heartbeat messages.
 	LastSeen int64
+	// HolddownStartTime is a Unix timestamp indicating when the peer entered holddown state.
+	// A peer in holddown rejects new connections for a cooldown period (typically 15 minutes).
+	// After the holddown period expires, the peer is permanently removed from the store.
+	// Zero value indicates the peer is not in holddown.
+	HolddownStartTime int64
 	// AddrsSentTo tracks PeerIds whose addresses have been sent to this peer.
 	// Prevents sending the same address twice to the same recipient.
 	AddrsSentTo mapset.Set[PeerId]

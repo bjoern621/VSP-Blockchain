@@ -22,6 +22,7 @@ func NewPeerStore() *peerStore {
 }
 
 // GetPeer retrieves a peer by its ID.
+// Also workds for holddown peers.
 func (s *peerStore) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -29,14 +30,17 @@ func (s *peerStore) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	return peer, exists
 }
 
-// GetAllPeers retrieves all known peers.
+// GetAllPeers retrieves all known peers, excluding peers in holddown state.
+// Holddown peers are effectively "soft-deleted" and should not be visible to most operations.
 func (s *peerStore) GetAllPeers() []common.PeerId {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	peerIds := make([]common.PeerId, 0, len(s.peers))
-	for k := range s.peers {
-		peerIds = append(peerIds, k)
+	for k, v := range s.peers {
+		if v.State != common.StateHolddown {
+			peerIds = append(peerIds, k)
+		}
 	}
 	return peerIds
 }
@@ -83,6 +87,23 @@ func (s *peerStore) GetUnconnectedPeers() []common.PeerId {
 	peerIds := make([]common.PeerId, 0)
 	for k, v := range s.peers {
 		if v.State == common.StateNew {
+			peerIds = append(peerIds, k)
+		}
+	}
+
+	return peerIds
+}
+
+// GetHolddownPeers retrieves all peers that are in holddown state.
+// These are peers that have been disconnected and are awaiting cleanup.
+// Used by ConnectionCheckService to check if holddown has expired.
+func (s *peerStore) GetHolddownPeers() []common.PeerId {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerIds := make([]common.PeerId, 0)
+	for k, v := range s.peers {
+		if v.State == common.StateHolddown {
 			peerIds = append(peerIds, k)
 		}
 	}

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
@@ -38,6 +39,18 @@ func createGRPCClient(remoteAddrPort netip.AddrPort) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
+// isPeerInHolddown checks if a peer is in holddown state.
+// Returns true if the peer is in holddown and should reject the connection.
+func (s *Server) isPeerInHolddown(peerID common.PeerId) bool {
+	peer, exists := s.holddownChecker.GetPeer(peerID)
+	if !exists {
+		return false
+	}
+	peer.Lock()
+	defer peer.Unlock()
+	return peer.State == common.StateHolddown
+}
+
 func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empty, error) {
 	inboundAddr := getPeerAddr(ctx)
 	info, addrPort, err := mapping.VersionInfoFromProto(req)
@@ -46,6 +59,13 @@ func (s *Server) Version(ctx context.Context, req *pb.VersionInfo) (*emptypb.Emp
 	}
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
+
+	// Check if peer is in holddown state - reject the connection attempt
+	if s.isPeerInHolddown(peerID) {
+		logger.Infof("[handshake_grpc] Rejecting Version from peer %s: peer is in holddown", peerID)
+		return &emptypb.Empty{}, fmt.Errorf("peer in holddown")
+	}
+
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, addrPort)
 
@@ -61,6 +81,13 @@ func (s *Server) Verack(ctx context.Context, req *pb.VersionInfo) (*emptypb.Empt
 	}
 
 	peerID := s.networkInfoRegistry.GetOrRegisterPeer(inboundAddr, addrPort)
+
+	// Check if peer is in holddown state - reject the connection attempt
+	if s.isPeerInHolddown(peerID) {
+		logger.Infof("[handshake_grpc] Rejecting Verack from peer %s: peer is in holddown", peerID)
+		return &emptypb.Empty{}, fmt.Errorf("peer in holddown")
+	}
+
 	s.networkInfoRegistry.AddInboundAddress(peerID, inboundAddr)
 	s.networkInfoRegistry.SetListeningEndpoint(peerID, addrPort)
 

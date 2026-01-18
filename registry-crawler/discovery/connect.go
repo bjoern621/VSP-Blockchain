@@ -95,3 +95,10 @@ func isNotFoundError(errorMsg string) bool {
 	return strings.Contains(errorMsg, "peer not found") ||
 		strings.Contains(errorMsg, "not found")
 }
+
+// isHolddownError checks if the error message indicates the peer is in holddown state.
+// Peers in holddown were recently disconnected and reject new connection attempts.
+func isHolddownError(errorMsg string) bool {
+	return strings.Contains(errorMsg, "holddown") ||
+		strings.Contains(errorMsg, "recently disconnected")
+}

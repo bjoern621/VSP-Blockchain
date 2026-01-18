@@ -60,7 +60,7 @@ func main() {
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
-	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService)
+	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
@@ -157,7 +157,7 @@ func main() {
 
 	logger.Infof("[main] Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService, peerStore)
 
 	grpcServer.Attach(blockchain)
 

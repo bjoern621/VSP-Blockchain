@@ -20,6 +20,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// holddownChecker provides the ability to check if a peer is in holddown state.
+// Implemented by PeerStore.
+type holddownChecker interface {
+	GetPeer(id common.PeerId) (*common.Peer, bool)
+}
+
 // Server represents the P2P gRPC server for peer-to-peer communication.
 // This is the application stub / grpc adapter.
 // It contains no domain logic, only type transformation and delegation.
@@ -29,6 +35,7 @@ type Server struct {
 	listener            net.Listener
 	handshakeMsgHandler handshake.HandshakeMsgHandler
 	networkInfoRegistry *networkinfo.NetworkInfoRegistry
+	holddownChecker     holddownChecker
 
 	pb.UnimplementedBlockchainServiceServer
 	observers mapset.Set[observer.BlockchainObserverAPI]
@@ -38,13 +45,20 @@ type Server struct {
 	keepaliveService *keepalive.KeepaliveService
 }
 
-func NewServer(handshakeMsgHandler handshake.HandshakeMsgHandler, networkInfoRegistry *networkinfo.NetworkInfoRegistry, discoveryService *discovery.DiscoveryService, keepaliveService *keepalive.KeepaliveService) *Server {
+func NewServer(
+	handshakeMsgHandler handshake.HandshakeMsgHandler,
+	networkInfoRegistry *networkinfo.NetworkInfoRegistry,
+	discoveryService *discovery.DiscoveryService,
+	keepaliveService *keepalive.KeepaliveService,
+	holddownChecker holddownChecker,
+) *Server {
 	return &Server{
 		handshakeMsgHandler: handshakeMsgHandler,
 		networkInfoRegistry: networkInfoRegistry,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		discoveryService:    discoveryService,
 		keepaliveService:    keepaliveService,
+		holddownChecker:     holddownChecker,
 	}
 }
 
