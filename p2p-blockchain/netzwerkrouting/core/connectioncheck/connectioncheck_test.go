@@ -14,15 +14,6 @@ import (
 // Mocks
 //
 
-// mockNetworkInfoCleaner is a mock implementation of networkInfoCleaner for testing.
-type mockNetworkInfoCleaner struct {
-	removedPeers []common.PeerId
-}
-
-func (m *mockNetworkInfoCleaner) RemovePeer(peerID common.PeerId) {
-	m.removedPeers = append(m.removedPeers, peerID)
-}
-
 // mockPeerRetriever is a mock implementation of peerRetriever for testing.
 type mockPeerRetriever struct {
 	peers map[common.PeerId]*peer.Peer
@@ -49,13 +40,13 @@ func (m *mockPeerRetriever) GetPeersWithHandshakeStarted() []common.PeerId {
 	return ids
 }
 
-// mockPeerRemover is a mock implementation of peerRemover for testing.
-type mockPeerRemover struct {
+type mockPeerDisconnector struct {
 	removedPeers []common.PeerId
 }
 
-func (m *mockPeerRemover) RemovePeer(id common.PeerId) {
+func (m *mockPeerDisconnector) Disconnect(id common.PeerId) error {
 	m.removedPeers = append(m.removedPeers, id)
+	return nil
 }
 
 //
@@ -64,10 +55,9 @@ func (m *mockPeerRemover) RemovePeer(id common.PeerId) {
 
 func TestCheckConnections(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	// Create test peers with different LastSeen timestamps
 	now := time.Now().Unix()
@@ -97,26 +87,19 @@ func TestCheckConnections(t *testing.T) {
 	service.checkConnections()
 
 	// Verify that peer-2-old and peer-3-zero were removed
-	assert.Equal(t, 2, len(peerRemover.removedPeers), "Should have removed 2 peers")
-	assert.Contains(t, peerRemover.removedPeers, peerID2, "Should have removed peer-2-old")
-	assert.Contains(t, peerRemover.removedPeers, peerID3, "Should have removed peer-3-zero")
-
-	// Verify that network info cleaner was called
-	assert.Equal(t, 2, len(networkInfoCleaner.removedPeers), "Should have called networkInfoCleaner 2 times")
-	assert.Contains(t, networkInfoCleaner.removedPeers, peerID2, "Should have cleaned up peer-2-old")
-	assert.Contains(t, networkInfoCleaner.removedPeers, peerID3, "Should have cleaned up peer-3-zero")
+	assert.Equal(t, 2, len(peerDisconnector.removedPeers), "Should have removed 2 peers")
+	assert.Contains(t, peerDisconnector.removedPeers, peerID2, "Should have removed peer-2-old")
+	assert.Contains(t, peerDisconnector.removedPeers, peerID3, "Should have removed peer-3-zero")
 
 	// Verify that peer-1-recent was NOT removed
-	assert.NotContains(t, peerRemover.removedPeers, peerID1, "Should NOT have removed peer-1-recent")
+	assert.NotContains(t, peerDisconnector.removedPeers, peerID1, "Should NOT have removed peer-1-recent")
 }
 
 func TestCheckConnectionsAtTimeoutBoundary(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
-
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 	now := time.Now().Unix()
 
 	// Create peer exactly at timeout boundary (SHOULD be removed)
@@ -128,16 +111,15 @@ func TestCheckConnectionsAtTimeoutBoundary(t *testing.T) {
 
 	service.checkConnections()
 
-	assert.Equal(t, 1, len(peerRemover.removedPeers), "Should have removed peer at exact timeout")
-	assert.Contains(t, peerRemover.removedPeers, peerID, "Should have removed peer at exact timeout")
+	assert.Equal(t, 1, len(peerDisconnector.removedPeers), "Should have removed peer at exact timeout")
+	assert.Contains(t, peerDisconnector.removedPeers, peerID, "Should have removed peer at exact timeout")
 }
 
 func TestCheckConnectionsJustBeforeTimeout(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	now := time.Now().Unix()
 
@@ -150,28 +132,26 @@ func TestCheckConnectionsJustBeforeTimeout(t *testing.T) {
 
 	service.checkConnections()
 
-	assert.Equal(t, 0, len(peerRemover.removedPeers), "Should NOT have removed peer before timeout")
+	assert.Equal(t, 0, len(peerDisconnector.removedPeers), "Should NOT have removed peer before timeout")
 }
 
 func TestCheckConnectionsNoConnectedPeers(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	// No peers in the store
 	service.checkConnections()
 
-	assert.Equal(t, 0, len(peerRemover.removedPeers), "Should not have removed any peers")
+	assert.Equal(t, 0, len(peerDisconnector.removedPeers), "Should not have removed any peers")
 }
 
 func TestCheckConnectionsPeerNotFound(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	// Add a peer to the retriever
 	peerID := common.PeerId("peer-1")
@@ -188,15 +168,14 @@ func TestCheckConnectionsPeerNotFound(t *testing.T) {
 	service.checkConnections()
 
 	// Should not panic and should not remove anything
-	assert.Equal(t, 0, len(peerRemover.removedPeers), "Should not have removed any peers")
+	assert.Equal(t, 0, len(peerDisconnector.removedPeers), "Should not have removed any peers")
 }
 
 func TestStartAndStop(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	// Start the service
 	service.Start()
@@ -214,35 +193,27 @@ func TestStartAndStop(t *testing.T) {
 
 func TestRemovePeer(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	peerID := common.PeerId("test-peer")
 
 	// Call removePeer
 	service.removePeer(peerID)
 
-	// Verify both removers were called
-	assert.Equal(t, 1, len(networkInfoCleaner.removedPeers), "Network info cleaner should have been called")
-	assert.Equal(t, peerID, networkInfoCleaner.removedPeers[0], "Network info cleaner should have removed the peer")
-
-	assert.Equal(t, 1, len(peerRemover.removedPeers), "Peer remover should have been called")
-	assert.Equal(t, peerID, peerRemover.removedPeers[0], "Peer remover should have removed the peer")
+	assert.Equal(t, 1, len(peerDisconnector.removedPeers), "Peer remover should have been called")
+	assert.Equal(t, peerID, peerDisconnector.removedPeers[0], "Peer remover should have removed the peer")
 }
 
 func TestNewConnectionCheckService(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
-	peerRemover := &mockPeerRemover{}
-	networkInfoCleaner := &mockNetworkInfoCleaner{}
+	peerDisconnector := &mockPeerDisconnector{}
 
-	service := NewConnectionCheckService(peerRetriever, peerRemover, networkInfoCleaner)
+	service := NewConnectionCheckService(peerRetriever, peerDisconnector)
 
 	require.NotNil(t, service, "Service should be created")
 	assert.NotNil(t, service.stopChan, "Stop channel should be initialized")
 	assert.Equal(t, peerRetriever, service.peerRetriever, "Peer retriever should be set")
-	assert.Equal(t, peerRemover, service.storePeerRemover, "Peer remover should be set")
-	assert.Equal(t, networkInfoCleaner, service.networkInfoCleaner, "Network info cleaner should be set")
 	assert.Nil(t, service.ticker, "Ticker should not be initialized until Start is called")
 }

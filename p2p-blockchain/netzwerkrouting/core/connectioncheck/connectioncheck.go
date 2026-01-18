@@ -28,32 +28,28 @@ type peerRetriever interface {
 	GetPeer(id common.PeerId) (*peer.Peer, bool)
 }
 
-// peerRemover is an interface for removing peers.
-type peerRemover interface {
-	// RemovePeer removes a peer from the internal state.
-	RemovePeer(id common.PeerId)
+type peerDisconnector interface {
+	// DisconnectPeer disconnects a peer by its ID.
+	Disconnect(id common.PeerId) error
 }
 
 // ConnectionCheckService provides periodic verification of peer connections.
 type ConnectionCheckService struct {
-	peerRetriever      peerRetriever
-	storePeerRemover   peerRemover
-	networkInfoCleaner peerRemover
-	stopChan           chan struct{}
-	ticker             *time.Ticker
+	peerRetriever    peerRetriever
+	peerDisconnector peerDisconnector
+	stopChan         chan struct{}
+	ticker           *time.Ticker
 }
 
 // NewConnectionCheckService creates a new ConnectionCheckService.
 func NewConnectionCheckService(
 	peerRetriever peerRetriever,
-	peerRemover peerRemover,
-	networkInfoCleaner peerRemover,
+	peerDisconnector peerDisconnector,
 ) *ConnectionCheckService {
 	return &ConnectionCheckService{
-		peerRetriever:      peerRetriever,
-		storePeerRemover:   peerRemover,
-		networkInfoCleaner: networkInfoCleaner,
-		stopChan:           make(chan struct{}),
+		peerRetriever:    peerRetriever,
+		peerDisconnector: peerDisconnector,
+		stopChan:         make(chan struct{}),
 	}
 }
 
@@ -142,9 +138,5 @@ func (s *ConnectionCheckService) checkConnections() {
 
 // removePeer removes a peer from both the peer store and the network info registry.
 func (s *ConnectionCheckService) removePeer(peerID common.PeerId) {
-	// Remove from network info registry first (closes gRPC connection)
-	s.networkInfoCleaner.RemovePeer(peerID)
-
-	// Then remove from peer store
-	s.storePeerRemover.RemovePeer(peerID)
+	_ = s.peerDisconnector.Disconnect(peerID)
 }

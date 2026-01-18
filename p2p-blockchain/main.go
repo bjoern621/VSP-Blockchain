@@ -55,11 +55,13 @@ func main() {
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
+	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
+
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
 	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
-	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
+	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
@@ -119,7 +121,6 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
-		disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
 		disconnectAPI := api.NewDisconnectAPIService(networkInfoRegistry, disconnectService)
 		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 

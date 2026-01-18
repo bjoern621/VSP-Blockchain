@@ -69,6 +69,8 @@ type peerRetrieverAndRemover interface {
 // 1. Verifying the peer exists in the store
 // 2. Removing from network info registry (closes gRPC connections)
 // 3. Removing from peer store
+// After executing this method, the peer will no longer be known to the system.
+// Returns an error if the peer does not exist.
 func (s *disconnectService) Disconnect(peerID common.PeerId) error {
 	// Verify the peer exists in the store
 	_, ok := s.peerRetriever.GetPeer(peerID)
