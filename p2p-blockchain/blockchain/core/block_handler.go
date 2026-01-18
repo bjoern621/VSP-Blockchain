@@ -36,6 +36,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	}
 
 	b.NotifyStopMining()
+	defer b.NotifyStartMining()
 	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
@@ -68,8 +69,6 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 6. Broadcast new blocks
 	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
-
-	b.NotifyStartMining()
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
