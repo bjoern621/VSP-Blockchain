@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"encoding/binary"
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
@@ -16,85 +17,153 @@ var (
 	ErrNoOutputs          = errors.New("transaction has no outputs")
 )
 
+// TransactionValidatorAPI defines the interface for validating transactions against the UTXO set.
 type TransactionValidatorAPI interface {
+	// ValidateTransaction validates a transaction against the UTXO set at a specific block.
+	// It returns true if the transaction is valid, false otherwise.
+	// For coinbase transactions, validation is always successful (reward validation is done at block level).
 	ValidateTransaction(tx transaction.Transaction, blockHash common.Hash) (bool, error)
 }
 
+// TransactionValidator implements TransactionValidatorAPI and validates transactions
+// against the UTXO set stored in the blockchain.
 type TransactionValidator struct {
 	utxoStore utxo.UtxoStoreAPI
 }
 
+// NewTransactionValidator creates a new TransactionValidator with the given UTXO store.
 func NewTransactionValidator(utxoStoreAPI utxo.UtxoStoreAPI) TransactionValidatorAPI {
 	return &TransactionValidator{
 		utxoStore: utxoStoreAPI,
 	}
 }
 
+// ValidateTransaction validates a transaction against the UTXO set at the specified block.
+// It performs the following checks:
+//  1. Coinbase transactions are automatically valid (no UTXO validation needed)
+//  2. Basic sanity checks (non-empty inputs and outputs)
+//  3. Duplicate input detection (prevents double-spending within the same transaction)
+//  4. UTXO existence verification
+//  5. Public key hash validation (ensures the spender owns the referenced output)
+//  6. Value conservation (inputs >= outputs, difference is the transaction fee)
 func (t *TransactionValidator) ValidateTransaction(tx transaction.Transaction, blockHash common.Hash) (bool, error) {
-	// Step 1: Handle coinbase transactions specially
-	// Coinbase transactions create new coins and don't reference UTXOs
+	// Coinbase transactions are valid by structure (no UTXO validation needed)
 	if tx.IsCoinbase() {
-		// Coinbase transactions are valid by structure (no UTXO validation needed)
-		// Note: Coinbase reward validation is done at block level
 		return true, nil
 	}
 
-	// Step 2: Basic sanity checks
+	if err := t.validateBasicStructure(tx); err != nil {
+		return false, err
+	}
+
+	inputSum, err := t.validateInputs(tx, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	if err := t.validateValueConservation(tx, inputSum); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// validateBasicStructure performs basic sanity checks on the transaction structure.
+// It ensures the transaction has at least one input and one output.
+func (t *TransactionValidator) validateBasicStructure(tx transaction.Transaction) error {
 	if len(tx.Inputs) == 0 {
-		return false, ErrNoInputs
+		return ErrNoInputs
 	}
 	if len(tx.Outputs) == 0 {
-		return false, ErrNoOutputs
+		return ErrNoOutputs
 	}
+	return nil
+}
 
-	// Step 3: Track seen outpoints to detect double-spending within the transaction
+// validateInputs validates all inputs in the transaction.
+// It checks for duplicate inputs, verifies UTXO existence, and validates public key hash bindings.
+// Returns the total sum of input values if successful.
+func (t *TransactionValidator) validateInputs(tx transaction.Transaction, blockHash common.Hash) (uint64, error) {
 	seenOutpoints := make(map[string]struct{})
-
 	var inputSum uint64
 
-	for i, input := range tx.Inputs {
-		// Create unique key for this outpoint
-		outpointKey := string(input.PrevTxID[:]) + string(rune(input.OutputIndex))
+	for _, input := range tx.Inputs {
+		outpointKey := t.createOutpointKey(input)
 
-		// Step 4: Check for duplicate inputs (double-spend within same transaction)
-		if _, exists := seenOutpoints[outpointKey]; exists {
-			return false, ErrDuplicateInput
+		if err := t.checkDuplicateInput(outpointKey, seenOutpoints); err != nil {
+			return 0, err
 		}
 		seenOutpoints[outpointKey] = struct{}{}
 
-		valid := t.utxoStore.ValidateTransactionFromBlock(tx, blockHash)
-		if !valid {
-			return false, ErrUTXONotFound
-		}
-
-		referencedOutput, err := t.utxoStore.GetUtxoFromBlock(input.PrevTxID, input.OutputIndex, blockHash)
+		referencedOutput, err := t.validateAndGetReferencedOutput(tx, input, blockHash)
 		if err != nil {
-			return false, ErrUTXONotFound
+			return 0, err
 		}
 
-		// Step 3: Validate public key hash binding
-		// Compute HASH160(Input.PubKey) and compare with the referenced UTXO's PubKeyHash
-		computedPubKeyHash := transaction.Hash160(input.PubKey)
-		if computedPubKeyHash != referencedOutput.PubKeyHash {
-			return false, ErrPubKeyHashMismatch
+		if err := t.validatePubKeyHash(input, referencedOutput); err != nil {
+			return 0, err
 		}
 
-		// Accumulate input value for step 4
 		inputSum += referencedOutput.Value
-
-		_ = i // Input index used for potential future signature validation (step 2)
 	}
 
-	// Step 4: Calculate output sum and verify value conservation
+	return inputSum, nil
+}
+
+// createOutpointKey creates a unique string key for an outpoint (transaction ID + output index).
+// This is used to detect duplicate inputs within the same transaction.
+func (t *TransactionValidator) createOutpointKey(input transaction.Input) string {
+	indexBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(indexBytes, input.OutputIndex)
+	return string(input.PrevTxID[:]) + string(indexBytes)
+}
+
+// checkDuplicateInput checks if the given outpoint has already been seen in this transaction.
+// Returns ErrDuplicateInput if the outpoint was already used.
+func (t *TransactionValidator) checkDuplicateInput(outpointKey string, seenOutpoints map[string]struct{}) error {
+	if _, exists := seenOutpoints[outpointKey]; exists {
+		return ErrDuplicateInput
+	}
+	return nil
+}
+
+// validateAndGetReferencedOutput validates that the referenced UTXO exists and returns it.
+// Returns ErrUTXONotFound if the UTXO does not exist or the transaction is invalid.
+func (t *TransactionValidator) validateAndGetReferencedOutput(tx transaction.Transaction, input transaction.Input, blockHash common.Hash) (transaction.Output, error) {
+	referencedOutput, err := t.utxoStore.GetUtxoFromBlock(input.PrevTxID, input.OutputIndex, blockHash)
+	if err != nil {
+		return transaction.Output{}, ErrUTXONotFound
+	}
+
+	return referencedOutput, nil
+}
+
+// validatePubKeyHash verifies that the input's public key hashes to the referenced output's public key hash.
+// This ensures that the spender actually owns the UTXO they are trying to spend.
+func (t *TransactionValidator) validatePubKeyHash(input transaction.Input, referencedOutput transaction.Output) error {
+	computedPubKeyHash := transaction.Hash160(input.PubKey)
+	if computedPubKeyHash != referencedOutput.PubKeyHash {
+		return ErrPubKeyHashMismatch
+	}
+	return nil
+}
+
+// validateValueConservation ensures that the total input value is at least equal to the total output value.
+// The difference between inputs and outputs is the transaction fee.
+func (t *TransactionValidator) validateValueConservation(tx transaction.Transaction, inputSum uint64) error {
+	outputSum := t.calculateOutputSum(tx)
+
+	if inputSum < outputSum {
+		return ErrInsufficientInputs
+	}
+	return nil
+}
+
+// calculateOutputSum computes the total value of all outputs in the transaction.
+func (t *TransactionValidator) calculateOutputSum(tx transaction.Transaction) uint64 {
 	var outputSum uint64
 	for _, output := range tx.Outputs {
 		outputSum += output.Value
 	}
-
-	// Inputs must be >= outputs (difference is the transaction fee)
-	if inputSum < outputSum {
-		return false, ErrInsufficientInputs
-	}
-
-	return true, nil
+	return outputSum
 }
