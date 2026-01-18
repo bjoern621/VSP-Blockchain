@@ -31,9 +31,11 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 		}
 	}
 
-	logger.Infof("[inv_handler] Inv Message from %v has %d unknown items, Sending GetData...", peerID, len(unknownData))
-
 	if len(unknownData) > 0 {
+		logger.Infof("[inv_handler] Inv Message from %v has %d unknown items, Sending GetData...", peerID, len(unknownData))
 		b.blockchainMsgSender.SendGetData(unknownData, peerID)
+		return
 	}
+
+	logger.Infof("[inv_handler] Inv Message from %v has %d unknown items", peerID, len(unknownData))
 }
