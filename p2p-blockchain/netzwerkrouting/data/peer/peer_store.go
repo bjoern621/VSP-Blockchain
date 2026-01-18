@@ -38,15 +38,15 @@ func (s *peerStore) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
-// GetAllOutboundPeers retrieves all connected outbound peers' IDs.
-func (s *peerStore) GetAllOutboundPeers() []common.PeerId {
+// GetAllOutboundPeers retrieves all connected peers' IDs.
+func (s *peerStore) GetAllOutboundPeers() []common.PeerId { // TODO
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	peerIds := make([]common.PeerId, 0)
 
 	for k, v := range s.peers {
-		if v.Direction == common.DirectionOutbound && v.State == common.StateConnected {
+		if v.State == common.StateConnected {
 			peerIds = append(peerIds, k)
 		}
 	}
@@ -99,12 +99,12 @@ func (s *peerStore) RemovePeer(id common.PeerId) {
 	delete(s.peers, id)
 }
 
-// NewInboundPeer creates a new peer for an inbound connection.
-func (s *peerStore) NewInboundPeer() common.PeerId {
-	return s.newPeer(common.DirectionInbound)
+// NewInboundPeer creates a new peer.
+func (s *peerStore) NewInboundPeer() common.PeerId { // TODO
+	return s.newPeer()
 }
 
-// NewPeer creates a new peer without a specified direction.
+// NewPeer creates a new peer.
 func (s *peerStore) NewPeer() common.PeerId {
 	return s.newGenericPeer()
 }

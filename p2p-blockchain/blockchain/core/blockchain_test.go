@@ -4,7 +4,6 @@ import (
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/inv"
@@ -154,6 +153,10 @@ func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
 }
 
+func (m *mockBlockStore) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
+}
+
 // mockChainReorganization is a mock for ChainReorganization
 type mockChainReorganization struct {
 	checkAndReorganizeResult bool
@@ -184,27 +187,37 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 	}
 }
 
-type mockLookupAPIImpl struct{}
+type mockUtxoStoreAPI struct{}
 
-var _ utxo.LookupService = (*mockLookupAPIImpl)(nil)
-
-func (mockLookupAPIImpl) GetUTXO(_ transaction.TransactionID, _ uint32) (transaction.Output, error) {
-	return transaction.Output{}, nil
-}
-func (mockLookupAPIImpl) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	return utxopool.UTXOEntry{}, nil
-}
-func (mockLookupAPIImpl) ContainsUTXO(_ utxopool.Outpoint) bool {
+func (a mockUtxoStoreAPI) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
 	return true
 }
-func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
+
+var _ utxo.UtxoStoreAPI = (*mockUtxoStoreAPI)(nil)
+
+func (mockUtxoStoreAPI) InitializeGenesisPool(_ block.Block) error {
+	return nil
+}
+func (mockUtxoStoreAPI) AddNewBlock(_ block.Block) error {
+	return nil
+}
+func (mockUtxoStoreAPI) GetUtxoFromBlock(_ transaction.TransactionID, _ uint32, _ common.Hash) (transaction.Output, error) {
+	return transaction.Output{}, nil
+}
+func (mockUtxoStoreAPI) ValidateBlock(_ block.Block) bool {
+	return true
+}
+func (mockUtxoStoreAPI) ValidateTransactionFromBlock(_ transaction.Transaction, _ common.Hash) bool {
+	return true
+}
+func (mockUtxoStoreAPI) GetUtxosByPubKeyHashFromBlock(_ transaction.PubKeyHash, _ common.Hash) ([]transaction.UTXO, error) {
 	return []transaction.UTXO{}, nil
 }
 
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
-	bc := NewBlockchain(sender, nil, validation.NewValidationService(mockLookupAPIImpl{}), nil, nil, nil)
+	bc := NewBlockchain(sender, nil, validation.NewTransactionValidator(mockUtxoStoreAPI{}), nil, nil, nil)
 
 	peerID := common.PeerId("peer-1")
 

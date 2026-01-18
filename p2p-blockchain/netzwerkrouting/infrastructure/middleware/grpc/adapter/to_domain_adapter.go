@@ -255,9 +255,8 @@ func toTx(tx *pb.Transaction) (transaction.Transaction, error) {
 	}
 
 	return transaction.Transaction{
-		Inputs:   inputs,
-		Outputs:  outputs,
-		LockTime: tx.LockTime,
+		Inputs:  inputs,
+		Outputs: outputs,
 	}, nil
 }
 
@@ -294,7 +293,6 @@ func toInput(in *pb.TxInput) (transaction.Input, error) {
 		OutputIndex: in.OutputIndex,
 		Signature:   in.Signature,
 		PubKey:      pubKey,
-		Sequence:    in.Sequence,
 	}, nil
 }
 

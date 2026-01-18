@@ -13,6 +13,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockUtxoStoreForGetData is a mock UTXO store for GetData handler tests
+type mockUtxoStoreForGetData struct {
+	utxos map[string]transaction.Output // key: txID+outputIndex
+}
+
+func (m *mockUtxoStoreForGetData) ValidateTransactionsOfBlock(_ block.Block) bool {
+	return true
+}
+
+func newMockUtxoStoreForGetData() *mockUtxoStoreForGetData {
+	return &mockUtxoStoreForGetData{
+		utxos: make(map[string]transaction.Output),
+	}
+}
+
+func (m *mockUtxoStoreForGetData) AddUtxo(txID transaction.TransactionID, outputIndex uint32, output transaction.Output) {
+	key := string(txID[:]) + string(rune(outputIndex))
+	m.utxos[key] = output
+}
+
+func (m *mockUtxoStoreForGetData) InitializeGenesisPool(_ block.Block) error {
+	return nil
+}
+
+func (m *mockUtxoStoreForGetData) AddNewBlock(_ block.Block) error {
+	return nil
+}
+
+func (m *mockUtxoStoreForGetData) GetUtxoFromBlock(txID transaction.TransactionID, outputIndex uint32, _ common.Hash) (transaction.Output, error) {
+	key := string(txID[:]) + string(rune(outputIndex))
+	if output, ok := m.utxos[key]; ok {
+		return output, nil
+	}
+	return transaction.Output{}, errors.New("UTXO not found")
+}
+
+func (m *mockUtxoStoreForGetData) ValidateBlock(_ block.Block) bool {
+	return true
+}
+
+func (m *mockUtxoStoreForGetData) ValidateTransactionFromBlock(_ transaction.Transaction, _ common.Hash) bool {
+	return true
+}
+
+func (m *mockUtxoStoreForGetData) GetUtxosByPubKeyHashFromBlock(_ transaction.PubKeyHash, _ common.Hash) ([]transaction.UTXO, error) {
+	return []transaction.UTXO{}, nil
+}
+
 type mockBlockchainMsgSender struct {
 	mu              sync.RWMutex
 	sendBlockCalled bool
@@ -100,6 +148,10 @@ func (m *mockBlockStoreGetData) GetAllBlocksWithMetadata() []block.BlockWithMeta
 	return nil
 }
 
+func (m *mockBlockStoreGetData) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
+}
+
 func createTestBlockForGetData(nonce uint32) block.Block {
 	var merkleRoot common.Hash
 	for i := range 32 {
@@ -121,16 +173,44 @@ func createTestBlockForGetData(nonce uint32) block.Block {
 }
 
 func createTestTransactionForGetData() transaction.Transaction {
+	// Create a PubKey for the transaction input
+	pubKey := transaction.PubKey{0x03, 0x04}
+
+	// The PubKeyHash should be HASH160(pubKey) for validation to pass
+	// For testing, we'll compute it properly
+	pubKeyHash := transaction.Hash160(pubKey)
+
 	return transaction.Transaction{
-		Inputs: []transaction.Input{},
-		Outputs: []transaction.Output{
+		Inputs: []transaction.Input{
 			{
-				Value:      100,
-				PubKeyHash: transaction.PubKeyHash{1, 2, 3},
+				PrevTxID:    transaction.TransactionID{1, 2, 3, 4, 5},
+				OutputIndex: 0,
+				Signature:   []byte{0x01, 0x02},
+				PubKey:      pubKey,
 			},
 		},
-		LockTime: 0,
+		Outputs: []transaction.Output{
+			{
+				Value:      50, // Less than the input value (100) to account for fee
+				PubKeyHash: pubKeyHash,
+			},
+		},
 	}
+}
+
+// Helper function to get the expected UTXO for the test transaction
+func getTestUtxoForTransaction() (transaction.TransactionID, uint32, transaction.Output) {
+	pubKey := transaction.PubKey{0x03, 0x04}
+	pubKeyHash := transaction.Hash160(pubKey)
+
+	txID := transaction.TransactionID{1, 2, 3, 4, 5}
+	outputIndex := uint32(0)
+	output := transaction.Output{
+		Value:      100,
+		PubKeyHash: pubKeyHash,
+	}
+
+	return txID, outputIndex, output
 }
 
 func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing.T) {
@@ -140,7 +220,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -183,7 +263,7 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -225,7 +305,13 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+
+	// Create mock UTXO store and set up the UTXO that the test transaction references
+	utxoStore := newMockUtxoStoreForGetData()
+	txID, outputIndex, output := getTestUtxoForTransaction()
+	utxoStore.AddUtxo(txID, outputIndex, output)
+
+	txValidator := validation.NewTransactionValidator(utxoStore)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -269,7 +355,7 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -306,7 +392,7 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -348,7 +434,13 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+
+	// Create mock UTXO store and set up the UTXO that the test transaction references
+	utxoStore := newMockUtxoStoreForGetData()
+	txID, outputIndex, output := getTestUtxoForTransaction()
+	utxoStore.AddUtxo(txID, outputIndex, output)
+
+	txValidator := validation.NewTransactionValidator(utxoStore)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -409,7 +501,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -454,7 +546,7 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 

@@ -18,7 +18,6 @@ type Peer struct {
 	Version           string
 	SupportedServices []common.ServiceType
 	State             common.PeerConnectionState
-	Direction         common.Direction
 	// LastSeen is a Unix timestamp indicating the last time the peer was seen active.
 	// Seen active means, that a heartbeat message was received from the peer.
 	// It's not updated on every interaction with the peer,
@@ -31,22 +30,20 @@ type Peer struct {
 
 // newPeer creates a new peer with a unique ID and adds it to the peer store.
 // PeerConnectionState is initialized to StateNew.
-func (s *peerStore) newPeer(direction common.Direction) common.PeerId {
+func (s *peerStore) newPeer() common.PeerId {
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:          peerID,
 		State:       common.StateNew,
-		Direction:   direction,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	s.addPeer(peer)
-	logger.Debugf("[peer] new peer %v created (direction: %v)", peerID, direction)
+	logger.Debugf("[peer] new peer %v created", peerID)
 	return peerID
 }
 
-// newGenericPeer creates a new peer without a specified direction.
-// Otherwise similar to newPeer.
-func (s *peerStore) newGenericPeer() common.PeerId {
+// newGenericPeer creates a new peer, similar to newPeer.
+func (s *peerStore) newGenericPeer() common.PeerId { // TODO
 	peerID := common.PeerId(uuid.NewString())
 	peer := &Peer{
 		id:          peerID,

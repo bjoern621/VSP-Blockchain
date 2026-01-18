@@ -10,7 +10,7 @@ import (
 )
 
 func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId) {
-	logger.Infof("[get_headers_handler] GetHeaders Message received: %v from %v", locator, peerID)
+	logger.Infof("[get_headers_handler] GetHeaders Message received from %v", peerID)
 
 	// Find the common ancestor by checking the block locator hashes
 	// The locator hashes are ordered from newest to oldest

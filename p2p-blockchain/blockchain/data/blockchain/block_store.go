@@ -7,10 +7,19 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"slices"
+	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
+
+// BlockFullValidator is the interface for full block validation.
+// Defined here to avoid circular dependency with the validation package.
+type BlockFullValidator interface {
+	// FullValidation performs comprehensive validation including transactions and UTXO set.
+	FullValidation(block block.Block) (bool, error)
+}
 
 type BlockStoreAPI interface {
 	// AddBlock adds a new block to the block store.
@@ -61,6 +70,10 @@ type BlockStoreAPI interface {
 	// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
 	// Returns a slice of BlockWithMetadata containing each block and its position in the chain.
 	GetAllBlocksWithMetadata() []block.BlockWithMetadata
+
+	// IsBlockInvalid checks if the given block is marked as invalid.
+	// Returns an error if the block is not found in the block store.
+	IsBlockInvalid(block block.Block) (bool, error)
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -91,19 +104,25 @@ type blockNode struct {
 
 	Parent   *blockNode
 	Children []*blockNode
+
+	IsInvalid bool
 }
 
 // BlockStore manages the storage and retrieval of blocks in the blockchain.
 // Its underlying structure is private and only [block.Block] can be accessed externally.
 // It's responsible for maintaining the integrity of the blockchain data. This means the BlockStore state is always consistent and valid.
 // Retrieved blocks are always copies of the stored blocks to prevent external modification of the internal state. This means that any modification to a retrieved block does not affect the stored block in the BlockStore.
+// Thread-safe: All public methods are protected by mutex locks.
 type BlockStore struct {
+	mu          sync.RWMutex
 	blockForest blockForest
 	// hashToHeaders provides fast lookup of blockNodes by their hash.
 	hashToHeaders map[common.Hash]*blockNode
+	// blockValidator validates blocks when they are connected to the chain.
+	blockValidator BlockFullValidator
 }
 
-func NewBlockStore(genesis block.Block) *BlockStore {
+func NewBlockStore(genesis block.Block, blockValidator BlockFullValidator) *BlockStore {
 	genesisNode := blockNode{
 		AccumulatedWork: uint64(genesis.BlockDifficulty()),
 		Height:          0,
@@ -120,6 +139,7 @@ func NewBlockStore(genesis block.Block) *BlockStore {
 		hashToHeaders: map[common.Hash]*blockNode{
 			genesis.Hash(): &genesisNode,
 		},
+		blockValidator: blockValidator,
 	}
 }
 
@@ -134,9 +154,10 @@ func NewBlockStore(genesis block.Block) *BlockStore {
 // Panics if the block violates any domain rules.
 // Returns a (non-nil) slice of block hashes that were added to the main or side chain because of this addition.
 func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash) {
-	blockHash := block.Hash()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	// TODO validate block, panic if invalid
+	blockHash := block.Hash()
 
 	addedBlockHashes = []common.Hash{}
 
@@ -151,7 +172,7 @@ func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash
 	isParentOrphan := false
 	if parentExists {
 		var err error
-		isParentOrphan, err = s.IsOrphanBlock(*parent.Block)
+		isParentOrphan, err = s.isOrphanBlock(*parent.Block)
 		assert.IsNil(err, "error checking if parent is orphan")
 	}
 
@@ -203,7 +224,8 @@ func (s *BlockStore) connectOrphanBlock(newNode *blockNode) (addedBlockHashes []
 }
 
 // connectNodes connects a parent blockNode to a child blockNode.
-// Updates (1) accumulated work, (2) height, (3) leaves, (4) roots and (5) connection relation accordingly.
+// Updates (1) accumulated work, (2) height, (3) leaves, (4) roots, (5) connection relation and (6) validity accordingly.
+// Performs full validation on the child block and marks it as invalid if validation fails or if the parent is invalid.
 func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 	assert.Assert(child.Block.Header.PreviousBlockHash == parent.Block.Hash())
 
@@ -212,6 +234,17 @@ func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 
 	child.AccumulatedWork = parent.AccumulatedWork + uint64(child.Block.BlockDifficulty())
 	child.Height = parent.Height + 1
+
+	// Validate the child block and propagate invalidity from parent
+	if parent.IsInvalid {
+		child.IsInvalid = true
+		logger.Warnf("[block_store] Block %v marked invalid due to invalid parent %v", child.Block.Hash(), parent.Block.Hash())
+	} else {
+		if ok, err := s.blockValidator.FullValidation(*child.Block); !ok {
+			child.IsInvalid = true
+			logger.Warnf("[block_store] Block %v marked invalid: %v", child.Block.Hash(), err)
+		}
+	}
 
 	// Remove parent from leaves (if it was a leaf)
 	// Is a leaf if it was a tip before
@@ -235,6 +268,13 @@ func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 // Returns an error if the block is not found in the block store.
 // O(1) time complexity.
 func (s *BlockStore) IsOrphanBlock(block block.Block) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.isOrphanBlock(block)
+}
+
+// isOrphanBlock is the internal implementation without locking.
+func (s *BlockStore) isOrphanBlock(block block.Block) (bool, error) {
 	blockNode, exists := s.hashToHeaders[block.Hash()]
 	if !exists {
 		return false, fmt.Errorf("block with hash %v not found", block.Hash())
@@ -245,17 +285,35 @@ func (s *BlockStore) IsOrphanBlock(block block.Block) (bool, error) {
 	return isOrphan, nil
 }
 
+// IsBlockInvalid checks if the given block is marked as invalid.
+// Returns an error if the block is not found in the block store.
+// O(1) time complexity.
+func (s *BlockStore) IsBlockInvalid(block block.Block) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	blockNode, exists := s.hashToHeaders[block.Hash()]
+	if !exists {
+		return false, fmt.Errorf("block with hash %v not found", block.Hash())
+	}
+
+	return blockNode.IsInvalid, nil
+}
+
 // IsPartOfMainChain checks if the given block is part of the main chain.
 // Returns false if the block is not found in the block store.
 // O(h) time complexity, with h being the height of the main chain.
 func (s *BlockStore) IsPartOfMainChain(block block.Block) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	blockNode, exists := s.hashToHeaders[block.Hash()]
 	if !exists {
 		return false
 	}
 
 	// Get main chain tip
-	mainChainTip := s.GetMainChainTip()
+	mainChainTip := s.getMainChainTip()
 	mainChainTipNode := s.hashToHeaders[mainChainTip.Hash()]
 
 	// Traverse up from main chain tip to genesis, checking if we encounter the blockNode
@@ -275,6 +333,13 @@ func (s *BlockStore) IsPartOfMainChain(block block.Block) bool {
 // O(1) time complexity.
 // Also works for orphan blocks.
 func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.getBlockByHash(hash)
+}
+
+// getBlockByHash is the internal implementation without locking.
+func (s *BlockStore) getBlockByHash(hash common.Hash) (block.Block, error) {
 	blockNode, exists := s.hashToHeaders[hash]
 	if !exists {
 		return block.Block{}, fmt.Errorf("block with hash %v not found", hash)
@@ -288,6 +353,9 @@ func (s *BlockStore) GetBlockByHash(hash common.Hash) (block.Block, error) {
 // Starts search at leaves, so retrieving blocks at higher heights is faster.
 // Never contains orphans, as orphans have no defined height in relation to the genesis block.
 func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	blockHashesAtHeight := mapset.NewSet[common.Hash]()
 
 	for _, leaf := range s.blockForest.Leaves {
@@ -297,7 +365,7 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 		for currentNode != nil && currentNode.Height >= height {
 			if currentNode.Height == height {
 				// isOrphan removes orphans from the result (orphans may have the default height 0)
-				isOrphan, err := s.IsOrphanBlock(*currentNode.Block)
+				isOrphan, err := s.isOrphanBlock(*currentNode.Block)
 				assert.IsNil(err, "error checking if block is orphan")
 				if !isOrphan {
 					blockHashesAtHeight.Add(currentNode.Block.Hash())
@@ -313,7 +381,7 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 	// Convert hashes back to blocks
 	blocksAtHeight := make([]block.Block, 0, blockHashesAtHeight.Cardinality())
 	for hash := range blockHashesAtHeight.Iter() {
-		b, err := s.GetBlockByHash(hash)
+		b, err := s.getBlockByHash(hash)
 		assert.IsNil(err, "error retrieving block by hash")
 		blocksAtHeight = append(blocksAtHeight, b)
 	}
@@ -326,6 +394,9 @@ func (s *BlockStore) GetBlocksByHeight(height uint64) []block.Block {
 // Also note that the highest block may not be part of the main chain (the main chain is the one with the most accumulated work).
 // Use GetMainChainTip to get the tip of the main chain.
 func (s *BlockStore) GetCurrentHeight() uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	var maxHeight uint64
 	for _, leaf := range s.blockForest.Leaves {
 		if leaf.Height > maxHeight {
@@ -340,6 +411,13 @@ func (s *BlockStore) GetCurrentHeight() uint64 {
 // The main chain is defined as the chain with the highest accumulated work.
 // In the case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
 func (s *BlockStore) GetMainChainTip() block.Block {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.getMainChainTip()
+}
+
+// getMainChainTip is the internal implementation without locking.
+func (s *BlockStore) getMainChainTip() block.Block {
 	var mainChainTip *blockNode
 	var maxAccumulatedWork uint64
 
@@ -375,6 +453,9 @@ func copyOfBlock(node *blockNode) block.Block {
 
 // GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
 func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	// Get main chain hashes for marking blocks
 	mainChainHashes := s.getMainChainHashes()
 
@@ -386,6 +467,8 @@ func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 		s.collectBlocksWithMetadata(root, mainChainHashes, visited, &result)
 	}
 
+	assert.Assert(len(result) == len(s.hashToHeaders))
+
 	return result
 }
 
@@ -393,7 +476,7 @@ func (s *BlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 func (s *BlockStore) getMainChainHashes() mapset.Set[common.Hash] {
 	mainChainHashes := mapset.NewSet[common.Hash]()
 
-	mainChainTip := s.GetMainChainTip()
+	mainChainTip := s.getMainChainTip()
 	mainChainTipNode := s.hashToHeaders[mainChainTip.Hash()]
 
 	// Traverse from tip to genesis
@@ -415,7 +498,7 @@ func (s *BlockStore) collectBlocksWithMetadata(node *blockNode, mainChainHashes 
 	}
 	visited.Add(blockHash)
 
-	isOrphan, _ := s.IsOrphanBlock(*node.Block)
+	isOrphan, _ := s.isOrphanBlock(*node.Block)
 	isMainChain := mainChainHashes.Contains(blockHash)
 
 	var parentHash *common.Hash

@@ -75,25 +75,22 @@ func TestCheckConnections(t *testing.T) {
 	// Peer 1: Recent LastSeen (should NOT be removed)
 	peerID1 := common.PeerId("peer-1-recent")
 	peerRetriever.peers[peerID1] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  now - (10 * 60), // 10 minutes ago
-		Direction: common.DirectionOutbound,
+		State:    common.StateConnected,
+		LastSeen: now - (8 * 60), // 8 minutes ago (< 9 min PeerTimeout)
 	}
 
 	// Peer 2: Old LastSeen (SHOULD be removed)
 	peerID2 := common.PeerId("peer-2-old")
 	peerRetriever.peers[peerID2] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  now - (20 * 60), // 20 minutes ago (> PeerTimeout)
-		Direction: common.DirectionInbound,
+		State:    common.StateConnected,
+		LastSeen: now - (10 * 60), // 10 minutes ago (> 9 min PeerTimeout)
 	}
 
 	// Peer 3: LastSeen = 0 (SHOULD be removed)
 	peerID3 := common.PeerId("peer-3-zero")
 	peerRetriever.peers[peerID3] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  0,
-		Direction: common.DirectionOutbound,
+		State:    common.StateConnected,
+		LastSeen: 0,
 	}
 
 	// Run the connection check
@@ -125,9 +122,8 @@ func TestCheckConnectionsAtTimeoutBoundary(t *testing.T) {
 	// Create peer exactly at timeout boundary (SHOULD be removed)
 	peerID := common.PeerId("peer-exact-timeout")
 	peerRetriever.peers[peerID] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  now - int64(PeerTimeout.Seconds()),
-		Direction: common.DirectionOutbound,
+		State:    common.StateConnected,
+		LastSeen: now - int64(PeerTimeout.Seconds()), // exactly 9 minutes ago
 	}
 
 	service.checkConnections()
@@ -148,9 +144,8 @@ func TestCheckConnectionsJustBeforeTimeout(t *testing.T) {
 	// Create peer just before timeout boundary (should NOT be removed)
 	peerID := common.PeerId("peer-before-timeout")
 	peerRetriever.peers[peerID] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  now - int64(PeerTimeout.Seconds()) + 1, // 1 second before timeout
-		Direction: common.DirectionOutbound,
+		State:    common.StateConnected,
+		LastSeen: now - int64(PeerTimeout.Seconds()) + 1, // 1 second before 9 min timeout
 	}
 
 	service.checkConnections()
@@ -181,9 +176,8 @@ func TestCheckConnectionsPeerNotFound(t *testing.T) {
 	// Add a peer to the retriever
 	peerID := common.PeerId("peer-1")
 	peerRetriever.peers[peerID] = &peer.Peer{
-		State:     common.StateConnected,
-		LastSeen:  0,
-		Direction: common.DirectionOutbound,
+		State:    common.StateConnected,
+		LastSeen: 0,
 	}
 
 	// Remove the peer from the retriever (simulating concurrent removal)

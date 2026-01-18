@@ -234,9 +234,8 @@ func merkleRootReferenceFromLeaves(leaves []common.Hash) common.Hash {
 
 func makeTx(lockTime uint64) transaction.Transaction {
 	return transaction.Transaction{
-		Inputs:   nil,
-		Outputs:  nil,
-		LockTime: lockTime,
+		Inputs:  nil,
+		Outputs: nil,
 	}
 }
 

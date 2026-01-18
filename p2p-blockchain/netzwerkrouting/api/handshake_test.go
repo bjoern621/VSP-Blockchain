@@ -37,14 +37,6 @@ func (m *mockHandshakeInitiator) InitiateHandshake(peerID common.PeerId) error {
 	if ok {
 		p.Lock()
 		if p.State == common.StateNew {
-			switch p.Direction {
-			case common.DirectionInbound:
-				p.Direction = common.DirectionBoth
-			case common.DirectionUnknown:
-				p.Direction = common.DirectionOutbound
-			case common.DirectionOutbound, common.DirectionBoth:
-				// These cases would return an error in the real implementation
-			}
 			p.State = common.StateAwaitingVerack
 		}
 		p.Unlock()
@@ -291,15 +283,12 @@ func TestInitiateHandshake_FullChain_CreationToInitiation(t *testing.T) {
 		t.Fatal("initiator not called")
 	}
 
-	// Verify peer exists in peer store with correct direction
+	// Verify peer exists in peer store
 	peerObj, peerExists := peerStore.GetPeer(registeredPeerID)
 	if !peerExists {
 		t.Fatal("peer not found in peer store")
 	}
 
-	if peerObj.Direction != common.DirectionOutbound {
-		t.Errorf("expected peer direction OutBound, got %v", peerObj.Direction)
-	}
 	if peerObj.State != common.StateAwaitingVerack {
 		t.Errorf("expected peer state StateAwaitingVerack, got %v", peerObj.State)
 	}

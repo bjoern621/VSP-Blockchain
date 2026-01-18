@@ -90,7 +90,6 @@ func (r *NetworkInfoRegistry) RegisterPeer(peerID common.PeerId, listeningEndpoi
 
 // GetOrRegisterPeer atomically looks up a peer by addresses, or registers a new one if not found.
 // Returns the peerID and true if the peer already existed, or the new peerID and false if created.
-// The registered peer will have NO direction assigned yet.
 func (r *NetworkInfoRegistry) GetOrRegisterPeer(inboundAddr netip.AddrPort, listeningEndpoint netip.AddrPort) common.PeerId {
 	r.mu.Lock()
 	defer r.mu.Unlock()

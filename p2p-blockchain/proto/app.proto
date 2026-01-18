@@ -79,6 +79,20 @@ service AppService {
     // Post-conditions:
     //  - Returns a DOT format string that can be rendered with Graphviz.
     rpc GetBlockchainVisualization(GetBlockchainVisualizationRequest) returns (GetBlockchainVisualizationResponse);
+
+    // StartMining starts the mining process to create new blocks.
+    //
+    // Post-conditions:
+    //  - Miner begins attempting to create new blocks.
+    //  - Returns success/failure status.
+    rpc StartMining(google.protobuf.Empty) returns (StartMiningResponse);
+
+    // StopMining stops the ongoing mining process.
+    //
+    // Post-conditions:
+    //  - Miner stops attempting to create new blocks.
+    //  - Returns success/failure status.
+    rpc StopMining(google.protobuf.Empty) returns (StopMiningResponse);
 }
 
 message ConnectToRequest {
@@ -122,8 +136,7 @@ message InternalPeerInfoEntry {
     string version = 3; // Protocol version string
     repeated string supported_services = 4;
     string connection_state = 5;
-    string direction = 6;
-    int64 last_seen = 7; // Unix timestamp when the peer was last seen active
+    int64 last_seen = 6; // Unix timestamp when the peer was last seen active
 }
 
 message QueryRegistryRequest {
@@ -234,3 +247,14 @@ message GetBlockchainVisualizationResponse {
     string visualization_url = 1;
 }
 
+// StartMiningResponse contains the result of starting the mining process.
+message StartMiningResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+// StopMiningResponse contains the result of stopping the mining process.
+message StopMiningResponse {
+    bool success = 1;
+    string error_message = 2;
+}

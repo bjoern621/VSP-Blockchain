@@ -148,7 +148,7 @@ func (m *mockDiscoveryPeerRetriever) GetAllOutboundPeers() []common.PeerId {
 	defer m.mu.RUnlock()
 	peerIds := make([]common.PeerId, 0, len(m.peers))
 	for id, p := range m.peers {
-		if p.State == common.StateConnected && p.Direction == common.DirectionOutbound {
+		if p.State == common.StateConnected {
 			peerIds = append(peerIds, id)
 		}
 	}

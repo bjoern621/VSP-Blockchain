@@ -42,7 +42,6 @@ func (h *handshakeService) HandleVersion(peerID common.PeerId, info VersionInfo)
 
 	p.Version = info.Version
 	p.SupportedServices = info.SupportedServices()
-	p.Direction = common.DirectionInbound
 
 	versionInfo := NewLocalVersionInfo()
 

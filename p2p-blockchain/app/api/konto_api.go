@@ -14,7 +14,8 @@ type KontoAPI interface {
 
 // KontoAPIImpl implements KontoAPI using the UTXO API.
 type KontoAPIImpl struct {
-	utxoAPI    *blockapi.UtxoAPI
+	blockStore blockapi.BlockStoreAPI
+	utxoAPI    blockapi.UtxoStoreAPI
 	keyDecoder VSAddressDecoder
 }
 
@@ -24,7 +25,7 @@ type VSAddressDecoder interface {
 }
 
 // NewKontoAPIImpl creates a new KontoAPIImpl with the given dependencies.
-func NewKontoAPIImpl(utxoAPI *blockapi.UtxoAPI, keyDecoder VSAddressDecoder) *KontoAPIImpl {
+func NewKontoAPIImpl(utxoAPI blockapi.UtxoStoreAPI, keyDecoder VSAddressDecoder) *KontoAPIImpl {
 	return &KontoAPIImpl{
 		utxoAPI:    utxoAPI,
 		keyDecoder: keyDecoder,
@@ -43,7 +44,9 @@ func (api *KontoAPIImpl) GetAssets(vsAddress string) konto.AssetsResult {
 	var pubKeyHash [20]byte
 	copy(pubKeyHash[:], pubKeyHashBytes)
 
-	utxos, err := api.utxoAPI.GetUTXOsByPubKeyHash(pubKeyHash)
+	mainChainTip := api.blockStore.GetMainChainTip()
+	mainChainTipHash := mainChainTip.Hash()
+	utxos, err := api.utxoAPI.GetUtxosByPubKeyHashFromBlock(pubKeyHash, mainChainTipHash)
 	if err != nil {
 		return konto.AssetsResult{
 			Success:      false,
