@@ -27,7 +27,7 @@ func (c *Client) SendReject(peerID common.PeerId, errorType int32, rejectedMessa
 func (s *Server) Reject(ctx context.Context, req *pb.Error) (*emptypb.Empty, error) {
 	peerID := s.GetPeerId(ctx)
 
-	logger.Infof("[error_handling] Reject message received from peer %s: error_type=%v, message_type=%s",
+	logger.Warnf("[error_handling] Reject message received from peer %s: error_type=%v, message_type=%s",
 		peerID, req.ErrorType, req.RejectedMessageType)
 
 	return &emptypb.Empty{}, nil
