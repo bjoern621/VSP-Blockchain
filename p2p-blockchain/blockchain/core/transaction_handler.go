@@ -11,6 +11,10 @@ import (
 // Tx processes a transaction message
 // If the transaction is valid and not yet known, it is added to the mempool and broadcasted to other peers
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
 	logger.Infof("[transaction_handler] Tx Message received: %v from %v", tx, peerID)
 
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)

@@ -11,6 +11,10 @@ import (
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
 	logger.Infof("[block_handler] Block Message %v received from %v with %d transactions", &receivedBlock.Header,
 		peerID, len(receivedBlock.Transactions))
 

@@ -9,6 +9,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 
+	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -90,4 +91,21 @@ func (b *Blockchain) NotifyStopMining() {
 	for o := range b.observers.Iter() {
 		o.StopMining()
 	}
+}
+
+// CheckPeerIsConnected checks if the peer with the given ID exists and is in the connected state.
+// Should be used at the beginning of message handlers to validate the peer.
+func (b *Blockchain) CheckPeerIsConnected(peerID common.PeerId) bool {
+	peer, exists := b.peerRetriever.GetPeer(peerID)
+	if !exists {
+		logger.Warnf("[blockchain] Peer %v not found", peerID)
+		return false
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[blockchain] Peer %s is not connected (state: %v)", peerID, peer.State)
+		return false
+	}
+
+	return true
 }

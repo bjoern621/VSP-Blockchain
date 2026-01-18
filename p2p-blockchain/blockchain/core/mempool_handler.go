@@ -8,6 +8,10 @@ import (
 )
 
 func (b *Blockchain) Mempool(peerID common.PeerId) {
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
 	logger.Infof("[mempool_handler] Message received from %v", peerID)
 
 	// Get all transaction hashes from the mempool

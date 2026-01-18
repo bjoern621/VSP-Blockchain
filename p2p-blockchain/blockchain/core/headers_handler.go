@@ -9,14 +9,7 @@ import (
 )
 
 func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
-	peer, exists := b.peerRetriever.GetPeer(peerID)
-	if !exists {
-		logger.Warnf("[headers_handler] Headers Message received from unknown peer %v", peerID)
-		return
-	}
-
-	if peer.State != common.StateConnected {
-		logger.Warnf("[headers_handler] Headers Message received from peer %s which is not connected (state: %v)", peerID, peer.State)
+	if !b.CheckPeerIsConnected(peerID) {
 		return
 	}
 
