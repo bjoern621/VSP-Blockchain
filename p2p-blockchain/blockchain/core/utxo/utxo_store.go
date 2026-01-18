@@ -33,15 +33,15 @@ type UtxoStoreAPI interface {
 	GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKeyHash, blockHash common.Hash) ([]transaction.UTXO, error)
 }
 
-// Outpoint uniquely identifies a UTXO by transaction ID and output index
-type Outpoint struct {
+// outpoint uniquely identifies a UTXO by transaction ID and output index
+type outpoint struct {
 	TxID        transaction.TransactionID
 	OutputIndex uint32
 }
 
 // utxoPool holds the UTXO set for a specific block.
 type utxoPool struct {
-	UtxoData map[Outpoint]transaction.Output
+	UtxoData map[outpoint]transaction.Output
 }
 
 // UtxoStore manages UTXO pools for each block in the blockchain.
@@ -72,7 +72,7 @@ func (us *UtxoStore) InitializeGenesisPool(genesisBlock block.Block) error {
 	}
 
 	// Create an empty pool for the "previous" block (which doesn't exist for genesis)
-	emptyPrevPool := &utxoPool{UtxoData: make(map[Outpoint]transaction.Output)}
+	emptyPrevPool := &utxoPool{UtxoData: make(map[outpoint]transaction.Output)}
 
 	// Build the genesis pool using the standard method
 	genesisPool := us.createUtxoPoolFromBlock(emptyPrevPool, genesisBlock)
@@ -94,7 +94,7 @@ func (us *UtxoStore) ValidateTransactionFromBlock(tx transaction.Transaction, bl
 	}
 
 	for _, input := range tx.Inputs {
-		outpoint := Outpoint{
+		outpoint := outpoint{
 			TxID:        input.PrevTxID,
 			OutputIndex: input.OutputIndex,
 		}
@@ -125,7 +125,7 @@ func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex 
 		return transaction.Output{}, fmt.Errorf("UTXO pool for block %v not found", blockHash)
 	}
 
-	outpoint := Outpoint{
+	outpoint := outpoint{
 		TxID:        id,
 		OutputIndex: outputIndex,
 	}
@@ -191,7 +191,7 @@ func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
 // createUtxoPoolFromBlock builds a new UTXO pool by copying the previous pool,
 // removing UTXOs spent by the block's inputs, and adding the block's new outputs.
 func (us *UtxoStore) createUtxoPoolFromBlock(prevPool *utxoPool, newBlock block.Block) *utxoPool {
-	newUtxoData := make(map[Outpoint]transaction.Output)
+	newUtxoData := make(map[outpoint]transaction.Output)
 
 	// Add all previous UTXOs to the new pool
 	for outpoint, output := range prevPool.UtxoData {
@@ -206,7 +206,7 @@ func (us *UtxoStore) createUtxoPoolFromBlock(prevPool *utxoPool, newBlock block.
 		}
 
 		for _, input := range tx.Inputs {
-			outpoint := Outpoint{
+			outpoint := outpoint{
 				TxID:        input.PrevTxID,
 				OutputIndex: input.OutputIndex,
 			}
@@ -220,7 +220,7 @@ func (us *UtxoStore) createUtxoPoolFromBlock(prevPool *utxoPool, newBlock block.
 	for _, tx := range newBlock.Transactions {
 		txID := tx.TransactionId()
 		for i, output := range tx.Outputs {
-			outpoint := Outpoint{
+			outpoint := outpoint{
 				TxID:        txID,
 				OutputIndex: uint32(i),
 			}
