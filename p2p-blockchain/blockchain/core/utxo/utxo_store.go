@@ -180,6 +180,11 @@ func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
 	prevPool, exists := us.blockHashToPool[prevBlockHash]
 	assert.Assert(exists, "previous block UTXO pool not found, but must exist, as block is no orphan")
 
+	valid := us.ValidateBlock(newBlock)
+	if !valid {
+		return fmt.Errorf("block %v is invalid, cannot add to UTXO store", newBlockHash)
+	}
+
 	newPool := us.createUtxoPoolFromBlock(&prevPool, newBlock)
 
 	// Store the new pool
