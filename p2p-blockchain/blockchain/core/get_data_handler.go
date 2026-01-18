@@ -9,7 +9,11 @@ import (
 )
 
 func (b *Blockchain) GetData(inventory []*inv.InvVector, peerID common.PeerId) {
-	logger.Infof("[get_data_handler] GetData Message received: %d items from %v", len(inventory), peerID)
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
+	logger.Infof("[get_data_handler] GetData Message received: %d items requested from %v", len(inventory), peerID)
 	for i, invVector := range inventory {
 		logger.Infof("[get_data_handler]  [%d] %v", i, invVector)
 	}

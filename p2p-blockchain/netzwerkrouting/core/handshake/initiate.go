@@ -31,6 +31,11 @@ func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
 	p.Lock()
 	defer p.Unlock()
 
+	// Check if peer is in holddown - recently disconnected, reject reconnection attempts
+	if p.State == common.StateHolddown {
+		return fmt.Errorf("peer %s is in holddown (recently disconnected), cannot initiate handshake", peerID)
+	}
+
 	if p.State != common.StateNew {
 		return fmt.Errorf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
 	}

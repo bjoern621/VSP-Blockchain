@@ -25,9 +25,11 @@ func TestOnPeerConnected_OutboundSendsGetHeaders(t *testing.T) {
 	blockchain := NewBlockchain(
 		mockMsgSender,
 		nil,
-		validation.NewTransactionValidator(nil),
+		nil,
 		nil,
 		mockBlockStore,
+		nil,
+		validation.NewTransactionValidator(nil),
 		nil,
 	)
 
@@ -74,9 +76,11 @@ func TestOnPeerConnected_InboundDoesNotTriggerIBD(t *testing.T) {
 	blockchain := NewBlockchain(
 		mockMsgSender,
 		nil,
-		validation.NewTransactionValidator(nil),
+		nil,
 		nil,
 		mockBlockStore,
+		nil,
+		validation.NewTransactionValidator(nil),
 		nil,
 	)
 
@@ -111,9 +115,11 @@ func TestOnPeerConnected_BlockLocatorUsesFibonacci(t *testing.T) {
 	blockchain := NewBlockchain(
 		mockMsgSender,
 		nil,
-		validation.NewTransactionValidator(nil),
+		nil,
 		nil,
 		mockBlockStore,
+		nil,
+		validation.NewTransactionValidator(nil),
 		nil,
 	)
 

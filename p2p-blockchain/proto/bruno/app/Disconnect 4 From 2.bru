@@ -1,12 +1,12 @@
 meta {
-  name: ConnectTo 1 To 4
+  name: Disconnect 4 From 2
   type: grpc
-  seq: 8
+  seq: 7
 }
 
 grpc {
-  url: localhost:20001
-  method: /app.AppService/ConnectTo
+  url: localhost:20004
+  method: /app.AppService/Disconnect
   body: grpc
   protoPath: ../../app.proto
   auth: inherit
@@ -17,8 +17,8 @@ body:grpc {
   name: message 1
   content: '''
     {
-      "ip_address": "rBwBDg==",
-      "port": 50052
+      "ip_address": "rBwBDA==", 
+      "port": 50051
     }
   '''
 }

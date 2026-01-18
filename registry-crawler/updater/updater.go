@@ -50,6 +50,25 @@ func RunPeerDiscoveryLoop(cfg common.Config) {
 func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	initPeerManager(cfg)
 
+	// Disconnect peers marked in the previous cycle
+	peersToDisconnect := peerManager.GetPeersToDisconnect()
+	if len(peersToDisconnect) > 0 {
+		conn, err := discovery.DialAppGRPC(ctx, cfg.AppAddr)
+		if err != nil {
+			logger.Warnf("failed to dial app service for disconnection: %v", err)
+		} else {
+			client := pb.NewAppServiceClient(conn)
+			for _, peer := range peersToDisconnect {
+				_, disconnectErr := discovery.DisconnectPeer(ctx, client, peer.IP, peer.Port)
+				if disconnectErr != nil {
+					logger.Warnf("failed to disconnect peer %s:%d: %v", peer.IP, peer.Port, disconnectErr)
+				} else {
+					logger.Debugf("disconnected peer %s:%d from previous cycle", peer.IP, peer.Port)
+				}
+			}
+		}
+	}
+
 	peerManager.CleanupExpired()
 
 	bootstrapPeers, port := discovery.ResolveBootstrapEndpoints(ctx, cfg)
@@ -86,6 +105,7 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	success := verifyPeer(ctx, cfg, peer.IP, peer.Port)
 	if success {
 		peerManager.MarkConnected(peer.IP)
+		peerManager.MarkForDisconnect(peer.IP)
 		logger.Debugf("peer verified and marked as known: %s", peer.IP)
 	} else {
 		peerManager.MarkFailed(peer.IP)
@@ -93,7 +113,7 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	}
 
 	total, newCount, connecting, known := peerManager.Stats()
-	logger.Infof("peer stats: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
+	logger.Infof("peer stats after verification: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
 }
 
 // verifyPeer attempts to connect to a peer to verify it is reachable.
@@ -110,7 +130,9 @@ func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) b
 	success, err := discovery.ConnectToPeer(ctx, client, ip, port)
 	if err != nil {
 		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
+		return false
 	}
+
 	return success
 }
 
@@ -143,7 +165,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg common.Config) error {
 	seedPort := int32(cfg.AcceptedP2PPort)
 
 	seedIPs = peerManager.GetRandomKnownPeerIPsFilteredByPort(seedPort, cfg.PeerRegistrySubsetSize)
-	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
+	logger.Debugf("selected %d random known peers for seed targets (requested %d): %v", len(seedIPs), cfg.PeerRegistrySubsetSize, seedIPs)
 	if len(seedIPs) == 0 {
 		logger.Debugf("no known peers, falling back to bootstrap targets")
 		bootstrapIPs, _ := discovery.ResolveBootstrapEndpoints(ctx, cfg)

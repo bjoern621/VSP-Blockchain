@@ -167,6 +167,7 @@ func (r *NetworkInfoRegistry) SetListeningEndpoint(peerID common.PeerId, listeni
 }
 
 // SetConnection sets the outbound gRPC connection for an existing peer.
+// Starts monitoring the connection state to detect disconnections.
 func (r *NetworkInfoRegistry) SetConnection(peerID common.PeerId, conn *grpc.ClientConn) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -227,6 +228,8 @@ func (r *NetworkInfoRegistry) GetAllInfrastructureInfo() api.FullInfrastructureI
 }
 
 // RemovePeer removes a peer from the network info registry and closes its gRPC connection.
+// This is a full removal that clears all address mappings and the peer entry.
+// Use CloseConnection for holddown scenarios where address mappings should be preserved.
 func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -260,6 +263,34 @@ func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
 	delete(r.networkInfoEntries, peerID)
 
 	logger.Debugf("[network_info_registry] Removed peer %s from network info registry", peerID)
+}
+
+// CloseConnection closes the gRPC connection for a peer but preserves address mappings.
+// This is used during holddown to prevent reconnection attempts while keeping the ability
+// to detect and reject incoming connections from the holddown peer.
+//
+// The peer entry and address mappings remain intact so GetOrRegisterPeer can still
+// find the peer by its listening endpoint or inbound addresses.
+func (r *NetworkInfoRegistry) CloseConnection(peerID common.PeerId) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	entry, exists := r.networkInfoEntries[peerID]
+	if !exists {
+		logger.Warnf("[network_info_registry] CloseConnection called for unknown peer %s", peerID)
+		return
+	}
+
+	// Close the gRPC connection if it exists
+	if entry.OutboundConn != nil {
+		err := entry.OutboundConn.Close()
+		if err != nil {
+			logger.Warnf("[network_info_registry] Failed to close gRPC connection for peer %s: %v", peerID, err)
+		} else {
+			logger.Debugf("[network_info_registry] Closed gRPC connection for peer %s (holddown)", peerID)
+		}
+		entry.OutboundConn = nil
+	}
 }
 
 // formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.

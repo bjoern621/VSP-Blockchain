@@ -229,7 +229,7 @@ func TestGetOwnPubKeyHash(t *testing.T) {
 	if err != nil {
 		t.Errorf("getOwnPubKeyHash() returned error: %v", err)
 	}
-	// Currently returns empty hash (TODO)
+	// Currently returns empty hash
 	if pubKeyHash != (transaction.PubKeyHash{}) {
 		t.Errorf("getOwnPubKeyHash() returned non-empty hash")
 	}

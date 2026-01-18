@@ -1,15 +1,15 @@
 meta {
-  name: Generate Key Pair
+  name: GetInternalPeerInfo Node 4
   type: grpc
   seq: 4
 }
 
 grpc {
-  url: localhost:20005
-  method: /app.AppService/GenerateKeyset
+  url: localhost:20004
+  method: /app.AppService/GetInternalPeerInfo
   body: grpc
   protoPath: ../../app.proto
-  auth: none
+  auth: inherit
   methodType: unary
 }
 

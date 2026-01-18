@@ -3,7 +3,6 @@ package peer
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 // PeerData is an interface for accessing peer information.
@@ -18,12 +17,12 @@ type PeerData interface {
 
 // dataPeerRetriever is the interface that the data layer's PeerStore implements.
 type dataPeerRetriever interface {
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
 }
 
 // peerDataAdapter wraps data layer's Peer and implements PeerData interface.
 type peerDataAdapter struct {
-	peer *peer.Peer
+	peer *common.Peer
 }
 
 func (a *peerDataAdapter) Lock() {

@@ -28,6 +28,10 @@ func (s *DiscoveryService) GetPeers() {
 		peer, found := s.peerRetriever.GetPeer(peerID)
 		assert.Assert(found, "peer should exist after registry discovery")
 
+		if peer.State != common.StateNew {
+			continue // Only update LastSeen for peers in StateNew via discovery
+		}
+
 		peer.Lock()
 		peer.LastSeen = time.Now().Unix()
 		peer.Unlock()
