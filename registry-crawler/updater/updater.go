@@ -143,7 +143,7 @@ func updateSeedHostsOnce(ctx context.Context, cfg common.Config) error {
 	seedPort := int32(cfg.AcceptedP2PPort)
 
 	seedIPs = peerManager.GetRandomKnownPeerIPsFilteredByPort(seedPort, cfg.PeerRegistrySubsetSize)
-	logger.Debugf("selected %d random known peers for seed targets (requested %d)", len(seedIPs), cfg.PeerRegistrySubsetSize)
+	logger.Debugf("selected %d random known peers for seed targets (requested %d): %v", len(seedIPs), cfg.PeerRegistrySubsetSize, seedIPs)
 	if len(seedIPs) == 0 {
 		logger.Debugf("no known peers, falling back to bootstrap targets")
 		bootstrapIPs, _ := discovery.ResolveBootstrapEndpoints(ctx, cfg)
