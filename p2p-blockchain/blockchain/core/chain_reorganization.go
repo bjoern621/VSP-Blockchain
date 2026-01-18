@@ -3,10 +3,8 @@ package core
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 )
 
 // ChainReorganizationAPI defines the interface for chain reorganization handling.
@@ -24,13 +22,13 @@ type ChainReorganizationAPI interface {
 type ChainReorganization struct {
 	lastKnownTip common.Hash
 	blockStore   blockchain.BlockStoreAPI
-	utxoService  utxo.UTXOService
+	utxoService  utxo.UtxoStoreAPI
 	mempool      *Mempool
 }
 
 func NewChainReorganization(
 	blockStore blockchain.BlockStoreAPI,
-	utxoService utxo.UTXOService,
+	utxoService utxo.UtxoStoreAPI,
 	mempool *Mempool,
 ) *ChainReorganization {
 	return &ChainReorganization{
@@ -191,49 +189,17 @@ func (cr *ChainReorganization) disconnectBlocks(fromTip, toForkPoint common.Hash
 }
 
 // disconnectBlock performs rollback operations for a single block:
-// - Reverts UTXO state changes
 // - Moves transactions back to mempool
+// Note: With the new UTXO store design, each block maintains its own immutable UTXO pool snapshot,
+// so there's no need to revert UTXO state changes. The previous block's UTXO pool is still available.
 func (cr *ChainReorganization) disconnectBlock(blockHash common.Hash) error {
 	blk, err := cr.blockStore.GetBlockByHash(blockHash)
 	if err != nil {
 		return err
 	}
 
-	// First, undo the UTXO state changes
-	err = cr.undoBlockState(blk)
-	if err != nil {
-		return err
-	}
-
-	// Then, move transactions back to mempool
+	// Move transactions back to mempool
 	cr.moveTransactionsToMempool(blk)
-
-	return nil
-}
-
-// undoBlockState reverts the UTXO state changes made by the given block.
-// This includes:
-// - Removing UTXOs created by the block's transactions
-// - Restoring UTXOs that were spent by the block's transactions
-func (cr *ChainReorganization) undoBlockState(blk block.Block) error {
-	// Process transactions in reverse order
-	for i := len(blk.Transactions) - 1; i >= 0; i-- {
-		tx := blk.Transactions[i]
-		txID := tx.TransactionId()
-
-		// Save input UTXOs before reverting (needed for restoration)
-		inputUTXOs, err := cr.saveInputUTXOs(&tx)
-		if err != nil {
-			// For coinbase transactions, there are no inputs to save
-			inputUTXOs = []utxopool.UTXOEntry{}
-		}
-
-		// Revert the transaction (removes outputs, restores inputs)
-		err = cr.utxoService.RevertTransaction(&tx, txID, inputUTXOs)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
@@ -339,22 +305,7 @@ func (cr *ChainReorganization) connectBlock(blk block.Block) error {
 
 // applyBlock applies all transactions in the block to the UTXO set.
 func (cr *ChainReorganization) applyBlock(blk block.Block) error {
-	// Get block height from blockStore
-	// We need this to properly mark UTXOs as confirmed
-	blockHeight := cr.getBlockHeight(blk)
-
-	for _, tx := range blk.Transactions {
-		txID := tx.TransactionId()
-		isCoinbase := tx.IsCoinbase()
-
-		// Apply the transaction to the UTXO set
-		err := cr.utxoService.ApplyTransaction(&tx, txID, blockHeight, isCoinbase)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return cr.utxoService.AddNewBlock(blk)
 }
 
 // cleanMempool removes confirmed transactions from the mempool.
@@ -371,26 +322,6 @@ func (cr *ChainReorganization) cleanMempool(blockHashes []common.Hash) {
 // Helper methods
 // =========================================================================
 
-// saveInputUTXOs retrieves and saves the input UTXOs of a transaction
-// before they are spent. This is needed for later rollback.
-func (cr *ChainReorganization) saveInputUTXOs(tx *transaction.Transaction) ([]utxopool.UTXOEntry, error) {
-	inputUTXOs := make([]utxopool.UTXOEntry, 0, len(tx.Inputs))
-
-	for _, input := range tx.Inputs {
-		outpoint := utxopool.NewOutpoint(input.PrevTxID, input.OutputIndex)
-
-		// Retrieve the UTXO entry from the UTXO set
-		entry, err := cr.utxoService.GetUTXOEntry(outpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		inputUTXOs = append(inputUTXOs, entry)
-	}
-
-	return inputUTXOs, nil
-}
-
 // blockHashesFromBlocks extracts block hashes from a list of blocks.
 func (cr *ChainReorganization) blockHashesFromBlocks(blocks []block.Block) []common.Hash {
 	hashes := make([]common.Hash, len(blocks))
@@ -398,31 +329,6 @@ func (cr *ChainReorganization) blockHashesFromBlocks(blocks []block.Block) []com
 		hashes[i] = blk.Hash()
 	}
 	return hashes
-}
-
-// getBlockHeight retrieves the height of a block from the blockStore.
-func (cr *ChainReorganization) getBlockHeight(blk block.Block) uint64 {
-	// Walk backwards to genesis counting blocks
-	// This is a simple implementation - could be optimized by caching heights
-	height := uint64(0)
-	currentHash := blk.Hash()
-
-	for {
-		currentBlock, err := cr.blockStore.GetBlockByHash(currentHash)
-		if err != nil {
-			break
-		}
-
-		// Stop at genesis (no previous block)
-		if currentBlock.Header.PreviousBlockHash == (common.Hash{}) {
-			break
-		}
-
-		height++
-		currentHash = currentBlock.Header.PreviousBlockHash
-	}
-
-	return height
 }
 
 // updateLastKnownTip updates the last known chain tip.
