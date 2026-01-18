@@ -656,7 +656,7 @@ func TestNewMinerService(t *testing.T) {
 		t.Error("Blockchain not set correctly")
 	}
 
-	if minerService.utxoLookup != mockUTXO {
+	if miner.utxoLookup != mockUTXO {
 		t.Error("UTXO lookup not set correctly")
 	}
 
