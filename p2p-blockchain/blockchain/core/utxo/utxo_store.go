@@ -6,6 +6,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
@@ -48,8 +49,9 @@ type utxoPool struct {
 
 // UtxoStore manages UTXO pools for each block in the blockchain.
 type UtxoStore struct {
-	blockHashToPool map[common.Hash]utxoPool // maps block hash to its UTXO pool
-	blockStore      blockchain.BlockStoreAPI
+	blockHashToPool   map[common.Hash]utxoPool // maps block hash to its UTXO pool
+	blockHashToPoolMu sync.RWMutex             // protects blockHashToPool
+	blockStore        blockchain.BlockStoreAPI
 }
 
 // NewUtxoStore creates a new UTXO store with the given block store.
@@ -66,6 +68,9 @@ func NewUtxoStore(blockStore blockchain.BlockStoreAPI) UtxoStoreAPI {
 // and then build the genesis pool from it.
 func (us *UtxoStore) InitializeGenesisPool(genesisBlock block.Block) error {
 	genesisHash := genesisBlock.Hash()
+
+	us.blockHashToPoolMu.Lock()
+	defer us.blockHashToPoolMu.Unlock()
 
 	// Check if already initialized
 	if _, exists := us.blockHashToPool[genesisHash]; exists {
@@ -90,6 +95,15 @@ func (us *UtxoStore) InitializeGenesisPool(genesisBlock block.Block) error {
 // ValidateTransactionFromBlock checks if all inputs in the transaction reference valid UTXOs
 // from the UTXO pool at the specified block hash.
 func (us *UtxoStore) ValidateTransactionFromBlock(tx transaction.Transaction, blockHash common.Hash) bool {
+	us.blockHashToPoolMu.RLock()
+	defer us.blockHashToPoolMu.RUnlock()
+
+	return us.validateTransactionFromBlockLocked(tx, blockHash)
+}
+
+// validateTransactionFromBlockLocked checks if all inputs in the transaction reference valid UTXOs.
+// Caller must hold the lock.
+func (us *UtxoStore) validateTransactionFromBlockLocked(tx transaction.Transaction, blockHash common.Hash) bool {
 	prevPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
 		return false // Previous block's UTXO pool not found; block is invalid
@@ -111,12 +125,21 @@ func (us *UtxoStore) ValidateTransactionFromBlock(tx transaction.Transaction, bl
 // ValidateTransactionsOfBlock checks if all inputs in the block's transactions reference valid UTXOs.
 // Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
 func (us *UtxoStore) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
+	us.blockHashToPoolMu.RLock()
+	defer us.blockHashToPoolMu.RUnlock()
+
+	return us.validateTransactionsOfBlockLocked(blockToValidate)
+}
+
+// validateTransactionsOfBlockLocked checks if all inputs in the block's transactions reference valid UTXOs.
+// Caller must hold the lock.
+func (us *UtxoStore) validateTransactionsOfBlockLocked(blockToValidate block.Block) bool {
 	for _, tx := range blockToValidate.Transactions {
 		// Skip coinbase transactions as they don't have real UTXO inputs
 		if tx.IsCoinbase() {
 			continue
 		}
-		valid := us.ValidateTransactionFromBlock(tx, blockToValidate.Header.PreviousBlockHash)
+		valid := us.validateTransactionFromBlockLocked(tx, blockToValidate.Header.PreviousBlockHash)
 		if !valid {
 			return false // Invalid transaction found
 		}
@@ -127,6 +150,9 @@ func (us *UtxoStore) ValidateTransactionsOfBlock(blockToValidate block.Block) bo
 
 // GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
 func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex uint32, blockHash common.Hash) (transaction.Output, error) {
+	us.blockHashToPoolMu.RLock()
+	defer us.blockHashToPoolMu.RUnlock()
+
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
 		return transaction.Output{}, fmt.Errorf("UTXO pool for block %v not found", blockHash)
@@ -147,6 +173,9 @@ func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex 
 
 // GetUtxosByPubKeyHashFromBlock retrieves all UTXOs associated with a public key hash from a specific block's UTXO pool.
 func (us *UtxoStore) GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKeyHash, blockHash common.Hash) ([]transaction.UTXO, error) {
+	us.blockHashToPoolMu.RLock()
+	defer us.blockHashToPoolMu.RUnlock()
+
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
 		return nil, fmt.Errorf("UTXO pool for block %v not found", blockHash)
@@ -179,6 +208,9 @@ func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
 		return nil
 	}
 
+	us.blockHashToPoolMu.Lock()
+	defer us.blockHashToPoolMu.Unlock()
+
 	if _, exists := us.blockHashToPool[newBlockHash]; exists {
 		logger.Warnf("[utxoStore] block %v already exists in UTXO store, skipping", newBlockHash)
 		return nil
@@ -188,7 +220,7 @@ func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
 	prevPool, exists := us.blockHashToPool[prevBlockHash]
 	assert.Assert(exists, "previous block UTXO pool not found, but must exist, as block is no orphan")
 
-	valid := us.ValidateTransactionsOfBlock(newBlock)
+	valid := us.validateTransactionsOfBlockLocked(newBlock)
 	if !valid {
 		return fmt.Errorf("block %v is invalid, cannot add to UTXO store", newBlockHash)
 	}
