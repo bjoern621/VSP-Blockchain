@@ -96,6 +96,10 @@ func (b *Blockchain) NotifyStopMining() {
 // CheckPeerIsConnected checks if the peer with the given ID exists and is in the connected state.
 // Should be used at the beginning of message handlers to validate the peer.
 func (b *Blockchain) CheckPeerIsConnected(peerID common.PeerId) bool {
+	if peerID == "" {
+		return true // Local peer ("local miner")
+	}
+
 	peer, exists := b.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[blockchain] Peer %v not found", peerID)
