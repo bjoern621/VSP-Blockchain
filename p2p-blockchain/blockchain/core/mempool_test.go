@@ -17,30 +17,30 @@ func txIDToBlockHash(id transaction.TransactionID) common.Hash {
 
 type mockValidator struct{}
 
-func (m *mockValidator) ValidateTransaction(tx *transaction.Transaction) (bool, error) {
+func (m *mockValidator) ValidateTransaction(_ transaction.Transaction, _ common.Hash) (bool, error) {
 	return true, nil
 }
 
 // mockBlockStore is a mock implementation of blockchain.BlockStoreAPI for testing
 type mockBlockStore2 struct{}
 
-func (m *mockBlockStore2) AddBlock(block block.Block) []common.Hash {
+func (m *mockBlockStore2) AddBlock(_ block.Block) []common.Hash {
 	return nil
 }
 
-func (m *mockBlockStore2) IsOrphanBlock(block block.Block) (bool, error) {
+func (m *mockBlockStore2) IsOrphanBlock(_ block.Block) (bool, error) {
 	return false, nil
 }
 
-func (m *mockBlockStore2) IsPartOfMainChain(block block.Block) bool {
+func (m *mockBlockStore2) IsPartOfMainChain(_ block.Block) bool {
 	return true
 }
 
-func (m *mockBlockStore2) GetBlockByHash(hash common.Hash) (block.Block, error) {
+func (m *mockBlockStore2) GetBlockByHash(_ common.Hash) (block.Block, error) {
 	return block.Block{}, fmt.Errorf("block not found")
 }
 
-func (m *mockBlockStore2) GetBlocksByHeight(height uint64) []block.Block {
+func (m *mockBlockStore2) GetBlocksByHeight(_ uint64) []block.Block {
 	return nil
 }
 
@@ -79,13 +79,17 @@ func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 
 	// Two different transactions (Hash() is expected to reflect the content).
 	tx1 := transaction.Transaction{
-		LockTime: 1,
+		Inputs: []transaction.Input{
+			{PrevTxID: transaction.TransactionID{1}},
+		},
 		Outputs: []transaction.Output{
 			{Value: 10},
 		},
 	}
 	tx2 := transaction.Transaction{
-		LockTime: 2,
+		Inputs: []transaction.Input{
+			{PrevTxID: transaction.TransactionID{2}},
+		},
 		Outputs: []transaction.Output{
 			{Value: 10},
 		},
@@ -127,7 +131,9 @@ func TestMempool_AddTransaction_DoesNotDuplicateSameTransactionID(t *testing.T) 
 	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
 	tx := transaction.Transaction{
-		LockTime: 123,
+		Inputs: []transaction.Input{
+			{PrevTxID: transaction.TransactionID{123}},
+		},
 		Outputs: []transaction.Output{
 			{Value: 99},
 		},

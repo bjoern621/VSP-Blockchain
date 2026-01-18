@@ -1,9 +1,7 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -16,150 +14,180 @@ import (
 // Mock Implementations for Integration Testing
 // =========================================================================
 
-// mockUTXOService is a mock for UTXOService that tracks state changes
-type mockUTXOService struct {
-	appliedTransactions     []transactionApplied
-	revertedTransactions    []transactionReverted
-	utxos                   map[utxopool.Outpoint]utxopool.UTXOEntry
-	blockHeight             uint64
-	addUTXOCalled           int
-	spendUTXOCalled         int
-	applyTransactionCalled  int
-	revertTransactionCalled int
-}
-
-type transactionApplied struct {
+// Outpoint uniquely identifies a UTXO by transaction ID and output index (mirrors utxo.Outpoint)
+type testOutpoint struct {
 	TxID        transaction.TransactionID
-	BlockHeight uint64
-	IsCoinbase  bool
-	Outputs     []uint32 // indices of outputs added
-	Inputs      []utxopool.Outpoint
+	OutputIndex uint32
 }
 
-type transactionReverted struct {
-	TxID   transaction.TransactionID
-	Inputs []utxopool.UTXOEntry // saved input UTXOs
+// mockUTXOService is a mock for UtxoStoreAPI that tracks state changes
+type mockUTXOService struct {
+	// blockHashToPool maps block hash to its UTXO pool
+	blockHashToPool map[common.Hash]map[testOutpoint]transaction.Output
+	blockStore      blockchain.BlockStoreAPI
+
+	// Tracking for test assertions
+	addNewBlockCalled           int
+	initializeGenesisPoolCalled int
 }
 
-func newMockUTXOService() *mockUTXOService {
+func newMockUTXOService(blockStore blockchain.BlockStoreAPI) *mockUTXOService {
 	return &mockUTXOService{
-		utxos: make(map[utxopool.Outpoint]utxopool.UTXOEntry),
+		blockHashToPool: make(map[common.Hash]map[testOutpoint]transaction.Output),
+		blockStore:      blockStore,
 	}
 }
 
-func (m *mockUTXOService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
-	outpoint := utxopool.NewOutpoint(txID, outputIndex)
-	entry, ok := m.utxos[outpoint]
-	if !ok {
-		return transaction.Output{}, utxo.ErrUTXONotFound
-	}
-	return entry.Output, nil
-}
+// InitializeGenesisPool creates the UTXO pool for the genesis block.
+func (m *mockUTXOService) InitializeGenesisPool(genesisBlock block.Block) error {
+	m.initializeGenesisPoolCalled++
 
-func (m *mockUTXOService) GetUTXOEntry(outpoint utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	entry, ok := m.utxos[outpoint]
-	if !ok {
-		return utxopool.UTXOEntry{}, utxo.ErrUTXONotFound
-	}
-	return entry, nil
-}
-
-func (m *mockUTXOService) ContainsUTXO(outpoint utxopool.Outpoint) bool {
-	_, ok := m.utxos[outpoint]
-	return ok
-}
-
-func (m *mockUTXOService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
-	return []transaction.UTXO{}, nil
-}
-
-func (m *mockUTXOService) AddUTXO(outpoint utxopool.Outpoint, entry utxopool.UTXOEntry) error {
-	m.addUTXOCalled++
-	m.utxos[outpoint] = entry
-	return nil
-}
-
-func (m *mockUTXOService) SpendUTXO(outpoint utxopool.Outpoint) error {
-	m.spendUTXOCalled++
-	delete(m.utxos, outpoint)
-	return nil
-}
-
-func (m *mockUTXOService) Remove(outpoint utxopool.Outpoint) error {
-	delete(m.utxos, outpoint)
-	return nil
-}
-
-func (m *mockUTXOService) ApplyTransaction(tx *transaction.Transaction, txID transaction.TransactionID, blockHeight uint64, isCoinbase bool) error {
-	m.applyTransactionCalled++
-
-	applied := transactionApplied{
-		TxID:        txID,
-		BlockHeight: blockHeight,
-		IsCoinbase:  isCoinbase,
+	genesisHash := genesisBlock.Hash()
+	if _, exists := m.blockHashToPool[genesisHash]; exists {
+		return nil
 	}
 
-	// Add outputs
-	for i, out := range tx.Outputs {
-		outpoint := utxopool.NewOutpoint(txID, uint32(i))
-		entry := utxopool.NewUTXOEntry(out, blockHeight, isCoinbase)
-		m.utxos[outpoint] = entry
-		applied.Outputs = append(applied.Outputs, uint32(i))
-	}
+	// Create genesis pool from empty previous pool
+	genesisPool := make(map[testOutpoint]transaction.Output)
 
-	// Spend inputs (skip for coinbase)
-	if !isCoinbase {
-		for _, in := range tx.Inputs {
-			outpoint := utxopool.NewOutpoint(in.PrevTxID, in.OutputIndex)
-			delete(m.utxos, outpoint)
-			applied.Inputs = append(applied.Inputs, outpoint)
+	// Add all outputs from genesis transactions
+	for _, tx := range genesisBlock.Transactions {
+		txID := tx.TransactionId()
+		for i, output := range tx.Outputs {
+			outpoint := testOutpoint{TxID: txID, OutputIndex: uint32(i)}
+			genesisPool[outpoint] = output
 		}
 	}
 
-	m.appliedTransactions = append(m.appliedTransactions, applied)
-	m.blockHeight = blockHeight
+	m.blockHashToPool[genesisHash] = genesisPool
 	return nil
 }
 
-func (m *mockUTXOService) RevertTransaction(tx *transaction.Transaction, txID transaction.TransactionID, inputUTXOs []utxopool.UTXOEntry) error {
-	m.revertTransactionCalled++
+// AddNewBlock creates a new UTXO pool for the block.
+func (m *mockUTXOService) AddNewBlock(newBlock block.Block) error {
+	m.addNewBlockCalled++
 
-	reverted := transactionReverted{
-		TxID:   txID,
-		Inputs: inputUTXOs,
+	newBlockHash := newBlock.Hash()
+
+	// Skip if already exists
+	if _, exists := m.blockHashToPool[newBlockHash]; exists {
+		return nil
 	}
 
-	// Remove outputs (in reverse order)
-	for i := len(tx.Outputs) - 1; i >= 0; i-- {
-		outpoint := utxopool.NewOutpoint(txID, uint32(i))
-		delete(m.utxos, outpoint)
+	// Get previous pool
+	prevBlockHash := newBlock.Header.PreviousBlockHash
+	prevPool, exists := m.blockHashToPool[prevBlockHash]
+	if !exists {
+		prevPool = make(map[testOutpoint]transaction.Output)
 	}
 
-	// Restore inputs
-	for i, in := range tx.Inputs {
-		outpoint := utxopool.NewOutpoint(in.PrevTxID, in.OutputIndex)
-		if i < len(inputUTXOs) {
-			entry := inputUTXOs[i]
-			m.utxos[outpoint] = entry
+	// Create new pool by copying previous
+	newPool := make(map[testOutpoint]transaction.Output)
+	for outpoint, output := range prevPool {
+		newPool[outpoint] = output
+	}
+
+	// Remove spent UTXOs
+	for _, tx := range newBlock.Transactions {
+		if tx.IsCoinbase() {
+			continue
+		}
+		for _, input := range tx.Inputs {
+			outpoint := testOutpoint{TxID: input.PrevTxID, OutputIndex: input.OutputIndex}
+			delete(newPool, outpoint)
 		}
 	}
 
-	m.revertedTransactions = append(m.revertedTransactions, reverted)
+	// Add new outputs
+	for _, tx := range newBlock.Transactions {
+		txID := tx.TransactionId()
+		for i, output := range tx.Outputs {
+			outpoint := testOutpoint{TxID: txID, OutputIndex: uint32(i)}
+			newPool[outpoint] = output
+		}
+	}
+
+	m.blockHashToPool[newBlockHash] = newPool
 	return nil
 }
 
-func (m *mockUTXOService) Flush() error {
-	return nil
+// GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
+func (m *mockUTXOService) GetUtxoFromBlock(prevTxID transaction.TransactionID, outputIndex uint32, blockHash common.Hash) (transaction.Output, error) {
+	pool, exists := m.blockHashToPool[blockHash]
+	if !exists {
+		return transaction.Output{}, nil
+	}
+	outpoint := testOutpoint{TxID: prevTxID, OutputIndex: outputIndex}
+	output, exists := pool[outpoint]
+	if !exists {
+		return transaction.Output{}, nil
+	}
+	return output, nil
 }
 
-func (m *mockUTXOService) Close() error {
-	return nil
+// ValidateBlock checks if all inputs reference valid UTXOs.
+func (m *mockUTXOService) ValidateBlock(blockToValidate block.Block) bool {
+	prevBlockHash := blockToValidate.Header.PreviousBlockHash
+	prevPool, exists := m.blockHashToPool[prevBlockHash]
+	if !exists {
+		return false
+	}
+
+	for _, tx := range blockToValidate.Transactions {
+		if tx.IsCoinbase() {
+			continue
+		}
+		for _, input := range tx.Inputs {
+			outpoint := testOutpoint{TxID: input.PrevTxID, OutputIndex: input.OutputIndex}
+			if _, exists := prevPool[outpoint]; !exists {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// ValidateTransactionFromBlock checks if a transaction is valid against the UTXO set at a specific block.
+func (m *mockUTXOService) ValidateTransactionFromBlock(tx transaction.Transaction, blockHash common.Hash) bool {
+	pool, exists := m.blockHashToPool[blockHash]
+	if !exists {
+		return false
+	}
+
+	for _, input := range tx.Inputs {
+		outpoint := testOutpoint{TxID: input.PrevTxID, OutputIndex: input.OutputIndex}
+		if _, exists := pool[outpoint]; !exists {
+			return false
+		}
+	}
+	return true
+}
+
+// GetUtxosByPubKeyHashFromBlock retrieves all UTXOs associated with a public key hash.
+func (m *mockUTXOService) GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKeyHash, blockHash common.Hash) ([]transaction.UTXO, error) {
+	pool, exists := m.blockHashToPool[blockHash]
+	if !exists {
+		return nil, nil
+	}
+
+	utxos := make([]transaction.UTXO, 0)
+	for outpoint, output := range pool {
+		if output.PubKeyHash == pubKeyHash {
+			utxo := transaction.UTXO{
+				TxID:        outpoint.TxID,
+				OutputIndex: outpoint.OutputIndex,
+				Output:      output,
+			}
+			utxos = append(utxos, utxo)
+		}
+	}
+	return utxos, nil
 }
 
 // mockValidatorForMempool is a mock that always validates successfully
 type mockValidatorForMempool struct{}
 
-func (m *mockValidatorForMempool) ValidateTransaction(_ *transaction.Transaction) (bool, error) {
+func (m *mockValidatorForMempool) ValidateTransaction(_ transaction.Transaction, _ common.Hash) (bool, error) {
 	return true, nil
 }
 
@@ -203,7 +231,6 @@ func createNonCoinbaseTransaction(prevTxID transaction.TransactionID, outputInde
 				OutputIndex: outputIndex,
 				Signature:   []byte("signature"),
 				PubKey:      transaction.PubKey{1, 2, 3},
-				Sequence:    0xffffffff,
 			},
 		},
 		Outputs: []transaction.Output{
@@ -212,7 +239,6 @@ func createNonCoinbaseTransaction(prevTxID transaction.TransactionID, outputInde
 				PubKeyHash: pubKeyHash,
 			},
 		},
-		LockTime: 0,
 	}
 }
 
@@ -228,7 +254,8 @@ func TestBlockStore_ReorganizationNoReorg(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 10)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
@@ -250,8 +277,6 @@ func TestBlockStore_ReorganizationNoReorg(t *testing.T) {
 	// Assert
 	assert.NoError(t, err, "CheckAndReorganize should not error")
 	assert.False(t, didReorg, "Should not reorganize when tip is the same")
-	assert.Equal(t, 0, utxoService.revertTransactionCalled, "Should not revert any transactions")
-	assert.Equal(t, 0, utxoService.applyTransactionCalled, "Should not apply any transactions")
 }
 
 // TestBlockStore_ReorganizationSimpleFork tests a simple chain reorganization
@@ -266,7 +291,8 @@ func TestBlockStore_ReorganizationSimpleFork(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
@@ -297,9 +323,8 @@ func TestBlockStore_ReorganizationSimpleFork(t *testing.T) {
 	tip := store.GetMainChainTip()
 	assert.Equal(t, side2.Hash(), tip.Hash(), "New tip should be side2")
 
-	// Verify transactions were reverted (b2, then b1 - in reverse order)
-	// Note: The actual reversion depends on UTXO service implementation
-	assert.True(t, utxoService.revertTransactionCalled >= 0, "Revert may have been called")
+	// Verify UTXO pools were created for the new chain
+	assert.True(t, utxoService.addNewBlockCalled >= 2, "Should have added blocks to UTXO store")
 }
 
 // TestBlockStore_ReorganizationWithUTXOState tests that UTXO state is correctly managed during reorganization
@@ -310,7 +335,8 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
@@ -331,21 +357,16 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 	}
 	store.AddBlock(block1)
 
-	// Manually apply the coinbase transaction to UTXO set
-	block1TxID := block1.Transactions[0].TransactionId()
-	err := utxoService.ApplyTransaction(&block1.Transactions[0], block1TxID, 1, true)
-	if err != nil {
-		assert.Fail(t, "Should not happen in test")
-		return
-	}
-
-	// Initialize with current tip
+	// Initialize with current tip (this will add block1 to UTXO store)
 	_, _ = reorg.CheckAndReorganize(block1.Hash())
 
-	// Verify UTXO was created
-	coinbaseOutpoint := utxopool.NewOutpoint(block1TxID, 0)
-	_, exists := utxoService.utxos[coinbaseOutpoint]
-	assert.True(t, exists, "Coinbase UTXO should exist after applying block1")
+	// Verify UTXO was created for block1
+	block1TxID := block1.Transactions[0].TransactionId()
+	block1Pool, exists := utxoService.blockHashToPool[block1.Hash()]
+	assert.True(t, exists, "Block1 UTXO pool should exist")
+	coinbaseOutpoint := testOutpoint{TxID: block1TxID, OutputIndex: 0}
+	_, utxoExists := block1Pool[coinbaseOutpoint]
+	assert.True(t, utxoExists, "Coinbase UTXO should exist in block1 pool")
 
 	// Create competing block with different coinbase
 	pubKeyHash2 := transaction.PubKeyHash{4, 5, 6}
@@ -370,9 +391,13 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, didReorg, "Should reorganize to side1")
 
-	// The old coinbase UTXO should be removed (reverted)
-	// This is verified by checking that revert was called
-	assert.True(t, utxoService.revertTransactionCalled > 0, "Should have reverted transactions from old chain")
+	// The side1 coinbase UTXO should exist in its pool
+	side1TxID := side1.Transactions[0].TransactionId()
+	side1Pool, exists := utxoService.blockHashToPool[side1.Hash()]
+	assert.True(t, exists, "Side1 UTXO pool should exist")
+	side1Outpoint := testOutpoint{TxID: side1TxID, OutputIndex: 0}
+	_, side1UtxoExists := side1Pool[side1Outpoint]
+	assert.True(t, side1UtxoExists, "Side1 coinbase UTXO should exist in its pool")
 }
 
 // TestBlockStore_ReorganizationLongerChainRollback tests reorganization with multiple blocks to roll back
@@ -383,7 +408,8 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
@@ -397,15 +423,6 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 
 	block3 := createBlockWithDifficulty(block2.Hash(), 3, 5)
 	store.AddBlock(block3)
-
-	// Apply blocks to UTXO set
-	for _, b := range []block.Block{block1, block2, block3} {
-		txID := b.Transactions[0].TransactionId()
-		err := utxoService.ApplyTransaction(&b.Transactions[0], txID, uint64(b.Header.Nonce), true)
-		if err != nil {
-			assert.Fail(t, "Should not happen in test")
-		}
-	}
 
 	_, _ = reorg.CheckAndReorganize(block3.Hash())
 
@@ -432,8 +449,9 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 	assert.Equal(t, side4.Hash(), tip.Hash(), "Tip should be side4")
 	assert.Equal(t, uint64(4), store.GetCurrentHeight(), "Height should be 4")
 
-	// Should have reverted 3 blocks from old chain and applied 4 from new chain
-	// The exact count depends on implementation, but reverts should have happened
+	// Verify UTXO pools were created for all new chain blocks
+	_, exists := utxoService.blockHashToPool[side4.Hash()]
+	assert.True(t, exists, "Side4 UTXO pool should exist")
 }
 
 // TestBlockStore_ReorganizationWithMempool tests that mempool is properly updated during reorganization
@@ -442,7 +460,8 @@ func TestBlockStore_ReorganizationWithMempool(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 
 	// Create a mempool with a validator that will pass
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -485,7 +504,8 @@ func TestBlockStore_ReorganizationIdempotent(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
@@ -514,23 +534,25 @@ func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
 	store := blockchain.NewBlockStore(genesis)
-	utxoService := newMockUTXOService()
+	utxoService := newMockUTXOService(store)
+	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
 	reorg := NewChainReorganization(store, utxoService, mempool)
 
-	// Track UTXO count before reorg
-	initialUTXOCount := len(utxoService.utxos)
-
 	// Build chain
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)
 	store.AddBlock(block1)
-	err := utxoService.ApplyTransaction(&block1.Transactions[0], block1.Transactions[0].TransactionId(), 1, true)
-	if err != nil {
-		assert.Fail(t, "Should not happen in test")
-	}
 
 	_, _ = reorg.CheckAndReorganize(block1.Hash())
+
+	// Verify block1 UTXO pool was created
+	block1Pool, exists := utxoService.blockHashToPool[block1.Hash()]
+	assert.True(t, exists, "Block1 UTXO pool should exist")
+	block1TxID := block1.Transactions[0].TransactionId()
+	block1Outpoint := testOutpoint{TxID: block1TxID, OutputIndex: 0}
+	_, block1UtxoExists := block1Pool[block1Outpoint]
+	assert.True(t, block1UtxoExists, "Block1 coinbase UTXO should exist")
 
 	// Build competing chain
 	side1 := createBlockWithDifficulty(genesis.Hash(), 10, 10)
@@ -543,23 +565,17 @@ func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, didReorg)
 
-	// After reorg, we should have:
-	// - Genesis coinbase (still there)
-	// - Side1 coinbase (newly added)
-	// - Block1 coinbase (removed)
-	// So: initial + 1 (side1) = roughly same as before block1 was added
-	// The exact count depends on the rollback implementation
-	finalUTXOCount := len(utxoService.utxos)
-
-	// At minimum, we should have at least the genesis UTXO and side1 UTXO
-	assert.True(t, finalUTXOCount >= initialUTXOCount,
-		"UTXO count should be at least initial count after reorg")
-
-	// Verify the side1 coinbase exists
+	// Verify the side1 coinbase exists in its pool
 	side1TxID := side1.Transactions[0].TransactionId()
-	side1Outpoint := utxopool.NewOutpoint(side1TxID, 0)
-	_, exists := utxoService.utxos[side1Outpoint]
-	assert.True(t, exists, "Side1 coinbase UTXO should exist")
+	side1Pool, exists := utxoService.blockHashToPool[side1.Hash()]
+	assert.True(t, exists, "Side1 UTXO pool should exist")
+	side1Outpoint := testOutpoint{TxID: side1TxID, OutputIndex: 0}
+	_, side1UtxoExists := side1Pool[side1Outpoint]
+	assert.True(t, side1UtxoExists, "Side1 coinbase UTXO should exist")
+
+	// Both pools should still exist (immutable snapshots)
+	_, block1PoolStillExists := utxoService.blockHashToPool[block1.Hash()]
+	assert.True(t, block1PoolStillExists, "Block1 UTXO pool should still exist (immutable)")
 }
 
 // TestBlockStore_AccumulatedWorkSelection verifies that main chain selection is based on accumulated work

@@ -25,9 +25,8 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 
 	// Create a simple coinbase transaction
 	tx := transaction.Transaction{
-		Inputs:   []transaction.Input{},
-		Outputs:  []transaction.Output{{Value: 50, PubKeyHash: transaction.PubKeyHash{1, 2, 3}}},
-		LockTime: 0,
+		Inputs:  []transaction.Input{},
+		Outputs: []transaction.Output{{Value: 50, PubKeyHash: transaction.PubKeyHash{1, 2, 3}}},
 	}
 
 	return block.Block{
@@ -57,9 +56,8 @@ func createTestBlockWithLeadingZeros(prevHash common.Hash, nonce uint32) block.B
 
 	// Create a simple coinbase transaction
 	tx := transaction.Transaction{
-		Inputs:   []transaction.Input{},
-		Outputs:  []transaction.Output{{Value: 50, PubKeyHash: transaction.PubKeyHash{1, 2, 3}}},
-		LockTime: 0,
+		Inputs:  []transaction.Input{},
+		Outputs: []transaction.Output{{Value: 50, PubKeyHash: transaction.PubKeyHash{1, 2, 3}}},
 	}
 
 	return block.Block{

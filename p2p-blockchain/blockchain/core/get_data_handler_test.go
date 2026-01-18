@@ -129,7 +129,6 @@ func createTestTransactionForGetData() transaction.Transaction {
 				PubKeyHash: transaction.PubKeyHash{1, 2, 3},
 			},
 		},
-		LockTime: 0,
 	}
 }
 
@@ -140,7 +139,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -183,7 +182,7 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -225,7 +224,7 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -269,7 +268,7 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -306,7 +305,7 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -348,7 +347,7 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -409,7 +408,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -454,7 +453,7 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
