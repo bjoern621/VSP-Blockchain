@@ -46,7 +46,7 @@ func main() {
 	logger.Infof("[main] Loglevel set to %v", logger.CurrentLevel())
 
 	peerStore := peer.NewPeerStore()
-	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
+	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore, peerStore)
 	grpcClient := grpc.NewClient(networkInfoRegistry)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
