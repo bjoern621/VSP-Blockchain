@@ -23,8 +23,9 @@ type UtxoStoreAPI interface {
 	// GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
 	GetUtxoFromBlock(prevTxID transaction.TransactionID, outputIndex uint32, blockHash common.Hash) (transaction.Output, error)
 
-	// ValidateBlock checks if all inputs in the block's transactions reference valid UTXOs.
-	ValidateBlock(blockToValidate block.Block) bool
+	// ValidateTransactionsOfBlock checks if all inputs in the block's transactions reference valid UTXOs.
+	// Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
+	ValidateTransactionsOfBlock(blockToValidate block.Block) bool
 
 	// ValidateTransactionFromBlock checks if a transaction is valid against the UTXO set at a specific block.
 	ValidateTransactionFromBlock(tx transaction.Transaction, blockHash common.Hash) bool
@@ -106,9 +107,9 @@ func (us *UtxoStore) ValidateTransactionFromBlock(tx transaction.Transaction, bl
 	return true
 }
 
-// ValidateBlock checks if all inputs in the block's transactions reference valid UTXOs
-// from the previous block's UTXO pool.
-func (us *UtxoStore) ValidateBlock(blockToValidate block.Block) bool {
+// ValidateTransactionsOfBlock checks if all inputs in the block's transactions reference valid UTXOs.
+// Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
+func (us *UtxoStore) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
 	for _, tx := range blockToValidate.Transactions {
 		valid := us.ValidateTransactionFromBlock(tx, blockToValidate.Header.PreviousBlockHash)
 		if !valid {
@@ -119,6 +120,7 @@ func (us *UtxoStore) ValidateBlock(blockToValidate block.Block) bool {
 	return true // All inputs are valid
 }
 
+// GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
 func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex uint32, blockHash common.Hash) (transaction.Output, error) {
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
@@ -138,6 +140,7 @@ func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex 
 	return output, nil
 }
 
+// GetUtxosByPubKeyHashFromBlock retrieves all UTXOs associated with a public key hash from a specific block's UTXO pool.
 func (us *UtxoStore) GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKeyHash, blockHash common.Hash) ([]transaction.UTXO, error) {
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
@@ -180,7 +183,7 @@ func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
 	prevPool, exists := us.blockHashToPool[prevBlockHash]
 	assert.Assert(exists, "previous block UTXO pool not found, but must exist, as block is no orphan")
 
-	valid := us.ValidateBlock(newBlock)
+	valid := us.ValidateTransactionsOfBlock(newBlock)
 	if !valid {
 		return fmt.Errorf("block %v is invalid, cannot add to UTXO store", newBlockHash)
 	}
