@@ -18,6 +18,8 @@ const (
 	StateConnecting
 	// StateKnown indicates a peer that has been successfully connected to and verified.
 	StateKnown
+	// StatePendingDisconnect indicates a peer that should be disconnected in the next cycle.
+	StatePendingDisconnect
 )
 
 func (s PeerState) String() string {
@@ -28,6 +30,8 @@ func (s PeerState) String() string {
 		return "connecting"
 	case StateKnown:
 		return "known"
+	case StatePendingDisconnect:
+		return "pending-disconnect"
 	default:
 		return "unknown"
 	}
@@ -68,6 +72,9 @@ func (pm *PeerManager) addPeer(ip string, port int32) bool {
 
 	if existing, ok := pm.peers[ip]; ok {
 		if existing.State == StateKnown && now.Sub(existing.LastSeen) < pm.knownTTL {
+			return false
+		}
+		if existing.State == StatePendingDisconnect && now.Sub(existing.LastSeen) < pm.knownTTL {
 			return false
 		}
 		if existing.State == StateConnecting {
@@ -154,6 +161,39 @@ func (pm *PeerManager) MarkConnected(ip string) {
 		peer.State = StateKnown
 		peer.LastSeen = time.Now()
 	}
+}
+
+// MarkForDisconnect marks a peer to be disconnected in the next cycle.
+func (pm *PeerManager) MarkForDisconnect(ip string) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
+	if peer, ok := pm.peers[ip]; ok {
+		peer.State = StatePendingDisconnect
+		logger.Debugf("peer %s marked for disconnection in next cycle", ip)
+	}
+}
+
+// GetPeersToDisconnect returns all peers in StatePendingDisconnect and transitions them back to StateKnown.
+// This allows the TTL mechanism to prevent immediate re-verification.
+func (pm *PeerManager) GetPeersToDisconnect() []*PeerInfo {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
+	result := make([]*PeerInfo, 0)
+	now := time.Now()
+	for _, peer := range pm.peers {
+		if peer.State == StatePendingDisconnect {
+			result = append(result, &PeerInfo{
+				IP:   peer.IP,
+				Port: peer.Port,
+			})
+			// Keep peer as Known with updated LastSeen - TTL prevents re-verification
+			peer.State = StateKnown
+			peer.LastSeen = now
+		}
+	}
+	return result
 }
 
 // MarkFailed removes a peer that failed to connect.
@@ -244,6 +284,8 @@ func (pm *PeerManager) Stats() (total, newCount, connecting, known int) {
 			connecting++
 		case StateKnown:
 			known++
+		case StatePendingDisconnect:
+			// Don't count pending disconnect peers in stats
 		}
 	}
 	return

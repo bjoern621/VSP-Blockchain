@@ -50,6 +50,25 @@ func RunPeerDiscoveryLoop(cfg common.Config) {
 func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	initPeerManager(cfg)
 
+	// Disconnect peers marked in the previous cycle
+	peersToDisconnect := peerManager.GetPeersToDisconnect()
+	if len(peersToDisconnect) > 0 {
+		conn, err := discovery.DialAppGRPC(ctx, cfg.AppAddr)
+		if err != nil {
+			logger.Warnf("failed to dial app service for disconnection: %v", err)
+		} else {
+			client := pb.NewAppServiceClient(conn)
+			for _, peer := range peersToDisconnect {
+				_, disconnectErr := discovery.DisconnectPeer(ctx, client, peer.IP, peer.Port)
+				if disconnectErr != nil {
+					logger.Warnf("failed to disconnect peer %s:%d: %v", peer.IP, peer.Port, disconnectErr)
+				} else {
+					logger.Debugf("disconnected peer %s:%d from previous cycle", peer.IP, peer.Port)
+				}
+			}
+		}
+	}
+
 	peerManager.CleanupExpired()
 
 	bootstrapPeers, port := discovery.ResolveBootstrapEndpoints(ctx, cfg)
@@ -86,6 +105,7 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	success := verifyPeer(ctx, cfg, peer.IP, peer.Port)
 	if success {
 		peerManager.MarkConnected(peer.IP)
+		peerManager.MarkForDisconnect(peer.IP)
 		logger.Debugf("peer verified and marked as known: %s", peer.IP)
 	} else {
 		peerManager.MarkFailed(peer.IP)
@@ -111,14 +131,6 @@ func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) b
 	if err != nil {
 		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
 		return false
-	}
-
-	// Disconnect after verification
-	if success {
-		_, disconnectErr := discovery.DisconnectPeer(ctx, client, ip, port)
-		if disconnectErr != nil {
-			logger.Warnf("failed to disconnect from peer %s:%d after verification: %v", ip, port, disconnectErr)
-		}
 	}
 
 	return success

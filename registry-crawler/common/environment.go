@@ -53,7 +53,7 @@ const (
 	defaultDebugCIDR              = "203.0.113.0/24" // TEST-NET-3
 	defaultDebugRandomIPCount     = 6
 	defaultPeerDiscoveryInterval  = 30 * time.Second
-	defaultPeerKnownTTL           = 15 * time.Minute
+	defaultPeerKnownTTL           = 15 * time.Minute // Must be greater than Node's connection check interval
 	defaultPeerRegistrySubsetSize = 5
 )
 
