@@ -49,8 +49,7 @@ func (v *VersionInfo) SupportedServices() []common.ServiceType {
 //   - wallet requires blockchain_full or blockchain_simple.
 //   - miner requires blockchain_full or blockchain_simple.
 func (v *VersionInfo) validateRequiresBlockchain() error {
-	hasBlockchain := slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) ||
-		slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple)
+	hasBlockchain := slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull)
 
 	if slices.Contains(v.supportedServices, common.ServiceType_Wallet) && !hasBlockchain {
 		return ErrWalletRequiresBlockchain
@@ -101,18 +100,6 @@ func (v *VersionInfo) AddService(svc ...common.ServiceType) {
 func (v *VersionInfo) addService(svc common.ServiceType) error {
 	if slices.Contains(v.supportedServices, svc) {
 		return ErrDuplicateService
-	}
-
-	if svc == common.ServiceType_BlockchainFull {
-		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple) {
-			return ErrMutuallyExclusiveBlockchain
-		}
-	}
-
-	if svc == common.ServiceType_BlockchainSimple {
-		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) {
-			return ErrMutuallyExclusiveBlockchain
-		}
 	}
 
 	v.supportedServices = append(v.supportedServices, svc)
