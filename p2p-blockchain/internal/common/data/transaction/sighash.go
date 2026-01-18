@@ -20,8 +20,6 @@ func (tx *Transaction) SigHash(inputIndex int, referenced Output) ([]byte, error
 
 	addOutputList(buf, tx)
 
-	writeUint64(buf, tx.LockTime)
-
 	return doubleSHA256Hash(buf)
 }
 
@@ -60,8 +58,6 @@ func addInput(buf *bytes.Buffer, referenced Output, in Input, toBeSigned bool) {
 	} else {
 		writeUint64(buf, uint64(0))
 	}
-
-	writeUint32(buf, in.Sequence)
 }
 
 // Helper is used to ignore Error for binary.Write() since bytes.Buffer doesnt fail
