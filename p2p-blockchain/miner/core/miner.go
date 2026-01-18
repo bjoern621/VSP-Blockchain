@@ -62,20 +62,23 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	m.cancelMining = cancel
 
 	go func() {
-		defer func() {
+		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
+		if err != nil {
 			m.mu.Lock()
 			m.cancelMining = nil
 			m.mu.Unlock()
-		}()
-
-		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
-		if err != nil {
 			logger.Infof("[miner] Mining stopped: %v", err)
 			return
 		}
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
 		logger.Tracef("[miner] Mined new block: %v", &candidateBlock.Header)
+
+		// Clear cancelMining BEFORE AddSelfMinedBlock, because it triggers NotifyStartMining
+		m.mu.Lock()
+		m.cancelMining = nil
+		m.mu.Unlock()
+
 		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
