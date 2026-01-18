@@ -110,7 +110,17 @@ func verifyPeer(ctx context.Context, cfg common.Config, ip string, port int32) b
 	success, err := discovery.ConnectToPeer(ctx, client, ip, port)
 	if err != nil {
 		logger.Warnf("peer verification failed for %s:%d: %v", ip, port, err)
+		return false
 	}
+
+	// Disconnect after verification
+	if success {
+		_, disconnectErr := discovery.DisconnectPeer(ctx, client, ip, port)
+		if disconnectErr != nil {
+			logger.Warnf("failed to disconnect from peer %s:%d after verification: %v", ip, port, disconnectErr)
+		}
+	}
+
 	return success
 }
 
