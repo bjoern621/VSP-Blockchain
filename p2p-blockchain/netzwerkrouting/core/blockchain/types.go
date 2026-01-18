@@ -20,5 +20,5 @@ func NewBlockchainService(blockchainMsgSender BlockchainMsgSender, peerRetriever
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
 	GetPeer(id common.PeerId) (*common.Peer, bool)
-	GetAllOutboundPeers() []common.PeerId
+	GetAllConnectedPeers() []common.PeerId
 }

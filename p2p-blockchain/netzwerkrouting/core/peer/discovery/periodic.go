@@ -103,7 +103,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 
 	logger.Infof("[peer-discovery] Performing gossip discovery")
 
-	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
+	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
 	if len(connectedPeers) == 0 {
 		logger.Debugf("[peer-discovery] No connected peers for gossip discovery")

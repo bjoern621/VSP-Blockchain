@@ -28,7 +28,7 @@ type HeartbeatMsgHandler interface {
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
 	GetPeer(id common.PeerId) (*common.Peer, bool)
-	GetAllOutboundPeers() []common.PeerId
+	GetAllConnectedPeers() []common.PeerId
 }
 
 // errorMsgSender defines the interface for sending error/reject messages to peers.
@@ -92,7 +92,7 @@ func (s *KeepaliveService) Stop() {
 
 // sendHeartbeats sends heartbeat ping messages to all connected outbound peers.
 func (s *KeepaliveService) sendHeartbeats() {
-	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
+	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 	logger.Debugf("[heartbeat] Sending heartbeat bings to %d connected outbound peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {

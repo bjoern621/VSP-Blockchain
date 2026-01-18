@@ -125,7 +125,7 @@ func TestHandleVersion(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore, nil)
 
-	peerID := peerStore.NewInboundPeer()
+	peerID := peerStore.NewPeer()
 
 	versionInfo := VersionInfo{
 		Version: "2.5.1",
@@ -192,7 +192,7 @@ func TestHandleAck(t *testing.T) {
 	sender := newMockHandshakeMsgSender()
 	service := NewHandshakeService(sender, peerStore, nil)
 
-	peerID := peerStore.NewInboundPeer()
+	peerID := peerStore.NewPeer()
 
 	p, _ := peerStore.GetPeer(peerID)
 	p.Lock()

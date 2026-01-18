@@ -35,7 +35,7 @@ const (
 
 // peerCounter is an interface for getting the current peer count.
 type peerCounter interface {
-	GetAllOutboundPeers() []common.PeerId
+	GetAllConnectedPeers() []common.PeerId
 }
 
 // peerDiscoverer is an interface for discovering new peers.
@@ -133,7 +133,7 @@ func (s *PeerManagementService) run() {
 
 // checkAndMaintainPeers checks if we need more peers and establishes connections if needed.
 func (s *PeerManagementService) checkAndMaintainPeers() {
-	currentPeers := s.peerCounter.GetAllOutboundPeers()
+	currentPeers := s.peerCounter.GetAllConnectedPeers()
 	peerCount := len(currentPeers)
 
 	if peerCount >= s.minPeers {

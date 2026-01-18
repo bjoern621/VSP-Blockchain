@@ -142,7 +142,7 @@ func (m *mockDiscoveryPeerRetriever) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
-func (m *mockDiscoveryPeerRetriever) GetAllOutboundPeers() []common.PeerId {
+func (m *mockDiscoveryPeerRetriever) GetAllConnectedPeers() []common.PeerId {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	peerIds := make([]common.PeerId, 0, len(m.peers))

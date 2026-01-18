@@ -11,5 +11,5 @@ type peerRetriever interface {
 	GetAllPeers() []common.PeerId
 	// GetPeer retrieves a peer by its ID.
 	GetPeer(id common.PeerId) (*common.Peer, bool)
-	GetAllOutboundPeers() []common.PeerId
+	GetAllConnectedPeers() []common.PeerId
 }

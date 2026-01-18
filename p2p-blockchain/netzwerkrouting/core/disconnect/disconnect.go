@@ -65,7 +65,7 @@ func NewDisconnectService(
 //
 // The peer will remain in holddown for 15 minutes, during which:
 //   - All incoming connection attempts are rejected with REJECT_HOLDDOWN
-//   - The peer is excluded from GetAllOutboundPeers, GetUnconnectedPeers, etc.
+//   - The peer is excluded from GetAllConnectedPeers, GetUnconnectedPeers, etc.
 //
 // After 15 minutes, ConnectionCheckService will fully remove the peer.
 func (s *disconnectService) Disconnect(peerID common.PeerId) error {

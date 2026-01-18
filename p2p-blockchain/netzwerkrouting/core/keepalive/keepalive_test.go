@@ -59,7 +59,7 @@ func (m *mockErrorMsgSender) SendReject(peerId common.PeerId, errorType int32, r
 	m.lastData = data
 }
 
-func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId { // TODO
+func (m *mockPeerRetriever) GetAllConnectedPeers() []common.PeerId {
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
 		if p.State == common.StateConnected {

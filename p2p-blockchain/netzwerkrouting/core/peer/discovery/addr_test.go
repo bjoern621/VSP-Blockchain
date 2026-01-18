@@ -798,7 +798,7 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	}
 
 	// Verify that no peers have the discovered-peer in AddrsSentTo (except the discovered peer itself)
-	allPeers := peerStore.GetAllOutboundPeers()
+	allPeers := peerStore.GetAllConnectedPeers()
 	for _, peerID := range allPeers {
 		if peerID == "discovered-peer" {
 			continue // Skip the discovered peer itself
