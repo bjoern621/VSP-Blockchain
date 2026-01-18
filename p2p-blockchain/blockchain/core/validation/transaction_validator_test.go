@@ -19,6 +19,10 @@ type MockUtxoStore struct {
 	getUtxoError error
 }
 
+func (m *MockUtxoStore) ValidateTransactionsOfBlock(_ block.Block) bool {
+	return true
+}
+
 // makeOutpointKey creates a unique key for an outpoint.
 func makeOutpointKey(txID transaction.TransactionID, outputIndex uint32) string {
 	return string(txID[:]) + string(rune(outputIndex))
@@ -44,11 +48,6 @@ func (m *MockUtxoStore) GetUtxoFromBlock(prevTxID transaction.TransactionID, out
 		return output, nil
 	}
 	return transaction.Output{}, errors.New("UTXO not found")
-}
-
-// ValidateBlock is a mock implementation.
-func (m *MockUtxoStore) ValidateBlock(_ block.Block) bool {
-	return m.validateResult
 }
 
 // ValidateTransactionFromBlock returns the configured validateResult.

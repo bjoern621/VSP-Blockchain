@@ -70,7 +70,7 @@ func createTestBlockWithLeadingZeros(prevHash common.Hash, nonce uint32) block.B
 // (g)
 func TestNewBlockStore(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Test that genesis is in the store
 	retrievedGenesis, err := store.GetBlockByHash(genesis.Hash())
@@ -123,7 +123,7 @@ func TestNewBlockStore(t *testing.T) {
 // Add (b1) again: no change
 func TestAddBlock_Idempotent(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
 	addedHashes1 := store.AddBlock(block1)
@@ -148,7 +148,7 @@ func TestAddBlock_Idempotent(t *testing.T) {
 // (g) -> (b1) -> (b2)
 func TestAddBlock_MainChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Add blocks sequentially
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -209,7 +209,7 @@ func TestAddBlock_MainChain(t *testing.T) {
 // (g) -> (s1)          [side chain]
 func TestAddBlock_SideChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create main chain
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -280,7 +280,7 @@ func TestAddBlock_SideChain(t *testing.T) {
 // If (s1) has higher accumulated work, it becomes main chain tip
 func TestAddBlock_SideChainBecomesMainChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create initial main chain
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -320,7 +320,7 @@ func TestAddBlock_SideChainBecomesMainChain(t *testing.T) {
 //	..> (o) [orphan, no parent in store]
 func TestAddBlock_OrphanBlock(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create an orphan block (no parent exists)
 	var unknownParentHash common.Hash
@@ -371,7 +371,7 @@ func TestAddBlock_OrphanBlock(t *testing.T) {
 // (g) -> (p) -> (c) [re-add as connected block]
 func TestAddBlock_OrphanBecomesSideChain(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create an orphan block
 	var unknownParentHash common.Hash
@@ -416,7 +416,7 @@ func TestAddBlock_OrphanBecomesSideChain(t *testing.T) {
 // TestGetBlockByHash_NotFound tests GetBlockByHash with non-existent block
 func TestGetBlockByHash_NotFound(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	var nonExistentHash common.Hash
 	nonExistentHash[0] = 0xFF
@@ -430,7 +430,7 @@ func TestGetBlockByHash_NotFound(t *testing.T) {
 // TestGetBlockByHash_ReturnsCopy tests that GetBlockByHash returns a copy
 func TestGetBlockByHash_ReturnsCopy(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	retrieved, err := store.GetBlockByHash(genesis.Hash())
 	if err != nil {
@@ -455,7 +455,7 @@ func TestGetBlockByHash_ReturnsCopy(t *testing.T) {
 // TestIsOrphanBlock_NotFound tests IsOrphanBlock with non-existent block
 func TestIsOrphanBlock_NotFound(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	var nonExistentHash common.Hash
 	nonExistentHash[0] = 0xFF
@@ -471,7 +471,7 @@ func TestIsOrphanBlock_NotFound(t *testing.T) {
 // TestIsPartOfMainChain_NotFound tests IsPartOfMainChain with non-existent block
 func TestIsPartOfMainChain_NotFound(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	var nonExistentHash common.Hash
 	nonExistentHash[0] = 0xFF
@@ -489,7 +489,7 @@ func TestIsPartOfMainChain_NotFound(t *testing.T) {
 // Query height 10: returns empty
 func TestGetBlocksByHeight_EmptyResult(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	blocks := store.GetBlocksByHeight(10)
 	if len(blocks) != 0 {
@@ -505,7 +505,7 @@ func TestGetBlocksByHeight_EmptyResult(t *testing.T) {
 // All at height 1
 func TestGetBlocksByHeight_MultipleBlocks(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create multiple blocks at height 1
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -552,7 +552,7 @@ func TestGetBlocksByHeight_MultipleBlocks(t *testing.T) {
 // (g)
 func TestGetCurrentHeight_Empty(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	height := store.GetCurrentHeight()
 	if height != 0 {
@@ -569,7 +569,7 @@ func TestGetCurrentHeight_Empty(t *testing.T) {
 // Height should be 1
 func TestGetCurrentHeight_WithOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Add a block to main chain
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -596,7 +596,7 @@ func TestGetCurrentHeight_WithOrphans(t *testing.T) {
 // Tip should be the chain with highest accumulated work
 func TestGetMainChainTip_MultipleChains(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Chain 1: genesis -> block1a -> block2a
 	block1a := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -641,7 +641,7 @@ func TestGetMainChainTip_MultipleChains(t *testing.T) {
 // Either (b1) or (b2) can be main chain tip (implementation choice)
 func TestGetMainChainTip_EqualWork(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create two chains with similar accumulated work
 	// Chain 1: genesis -> block1
@@ -670,7 +670,7 @@ func TestGetMainChainTip_EqualWork(t *testing.T) {
 //	..> (o2)                     [orphan]
 func TestComplexScenario_MainChainSideChainOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	// Create main chain
 	block1 := createTestBlockWithLeadingZeros(genesis.Hash(), 1)
@@ -801,7 +801,7 @@ func TestComplexScenario_MainChainSideChainOrphans(t *testing.T) {
 // (g) -> (p) -> (o1) -> (o2) -> (o3)
 func TestAddBlock_ChainedOrphans(t *testing.T) {
 	genesis := createTestBlockWithLeadingZeros([32]byte{}, 0)
-	store := NewBlockStore(genesis)
+	store := NewBlockStore(genesis, nil)
 
 	parent := createTestBlockWithLeadingZeros(genesis.Hash(), 10)
 

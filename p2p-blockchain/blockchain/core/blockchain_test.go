@@ -153,6 +153,10 @@ func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
 }
 
+func (m *mockBlockStore) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
+}
+
 // mockChainReorganization is a mock for ChainReorganization
 type mockChainReorganization struct {
 	checkAndReorganizeResult bool
@@ -184,6 +188,10 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 }
 
 type mockUtxoStoreAPI struct{}
+
+func (a mockUtxoStoreAPI) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
+	return true
+}
 
 var _ utxo.UtxoStoreAPI = (*mockUtxoStoreAPI)(nil)
 

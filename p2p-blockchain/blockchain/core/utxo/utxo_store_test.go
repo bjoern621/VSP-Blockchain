@@ -55,6 +55,10 @@ func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
 }
 
+func (m *mockBlockStore) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
+}
+
 // =========================================================================
 // Test Helpers
 // =========================================================================
@@ -135,8 +139,8 @@ func TestAddNewBlock_SkipsDuplicateBlock(t *testing.T) {
 	testBlock := createTestBlock(genesisHash, []transaction.Transaction{coinbaseTx})
 
 	// Pre-populate with genesis pool and the block's pool
-	utxoStore.blockHashToPool[genesisHash] = utxoPool{UtxoData: make(map[Outpoint]transaction.Output)}
-	utxoStore.blockHashToPool[testBlock.Hash()] = utxoPool{UtxoData: make(map[Outpoint]transaction.Output)}
+	utxoStore.blockHashToPool[genesisHash] = utxoPool{UtxoData: make(map[outpoint]transaction.Output)}
+	utxoStore.blockHashToPool[testBlock.Hash()] = utxoPool{UtxoData: make(map[outpoint]transaction.Output)}
 
 	initialPoolCount := len(utxoStore.blockHashToPool)
 
@@ -159,7 +163,7 @@ func TestAddNewBlock_AddsCoinbaseOutputsToPool(t *testing.T) {
 	testBlock := createTestBlock(genesisHash, []transaction.Transaction{coinbaseTx})
 
 	// Pre-populate with empty genesis pool
-	utxoStore.blockHashToPool[genesisHash] = utxoPool{UtxoData: make(map[Outpoint]transaction.Output)}
+	utxoStore.blockHashToPool[genesisHash] = utxoPool{UtxoData: make(map[outpoint]transaction.Output)}
 
 	// Act
 	err := utxoStore.AddNewBlock(testBlock)
@@ -172,7 +176,7 @@ func TestAddNewBlock_AddsCoinbaseOutputsToPool(t *testing.T) {
 
 	// Check the coinbase output is in the pool
 	txID := coinbaseTx.TransactionId()
-	outpoint := Outpoint{TxID: txID, OutputIndex: 0}
+	outpoint := outpoint{TxID: txID, OutputIndex: 0}
 	output, exists := newPool.UtxoData[outpoint]
 	assert.True(t, exists)
 	assert.Equal(t, uint64(50), output.Value)
@@ -189,13 +193,13 @@ func TestAddNewBlock_RemovesSpentUtxos(t *testing.T) {
 
 	// Create a previous UTXO
 	prevTxID := transaction.TransactionID{0x01, 0x02, 0x03}
-	prevOutpoint := Outpoint{TxID: prevTxID, OutputIndex: 0}
+	prevoutpoint := outpoint{TxID: prevTxID, OutputIndex: 0}
 	prevOutput := transaction.Output{Value: 100, PubKeyHash: pubKeyHash}
 
 	// Pre-populate genesis pool with existing UTXO
 	genesisPool := utxoPool{
-		UtxoData: map[Outpoint]transaction.Output{
-			prevOutpoint: prevOutput,
+		UtxoData: map[outpoint]transaction.Output{
+			prevoutpoint: prevOutput,
 		},
 	}
 	utxoStore.blockHashToPool[genesisHash] = genesisPool
@@ -213,13 +217,13 @@ func TestAddNewBlock_RemovesSpentUtxos(t *testing.T) {
 	newPool := utxoStore.blockHashToPool[testBlock.Hash()]
 
 	// Previous UTXO should be removed
-	_, exists := newPool.UtxoData[prevOutpoint]
+	_, exists := newPool.UtxoData[prevoutpoint]
 	assert.False(t, exists, "spent UTXO should be removed")
 
 	// New output should be added
 	newTxID := spendingTx.TransactionId()
-	newOutpoint := Outpoint{TxID: newTxID, OutputIndex: 0}
-	newOutput, exists := newPool.UtxoData[newOutpoint]
+	newoutpoint := outpoint{TxID: newTxID, OutputIndex: 0}
+	newOutput, exists := newPool.UtxoData[newoutpoint]
 	assert.True(t, exists, "new UTXO should be added")
 	assert.Equal(t, uint64(90), newOutput.Value)
 }
@@ -235,12 +239,12 @@ func TestAddNewBlock_HandlesMultipleOutputs(t *testing.T) {
 
 	// Create a previous UTXO
 	prevTxID := transaction.TransactionID{0x01, 0x02, 0x03}
-	prevOutpoint := Outpoint{TxID: prevTxID, OutputIndex: 0}
+	prevoutpoint := outpoint{TxID: prevTxID, OutputIndex: 0}
 	prevOutput := transaction.Output{Value: 100, PubKeyHash: pubKeyHash1}
 
 	genesisPool := utxoPool{
-		UtxoData: map[Outpoint]transaction.Output{
-			prevOutpoint: prevOutput,
+		UtxoData: map[outpoint]transaction.Output{
+			prevoutpoint: prevOutput,
 		},
 	}
 	utxoStore.blockHashToPool[genesisHash] = genesisPool
@@ -272,11 +276,11 @@ func TestAddNewBlock_HandlesMultipleOutputs(t *testing.T) {
 	assert.Len(t, newPool.UtxoData, 2)
 
 	txID := tx.TransactionId()
-	output0, exists := newPool.UtxoData[Outpoint{TxID: txID, OutputIndex: 0}]
+	output0, exists := newPool.UtxoData[outpoint{TxID: txID, OutputIndex: 0}]
 	assert.True(t, exists)
 	assert.Equal(t, uint64(60), output0.Value)
 
-	output1, exists := newPool.UtxoData[Outpoint{TxID: txID, OutputIndex: 1}]
+	output1, exists := newPool.UtxoData[outpoint{TxID: txID, OutputIndex: 1}]
 	assert.True(t, exists)
 	assert.Equal(t, uint64(30), output1.Value)
 }
@@ -291,12 +295,12 @@ func TestAddNewBlock_PreservesPreviousPool(t *testing.T) {
 
 	// Create existing UTXOs in genesis pool
 	existingTxID := transaction.TransactionID{0xaa, 0xbb, 0xcc}
-	existingOutpoint := Outpoint{TxID: existingTxID, OutputIndex: 0}
+	existingoutpoint := outpoint{TxID: existingTxID, OutputIndex: 0}
 	existingOutput := transaction.Output{Value: 200, PubKeyHash: pubKeyHash}
 
 	genesisPool := utxoPool{
-		UtxoData: map[Outpoint]transaction.Output{
-			existingOutpoint: existingOutput,
+		UtxoData: map[outpoint]transaction.Output{
+			existingoutpoint: existingOutput,
 		},
 	}
 	utxoStore.blockHashToPool[genesisHash] = genesisPool
@@ -314,7 +318,7 @@ func TestAddNewBlock_PreservesPreviousPool(t *testing.T) {
 	newPool := utxoStore.blockHashToPool[testBlock.Hash()]
 
 	// Previous UTXO should still exist
-	_, exists := newPool.UtxoData[existingOutpoint]
+	_, exists := newPool.UtxoData[existingoutpoint]
 	assert.True(t, exists, "unspent UTXO should be preserved")
 
 	// Plus the new coinbase output
@@ -326,7 +330,7 @@ func TestCreateUtxoPoolFromBlock_EmptyPrevPool(t *testing.T) {
 	mockStore := newMockBlockStore()
 	utxoStore := NewUtxoStore(mockStore).(*UtxoStore)
 
-	prevPool := utxoPool{UtxoData: make(map[Outpoint]transaction.Output)}
+	prevPool := utxoPool{UtxoData: make(map[outpoint]transaction.Output)}
 	pubKeyHash := transaction.PubKeyHash{1, 2, 3}
 
 	coinbaseTx := createCoinbaseTx(pubKeyHash, 50)
@@ -339,21 +343,21 @@ func TestCreateUtxoPoolFromBlock_EmptyPrevPool(t *testing.T) {
 	assert.Len(t, newPool.UtxoData, 1)
 
 	txID := coinbaseTx.TransactionId()
-	outpoint := Outpoint{TxID: txID, OutputIndex: 0}
+	outpoint := outpoint{TxID: txID, OutputIndex: 0}
 	output, exists := newPool.UtxoData[outpoint]
 	assert.True(t, exists)
 	assert.Equal(t, uint64(50), output.Value)
 }
 
-func TestOutpoint_Equality(t *testing.T) {
+func TestOutpoint_equality(t *testing.T) {
 	txID1 := transaction.TransactionID{0x01, 0x02, 0x03}
 	txID2 := transaction.TransactionID{0x01, 0x02, 0x03}
 	txID3 := transaction.TransactionID{0x04, 0x05, 0x06}
 
-	outpoint1 := Outpoint{TxID: txID1, OutputIndex: 0}
-	outpoint2 := Outpoint{TxID: txID2, OutputIndex: 0}
-	outpoint3 := Outpoint{TxID: txID1, OutputIndex: 1}
-	outpoint4 := Outpoint{TxID: txID3, OutputIndex: 0}
+	outpoint1 := outpoint{TxID: txID1, OutputIndex: 0}
+	outpoint2 := outpoint{TxID: txID2, OutputIndex: 0}
+	outpoint3 := outpoint{TxID: txID1, OutputIndex: 1}
+	outpoint4 := outpoint{TxID: txID3, OutputIndex: 0}
 
 	assert.Equal(t, outpoint1, outpoint2, "same TxID and OutputIndex should be equal")
 	assert.NotEqual(t, outpoint1, outpoint3, "different OutputIndex should not be equal")

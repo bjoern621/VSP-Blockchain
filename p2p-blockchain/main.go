@@ -61,7 +61,8 @@ func main() {
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	genesisBlock := blockchainData.GenesisBlock()
-	blockStore := blockchainData.NewBlockStore(genesisBlock)
+	blockValidator := validation.NewBlockValidationService()
+	blockStore := blockchainData.NewBlockStore(genesisBlock, blockValidator)
 
 	utxoStore := utxo.NewUtxoStore(blockStore)
 	err := utxoStore.InitializeGenesisPool(genesisBlock)
@@ -70,7 +71,6 @@ func main() {
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
 	transactionValidator := validation.NewTransactionValidator(utxoStore)
-	blockValidator := validation.NewBlockValidationService()
 
 	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, utxoStore)
 

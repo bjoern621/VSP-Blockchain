@@ -56,6 +56,10 @@ func (m *mockBlockStore2) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
 }
 
+func (m *mockBlockStore2) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
+}
+
 func newMockBlockStore() BlockStoreAPI {
 	return &mockBlockStore2{}
 }

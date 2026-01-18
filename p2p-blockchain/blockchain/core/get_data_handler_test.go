@@ -18,6 +18,10 @@ type mockUtxoStoreForGetData struct {
 	utxos map[string]transaction.Output // key: txID+outputIndex
 }
 
+func (m *mockUtxoStoreForGetData) ValidateTransactionsOfBlock(_ block.Block) bool {
+	return true
+}
+
 func newMockUtxoStoreForGetData() *mockUtxoStoreForGetData {
 	return &mockUtxoStoreForGetData{
 		utxos: make(map[string]transaction.Output),
@@ -142,6 +146,10 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(_ block.Block) bool {
 
 func (m *mockBlockStoreGetData) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
+}
+
+func (m *mockBlockStoreGetData) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
 }
 
 func createTestBlockForGetData(nonce uint32) block.Block {

@@ -31,6 +31,10 @@ type mockUTXOService struct {
 	initializeGenesisPoolCalled int
 }
 
+func (m *mockUTXOService) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
+	return true
+}
+
 func newMockUTXOService(blockStore blockchain.BlockStoreAPI) *mockUTXOService {
 	return &mockUTXOService{
 		blockHashToPool: make(map[common.Hash]map[testOutpoint]transaction.Output),
@@ -253,7 +257,7 @@ func createNonCoinbaseTransaction(prevTxID transaction.TransactionID, outputInde
 func TestBlockStore_ReorganizationNoReorg(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 10)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -290,7 +294,7 @@ func TestBlockStore_ReorganizationNoReorg(t *testing.T) {
 func TestBlockStore_ReorganizationSimpleFork(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -334,7 +338,7 @@ func TestBlockStore_ReorganizationSimpleFork(t *testing.T) {
 func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -407,7 +411,7 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -459,7 +463,7 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 func TestBlockStore_ReorganizationWithMempool(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 
@@ -503,7 +507,7 @@ func TestBlockStore_ReorganizationWithMempool(t *testing.T) {
 func TestBlockStore_ReorganizationIdempotent(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -533,7 +537,7 @@ func TestBlockStore_ReorganizationIdempotent(t *testing.T) {
 func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 	utxoService := newMockUTXOService(store)
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
@@ -582,7 +586,7 @@ func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 func TestBlockStore_AccumulatedWorkSelection(t *testing.T) {
 	// Arrange
 	genesis := createBlockWithDifficulty([32]byte{}, 0, 5)
-	store := blockchain.NewBlockStore(genesis)
+	store := blockchain.NewBlockStore(genesis, nil)
 
 	// Create two chains with same length but different difficulties
 	// Chain A: lower total work

@@ -18,6 +18,7 @@ type UtxoStoreAPI interface {
 	InitializeGenesisPool(genesisBlock block.Block) error
 
 	// AddNewBlock updates the UTXO set with a new block's transactions.
+	// Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
 	AddNewBlock(block block.Block) error
 
 	// GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
@@ -111,6 +112,10 @@ func (us *UtxoStore) ValidateTransactionFromBlock(tx transaction.Transaction, bl
 // Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
 func (us *UtxoStore) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
 	for _, tx := range blockToValidate.Transactions {
+		// Skip coinbase transactions as they don't have real UTXO inputs
+		if tx.IsCoinbase() {
+			continue
+		}
 		valid := us.ValidateTransactionFromBlock(tx, blockToValidate.Header.PreviousBlockHash)
 		if !valid {
 			return false // Invalid transaction found

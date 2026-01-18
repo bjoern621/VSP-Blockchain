@@ -29,6 +29,10 @@ type mockUtxoStoreAPI struct {
 	utxos map[utxoOutpoint]transaction.Output
 }
 
+func (m *mockUtxoStoreAPI) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
+	return true
+}
+
 func (m *mockUtxoStoreAPI) InitializeGenesisPool(_ block.Block) error {
 	return nil
 }
@@ -43,10 +47,6 @@ func (m *mockUtxoStoreAPI) GetUtxoFromBlock(prevTxID transaction.TransactionID, 
 		return output, nil
 	}
 	return transaction.Output{}, &utxoNotFoundError{}
-}
-
-func (m *mockUtxoStoreAPI) ValidateBlock(_ block.Block) bool {
-	return true
 }
 
 func (m *mockUtxoStoreAPI) ValidateTransactionFromBlock(_ transaction.Transaction, _ common.Hash) bool {
@@ -71,6 +71,10 @@ func (e *utxoNotFoundError) Error() string {
 // mockBlockStore is a mock implementation of blockchain.BlockStoreAPI
 type mockBlockStore struct {
 	tip block.Block
+}
+
+func (m *mockBlockStore) IsBlockInvalid(block block.Block) (bool, error) {
+	return false, nil
 }
 
 func (m *mockBlockStore) AddBlock(_ block.Block) []common.Hash {

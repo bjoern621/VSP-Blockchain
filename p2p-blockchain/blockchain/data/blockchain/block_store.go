@@ -10,8 +10,16 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 	mapset "github.com/deckarep/golang-set/v2"
 )
+
+// BlockFullValidator is the interface for full block validation.
+// Defined here to avoid circular dependency with the validation package.
+type BlockFullValidator interface {
+	// FullValidation performs comprehensive validation including transactions and UTXO set.
+	FullValidation(block block.Block) (bool, error)
+}
 
 type BlockStoreAPI interface {
 	// AddBlock adds a new block to the block store.
@@ -62,6 +70,10 @@ type BlockStoreAPI interface {
 	// GetAllBlocksWithMetadata returns all blocks in the store with their metadata for visualization purposes.
 	// Returns a slice of BlockWithMetadata containing each block and its position in the chain.
 	GetAllBlocksWithMetadata() []block.BlockWithMetadata
+
+	// IsBlockInvalid checks if the given block is marked as invalid.
+	// Returns an error if the block is not found in the block store.
+	IsBlockInvalid(block block.Block) (bool, error)
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -92,6 +104,8 @@ type blockNode struct {
 
 	Parent   *blockNode
 	Children []*blockNode
+
+	IsInvalid bool
 }
 
 // BlockStore manages the storage and retrieval of blocks in the blockchain.
@@ -104,9 +118,11 @@ type BlockStore struct {
 	blockForest blockForest
 	// hashToHeaders provides fast lookup of blockNodes by their hash.
 	hashToHeaders map[common.Hash]*blockNode
+	// blockValidator validates blocks when they are connected to the chain.
+	blockValidator BlockFullValidator
 }
 
-func NewBlockStore(genesis block.Block) *BlockStore {
+func NewBlockStore(genesis block.Block, blockValidator BlockFullValidator) *BlockStore {
 	genesisNode := blockNode{
 		AccumulatedWork: uint64(genesis.BlockDifficulty()),
 		Height:          0,
@@ -123,6 +139,7 @@ func NewBlockStore(genesis block.Block) *BlockStore {
 		hashToHeaders: map[common.Hash]*blockNode{
 			genesis.Hash(): &genesisNode,
 		},
+		blockValidator: blockValidator,
 	}
 }
 
@@ -141,8 +158,6 @@ func (s *BlockStore) AddBlock(block block.Block) (addedBlockHashes []common.Hash
 	defer s.mu.Unlock()
 
 	blockHash := block.Hash()
-
-	// TODO validate block, panic if invalid
 
 	addedBlockHashes = []common.Hash{}
 
@@ -209,7 +224,8 @@ func (s *BlockStore) connectOrphanBlock(newNode *blockNode) (addedBlockHashes []
 }
 
 // connectNodes connects a parent blockNode to a child blockNode.
-// Updates (1) accumulated work, (2) height, (3) leaves, (4) roots and (5) connection relation accordingly.
+// Updates (1) accumulated work, (2) height, (3) leaves, (4) roots, (5) connection relation and (6) validity accordingly.
+// Performs full validation on the child block and marks it as invalid if validation fails or if the parent is invalid.
 func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 	assert.Assert(child.Block.Header.PreviousBlockHash == parent.Block.Hash())
 
@@ -218,6 +234,17 @@ func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 
 	child.AccumulatedWork = parent.AccumulatedWork + uint64(child.Block.BlockDifficulty())
 	child.Height = parent.Height + 1
+
+	// Validate the child block and propagate invalidity from parent
+	if parent.IsInvalid {
+		child.IsInvalid = true
+		logger.Warnf("[block_store] Block %v marked invalid due to invalid parent %v", child.Block.Hash(), parent.Block.Hash())
+	} else if s.blockValidator != nil {
+		if ok, err := s.blockValidator.FullValidation(*child.Block); !ok {
+			child.IsInvalid = true
+			logger.Warnf("[block_store] Block %v marked invalid: %v", child.Block.Hash(), err)
+		}
+	}
 
 	// Remove parent from leaves (if it was a leaf)
 	// Is a leaf if it was a tip before
@@ -256,6 +283,21 @@ func (s *BlockStore) isOrphanBlock(block block.Block) (bool, error) {
 	// A block is an orphan if it has no parent and no accumulated work (genesis has accumulated work from its difficulty)
 	isOrphan := blockNode.Parent == nil && blockNode.AccumulatedWork == 0
 	return isOrphan, nil
+}
+
+// IsBlockInvalid checks if the given block is marked as invalid.
+// Returns an error if the block is not found in the block store.
+// O(1) time complexity.
+func (s *BlockStore) IsBlockInvalid(block block.Block) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	blockNode, exists := s.hashToHeaders[block.Hash()]
+	if !exists {
+		return false, fmt.Errorf("block with hash %v not found", block.Hash())
+	}
+
+	return blockNode.IsInvalid, nil
 }
 
 // IsPartOfMainChain checks if the given block is part of the main chain.
