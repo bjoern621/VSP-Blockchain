@@ -101,7 +101,7 @@ func main() {
 
 	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
 	blockchain.Attach(minerImpl)
-	minerImpl.StartMining(make([]transaction.Transaction, 0)) // TODO
+	minerImpl.StartMining(make([]transaction.Transaction, 0))
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
