@@ -12,7 +12,6 @@ import (
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
@@ -95,7 +94,7 @@ func main() {
 
 	minerImpl := minerCore.NewMinerService(blockchain, multiChainLookupService, blockStore)
 	blockchain.Attach(minerImpl)
-	minerImpl.StartMining(make([]transaction.Transaction, 0))
+	//minerImpl.StartMining(make([]transaction.Transaction, 0)) // TODO
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
@@ -117,12 +116,15 @@ func main() {
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
 
+		// Initialize mining service
+		miningService := appcore.NewMiningService(minerImpl)
+
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

@@ -1,23 +1,21 @@
 meta {
-  name: GetVisualization Node 4
+  name: Stop
   type: grpc
-  seq: 4
+  seq: 2
 }
 
 grpc {
   url: localhost:20004
-  method: /app.AppService/GetBlockchainVisualization
+  method: /app.AppService/StopMining
   body: grpc
   protoPath: ../../app.proto
-  auth: none
+  auth: inherit
   methodType: unary
 }
 
 body:grpc {
   name: message 1
   content: '''
-    {
-      "include_details": true
-    }
+    {}
   '''
 }

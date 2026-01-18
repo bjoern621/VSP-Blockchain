@@ -8,6 +8,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	minerApi "s3b/vsp-blockchain/p2p-blockchain/miner/api"
 	"testing"
 	"time"
 )
@@ -651,12 +652,7 @@ func TestNewMinerService(t *testing.T) {
 		t.Fatal("NewMinerService() returned nil")
 	}
 
-	minerService, ok := miner.(*minerService)
-	if !ok {
-		t.Fatal("NewMinerService() did not return *minerService")
-	}
-
-	if minerService.blockchain != mockBlockchain {
+	if miner.blockchain != mockBlockchain {
 		t.Error("Blockchain not set correctly")
 	}
 
@@ -664,14 +660,14 @@ func TestNewMinerService(t *testing.T) {
 		t.Error("UTXO lookup not set correctly")
 	}
 
-	if minerService.blockStore != mockBlockStore {
+	if miner.blockStore != mockBlockStore {
 		t.Error("Block store not set correctly")
 	}
 }
 
 func TestMinerAPI_Interface(t *testing.T) {
 	// Compile-time check that minerService implements MinerAPI
-	var _ MinerAPI = &minerService{}
+	var _ minerApi.MinerAPI = &minerService{}
 }
 
 func TestMinerBlockchainAPI_Interface(t *testing.T) {

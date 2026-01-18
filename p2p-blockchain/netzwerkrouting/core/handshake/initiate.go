@@ -3,8 +3,6 @@ package handshake
 import (
 	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-
-	"bjoernblessin.de/go-utils/util/assert"
 )
 
 // HandshakeMsgSender defines the interface for initiating a handshake with a peer.
@@ -35,19 +33,6 @@ func (h *handshakeService) InitiateHandshake(peerID common.PeerId) error {
 
 	if p.State != common.StateNew {
 		return fmt.Errorf("cannot initiate handshake with peer %s in state %v. peer state must be StateNew", peerID, p.State)
-	}
-
-	switch p.Direction {
-	case common.DirectionBoth:
-		return fmt.Errorf("cannot initiate handshake with peer %s with direction Both", peerID)
-	case common.DirectionInbound:
-		p.Direction = common.DirectionBoth
-	case common.DirectionOutbound:
-		return fmt.Errorf("handshake already initiated with outbound peer %s", peerID)
-	case common.DirectionUnknown:
-		p.Direction = common.DirectionOutbound
-	default:
-		assert.Never("unhandled peer direction")
 	}
 
 	versionInfo := NewLocalVersionInfo()

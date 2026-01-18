@@ -12,7 +12,6 @@ type PeerData interface {
 	Unlock()
 	GetVersion() string
 	GetState() common.PeerConnectionState
-	GetDirection() common.Direction
 	GetSupportedServices() []common.ServiceType
 	GetLastSeen() int64
 }
@@ -41,10 +40,6 @@ func (a *peerDataAdapter) GetVersion() string {
 
 func (a *peerDataAdapter) GetState() common.PeerConnectionState {
 	return a.peer.State
-}
-
-func (a *peerDataAdapter) GetDirection() common.Direction {
-	return a.peer.Direction
 }
 
 func (a *peerDataAdapter) GetSupportedServices() []common.ServiceType {
