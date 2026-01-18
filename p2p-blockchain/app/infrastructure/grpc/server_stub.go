@@ -28,6 +28,7 @@ type Server struct {
 	regService           *core.InternalViewService
 	queryRegistryService *core.QueryRegistryService
 	discoveryService     *core.DiscoveryService
+	disconnectService    *core.DisconnectService
 	keysApi              api.KeyGeneratorApi
 	transactionHandler   *adapters.TransactionHandlerAdapter
 	kontoHandler         *adapters.KontoHandlerAdapter
@@ -46,12 +47,14 @@ func NewServer(
 	kontoHandler *adapters.KontoHandlerAdapter,
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
 	miningService *core.MiningService,
+	disconnectService *core.DisconnectService,
 ) *Server {
 	return &Server{
 		connService:          connService,
 		regService:           regService,
 		queryRegistryService: queryRegistryService,
 		discoveryService:     discoveryService,
+		disconnectService:    disconnectService,
 		keysApi:              keysApi,
 		transactionHandler:   transactionHandler,
 		kontoHandler:         kontoHandler,
@@ -108,6 +111,35 @@ func (s *Server) ConnectTo(_ context.Context, req *pb.ConnectToRequest) (*pb.Con
 	}
 
 	return &pb.ConnectToResponse{
+		Success:      true,
+		ErrorMessage: "",
+	}, nil
+}
+
+// Disconnect handles the Disconnect RPC call from external local systems.
+// Disconnecting from a peer means forgetting the peer, which involves:
+// - Closing any gRPC connections
+// - Removing the peer from network info registry
+// - Removing the peer from peer store
+func (s *Server) Disconnect(_ context.Context, req *pb.DisconnectRequest) (*pb.DisconnectResponse, error) {
+	if req.Port > 65535 {
+		return &pb.DisconnectResponse{
+			Success:      false,
+			ErrorMessage: "port must be between 0 and 65535",
+		}, nil
+	}
+
+	port := uint16(req.Port)
+
+	err := s.disconnectService.Disconnect(req.IpAddress, port)
+	if err != nil {
+		return &pb.DisconnectResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to disconnect: %v", err),
+		}, nil
+	}
+
+	return &pb.DisconnectResponse{
 		Success:      true,
 		ErrorMessage: "",
 	}, nil

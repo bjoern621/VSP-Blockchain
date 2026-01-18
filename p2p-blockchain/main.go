@@ -16,6 +16,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/connectioncheck"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/disconnect"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
 	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
@@ -118,8 +119,11 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+		disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, networkInfoRegistry, peerStore)
+		disconnectAPI := api.NewDisconnectAPIService(disconnectService)
+		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService, disconnectAppService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
