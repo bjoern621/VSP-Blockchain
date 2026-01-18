@@ -28,7 +28,6 @@ type PeerInfo struct {
 
 	Version           string
 	ConnectionState   common.PeerConnectionState
-	Direction         common.Direction
 	SupportedServices []common.ServiceType
 	LastSeen          int64
 }
@@ -70,7 +69,6 @@ func (s *networkRegistryService) GetInternalPeerInfo() []PeerInfo {
 			p.Lock()
 			pInfo.Version = p.GetVersion()
 			pInfo.ConnectionState = p.GetState()
-			pInfo.Direction = p.GetDirection()
 
 			pInfo.SupportedServices = slices.Clone(p.GetSupportedServices())
 			pInfo.LastSeen = p.GetLastSeen()

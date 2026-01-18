@@ -17,7 +17,6 @@ import (
 // It delegates to the discovery service to retrieve and send all known peer addresses.
 func (s *Server) GetAddr(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
-	logger.Debugf("[peerdiscovery_grpc] Received GetAddr from peer %s", peerId)
 
 	s.discoveryService.HandleGetAddr(peerId)
 
@@ -29,7 +28,6 @@ func (s *Server) GetAddr(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 // It delegates to the discovery service to process the received addresses.
 func (s *Server) Addr(ctx context.Context, req *pb.AddrList) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
-	logger.Debugf("[peerdiscovery_grpc] Received Addr from peer %s with %d addresses", peerId, len(req.Peers))
 
 	// Convert protobuf addresses (IP + port + timestamp) to domain model (PeerId + timestamp)
 	// The infrastructure layer looks up or registers PeerIds from IP addresses
