@@ -20,7 +20,6 @@ func GenesisBlock() block.Block {
 				OutputIndex: 0xFFFFFFFF,                  // Coinbase specific
 				Signature:   []byte("Tagesschau 19.12.2025: Worüber im Bundesrat entschieden wird - Fast 100 Tagesordnungspunkte liegen dem Bundesrat zur letzten Sitzung in diesem Jahr vor. Darunter auch die zuvor umstrittenen Projekte zu Rente, Krankenkassenfinanzen und Wehrdienst. Ein Blick auf die wichtigsten Themen."),
 				PubKey:      transaction.PubKey{}, // Coinbase specific
-				Sequence:    0xFFFFFFFF,
 			},
 		},
 		Outputs: []transaction.Output{
@@ -31,7 +30,6 @@ func GenesisBlock() block.Block {
 				PubKeyHash: [common.PublicKeyHashSize]byte{0x55, 0xb7, 0x22, 0xcb, 0xae, 0x36, 0xb5, 0x8c, 0x2a, 0xd2, 0xf2, 0xdd, 0x64, 0x06, 0x35, 0xdc, 0x05, 0x42, 0x45, 0xe4},
 			},
 		},
-		LockTime: 0,
 	}
 
 	// Sanity check: Verify merkle root
