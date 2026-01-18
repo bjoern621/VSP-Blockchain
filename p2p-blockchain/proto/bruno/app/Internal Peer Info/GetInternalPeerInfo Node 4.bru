@@ -1,12 +1,12 @@
 meta {
-  name: ConnectTo 1 To 4
+  name: GetInternalPeerInfo Node 4
   type: grpc
-  seq: 8
+  seq: 2
 }
 
 grpc {
-  url: localhost:20001
-  method: /app.AppService/ConnectTo
+  url: localhost:20004
+  method: /app.AppService/GetInternalPeerInfo
   body: grpc
   protoPath: ../../app.proto
   auth: inherit
@@ -16,9 +16,6 @@ grpc {
 body:grpc {
   name: message 1
   content: '''
-    {
-      "ip_address": "rBwBDg==",
-      "port": 50052
-    }
+    {}
   '''
 }

@@ -1,11 +1,11 @@
 meta {
-  name: ConnectTo 3 To 1
+  name: ConnectTo 1 To 4
   type: grpc
-  seq: 10
+  seq: 2
 }
 
 grpc {
-  url: localhost:20003
+  url: localhost:20001
   method: /app.AppService/ConnectTo
   body: grpc
   protoPath: ../../app.proto
@@ -17,8 +17,8 @@ body:grpc {
   name: message 1
   content: '''
     {
-      "ip_address": "rBwBCg==", 
-      "port": 50051
+      "ip_address": "rBwBDg==",
+      "port": 50052
     }
   '''
 }
