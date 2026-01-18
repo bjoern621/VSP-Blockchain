@@ -30,11 +30,13 @@ func NewChainReorganization(
 	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UtxoStoreAPI,
 	mempool *Mempool,
+	genesisBlock common.Hash,
 ) *ChainReorganization {
 	return &ChainReorganization{
-		blockStore:  blockStore,
-		utxoService: utxoService,
-		mempool:     mempool,
+		blockStore:   blockStore,
+		utxoService:  utxoService,
+		mempool:      mempool,
+		lastKnownTip: genesisBlock,
 	}
 }
 
