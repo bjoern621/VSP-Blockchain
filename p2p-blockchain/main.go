@@ -119,8 +119,8 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
-		disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, networkInfoRegistry, peerStore)
-		disconnectAPI := api.NewDisconnectAPIService(disconnectService)
+		disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
+		disconnectAPI := api.NewDisconnectAPIService(networkInfoRegistry, disconnectService)
 		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 
 		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService, disconnectAppService)

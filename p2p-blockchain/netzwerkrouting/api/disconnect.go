@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/disconnect"
@@ -19,15 +20,27 @@ type DisconnectAPI interface {
 
 // disconnectAPIService implements DisconnectAPI.
 type disconnectAPIService struct {
-	disconnectService disconnect.DisconnectService
+	outboundPeerResolver OutboundPeerResolver
+	disconnectService    disconnect.DisconnectService
 }
 
-func NewDisconnectAPIService(disconnectService disconnect.DisconnectService) DisconnectAPI {
+func NewDisconnectAPIService(
+	outboundPeerResolver OutboundPeerResolver,
+	disconnectService disconnect.DisconnectService,
+) DisconnectAPI {
 	return &disconnectAPIService{
-		disconnectService: disconnectService,
+		outboundPeerResolver: outboundPeerResolver,
+		disconnectService:    disconnectService,
 	}
 }
 
 func (s *disconnectAPIService) Disconnect(addrPort netip.AddrPort) error {
-	return s.disconnectService.Disconnect(addrPort)
+	// Resolve peer by address
+	peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort)
+	if !exists {
+		return fmt.Errorf("peer not found at %s", addrPort.String())
+	}
+
+	// Delegate to core service
+	return s.disconnectService.Disconnect(peerID)
 }

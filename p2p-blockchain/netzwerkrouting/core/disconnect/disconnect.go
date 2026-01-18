@@ -2,7 +2,6 @@ package disconnect
 
 import (
 	"fmt"
-	"net/netip"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
@@ -10,20 +9,12 @@ import (
 
 // DisconnectService defines the interface for disconnecting/forgetting peers.
 type DisconnectService interface {
-	// Disconnect disconnects from a peer at the given address.
+	// Disconnect disconnects from a peer with the given ID.
 	// This involves:
-	// 1. Finding the peer by address
-	// 2. Verifying the peer exists in the store
-	// 3. Removing from network info registry (closes gRPC connections)
-	// 4. Removing from peer store
-	Disconnect(addrPort netip.AddrPort) error
-}
-
-// outboundPeerResolver is implemented by infrastructure layer (NetworkInfoRegistry) to resolve
-// peers by address.
-type outboundPeerResolver interface {
-	// GetOutboundPeer checks if a peer with the given listening address already exists.
-	GetOutboundPeer(addrPort netip.AddrPort) (peerID common.PeerId, exists bool)
+	// 1. Verifying the peer exists in the store
+	// 2. Removing from network info registry (closes gRPC connections)
+	// 3. Removing from peer store
+	Disconnect(peerID common.PeerId) error
 }
 
 // networkInfoRemover is implemented by infrastructure layer (NetworkInfoRegistry) to remove
@@ -48,22 +39,19 @@ type peerRemover interface {
 
 // disconnectService implements DisconnectService with the actual domain logic.
 type disconnectService struct {
-	outboundPeerResolver outboundPeerResolver
-	networkInfoRemover   networkInfoRemover
-	peerRetriever        peerRetriever
-	peerRemover          peerRemover
+	networkInfoRemover networkInfoRemover
+	peerRetriever      peerRetriever
+	peerRemover        peerRemover
 }
 
 func NewDisconnectService(
-	outboundPeerResolver outboundPeerResolver,
 	networkInfoRemover networkInfoRemover,
 	peerStore peerRetrieverAndRemover,
 ) DisconnectService {
 	return &disconnectService{
-		outboundPeerResolver: outboundPeerResolver,
-		networkInfoRemover:   networkInfoRemover,
-		peerRetriever:        peerStore,
-		peerRemover:          peerStore,
+		networkInfoRemover: networkInfoRemover,
+		peerRetriever:      peerStore,
+		peerRemover:        peerStore,
 	}
 }
 
@@ -74,19 +62,12 @@ type peerRetrieverAndRemover interface {
 	peerRemover
 }
 
-// Disconnect disconnects from a peer at the given address.
+// Disconnect disconnects from a peer with the given ID.
 // This involves:
-// 1. Finding the peer by address
-// 2. Verifying the peer exists in the store
-// 3. Removing from network info registry (closes gRPC connections)
-// 4. Removing from peer store
-func (s *disconnectService) Disconnect(addrPort netip.AddrPort) error {
-	// Get the peer by address
-	peerID, exists := s.outboundPeerResolver.GetOutboundPeer(addrPort)
-	if !exists {
-		return fmt.Errorf("peer not found at %s", addrPort.String())
-	}
-
+// 1. Verifying the peer exists in the store
+// 2. Removing from network info registry (closes gRPC connections)
+// 3. Removing from peer store
+func (s *disconnectService) Disconnect(peerID common.PeerId) error {
 	// Verify the peer exists in the store
 	_, ok := s.peerRetriever.GetPeer(peerID)
 	if !ok {
