@@ -107,6 +107,10 @@ func main() {
 		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
+		// Initialize history API and handler
+		historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
+		historyHandler := adapters.NewHistoryAdapter(historyAPI)
+
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
@@ -119,7 +123,7 @@ func main() {
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService)
+		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, historyHandler, visualizationHandler, miningService)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
