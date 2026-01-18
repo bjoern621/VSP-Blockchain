@@ -15,6 +15,7 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/connectioncheck"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/disconnect"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
 	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
@@ -45,19 +46,20 @@ func main() {
 
 	peerStore := peer.NewPeerStore()
 	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
-	grpcClient := grpc.NewClient(networkInfoRegistry)
-	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
+	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
+	grpcClient := grpc.NewClient(networkInfoRegistry, disconnectService)
+	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore, grpcClient)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
-	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
-	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
+	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient, grpcClient)
+	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
 	genesisBlock := blockchainData.GenesisBlock()
@@ -72,7 +74,16 @@ func main() {
 
 	transactionValidator := validation.NewTransactionValidator(utxoStore)
 
-	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, utxoStore)
+	blockchain := core.NewBlockchain(
+		blockchainMsgService,
+		grpcClient,
+		grpcClient,
+		blockValidator,
+		blockStore,
+		peerStore,
+		transactionValidator,
+		utxoStore,
+	)
 
 	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
 	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
@@ -113,8 +124,21 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+		disconnectAPI := api.NewDisconnectAPIService(networkInfoRegistry, disconnectService)
+		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService)
+		appServer := appgrpc.NewServer(
+			connService,
+			internalViewService,
+			queryRegistryService,
+			keyGeneratorApiImpl,
+			transactionHandler,
+			discoveryAppService,
+			kontoHandler,
+			visualizationHandler,
+			miningService,
+			disconnectAppService,
+		)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {
@@ -129,7 +153,7 @@ func main() {
 
 	logger.Infof("[main] Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService, peerStore)
 
 	grpcServer.Attach(blockchain)
 

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -20,14 +19,14 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add some test peers
-	peer1 := &peer.Peer{
+	peer1 := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
-	peer2 := &peer.Peer{
+	peer2 := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
@@ -35,6 +34,11 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	peerStore.AddPeerById("peer-2", peer2)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr
 	service.HandleGetAddr(requesterPeerID)
@@ -78,18 +82,18 @@ func TestHandleGetAddr_ExcludesRequesterPeer(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add the requesting peer itself to the store
 	requesterPeerID := common.PeerId("requester-peer")
-	requesterPeer := &peer.Peer{
+	requesterPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
 	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Add another peer
-	otherPeer := &peer.Peer{
+	otherPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
@@ -126,11 +130,16 @@ func TestHandleGetAddr_DoesNotSendWhenNoPeers(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
-	// Call HandleGetAddr with empty peer store
+	// Call HandleGetAddr with only the requester peer in the store (no other peers)
 	service.HandleGetAddr(requesterPeerID)
 
 	// Give time for goroutine to finish
@@ -147,10 +156,10 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add a peer with LastSeen set
-	testPeer := &peer.Peer{
+	testPeer := &common.Peer{
 		Version:  "1.0.0",
 		State:    common.StateConnected,
 		LastSeen: time.Now().Unix(),
@@ -158,6 +167,11 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr
 	service.HandleGetAddr(requesterPeerID)
@@ -186,16 +200,21 @@ func TestHandleGetAddr_SendsAsynchronously(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add a peer
-	testPeer := &peer.Peer{
+	testPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr - it should return immediately
 	service.HandleGetAddr(requesterPeerID)
@@ -219,7 +238,7 @@ func TestSendGetAddr_ForwardsToSender(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	targetPeerID := common.PeerId("target-peer")
 

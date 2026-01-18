@@ -1,12 +1,12 @@
 meta {
-  name: QueryRegistry
+  name: ConnectTo 3 To 1
   type: grpc
   seq: 2
 }
 
 grpc {
-  url: localhost:20001
-  method: /app.AppService/QueryRegistry
+  url: localhost:20003
+  method: /app.AppService/ConnectTo
   body: grpc
   protoPath: ../../app.proto
   auth: inherit
@@ -16,6 +16,9 @@ grpc {
 body:grpc {
   name: message 1
   content: '''
-    {}
+    {
+      "ip_address": "rBwBCw==", 
+      "port": 50051
+    }
   '''
 }

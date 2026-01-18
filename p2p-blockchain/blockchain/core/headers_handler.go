@@ -9,7 +9,15 @@ import (
 )
 
 func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.PeerId) {
-	logger.Infof("[headers_handler] Headers Message received: %d headers from %v", len(blockHeaders), peerID)
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
+	headerHashes := make([]common.Hash, len(blockHeaders))
+	for i, header := range blockHeaders {
+		headerHashes[i] = header.Hash()
+	}
+	logger.Infof("[headers_handler] Headers Message received: %d headers from %v: %v", len(blockHeaders), peerID, headerHashes)
 
 	if len(blockHeaders) == 0 {
 		return
@@ -20,6 +28,8 @@ func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.Pe
 	for i, header := range blockHeaders {
 		if ok, err := b.blockValidator.ValidateHeaderOnly(*header); !ok {
 			logger.Warnf("[headers_handler] Invalid header at index %d from %v: %v", i, peerID, err)
+			headerHash := header.Hash()
+			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "headers", headerHash[:])
 			continue
 		}
 
