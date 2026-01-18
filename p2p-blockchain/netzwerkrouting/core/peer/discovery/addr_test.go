@@ -25,7 +25,7 @@ func TestHandleAddr_UpdatesPeerLastSeenTimestamp(t *testing.T) {
 	oldTimestamp := time.Now().Add(-24 * time.Hour).Unix()
 	testPeer := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    oldTimestamp,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -71,7 +71,7 @@ func TestHandleAddr_DoesNotUpdateOlderTimestamp(t *testing.T) {
 	recentTimestamp := time.Now().Unix()
 	testPeer := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    recentTimestamp,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -112,19 +112,19 @@ func TestHandleAddr_HandlesMultipleAddresses(t *testing.T) {
 	now := time.Now().Unix()
 	peer1 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 3600,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	peer2 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 7200,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	peer3 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 1800,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -218,7 +218,7 @@ func TestHandleAddr_ThreadSafe(t *testing.T) {
 	now := time.Now().Unix()
 	testPeer := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
@@ -312,19 +312,19 @@ func TestHandleAddr_UpdatesCorrectPeer(t *testing.T) {
 
 	peer1 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 3600,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	peer2 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 7200,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
 	peer3 := &common.Peer{
 		Version:     "1.0.0",
-		State:       common.StateConnected,
+		State:       common.StateNew,
 		LastSeen:    now - 1800,
 		AddrsSentTo: mapset.NewSet[common.PeerId](),
 	}
