@@ -12,6 +12,7 @@ import (
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
@@ -99,7 +100,7 @@ func main() {
 
 	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
 	blockchain.Attach(minerImpl)
-	//minerImpl.StartMining(make([]transaction.Transaction, 0)) // TODO
+	minerImpl.StartMining(make([]transaction.Transaction, 0)) // TODO
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")

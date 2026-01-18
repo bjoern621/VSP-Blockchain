@@ -28,9 +28,10 @@ func NewMinerService(
 	blockStore blockchainApi.BlockStoreAPI,
 ) *minerService {
 	return &minerService{
-		blockchain:  blockchain,
-		utxoService: utxoServiceAPI,
-		blockStore:  blockStore,
+		blockchain:    blockchain,
+		utxoService:   utxoServiceAPI,
+		blockStore:    blockStore,
+		miningEnabled: true,
 	}
 }
 
