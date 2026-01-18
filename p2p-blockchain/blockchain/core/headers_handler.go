@@ -13,7 +13,11 @@ func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.Pe
 		return
 	}
 
-	logger.Infof("[headers_handler] Headers Message received: %d headers from %v", len(blockHeaders), peerID)
+	headerHashes := make([]common.Hash, len(blockHeaders))
+	for i, header := range blockHeaders {
+		headerHashes[i] = header.Hash()
+	}
+	logger.Infof("[headers_handler] Headers Message received: %d headers from %v: %v", len(blockHeaders), peerID, headerHashes)
 
 	if len(blockHeaders) == 0 {
 		return
