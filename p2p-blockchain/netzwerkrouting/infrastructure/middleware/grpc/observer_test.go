@@ -76,14 +76,6 @@ func mustHash(b byte) common.Hash {
 	return h
 }
 
-func mustPublicKeyHash(b byte) block.PublicKeyHash {
-	var h block.PublicKeyHash
-	for i := 0; i < len(h); i++ {
-		h[i] = b
-	}
-	return h
-}
-
 // Tests
 
 func TestObserverBlockchainServer_Notify(t *testing.T) {
