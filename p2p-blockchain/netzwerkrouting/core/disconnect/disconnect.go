@@ -5,6 +5,8 @@ import (
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // DisconnectService defines the interface for disconnecting/forgetting peers.
@@ -73,6 +75,8 @@ func (s *disconnectService) Disconnect(peerID common.PeerId) error {
 	if !ok {
 		return fmt.Errorf("peer %s not found in store", peerID)
 	}
+
+	logger.Infof("Disconnecting from peer %s", peerID)
 
 	// Remove from network info registry first (closes gRPC connections)
 	s.networkInfoRemover.RemovePeer(peerID)
