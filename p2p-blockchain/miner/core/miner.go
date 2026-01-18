@@ -16,7 +16,6 @@ import (
 type minerService struct {
 	mu            sync.RWMutex
 	miningEnabled bool
-	isMining      bool
 	cancelMining  context.CancelFunc
 	blockchain    blockchainApi.BlockchainAPI
 	utxoService   blockchainApi.UtxoStoreAPI
