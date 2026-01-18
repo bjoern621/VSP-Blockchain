@@ -258,7 +258,7 @@ func TestBlockStore_ReorganizationNoReorg(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Build main chain
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 10)
@@ -295,7 +295,7 @@ func TestBlockStore_ReorganizationSimpleFork(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Build initial main chain (lower difficulty)
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)
@@ -339,7 +339,7 @@ func TestBlockStore_ReorganizationWithUTXOState(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Create block with a specific coinbase output
 	pubKeyHash1 := transaction.PubKeyHash{1, 2, 3}
@@ -412,7 +412,7 @@ func TestBlockStore_ReorganizationLongerChainRollback(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Build initial chain: g -> b1 -> b2 -> b3
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)
@@ -466,7 +466,7 @@ func TestBlockStore_ReorganizationWithMempool(t *testing.T) {
 	// Create a mempool with a validator that will pass
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Create blocks with non-coinbase transactions
 	pubKeyHash := transaction.PubKeyHash{1, 2, 3}
@@ -508,7 +508,7 @@ func TestBlockStore_ReorganizationIdempotent(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)
 	store.AddBlock(block1)
@@ -538,7 +538,7 @@ func TestBlockStore_ReorganizationStateConsistency(t *testing.T) {
 	_ = utxoService.InitializeGenesisPool(genesis)
 	mempool := NewMempool(&mockValidatorForMempool{}, store)
 
-	reorg := NewChainReorganization(store, utxoService, mempool)
+	reorg := NewChainReorganization(store, utxoService, mempool, genesis.Hash())
 
 	// Build chain
 	block1 := createBlockWithDifficulty(genesis.Hash(), 1, 5)

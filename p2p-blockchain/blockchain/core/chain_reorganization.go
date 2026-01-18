@@ -47,35 +47,6 @@ func NewChainReorganization(
 // This includes updating the UTXO set and mempool accordingly in both cases.
 // This is usually called after one or more blocks are added to the block store.
 func (cr *ChainReorganization) CheckAndReorganize(newTip common.Hash) (bool, error) {
-	// First time initialization
-	if cr.lastKnownTip == (common.Hash{}) {
-		// Walk backwards from newTip to genesis, collecting all blocks
-		var blocksToApply []block.Block
-		currentHash := newTip
-
-		for currentHash != (common.Hash{}) {
-			blk, err := cr.blockStore.GetBlockByHash(currentHash)
-			if err != nil {
-				return false, err
-			}
-
-			// Prepend to list so we apply in forward order (genesis first)
-			blocksToApply = append([]block.Block{blk}, blocksToApply...)
-
-			currentHash = blk.Header.PreviousBlockHash
-		}
-
-		// Apply all blocks to build up UTXO state
-		for _, blk := range blocksToApply {
-			err := cr.connectBlock(blk)
-			if err != nil {
-				return false, err
-			}
-		}
-
-		cr.updateLastKnownTip(newTip)
-		return false, nil
-	}
 
 	// No change, no reorganization needed
 	if cr.lastKnownTip == newTip {
