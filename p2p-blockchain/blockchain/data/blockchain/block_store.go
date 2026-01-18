@@ -239,7 +239,7 @@ func (s *BlockStore) connectNodes(parent *blockNode, child *blockNode) {
 	if parent.IsInvalid {
 		child.IsInvalid = true
 		logger.Warnf("[block_store] Block %v marked invalid due to invalid parent %v", child.Block.Hash(), parent.Block.Hash())
-	} else if s.blockValidator != nil {
+	} else {
 		if ok, err := s.blockValidator.FullValidation(*child.Block); !ok {
 			child.IsInvalid = true
 			logger.Warnf("[block_store] Block %v marked invalid: %v", child.Block.Hash(), err)
