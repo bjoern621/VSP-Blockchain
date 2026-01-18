@@ -277,7 +277,16 @@ func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockc
 }
 
 func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMiningResponse, error) {
-	err := s.miningService.StartMining(nil)
+	err := s.miningService.EnableMining()
+	if err != nil {
+		return &pb.StartMiningResponse{
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to enable mining: %v", err),
+		}, nil
+	}
+
+	// Attempt to start mining with empty transactions
+	err = s.miningService.StartMining(nil)
 	if err != nil {
 		return &pb.StartMiningResponse{
 			Success:      false,
@@ -292,11 +301,11 @@ func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMini
 }
 
 func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMiningResponse, error) {
-	err := s.miningService.StopMining()
+	err := s.miningService.DisableMining()
 	if err != nil {
 		return &pb.StopMiningResponse{
 			Success:      false,
-			ErrorMessage: fmt.Sprintf("failed to stop mining: %v", err),
+			ErrorMessage: fmt.Sprintf("failed to disable mining: %v", err),
 		}, nil
 	}
 

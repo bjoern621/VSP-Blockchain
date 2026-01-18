@@ -14,12 +14,13 @@ import (
 )
 
 type minerService struct {
-	mu           sync.RWMutex
-	isMining     bool
-	cancelMining context.CancelFunc
-	blockchain   blockchainApi.BlockchainAPI
-	utxoService  blockchainApi.UtxoServiceAPI
-	blockStore   blockchainApi.BlockStoreAPI
+	mu            sync.RWMutex
+	miningEnabled bool
+	isMining      bool
+	cancelMining  context.CancelFunc
+	blockchain    blockchainApi.BlockchainAPI
+	utxoService   blockchainApi.UtxoServiceAPI
+	blockStore    blockchainApi.BlockStoreAPI
 }
 
 func NewMinerService(
@@ -37,6 +38,11 @@ func NewMinerService(
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StartMining request")
+		return
+	}
 
 	if m.isMining {
 		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
@@ -80,6 +86,11 @@ func (m *minerService) StopMining() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StopMining request")
+		return
+	}
+
 	if !m.isMining || m.cancelMining == nil {
 		logger.Infof("[miner] Not currently mining, ignoring StopMining request")
 		return
@@ -88,6 +99,39 @@ func (m *minerService) StopMining() {
 	logger.Infof("[miner] Stopping mining")
 	m.cancelMining()
 	m.cancelMining = nil
+}
+
+func (m *minerService) EnableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.miningEnabled {
+		logger.Infof("[miner] Mining already enabled")
+		return
+	}
+
+	logger.Infof("[miner] Enabling mining")
+	m.miningEnabled = true
+}
+
+func (m *minerService) DisableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if !m.miningEnabled {
+		logger.Infof("[miner] Mining already disabled")
+		return
+	}
+
+	logger.Infof("[miner] Disabling mining")
+	m.miningEnabled = false
+
+	// Stop any ongoing mining
+	if m.isMining && m.cancelMining != nil {
+		logger.Infof("[miner] Stopping ongoing mining due to disable")
+		m.cancelMining()
+		m.cancelMining = nil
+	}
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target
