@@ -47,13 +47,13 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 	result, err := api.kontostandService.GetBalance(vsAddress)
 	if errors.Is(err, common.ErrInvalidAddress) {
 		logger.Warnf("[api_payment] Balance request validation failed: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid V$Address"})
 		return
 	}
 	var assetErr *common.AssetError
 	if errors.As(err, &assetErr) {
 		logger.Warnf("[api_payment] Balance request asset error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": assetErr.Message})
 		return
 	}
 	if err != nil {
@@ -86,7 +86,7 @@ func (api *PaymentAPI) HistoryGet(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		logger.Errorf("[api_payment] Failed to get history: %v", err)
+		logger.Warnf("[api_payment] Failed to get history: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}

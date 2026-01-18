@@ -5,6 +5,8 @@ import (
 	appapi "s3b/vsp-blockchain/p2p-blockchain/app/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/konto"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // HistoryHandlerAdapter handles history queries from gRPC requests.
@@ -60,10 +62,12 @@ func (h *HistoryHandlerAdapter) formatTxString(tx konto.TransactionEntry) string
 		// Only sent
 		txStr = fmt.Sprintf("TxID: %s, Block: %d, Sent: %d",
 			tx.TransactionID, tx.BlockHeight, tx.Sent)
-	} else {
+	} else if tx.Received > 0 {
 		// Only received
 		txStr = fmt.Sprintf("TxID: %s, Block: %d, Received: %d",
 			tx.TransactionID, tx.BlockHeight, tx.Received)
+	} else {
+		logger.Warnf("TransactionEntry with zero sent and received amounts: %+v", tx)
 	}
 	return txStr
 }
