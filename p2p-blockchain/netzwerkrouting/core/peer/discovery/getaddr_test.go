@@ -19,7 +19,7 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add some test peers
 	peer1 := &common.Peer{
@@ -82,7 +82,7 @@ func TestHandleGetAddr_ExcludesRequesterPeer(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add the requesting peer itself to the store
 	requesterPeerID := common.PeerId("requester-peer")
@@ -130,11 +130,16 @@ func TestHandleGetAddr_DoesNotSendWhenNoPeers(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
-	// Call HandleGetAddr with empty peer store
+	// Call HandleGetAddr with only the requester peer in the store (no other peers)
 	service.HandleGetAddr(requesterPeerID)
 
 	// Give time for goroutine to finish
@@ -151,7 +156,7 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add a peer with LastSeen set
 	testPeer := &common.Peer{
@@ -195,7 +200,7 @@ func TestHandleGetAddr_SendsAsynchronously(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	// Add a peer
 	testPeer := &common.Peer{
@@ -233,7 +238,7 @@ func TestSendGetAddr_ForwardsToSender(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, nil)
 
 	targetPeerID := common.PeerId("target-peer")
 

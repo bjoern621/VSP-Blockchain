@@ -50,17 +50,17 @@ func main() {
 	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
 	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
 	grpcClient := grpc.NewClient(networkInfoRegistry, disconnectService)
-	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
+	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore, grpcClient)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
-	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
+	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient, grpcClient)
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
@@ -84,6 +84,7 @@ func main() {
 
 	blockchain := core.NewBlockchain(
 		blockchainMsgService,
+		grpcClient,
 		grpcClient,
 		transactionValidator,
 		blockValidator,

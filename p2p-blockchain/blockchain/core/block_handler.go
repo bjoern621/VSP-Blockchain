@@ -27,11 +27,15 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
 		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
+		blockHash := receivedBlock.Hash()
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectMalformed, "block", blockHash[:])
 		return
 	}
 
 	if ok, err := b.blockValidator.ValidateHeaderOnly(receivedBlock.Header); !ok {
 		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
+		blockHash := receivedBlock.Hash()
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
 		return
 	}
 
@@ -51,6 +55,10 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	// 4. Full validation BEFORE applying to UTXO set
 	if ok, _ := b.blockValidator.FullValidation(receivedBlock); !ok {
 		// An invalid block will be "removed" in the block store in form of not beeing available for retreval
+		if peerID != "" {
+			blockHash := receivedBlock.Hash()
+			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
+		}
 		return
 	}
 

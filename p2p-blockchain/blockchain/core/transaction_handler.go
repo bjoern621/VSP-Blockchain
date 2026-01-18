@@ -20,6 +20,8 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
 	if !isValid {
 		logger.Errorf("[transaction_handler] Tx Message received from %v is invalid: %v", peerID, err)
+		txId := tx.TransactionId()
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "tx", txId[:])
 		return
 	}
 	if b.mempool.IsKnownTransactionId(tx.TransactionId()) || b.IsTransactionKnownById(tx.TransactionId()) {

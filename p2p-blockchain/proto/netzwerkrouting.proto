@@ -86,8 +86,42 @@ service ErrorHandling {
 }
 
 enum ErrorType {
+    // REJECT_MALFORMED indicates a message that cannot be parsed or has an incorrect format.
+    // This is used for syntax errors, missing required fields, or any case where the message
+    // structure itself is invalid regardless of content.
+    //
+    // Examples:
+    //  - Missing required fields in protobuf message
+    //  - Invalid hash length or format
+    //  - Corrupted data that cannot be deserialized
     REJECT_MALFORMED = 0;
+
+    // REJECT_INVALID indicates a well-formed message that fails validation logic.
+    // The message structure is correct, but the content does not satisfy business rules
+    // or consensus requirements.
+    //
+    // Examples:
+    //  - Block with hash larger than target (invalid proof-of-work)
+    //  - Transaction with invalid signature
+    //  - Block header that doesn't match merkleroot
+    //  - Transaction spending non-existent UTXO
     REJECT_INVALID = 1;
+
+    // REJECT_HOLDDOWN indicates a peer that is considered unavailable after a disconnect.
+    //
+    // Use cases:
+    //  - Peer is considered disconnected and needs to wait until a new connection can be established
+    REJECT_HOLDDOWN = 2;
+
+    // REJECT_NOT_CONNECTED indicates that a message was received from a peer that
+    // is not in an established connection state. This occurs when a peer attempts to
+    // send data before completing the connection handshake for example.
+    //
+    // Examples:
+    //  - Peer sent data before Verack was exchanged
+    //  - Message received from peer that failed authentication
+    //  - Peer sent data without completing version handshake
+    REJECT_NOT_CONNECTED = 3;
 }
 
 message Error {

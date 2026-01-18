@@ -31,11 +31,13 @@ func (s *DiscoveryService) HandleGetAddr(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("Received getaddr from unknown peer %s", peerID)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "getaddr", []byte("unknown peer"))
 		return
 	}
 
 	if peer.State != common.StateConnected {
 		logger.Warnf("Received getaddr from peer %s which is not connected (state: %v)", peerID, peer.State)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "getaddr", []byte("peer not connected"))
 		return
 	}
 

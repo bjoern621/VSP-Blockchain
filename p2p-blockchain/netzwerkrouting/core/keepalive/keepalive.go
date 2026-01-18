@@ -31,6 +31,13 @@ type peerRetriever interface {
 	GetAllOutboundPeers() []common.PeerId
 }
 
+// errorMsgSender defines the interface for sending error/reject messages to peers.
+// This allows the core layer to send reject messages without depending on the API layer.
+type errorMsgSender interface {
+	// SendReject sends a reject message to the specified peer
+	SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte)
+}
+
 // KeepaliveService handles keepalive (heartbeat) functionality for peers.
 // It maintains peer liveness through periodic ping/pong messages.
 type KeepaliveService struct {
@@ -39,18 +46,21 @@ type KeepaliveService struct {
 	stopChan          chan struct{}
 	ticker            *time.Ticker
 	heartbeatInterval time.Duration
+	errorMsgSender    errorMsgSender
 }
 
 // NewKeepaliveService creates a new KeepaliveService with a 5-minute interval.
 func NewKeepaliveService(
 	peerRetriever peerRetriever,
 	heartbeatSender HeartbeatMsgSender,
+	errorMsgSender errorMsgSender,
 ) *KeepaliveService {
 	return &KeepaliveService{
 		peerRetriever:     peerRetriever,
 		heartbeatSender:   heartbeatSender,
 		stopChan:          make(chan struct{}),
 		heartbeatInterval: DefaultHeartbeatInterval,
+		errorMsgSender:    errorMsgSender,
 	}
 }
 
@@ -96,11 +106,13 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[heartbeat] Received HeartbeatBing from unknown peer %s", peerID)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "heartbeat", []byte("unknown peer"))
 		return
 	}
 
 	if peer.State != common.StateConnected {
 		logger.Warnf("[heartbeat] Received HeartbeatBing from peer %s which is not connected (state: %v)", peerID, peer.State)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "heartbeat", []byte("peer not connected"))
 		return
 	}
 

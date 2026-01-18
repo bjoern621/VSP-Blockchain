@@ -8,12 +8,14 @@ import (
 type handshakeService struct {
 	handshakeMsgSender HandshakeMsgSender
 	peerRetriever      peerRetriever
+	errorMsgSender     errorMsgSender
 }
 
-func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerRetriever peerRetriever) *handshakeService {
+func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerRetriever peerRetriever, errorMsgSender errorMsgSender) *handshakeService {
 	return &handshakeService{
 		handshakeMsgSender: handshakeMsgSender,
 		peerRetriever:      peerRetriever,
+		errorMsgSender:     errorMsgSender,
 	}
 }
 

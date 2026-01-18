@@ -21,6 +21,7 @@ type Blockchain struct {
 	mempool                *Mempool
 	blockchainMsgSender    api.BlockchainAPI
 	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI
+	errorMsgSender         api.ErrorMsgSenderAPI
 
 	transactionValidator validation.ValidationAPI
 	blockValidator       validation.BlockValidationAPI
@@ -36,6 +37,7 @@ type Blockchain struct {
 func NewBlockchain(
 	blockchainMsgSender api.BlockchainAPI,
 	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI,
+	errorMsgSender api.ErrorMsgSenderAPI,
 	transactionValidator validation.ValidationAPI,
 	blockValidator validation.BlockValidationAPI,
 	blockStore blockchain.BlockStoreAPI,
@@ -47,6 +49,7 @@ func NewBlockchain(
 		mempool:                mempool,
 		blockchainMsgSender:    blockchainMsgSender,
 		fullInventoryMsgSender: fullInventoryMsgSender,
+		errorMsgSender:         errorMsgSender,
 
 		transactionValidator: transactionValidator,
 		blockValidator:       blockValidator,
@@ -108,6 +111,7 @@ func (b *Blockchain) CheckPeerIsConnected(peerID common.PeerId) bool {
 
 	if peer.State != common.StateConnected {
 		logger.Warnf("[blockchain] Peer %s is not connected (state: %v)", peerID, peer.State)
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "unknown", []byte("sending peer is not in state connected"))
 		return false
 	}
 

@@ -166,3 +166,19 @@ func (m *mockDiscoveryPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
 	defer m.mu.RUnlock()
 	return peerID == m.localPeerID
 }
+
+type mockErrorMsgSender struct {
+	sendRejectCalled bool
+	lastPeerID       common.PeerId
+	lastErrorType    int32
+	lastMessageType  string
+	lastData         []byte
+}
+
+func (m *mockErrorMsgSender) SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte) {
+	m.sendRejectCalled = true
+	m.lastPeerID = peerId
+	m.lastErrorType = errorType
+	m.lastMessageType = rejectedMessageType
+	m.lastData = data
+}

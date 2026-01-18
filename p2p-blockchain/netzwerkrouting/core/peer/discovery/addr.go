@@ -19,11 +19,13 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[addr_handler] Received addr from unknown peer %s", peerID)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "addr", []byte("unknown peer"))
 		return
 	}
 
 	if peer.State != common.StateConnected {
 		logger.Warnf("[addr_handler] Received addr from peer %s which is not connected (state: %v)", peerID, peer.State)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "addr", []byte("peer not connected"))
 		return
 	}
 

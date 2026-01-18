@@ -83,6 +83,22 @@ func (m *mockBlockchainSender) RequestMissingBlockHeaders(blockLocator block.Blo
 	m.requestMissingHeadersPeerId = peerId
 }
 
+type mockErrorMsgSender struct {
+	sendRejectCalled bool
+	lastPeerID       common.PeerId
+	lastErrorType    int32
+	lastMessageType  string
+	lastData         []byte
+}
+
+func (m *mockErrorMsgSender) SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte) {
+	m.sendRejectCalled = true
+	m.lastPeerID = peerId
+	m.lastErrorType = errorType
+	m.lastMessageType = rejectedMessageType
+	m.lastData = data
+}
+
 // mockBlockValidator is a mock for validation.BlockValidationAPI
 type mockBlockValidator struct {
 	sanityCheckResult    bool
@@ -230,10 +246,11 @@ func (mockLookupAPIImpl) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]trans
 func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 	// Arrange: create blockchain with mocked sender
 	sender := &mockBlockchainSender{}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-1")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
-	bc := NewBlockchain(sender, nil, validation.NewValidationService(mockLookupAPIImpl{}), nil, nil, nil, peerRetriever)
+	bc := NewBlockchain(sender, nil, errorMsgSender, validation.NewValidationService(mockLookupAPIImpl{}), nil, nil, nil, peerRetriever)
 
 	var h common.Hash
 	h[0] = 0xAB // arbitrary non-zero hash to make assertions clearer
@@ -286,6 +303,7 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-1")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
@@ -296,6 +314,7 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 		blockStore:          store,
 		chainReorganization: reorg,
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -319,6 +338,7 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 	// Arrange
 	sender := &mockBlockchainSender{}
+	errorMsgSender := &mockErrorMsgSender{}
 	validator := &mockBlockValidator{
 		sanityCheckResult:    true,
 		validateHeaderResult: false,
@@ -339,6 +359,7 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 		chainReorganization: reorg,
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -374,6 +395,7 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-orphan")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
@@ -395,6 +417,7 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	// Create a block with a non-zero parent hash (simulating an orphan)
@@ -443,6 +466,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-invalid")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
@@ -455,6 +479,7 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -492,6 +517,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-valid")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
@@ -504,6 +530,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -552,6 +579,8 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 	peerID := common.PeerId("peer-reorg")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
 
+	errorMsgSender := &mockErrorMsgSender{}
+
 	bc := &Blockchain{
 		blockchainMsgSender: sender,
 		blockValidator:      validator,
@@ -560,6 +589,7 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)
@@ -599,6 +629,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-broadcast")
 	peerRetriever.AddPeer(peerID, &common.Peer{State: common.StateConnected})
@@ -611,6 +642,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	// Act
@@ -640,6 +672,7 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
 	}
+	errorMsgSender := &mockErrorMsgSender{}
 	peerRetriever := newMockPeerRetriever()
 	senderPeerID := common.PeerId("peer-sender")
 	peerRetriever.AddPeer(senderPeerID, &common.Peer{State: common.StateConnected})
@@ -652,6 +685,7 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		mempool:             NewMempool(nil, nil),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
+		errorMsgSender:      errorMsgSender,
 	}
 
 	testBlock := createTestBlock(common.Hash{}, 123)

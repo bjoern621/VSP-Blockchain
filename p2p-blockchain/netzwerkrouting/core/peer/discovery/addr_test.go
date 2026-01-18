@@ -18,8 +18,9 @@ func TestHandleAddr_UpdatesPeerLastSeenTimestamp(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add a peer with an old timestamp
 	oldTimestamp := time.Now().Add(-24 * time.Hour).Unix()
@@ -64,8 +65,9 @@ func TestHandleAddr_DoesNotUpdateOlderTimestamp(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add a peer with a recent timestamp
 	recentTimestamp := time.Now().Unix()
@@ -105,8 +107,9 @@ func TestHandleAddr_HandlesMultipleAddresses(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add multiple peers
 	now := time.Now().Unix()
@@ -175,8 +178,9 @@ func TestHandleAddr_HandlesEmptyAddressList(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Add a peer
 	now := time.Now().Unix()
@@ -211,8 +215,9 @@ func TestHandleAddr_ThreadSafe(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create a peer
 	now := time.Now().Unix()
@@ -269,8 +274,9 @@ func TestHandleAddr_PanicsIfPeerNotRegistered(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Add sender peer so the connection check passes
 	senderPeerID := common.PeerId("sender-peer")
@@ -304,8 +310,9 @@ func TestHandleAddr_UpdatesCorrectPeer(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add multiple peers with different timestamps
 	now := time.Now().Unix()
@@ -372,8 +379,9 @@ func TestHandleAddr_SameTimestamp(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add a peer
 	timestamp := time.Now().Unix()
@@ -416,8 +424,9 @@ func TestForwardAddrs_DoesNotForwardToSender(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add connected peers including the sender
 	connectedPeers := []common.PeerId{"sender-peer", "peer-1", "peer-2", "peer-3"}
@@ -497,8 +506,9 @@ func TestForwardAddrs_DoesNotForwardToPeersThatAlreadyReceived(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add connected peers
 	connectedPeers := []common.PeerId{"sender-peer", "peer-1", "peer-2", "peer-3"}
@@ -580,8 +590,9 @@ func TestForwardAddrs_ForwardsToRandomPeers(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create and add connected peers
 	connectedPeers := []common.PeerId{"sender-peer", "peer-1", "peer-2", "peer-3", "peer-4"}
@@ -673,9 +684,8 @@ func TestForwardAddrs_WithLimitedPeers(t *testing.T) {
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
-
-	// Create only sender and 1 other connected peer
+	errorMsgSender := &mockErrorMsgSender{}
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 	connectedPeers := []common.PeerId{"sender-peer", "peer-1"}
 	now := time.Now().Unix()
 
@@ -746,8 +756,9 @@ func TestForwardAddrs_WithNoEligiblePeers(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create only the sender peer
 	now := time.Now().Unix()
@@ -809,8 +820,9 @@ func TestForwardAddrs_IndependentPeerSelection(t *testing.T) {
 	peerStore := newMockDiscoveryPeerRetriever()
 	addrSender := newMockAddrMsgSender()
 	getAddrSender := newMockGetAddrMsgSender()
+	errorMsgSender := &mockErrorMsgSender{}
 
-	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
+	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender, errorMsgSender)
 
 	// Create multiple connected peers
 	connectedPeers := []common.PeerId{"sender-peer", "peer-1", "peer-2", "peer-3", "peer-4"}

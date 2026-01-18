@@ -73,7 +73,7 @@ func (m *mockHandshakeMsgSender) getAckCallCount() int {
 func TestInitiateHandshake(t *testing.T) {
 	peerStore := peer.NewPeerStore()
 	sender := newMockHandshakeMsgSender()
-	service := NewHandshakeService(sender, peerStore)
+	service := NewHandshakeService(sender, peerStore, nil)
 
 	peerID := peerStore.NewPeer()
 
@@ -100,7 +100,7 @@ func TestInitiateHandshake(t *testing.T) {
 func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 	peerStore := peer.NewPeerStore()
 	sender := newMockHandshakeMsgSender()
-	service := NewHandshakeService(sender, peerStore)
+	service := NewHandshakeService(sender, peerStore, nil)
 
 	peerID := peerStore.NewPeer()
 
@@ -123,7 +123,7 @@ func TestInitiateHandshake_RejectsWhenAlreadyConnected(t *testing.T) {
 func TestHandleVersion(t *testing.T) {
 	peerStore := peer.NewPeerStore()
 	sender := newMockHandshakeMsgSender()
-	service := NewHandshakeService(sender, peerStore)
+	service := NewHandshakeService(sender, peerStore, nil)
 
 	peerID := peerStore.NewInboundPeer()
 
@@ -155,7 +155,7 @@ func TestHandleVersion(t *testing.T) {
 func TestHandleVerack(t *testing.T) {
 	peerStore := peer.NewPeerStore()
 	sender := newMockHandshakeMsgSender()
-	service := NewHandshakeService(sender, peerStore)
+	service := NewHandshakeService(sender, peerStore, nil)
 
 	peerID := peerStore.NewPeer()
 
@@ -190,7 +190,7 @@ func TestHandleVerack(t *testing.T) {
 func TestHandleAck(t *testing.T) {
 	peerStore := peer.NewPeerStore()
 	sender := newMockHandshakeMsgSender()
-	service := NewHandshakeService(sender, peerStore)
+	service := NewHandshakeService(sender, peerStore, nil)
 
 	peerID := peerStore.NewInboundPeer()
 

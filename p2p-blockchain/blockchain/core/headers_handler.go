@@ -28,6 +28,8 @@ func (b *Blockchain) Headers(blockHeaders []*block.BlockHeader, peerID common.Pe
 	for i, header := range blockHeaders {
 		if ok, err := b.blockValidator.ValidateHeaderOnly(*header); !ok {
 			logger.Warnf("[headers_handler] Invalid header at index %d from %v: %v", i, peerID, err)
+			headerHash := header.Hash()
+			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "headers", headerHash[:])
 			continue
 		}
 

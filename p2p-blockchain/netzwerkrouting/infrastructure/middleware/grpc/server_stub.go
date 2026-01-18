@@ -43,6 +43,8 @@ type Server struct {
 	pb.UnimplementedPeerDiscoveryServer
 	discoveryService *discovery.DiscoveryService
 	keepaliveService *keepalive.KeepaliveService
+
+	pb.UnimplementedErrorHandlingServer
 }
 
 func NewServer(
@@ -75,6 +77,7 @@ func (s *Server) Start(port uint16) error {
 	pb.RegisterConnectionEstablishmentServer(s.grpcServer, s)
 	pb.RegisterBlockchainServiceServer(s.grpcServer, s)
 	pb.RegisterPeerDiscoveryServer(s.grpcServer, s)
+	pb.RegisterErrorHandlingServer(s.grpcServer, s)
 
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
