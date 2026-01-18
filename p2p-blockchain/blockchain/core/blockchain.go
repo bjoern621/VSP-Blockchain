@@ -4,7 +4,6 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/miner/api/observer"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
@@ -54,14 +53,6 @@ func NewBlockchain(
 
 func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
 	b.Block(selfMinedBlock, "")
-}
-
-func (b *Blockchain) SetFilter(_ block.SetFilterRequest, _ common.PeerId) {
-	panic("No longer supported and will be removed later")
-}
-
-func (b *Blockchain) MerkleBlock(_ block.MerkleBlock, _ common.PeerId) {
-	panic("No longer supported and will be removed later")
 }
 
 func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
