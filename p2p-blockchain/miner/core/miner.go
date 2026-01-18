@@ -16,7 +16,6 @@ import (
 type minerService struct {
 	mu            sync.RWMutex
 	miningEnabled bool
-	isMining      bool
 	cancelMining  context.CancelFunc
 	blockchain    blockchainApi.BlockchainAPI
 	utxoService   blockchainApi.UtxoServiceAPI
@@ -44,7 +43,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 		return
 	}
 
-	if m.isMining {
+	if m.cancelMining != nil {
 		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
 		return
 	}
@@ -60,12 +59,10 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
-	m.isMining = true
 
 	go func() {
 		defer func() {
 			m.mu.Lock()
-			m.isMining = false
 			m.cancelMining = nil
 			m.mu.Unlock()
 		}()
@@ -91,8 +88,8 @@ func (m *minerService) StopMining() {
 		return
 	}
 
-	if !m.isMining || m.cancelMining == nil {
-		logger.Infof("[miner] Not currently mining, ignoring StopMining request")
+	if m.cancelMining == nil {
+		logger.Debugf("[miner] Not currently mining, ignoring StopMining request")
 		return
 	}
 
@@ -127,7 +124,7 @@ func (m *minerService) DisableMining() {
 	m.miningEnabled = false
 
 	// Stop any ongoing mining
-	if m.isMining && m.cancelMining != nil {
+	if m.cancelMining != nil {
 		logger.Infof("[miner] Stopping ongoing mining due to disable")
 		m.cancelMining()
 		m.cancelMining = nil
