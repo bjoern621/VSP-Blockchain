@@ -19,7 +19,8 @@ type UtxoStoreAPI interface {
 	InitializeGenesisPool(genesisBlock block.Block) error
 
 	// AddNewBlock updates the UTXO set with a new block's transactions.
-	// Precondition: the previous block's UTXO pool must exist. For this the previous block must have been added already.
+	// Precondition: the previous block's UTXO pool must exist and it must have been added to the block_store via the
+	// AddBlock() method on the blockStore. For this the previous block must have been added already.
 	AddNewBlock(block block.Block) error
 
 	// GetUtxoFromBlock retrieves a specific UTXO from a given block's UTXO pool.
