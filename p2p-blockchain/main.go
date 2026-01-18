@@ -5,12 +5,10 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
-	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
@@ -64,49 +62,45 @@ func main() {
 	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
-	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
-	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
-	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
-	assert.IsNil(err, "couldn't create UTXOEntryDAO")
-	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
-	assert.IsNil(err, "couldn't create chainStateService")
-	// Initialize UTXO lookup service and API
-	memPoolService := utxo.NewMemUTXOPoolService()
-	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
-
 	genesisBlock := blockchainData.GenesisBlock()
-	blockStore := blockchainData.NewBlockStore(genesisBlock)
+	blockValidator := validation.NewBlockValidationService()
+	blockStore := blockchainData.NewBlockStore(genesisBlock, blockValidator)
+
+	utxoStore := utxo.NewUtxoStore(blockStore)
+	err := utxoStore.InitializeGenesisPool(genesisBlock)
+	assert.IsNil(err, "Failed to initialize genesis UTXO pool")
 
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	transactionValidator := validation.NewValidationService(chainStateService)
-	blockValidator := validation.NewBlockValidationService()
+	transactionValidator := validation.NewTransactionValidator(utxoStore)
 
 	blockchain := core.NewBlockchain(
 		blockchainMsgService,
 		grpcClient,
 		grpcClient,
-		transactionValidator,
 		blockValidator,
 		blockStore,
-		fullNodeUtxoService,
 		peerStore,
+		transactionValidator,
+		utxoStore,
 	)
+
+	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
+	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
+	handshakeService.Attach(blockchain)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
-
-	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
+	minerImpl := minerCore.NewMinerService(blockchain, utxoStore, blockStore)
 	blockchain.Attach(minerImpl)
 	minerImpl.StartMining(make([]transaction.Transaction, 0))
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
 		// Intialize Transaction Creation API
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore)
 		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
 		// Initialize transaction service and API
@@ -116,7 +110,7 @@ func main() {
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 
 		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
+		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
 		// Initialize visualization service and handler

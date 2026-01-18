@@ -20,7 +20,8 @@ type TransactionCreationService struct {
 	keyGenerator  keys.KeyGenerator
 	keyDecoder    keys.KeyDecoder
 	blockchainAPI api.BlockchainAPI
-	utxoAPI       *blockapi.UtxoAPI
+	utxoAPI       blockapi.UtxoStoreAPI
+	blockStore    blockapi.BlockStoreAPI
 }
 
 // NewTransactionCreationService creates a new TransactionCreationService with the given dependencies.
@@ -28,13 +29,15 @@ func NewTransactionCreationService(
 	keyGenerator keys.KeyGenerator,
 	keyDecoder keys.KeyDecoder,
 	blockchainAPI api.BlockchainAPI,
-	utxoAPI *blockapi.UtxoAPI,
+	utxoAPI blockapi.UtxoStoreAPI,
+	blockStore blockapi.BlockStoreAPI,
 ) *TransactionCreationService {
 	return &TransactionCreationService{
 		keyGenerator:  keyGenerator,
 		keyDecoder:    keyDecoder,
 		blockchainAPI: blockchainAPI,
 		utxoAPI:       utxoAPI,
+		blockStore:    blockStore,
 	}
 }
 
@@ -45,7 +48,9 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 		return s.handleInvalidAddress(err)
 	}
 
-	utxos, err := s.utxoAPI.GetUTXOsByPubKeyHash(recipientPubKeyHash)
+	mainChainTip := s.blockStore.GetMainChainTip()
+	mainChainTipHash := mainChainTip.Hash()
+	utxos, err := s.utxoAPI.GetUtxosByPubKeyHashFromBlock(recipientPubKeyHash, mainChainTipHash)
 	if err != nil || len(utxos) == 0 {
 		return s.handleInsufficientFunds(err)
 	}

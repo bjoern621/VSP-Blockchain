@@ -9,6 +9,6 @@
 
 package openapi
 
-type BalanceGet200Response struct {
-	Balance int32 `json:"balance,omitempty"`
+type BlockchainVisualizationGet200Response struct {
+	URL string `json:"URL,omitempty"`
 }

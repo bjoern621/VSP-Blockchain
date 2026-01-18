@@ -192,9 +192,8 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 			},
 			Proofs: []block.MerkleProof{{
 				Transaction: transaction.Transaction{
-					Inputs:   []transaction.Input{},
-					Outputs:  []transaction.Output{},
-					LockTime: 123,
+					Inputs:  []transaction.Input{},
+					Outputs: []transaction.Output{},
 				},
 				Siblings: []common.Hash{mustHash(0x10), mustHash(0x11)},
 				Index:    1,
@@ -220,13 +219,11 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 				OutputIndex: 0,
 				Signature:   []byte{0x30, 0x01},
 				PubKey:      transaction.PubKey{},
-				Sequence:    0xffffffff,
 			}},
 			Outputs: []transaction.Output{{
 				Value:      500,
 				PubKeyHash: transaction.PubKeyHash{},
 			}},
-			LockTime: 500,
 		}
 
 		server.NotifyTx(tx, testPeerID)

@@ -12,6 +12,7 @@ type TransactionAdapter interface {
 	GetKeysetFromWIF(privateKeyWIF string) (common.Keyset, error)
 	// CreateTransaction creates and broadcasts a new transaction via the local node.
 	CreateTransaction(req common.TransactionRequest) (*common.TransactionResult, error)
+	GetBlockchainVisualization(includeDetails bool) (string, error)
 }
 
 type TransactionAdapterImpl struct {
@@ -100,4 +101,15 @@ func mapErrorCode(code pb.TransactionErrorCode) common.TransactionErrorCode {
 	default:
 		return common.ErrorCodeValidationFailed
 	}
+}
+
+func (t *TransactionAdapterImpl) GetBlockchainVisualization(includeDetails bool) (string, error) {
+
+	request := pb.GetBlockchainVisualizationRequest{IncludeDetails: includeDetails}
+	result, err := t.appServiceClient.GetBlockchainVisualization(context.Background(), &request)
+	if err != nil {
+		return "", common.ErrServer
+	}
+
+	return result.VisualizationUrl, nil
 }

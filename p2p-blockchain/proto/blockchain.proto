@@ -155,7 +155,6 @@ message SetFilterRequest {
 message Transaction {
     repeated TxInput inputs = 1;
     repeated TxOutput outputs = 2;
-    uint64 lock_time = 3;
 }
 
 message TxInput {
@@ -163,7 +162,6 @@ message TxInput {
     uint32 output_index = 2; // Index of the output in the previous transaction
     bytes signature = 3; // Signature and public_key together equals the script used to unlock the output
     bytes public_key = 4; // The public key corresponding to the address spending the output
-    uint32 sequence = 5;
 }
 
 message TxOutput {

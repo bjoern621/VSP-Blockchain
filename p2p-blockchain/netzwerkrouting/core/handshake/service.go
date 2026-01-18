@@ -4,11 +4,13 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
 
-// handshakeService implements HandshakeMsgHandler (for infrastructure) and HandshakeInitiator (for api) with the actual domain logic.
+// handshakeService implements HandshakeMsgHandler (for infrastructure), HandshakeInitiator (for api),
+// and ObservableHandshakeService (for connection observers) with the actual domain logic.
 type handshakeService struct {
 	handshakeMsgSender HandshakeMsgSender
 	peerRetriever      peerRetriever
 	errorMsgSender     errorMsgSender
+	*observerManager
 }
 
 func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerRetriever peerRetriever, errorMsgSender errorMsgSender) *handshakeService {
@@ -16,6 +18,7 @@ func NewHandshakeService(handshakeMsgSender HandshakeMsgSender, peerRetriever pe
 		handshakeMsgSender: handshakeMsgSender,
 		peerRetriever:      peerRetriever,
 		errorMsgSender:     errorMsgSender,
+		observerManager:    newObserverManager(),
 	}
 }
 

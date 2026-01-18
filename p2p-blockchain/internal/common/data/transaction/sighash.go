@@ -8,7 +8,7 @@ import (
 )
 
 // SigHash computes the Hash of a Transaction used for the Signature of an Input.
-// It follows the SIGHASH_ALL scheme, including all inputs and outputs (and the locktime).
+// It follows the SIGHASH_ALL scheme, including all inputs and outputs
 func (tx *Transaction) SigHash(inputIndex int, referenced Output) ([]byte, error) {
 	if inputIndex >= len(tx.Inputs) {
 		return nil, errors.New("input index out of range")
@@ -19,8 +19,6 @@ func (tx *Transaction) SigHash(inputIndex int, referenced Output) ([]byte, error
 	addInputList(buf, inputIndex, referenced, tx)
 
 	addOutputList(buf, tx)
-
-	writeUint64(buf, tx.LockTime)
 
 	return doubleSHA256Hash(buf)
 }
@@ -60,8 +58,6 @@ func addInput(buf *bytes.Buffer, referenced Output, in Input, toBeSigned bool) {
 	} else {
 		writeUint64(buf, uint64(0))
 	}
-
-	writeUint32(buf, in.Sequence)
 }
 
 // Helper is used to ignore Error for binary.Write() since bytes.Buffer doesnt fail

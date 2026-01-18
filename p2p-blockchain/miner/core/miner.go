@@ -16,15 +16,16 @@ import (
 type minerService struct {
 	mu            sync.RWMutex
 	miningEnabled bool
+	isMining      bool
 	cancelMining  context.CancelFunc
 	blockchain    blockchainApi.BlockchainAPI
-	utxoService   blockchainApi.UtxoServiceAPI
+	utxoService   blockchainApi.UtxoStoreAPI
 	blockStore    blockchainApi.BlockStoreAPI
 }
 
 func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
-	utxoServiceAPI blockchainApi.UtxoServiceAPI,
+	utxoServiceAPI blockchainApi.UtxoStoreAPI,
 	blockStore blockchainApi.BlockStoreAPI,
 ) *minerService {
 	return &minerService{
@@ -52,7 +53,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	tip := m.blockStore.GetMainChainTip()
 	previousBlockHash := tip.Hash()
 	logger.Infof("[miner] Started mining new block with %d transactions and PrevBlockHash %v", len(transactions), previousBlockHash)
-	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1)
+	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1, previousBlockHash)
 	if err != nil {
 		logger.Errorf("[miner] Failed to create candidate block: %v", err)
 		return
