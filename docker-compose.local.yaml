@@ -133,7 +133,7 @@ services:
             P2P_PORT: "50051"
             APP_LISTEN_ADDR: "0.0.0.0" # Listen on all interfaces for debug purposes, rest-api technically only needs 127.0.0.1
             P2P_LISTEN_ADDR: "172.28.1.15"
-            ADDITIONAL_SERVICES: "wallet, blockchain_simple, app"
+            ADDITIONAL_SERVICES: "wallet, blockchain_full, app"
             LOG_LEVEL: "DEBUG"
 
     rest-api:
