@@ -128,9 +128,15 @@ type mockBlockStore struct {
 
 	// Configurable return value for AddBlock (simulating multiple blocks added, e.g., connecting orphans)
 	addBlockReturnValue []common.Hash
+
+	// Configurable return for GetBlockByHash (to simulate block not found)
+	getBlockByHashErr error
 }
 
 func (m *mockBlockStore) GetBlockByHash(_ common.Hash) (block.Block, error) {
+	if m.getBlockByHashErr != nil {
+		return block.Block{}, m.getBlockByHashErr
+	}
 	return block.Block{}, nil
 }
 
@@ -276,7 +282,9 @@ func TestBlockchain_Block_SanityCheckFailure(t *testing.T) {
 		sanityCheckResult: false,
 		sanityCheckErr:    errors.New("block must contain at least one transaction"),
 	}
-	store := &mockBlockStore{}
+	store := &mockBlockStore{
+		getBlockByHashErr: errors.New("block not found"),
+	}
 	reorg := &mockChainReorganization{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-1")
@@ -316,7 +324,9 @@ func TestBlockchain_Block_ValidateHeaderFailure(t *testing.T) {
 		validateHeaderResult: false,
 		validateHeaderErr:    errors.New("block hash is not smaller than target"),
 	}
-	store := &mockBlockStore{}
+	store := &mockBlockStore{
+		getBlockByHashErr: errors.New("block not found"),
+	}
 	reorg := &mockChainReorganization{}
 	peerRetriever := newMockPeerRetriever()
 	peerID := common.PeerId("peer-2")
@@ -358,9 +368,10 @@ func TestBlockchain_Block_IsOrphanRequestsMissingHeaders(t *testing.T) {
 		fullValidationResult: true,
 	}
 	store := &mockBlockStore{
-		isOrphanResult: true,
-		currentHeight:  10,
-		blocksByHeight: make(map[uint64][]block.Block),
+		isOrphanResult:    true,
+		currentHeight:     10,
+		blocksByHeight:    make(map[uint64][]block.Block),
+		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{}
 	peerRetriever := newMockPeerRetriever()
@@ -427,8 +438,9 @@ func TestBlockchain_Block_FullValidationFailure(t *testing.T) {
 		fullValidationErr:    errors.New("merkle root in header does not match calculated merkle root"),
 	}
 	store := &mockBlockStore{
-		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		isOrphanResult:    false,
+		mainChainTip:      createTestBlock(common.Hash{}, 1),
+		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{}
 	peerRetriever := newMockPeerRetriever()
@@ -472,9 +484,10 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		fullValidationResult: true,
 	}
 	store := &mockBlockStore{
-		isOrphanResult: false,
-		currentHeight:  5,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		isOrphanResult:    false,
+		currentHeight:     5,
+		mainChainTip:      createTestBlock(common.Hash{}, 1),
+		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
@@ -528,8 +541,9 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		fullValidationResult: true,
 	}
 	store := &mockBlockStore{
-		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		isOrphanResult:    false,
+		mainChainTip:      createTestBlock(common.Hash{}, 1),
+		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: true, // Reorganization occurred
@@ -575,8 +589,9 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 	expectedHash := testBlock.Hash()
 
 	store := &mockBlockStore{
-		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		isOrphanResult:    false,
+		mainChainTip:      createTestBlock(common.Hash{}, 1),
+		getBlockByHashErr: errors.New("block not found"),
 		// Simulate multiple blocks being added (e.g., connecting orphans)
 		addBlockReturnValue: []common.Hash{expectedHash, {1, 2, 3}},
 	}
@@ -618,8 +633,9 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		fullValidationResult: true,
 	}
 	store := &mockBlockStore{
-		isOrphanResult: false,
-		mainChainTip:   createTestBlock(common.Hash{}, 1),
+		isOrphanResult:    false,
+		mainChainTip:      createTestBlock(common.Hash{}, 1),
+		getBlockByHashErr: errors.New("block not found"),
 	}
 	reorg := &mockChainReorganization{
 		checkAndReorganizeResult: false,
