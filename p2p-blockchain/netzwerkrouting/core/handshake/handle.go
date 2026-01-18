@@ -57,26 +57,38 @@ func (h *handshakeService) HandleVerack(peerID common.PeerId, info VersionInfo) 
 		return
 	}
 
-	p.Lock()
-	defer p.Unlock()
+	shouldNotify := func() bool {
+		p.Lock()
+		defer p.Unlock()
 
-	if p.State != common.StateAwaitingVerack {
-		logger.Warnf("[handshake_handler] peer %s sent Verack message in invalid state %v", peerID, p.State)
-		return
+		if p.State != common.StateAwaitingVerack {
+			logger.Warnf("[handshake_handler] peer %s sent Verack message in invalid state %v", peerID, p.State)
+			return false
+		}
+
+		if !checkVersionCompatibility(info.Version) {
+			logger.Warnf("[handshake_handler] peer %s has incompatible version %s", peerID, info.Version)
+			return false
+		}
+
+		// Valid
+
+		p.State = common.StateConnected
+		p.Version = info.Version
+		p.SupportedServices = info.SupportedServices()
+
+		go h.handshakeMsgSender.SendAck(peerID)
+
+		return true
+	}()
+
+	if shouldNotify {
+		// Notify observers that outbound connection is established (isOutbound=true)
+		// Only outbound connections trigger the Initial Block Download (IBD) process
+		// Called after lock is released to avoid deadlocks caused by notification callbacks
+		// which might try to access the peer again
+		h.notifyPeerConnected(peerID, true)
 	}
-
-	if !checkVersionCompatibility(info.Version) {
-		logger.Warnf("[handshake_handler] peer %s has incompatible version %s", peerID, info.Version)
-		return
-	}
-
-	// Valid
-
-	p.State = common.StateConnected
-	p.Version = info.Version
-	p.SupportedServices = info.SupportedServices()
-
-	go h.handshakeMsgSender.SendAck(peerID)
 }
 
 func (h *handshakeService) HandleAck(peerID common.PeerId) {
@@ -86,13 +98,25 @@ func (h *handshakeService) HandleAck(peerID common.PeerId) {
 		return
 	}
 
-	p.Lock()
-	defer p.Unlock()
+	shouldNotify := func() bool {
+		p.Lock()
+		defer p.Unlock()
 
-	if p.State != common.StateAwaitingAck {
-		logger.Warnf("[handshake_handler] peer %s sent Ack message in invalid state %v", peerID, p.State)
-		return
+		if p.State != common.StateAwaitingAck {
+			logger.Warnf("[handshake_handler] peer %s sent Ack message in invalid state %v", peerID, p.State)
+			return false
+		}
+
+		p.State = common.StateConnected
+
+		return true
+	}()
+
+	if shouldNotify {
+		// Notify observers that inbound connection is established (isOutbound=false)
+		// Inbound connections do NOT trigger IBD - only the initiating node syncs
+		// Called after lock is released to avoid deadlocks caused by notification callbacks
+		// which might try to access the peer again
+		h.notifyPeerConnected(peerID, false)
 	}
-
-	p.State = common.StateConnected
 }
