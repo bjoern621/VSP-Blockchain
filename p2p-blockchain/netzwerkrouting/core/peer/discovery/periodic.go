@@ -89,7 +89,7 @@ func (s *PeriodicDiscoveryService) run() {
 
 // performRegistryDiscovery queries the registry for new peers.
 func (s *PeriodicDiscoveryService) performRegistryDiscovery() {
-	logger.Debugf("[peer-discovery] Performing registry discovery")
+	logger.Infof("[peer-discovery] Performing registry discovery")
 	s.registryQuerier.GetPeers()
 }
 
@@ -101,7 +101,7 @@ func (s *PeriodicDiscoveryService) performGossipDiscovery() {
 		return
 	}
 
-	logger.Debugf("[peer-discovery] Performing gossip discovery")
+	logger.Infof("[peer-discovery] Performing gossip discovery")
 
 	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
 

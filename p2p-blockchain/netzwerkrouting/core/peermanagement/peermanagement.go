@@ -177,7 +177,7 @@ func (s *PeerManagementService) establishNewPeers(count int) {
 		}
 
 		handshakesSent++
-		logger.Infof("[peer-count-checker] Successfully initiated handshake with peer %s", peerID)
+		logger.Debugf("[peer-count-checker] Successfully initiated handshake with peer %s", peerID)
 	}
 
 	logger.Infof("[peer-count-checker] Sent %d/%d handshakes to new peers", handshakesSent, count)
