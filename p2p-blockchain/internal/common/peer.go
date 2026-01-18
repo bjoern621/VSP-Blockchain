@@ -19,6 +19,9 @@ type Peer struct {
 	// Seen active means, that a heartbeat message was received from the peer.
 	// It's not updated on every interaction with the peer,
 	// instead it's updated on discovery (gossip or registry) and heartbeat messages.
+	// Discovery updates only if the peer is in StateNew.
+	// Heartbeat messages update LastSeen only in StateConnected.
+	// This way, we can detect unreachable peers and put them into holddown.
 	LastSeen int64
 	// HolddownStartTime is a Unix timestamp indicating when the peer entered holddown state.
 	// A peer in holddown rejects new connections for a cooldown period (typically 15 minutes).

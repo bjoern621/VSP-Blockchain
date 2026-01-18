@@ -37,6 +37,10 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 		peer, exists := s.peerRetriever.GetPeer(addr.PeerId)
 		assert.Assert(exists, "peer should already be registered by infrastructure layer")
 
+		if peer.State != common.StateNew {
+			continue // Only update LastSeen for peers in StateNew via discovery
+		}
+
 		if peer.LastSeen < addr.LastActiveTimestamp {
 			peer.Lock()
 			peer.LastSeen = addr.LastActiveTimestamp
