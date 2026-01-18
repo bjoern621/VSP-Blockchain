@@ -42,7 +42,7 @@ Aus fachlicher Sicht wird damit die grundlegende Aufgabe der sicheren Kontoführ
 | Währung senden                                  | Ein Nutzer kann einem anderen Nutzer einen beliebigen Betrag seiner verfügbaren Währung übertragen. Das System prüft, ob der Sender über ausreichendes Guthaben verfügt. | [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)                   |
 | Kontostand anzeigen                             | Ein Nutzer kann seinen aktuellen Kontostand einsehen.                                                                                                                    | [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)           |
 | Transaktionsverlauf anzeigen                    | Ein Nutzer kann alle vergangenen Transaktionen seines Kontos einsehen, inklusive gesendeter und empfangener Beträge.                                                     | [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)  |
-| Ein neuen privaten Schlüssel erzeugen           | Ein Nutzer kann ein neuen privaten Schlüssel generieren lassen, mit welchem er Transaktionen durchführen kann                                                            | [US-154 privaten Schlüssel generieren lassen](github.com/bjoern621/VSP-Blockchain/issues/154) 
+| Ein neuen privaten Schlüssel erzeugen           | Ein Nutzer kann ein neuen privaten Schlüssel generieren lassen, mit welchem er Transaktionen durchführen kann                                                            | [US-154 privaten Schlüssel generieren lassen](https://github.com/bjoern621/VSP-Blockchain/issues/154) |
 | V$Adresse von einem privaten Schlüssel erhalten | Ein Nutzer kann mithilfe eines privaten Schlüssels die dazugehörige V$Adresse erhalten                                                                                   | [US-155 V$Adresse erhalten](https://github.com/bjoern621/VSP-Blockchain/issues/155)                                                                |                                                                                              |                                                                                              |                                                                                              |                                                                                                                                                                          |
 
 Alle genannten Anforderungen basieren auf den oben referenzierten User Stories und Akzeptanzkriterien.
@@ -72,7 +72,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 |---------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | **Product Owner** | wqx847@haw-hamburg.de | Erwartet, dass das System alle Kernfunktionen wie Überweisungen und Transaktionshistorie zuverlässig bereitstellt.                     |
 | **Endnutzer / Konto-Inhaber** | n/a                   | Erwartet eine sichere, transparente und einfach bedienbare Plattform, um Währung zu senden, zu empfangen und Transaktionen einzusehen. |
-| **Entwicklungsteam** | TBD                   | Erwartet eine stabile und verfügbare Versionsverwaltung (GitHub) und einen stabilen Main branch (durch Code Reviews gesichert)         |
+| **Entwicklungsteam** | [GitHub](https://github.com/bjoern621/VSP-Blockchain)            | Erwartet eine stabile und verfügbare Versionsverwaltung (GitHub) und einen stabilen Main branch (durch Code Reviews gesichert)         |
 
 # Randbedingungen
 
@@ -99,7 +99,6 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 | **Randbedingung** | **Erläuterung** |
 |--------------------|-----------------|
-| **Verschlüsselung** | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**. |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
 
 ---
@@ -117,7 +116,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 | **Monitoring- oder Logging-Systeme**   | Statusabfragen, Metriken                                | Logs, Health-Check-Responses                                                                   |
 
 ## Technischer Kontext
-![Diagram](https://www.plantuml.com/plantuml/png/TL91QiCm4BmN-eV159ABFf13ILAQ4WYbrALtMLPZ4NbbP2MbVKz_qezrRTMkPQWEXXtFpiwEX7KRf0_dsbvVWG-vKYFRUlVUQe-TTnGqbHbaYoA2aHU_ojMD8qq1sVDz_eBDqnwvzXUZTDyY6pEbH_63EqchyNhpu0pXaR6UQvsIjgkct4WIM_vvKfKq59rqvLrNJjKNE3XhJUCQaQkAJ0Xjq9OdoHfpTx73y7B-JIeUXC7lVi0YPOf0YFb62mnHqJby1fH68naUQR_HiS0oLLoX_I1LSSofwkYt-lwYOy354Vv2W2p-MQ0OEPl1Q09rAyo2bZswdF5Mh9Ou6xiWl3bMGTnEhY6bh_d5y8Fw0G00)
+![Diagram](https://www.plantuml.com/plantuml/png/RP1HIiD048RVFSLF4DgNlO0FqbPK2aN4Yk_RpTWitSo4pRIYv_4cNaoJfKat-B8mFz_CVZEBLctKOnsk082b91IhA1yjHJn4OIKk2zWMknJsMFyugHjXOaNnShzznV9vZIt5atVKDzZ6Zt0Ql9633OItwqVnZ2Sf4nd4sT1L5sXYp2g8ExZAUauINNdNbUFe6JOIWc-aCLjNiLTjbK8Ws1fJiRx1ir9yjuvGu6owJbaYiW36vAlCSBuF7_LBKNf2zd57dSy5O-Rvk1kqd-ogADaAWsZryyrxnKaOu-wmk__DTmEoJ8fv0cCcnxLzEC-ngTFG0XFzlb9pUt7uFzWEz8AuFDRX5m00)
 
 <details>
     <summary>Code</summary>
@@ -141,7 +140,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     ' REST API hängt von Blockchain ab
     interface " " as blockchainApi
     blockchainApi -- localNode
-    api --( blockchainApi : asynchron
+    api --( blockchainApi : synchron
     localNode -right-> blockChain : asynchron
 @enduml
     ````
@@ -180,8 +179,8 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 | **Priorität** | **Qualitätsziel** | **Maßnahmen / Architekturentscheidungen**                                                                                                                                                |
 |---------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **1** | **Sicherheit** | Verwendung von Signaturen für Transaktionsauthentizität. Alle gRPC-Verbindungen laufen über TLS. REST-Endpunkte sind authentifiziert und autorisiert.                                    |
-| **2** | **Zuverlässigkeit** | Validierung jeder Transaktion durch Mehrheitskonsens der Nodes. Unveränderliche Hash-Ketten sichern Datenintegrität. Fehlerbehandlung und Wiederholungsmechanismen für Netzwerkausfälle. |
+| **1** | **Sicherheit** | Verwendung von Signaturen für Transaktionsauthentizität.                                 |
+| **2** | **Zuverlässigkeit** | Validierung jeder Transaktion durch Mehrheitskonsens der Nodes. Unveränderliche Hash-Ketten sichern Datenintegrität. |
 | **3** | **Wartbarkeit** | Strikte Modultrennung. Pipeline Stages für Code Qualität                                                                                                                                 |
 | **4** | **Performance** | gRPC für effiziente Node-Kommunikation. Nebenläufige Verarbeitung (Goroutines) für Transaktionsvalidierung.                                                                              |
 
@@ -285,7 +284,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 - Ausgaben: Erfolgs- oder Fehlermeldungen
 
 #### Abhängigkeiten
-- V$Goin-Lib-Adapter (Signatur, Weiterleitung)
+- V$Goin-Node-Adapter (Weiterleitung)
 
 #### Erfüllte Anforderungen
 - [US-23 Transaktion](https://github.com/bjoern621/VSP-Blockchain/issues/23)
@@ -305,7 +304,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 - Ausgaben: Liste von Transaktionen
 
 #### Abhängigkeiten
-- V$Goin-Lib-Adapter (History-Abfrage)
+- V$Goin-Node-Adapter (History-Abfrage)
 
 #### Erfüllte Anforderungen
 - [US-27 Transaktionsverlauf einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/27)
@@ -331,7 +330,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 - Ausgaben: Balance, V$Adresse, Private Key WIF
 
 #### Abhängigkeiten
-- V$Goin-Lib-Adapter (Key-Funktionen, Balance, Key-Ableitung)
+- V$Goin-Node-Adapter (Key-Funktionen, Balance, Key-Ableitung)
 
 #### Erfüllte Anforderungen
 - [US-26 Kontostand einsehen](https://github.com/bjoern621/VSP-Blockchain/issues/26)
@@ -387,7 +386,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 </details>
 
 ### Whitebox *\<V$Goin-Node-Adapter\>*
-![Diagramm](https://www.plantuml.com/plantuml/png/ZPB1IWCn48RlWkymB1wyvBB7KahjHQHI2egUX-oeORD9JB8jHGJVmJVqIKmJkvijQpM7x2Hy_pz_afqxZzQtZJm_Wp2yy9BWbZOaeOIlZqzOwiPeHSeJ50yNrreejj8LiQiAZITR95sQNIsKGOiDYC3R9-HqvtV1iFDFiq5Uu_ClXl2Me_l13n6WkBUe778ljEe5wE0HfIJ_itD2lv2Qr_m5nL2-8h_LjXxetzEdEyaXBUpJ9bKe_WMLYHg415RfhMAN4O09JAUMNbjXoSrc2H-60XO5YIz71LcA9UrSR7yJghNLcz44hM4T41rDA4GrwfZTV3JErYVzZxY_slGFbE8lKABYrBSulfLuXemQRJ0dLOL_y1i0)
+![Diagramm](https://www.plantuml.com/plantuml/png/XL7DJiCm3Bxp5DR4WKik7D4qRLnW6fecWU1ijHwAcYOXSJTD28btu0rv4ZhJb4LGceDbrz-FNPz1--QHCN1J6wbOio6uenqPk8JFzmzOkTexIvO99e_dDqvRjNObgKM9dYbCX2OXLjfw35Y3jcrdYmNTyy4G97497eiAdmV4uBK7oYkIEKmU0jg81MjdV-0OuGcD8Uw-3B9NphBBU6lYlGjL8WvRLaVBkADWiDbc4hSwiWk7K-ytYVt-QKiuRYcSOoAOR6vGfTjRTI5jk8BfDD1BemF5sKpG-RIW13y4pmPOqI6AyxBDDi7j_d9llEhxekVRH9U_zR8xYEn9_Ozw1XitaNDr_CLc-Jt_DHgq1IMNz4yocnuqxf6kb-IxkfTF_Km-WGRaCyxucUPaowOsNm00)
 
 <details>
     <summary>Code</summary>
@@ -402,38 +401,27 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     
         component "Transaction-Adapter" as WalletAdapter
     
-        component "Blockchain-Adapter" as NetworkAdapter
+        component "Konto-Adapter" as NetworkAdapter
+
+        component "Transaktionsverlauf-Adapter" as HistoryAdapter
     }
     interface "V$Goin Node" as Node
-    interface "V$Goin Node" as Node2
     WalletAdapter -down-( Node : <<requires>>
-    NetworkAdapter --down( Node2 : <<requires>>
+    NetworkAdapter --down( Node : <<requires>>
     interface "Keys" as IKeyProv
     WalletAdapter -up- IKeyProv : <<provides>>
     interface "Transaction" as TransactionProv
     WalletAdapter -up- TransactionProv : <<provides>>
-    interface "Blockchain" as IBalanceProv
+    interface "KontoAdapterAPI" as IBalanceProv
     NetworkAdapter -up- IBalanceProv : <<provides>>
+    interface "HistoryAPI" as IHistoryProv
+    HistoryAdapter -up- IHistoryProv : <<provides>>
+    HistoryAdapter --down( Node : <<requires>>
     @enduml
     ````
 </details>
 
 # Laufzeitsicht
-
-## *\<Bezeichnung Laufzeitszenario 1\>*
-
-- \<hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen\>
-
-- \<hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem
-  Szenario erläutern\>
-
-## *\<Bezeichnung Laufzeitszenario 2\>*
-
-…​
-
-## *\<Bezeichnung Laufzeitszenario n\>*
-
-…​
 
 # Verteilungssicht
 
@@ -484,47 +472,44 @@ Zentrale fachliche Objekte sind:
 - Jede Transaktion muss gültig signiert sein.
 - Ausreichende UTXOs müssen für Transaktionen verfügbar sein.
 - Adressen und Schlüssel dürfen nur Base58 encoded.
-- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch SPV Node bzw. Miner Network validiert werden.
+- Unvollständige Eingangsdaten werden frühzeitig im API validiert, aber fehlerhafte Daten können erst durch lokale V$Goin-Node validiert werden.
 
-## 2. Sicherheitskonzept
-- Die REST Schnittstellen kommunizieren ausschließlich über TLS.
+## 2. Persistenz- und Datenhaltungskonzept
 
-## 3. Persistenz- und Datenhaltungskonzept
-
-### 3.1 Persistenzstrategien
+### 2.1 Persistenzstrategien
 Das System speichert selbst **keine eigenen Blockchain-Daten**, sondern fragt Assets (UTXOs) und Historien dynamisch über die lokale V$Goin Node ab.  
 Temporäre Daten:
 
 - JSON als API-Format, binäre Formate der V$Goin Blockchain
 
-### 3.2 Formatkonzept
+### 2.2 Formatkonzept
 - V$Adressen → String (33 oder 34 bytes)
 - Private Key WIFs → String 
 - Transaktionen → binäre V$Goin-Formate, API JSON
 
-## 4. Kommunikations- und Integrationskonzept
+## 3. Kommunikations- und Integrationskonzept
 
-### 4.1 Architekturprinzip
+### 3.1 Architekturprinzip
 - Der Adapter kapselt sämtliche Interaktionen mit der SPV-Node.
 - Das Backend ist vollständig entkoppelt von Blockchain-gRPC-Details.
 
-### 4.2 Kommunikationsmechanismen
+### 3.2 Kommunikationsmechanismen
 - Browser ↔ API: REST/HTTPS
 - API ↔ Adapter: interne Funktionsaufrufe
 - Adapter ↔ Node: RPC Aufrufe
 - Node ↔ Blockchain: gRPC-Kommunikation
 
-### 4.3 Schnittstellen
+### 3.3 Schnittstellen
 - Schnittstellen sind in der [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml) dokumentiert.
 
-## 5. Code-Qualität
+## 4. Code-Qualität
 - Automatisierte Tests
 - Statische Analyse (Sonar)
 - Architekturrichtlinienchecks
 - Manuelle Code Reviews vor jedem Merge
 
-## 6. Adapter-Pattern
-Das System verwendet ein komponentenweites Adapter-Muster, um die SPV-Node von der fachlichen Logik der API zu entkoppeln.  
+## 5. Adapter-Pattern
+Das System verwendet ein komponentenweites Adapter-Muster, um die V$Goin-Node von der fachlichen Logik der API zu entkoppeln.  
 Der Adapter kapselt sämtliche Low-Level-Funktionen der Node und stellt eine stabile interne Schnittstelle bereit.  
 Dadurch können Änderungen an der Blockchain-Technologie vorgenommen werden, ohne das Backend groß anzupassen.
 
@@ -586,5 +571,26 @@ REST/JSON ist leicht verständlich und dokumentierbar und funktioniert ohne spez
 
 | Begriff         | Definition         |
 |-----------------|--------------------|
-| *\<Begriff-1\>* | *\<Definition-1\>* |
-| *\<Begriff-2*   | *\<Definition-2\>* |
+| **Adapter (Pattern)** | Entwurfsmuster zur Entkopplung zwischen Fachlogik und externer Schnittstelle: Der *V$Goin-Node-Adapter* kapselt alle Low-Level-Aufrufe an die lokale Node und stellt eine stabile interne API bereit. |
+| **Asset** | Im Kontext dieser Dokumentation Synonym zu **UTXO**: eine nicht ausgegebene Transaktionseinheit, die als „verfügbares Zahlungsmittel“ für neue Transaktionen genutzt werden kann. |
+| **Balance / Kontostand** | Summe der für eine Adresse verfügbaren Werte (typischerweise basierend auf UTXOs), abrufbar über den REST-Endpunkt `/balance`. |
+| **Base58 / Base58Check** | Kodierungsverfahren für Adressen und Keys, das gut lesbare Zeichen verwendet; **Base58Check** ergänzt zusätzlich eine Prüfsumme zur Erkennung von Tippfehlern. |
+| **Blockchain** | Verteiltes, unveränderliches Transaktionsregister der **V$Goin-Blockchain**, das Besitzwechsel (Transaktionen) nachvollziehbar speichert und repliziert. |
+| **Elliptische Kurve secp256k1** | Kryptografischer Standard (Elliptic Curve), der zur Ableitung von Public Keys aus Private Keys genutzt wird; Grundlage für Signaturen/Key-Ableitung (wie in der OpenAPI beschrieben). |
+| **Hash (SHA-256)** | Kryptografische Hashfunktion; in diesem System u. a. für Key/Address-Ableitung und Integrität (z. B. im OpenAPI-Schema beschrieben) verwendet. |
+| **Health Check** | Technischer Endpunkt/Mechanismus zur Überprüfung der Dienstverfügbarkeit; Ergebnisse werden z. B. an Monitoring/Logging-Systeme geliefert. |
+| **Historie / Transaktionshistorie** | Liste verifizierter vergangener Transaktionen zu einer Adresse; abrufbar über den REST-Endpunkt `/history`. |
+| **JSON** | Textbasiertes Datenformat für Requests/Responses der externen REST-API. |
+| **Lokale V$Goin Node** | Lokale Node-Instanz, die als Gateway zur Blockchain dient.|
+| **Mehrheitskonsens** | Mechanismus im Netzwerk, durch den Transaktionen/Blöcke durch mehrere Knoten bestätigt werden (vereinfacht im Dokument als Qualitätsmaßnahme für Zuverlässigkeit genannt). |
+| **OpenAPI** | Standard zur Spezifikation von REST-APIs; in diesem Projekt ist die Schnittstelle in `rest-schnittstelle/openapi.yaml` beschrieben und dient als Grundlage für Code-Generierung und Dokumentation. |
+| **Private Key** | Geheimnis (privater kryptografischer Schlüssel), der zum Signieren von Transaktionen verwendet wird und Besitzrechte an V$Goins kontrolliert. |
+| **Private Key WIF (Wallet Import Format)** | Base58Check-kodierte Darstellung eines Private Keys (mit Präfix, Prüfsumme); wird in der API u. a. als `senderPrivateKeyWIF` (POST `/transaction`) bzw. `privateKeyWIF` (GET `/address`) verwendet. |
+| **Public Key** | Öffentlicher kryptografischer Schlüssel, der aus dem Private Key abgeleitet wird (z. B. via K = k·G auf secp256k1); dient als Basis für Adressableitung. |
+| **Public Key Hash / PublicKeyHash** | Hashwert des (komprimierten) Public Keys; wird Base58Check-kodiert als **VSAddress/V$Adresse** genutzt. |
+| **Signatur (digitale Signatur)** | Kryptografischer Nachweis, dass eine Transaktion vom Besitzer des Private Keys autorisiert wurde; ungültige Signaturen führen zur Ablehnung der Transaktion. |
+| **Transaktion** | Signiertes Transferobjekt, das einen Besitzwechsel von V$Goins repräsentiert; erzeugt aus Eingabewerten (UTXOs) und Ausgaben (Empfänger) und wird im Netzwerk broadcastet. |
+| **UTXO (Unspent Transaction Output)** | Nicht ausgegebener Transaktionsausgang, der als Input für neue Transaktionen dient; entspricht den „verfügbaren Zahlungsmitteln“/Assets. |
+| **V$Goin / VSGoins** | Digitale Währungseinheit, die auf der V$Goin-Blockchain geführt und übertragen wird. |
+| **V$Goin-Blockchain** | Die konkrete Blockchain-Implementierung/Chain, in der V$Goin-Transaktionen verarbeitet und gespeichert werden. |
+| **V$Adresse / VSAddress** | Base58Check-kodierter (komprimierter) PublicKeyHash (typisch 33–34 Zeichen), der als öffentlich teilbare Empfangsadresse dient; in der OpenAPI als Schema `VSAddress` definiert. |
