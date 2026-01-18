@@ -12,9 +12,6 @@ type Input struct {
 	//
 	// (In Bitcoin, this is not needed as the public key is included in the scriptSig of the input.)
 	PubKey PubKey
-	// Sequence is a relative lock-time for this input.
-	// It is used to enable features like Replace-By-Fee (RBF) and time-locked transactions.
-	Sequence uint32
 }
 
 func (in *Input) Clone() Input {
@@ -23,6 +20,5 @@ func (in *Input) Clone() Input {
 		OutputIndex: in.OutputIndex,
 		Signature:   append([]byte(nil), in.Signature...), //deep copy
 		PubKey:      in.PubKey,
-		Sequence:    in.Sequence,
 	}
 }
