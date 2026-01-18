@@ -16,6 +16,17 @@ type AddrMsgHandler interface {
 }
 
 func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress) {
+	peer, exists := s.peerRetriever.GetPeer(peerID)
+	if !exists {
+		logger.Warnf("[addr_handler] Received addr from unknown peer %s", peerID)
+		return
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[addr_handler] Received addr from peer %s which is not connected (state: %v)", peerID, peer.State)
+		return
+	}
+
 	logger.Tracef("[addr_handler] Received addr message from peer %s with %d addresses", peerID, len(addrs))
 
 	// There is not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.

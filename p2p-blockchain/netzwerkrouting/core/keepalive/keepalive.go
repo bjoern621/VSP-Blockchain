@@ -100,6 +100,11 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 		return
 	}
 
+	if peer.State != common.StateConnected {
+		logger.Warnf("[heartbeat] Received HeartbeatBing from peer %s which is not connected (state: %v)", peerID, peer.State)
+		return
+	}
+
 	peer.Lock()
 	now := time.Now().Unix()
 	peer.LastSeen = now
@@ -117,6 +122,11 @@ func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[heartbeat] Received HeartbeatBong from unknown peer %s", peerID)
+		return
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[heartbeat] Received HeartbeatBong from peer %s which is not connected (state: %v)", peerID, peer.State)
 		return
 	}
 
