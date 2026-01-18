@@ -93,7 +93,7 @@ func discoverOnePeer(ctx context.Context, cfg common.Config) {
 	}
 
 	total, newCount, connecting, known := peerManager.Stats()
-	logger.Infof("peer stats: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
+	logger.Infof("peer stats after verification: total=%d new=%d connecting=%d known=%d", total, newCount, connecting, known)
 }
 
 // verifyPeer attempts to connect to a peer to verify it is reachable.
