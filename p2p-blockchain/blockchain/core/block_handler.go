@@ -86,6 +86,8 @@ func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerI
 		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
 	}
 
+	logger.Infof("[block_handler] Requesting missing headers from peer %s, starting from parent hash %s", peerId, parentHash)
+
 	b.blockchainMsgSender.RequestMissingBlockHeaders(locator, peerId)
 }
 
