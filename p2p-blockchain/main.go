@@ -82,7 +82,15 @@ func main() {
 	transactionValidator := validation.NewValidationService(chainStateService)
 	blockValidator := validation.NewBlockValidationService()
 
-	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	blockchain := core.NewBlockchain(
+		blockchainMsgService,
+		grpcClient,
+		transactionValidator,
+		blockValidator,
+		blockStore,
+		fullNodeUtxoService,
+		peerStore,
+	)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
@@ -124,7 +132,18 @@ func main() {
 		disconnectAPI := api.NewDisconnectAPIService(networkInfoRegistry, disconnectService)
 		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService, disconnectAppService)
+		appServer := appgrpc.NewServer(
+			connService,
+			internalViewService,
+			queryRegistryService,
+			keyGeneratorApiImpl,
+			transactionHandler,
+			discoveryAppService,
+			kontoHandler,
+			visualizationHandler,
+			miningService,
+			disconnectAppService,
+		)
 
 		err := appServer.Start(common.AppPort())
 		if err != nil {

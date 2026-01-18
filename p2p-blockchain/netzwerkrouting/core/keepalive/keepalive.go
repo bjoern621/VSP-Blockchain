@@ -5,7 +5,6 @@ package keepalive
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -28,7 +27,7 @@ type HeartbeatMsgHandler interface {
 // peerRetriever is an interface for retrieving peers.
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
 	GetAllOutboundPeers() []common.PeerId
 }
 

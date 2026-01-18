@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -23,11 +22,11 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add some test peers
-	peer1 := &peer.Peer{
+	peer1 := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
-	peer2 := &peer.Peer{
+	peer2 := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
@@ -82,14 +81,14 @@ func TestHandleGetAddr_ExcludesRequesterPeer(t *testing.T) {
 
 	// Add the requesting peer itself to the store
 	requesterPeerID := common.PeerId("requester-peer")
-	requesterPeer := &peer.Peer{
+	requesterPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
 	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Add another peer
-	otherPeer := &peer.Peer{
+	otherPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}
@@ -150,7 +149,7 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add a peer with LastSeen set
-	testPeer := &peer.Peer{
+	testPeer := &common.Peer{
 		Version:  "1.0.0",
 		State:    common.StateConnected,
 		LastSeen: time.Now().Unix(),
@@ -189,7 +188,7 @@ func TestHandleGetAddr_SendsAsynchronously(t *testing.T) {
 	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
 	// Add a peer
-	testPeer := &peer.Peer{
+	testPeer := &common.Peer{
 		Version: "1.0.0",
 		State:   common.StateConnected,
 	}

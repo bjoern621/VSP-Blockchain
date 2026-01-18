@@ -2,7 +2,6 @@ package connectioncheck
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"testing"
 	"time"
 
@@ -16,16 +15,16 @@ import (
 
 // mockPeerRetriever is a mock implementation of peerRetriever for testing.
 type mockPeerRetriever struct {
-	peers map[common.PeerId]*peer.Peer
+	peers map[common.PeerId]*common.Peer
 }
 
 func newMockPeerRetriever() *mockPeerRetriever {
 	return &mockPeerRetriever{
-		peers: make(map[common.PeerId]*peer.Peer),
+		peers: make(map[common.PeerId]*common.Peer),
 	}
 }
 
-func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
+func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	p, exists := m.peers[id]
 	return p, exists
 }
@@ -64,21 +63,21 @@ func TestCheckConnections(t *testing.T) {
 
 	// Peer 1: Recent LastSeen (should NOT be removed)
 	peerID1 := common.PeerId("peer-1-recent")
-	peerRetriever.peers[peerID1] = &peer.Peer{
+	peerRetriever.peers[peerID1] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: now - (8 * 60), // 8 minutes ago (< 9 min PeerTimeout)
 	}
 
 	// Peer 2: Old LastSeen (SHOULD be removed)
 	peerID2 := common.PeerId("peer-2-old")
-	peerRetriever.peers[peerID2] = &peer.Peer{
+	peerRetriever.peers[peerID2] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: now - (10 * 60), // 10 minutes ago (> 9 min PeerTimeout)
 	}
 
 	// Peer 3: LastSeen = 0 (SHOULD be removed)
 	peerID3 := common.PeerId("peer-3-zero")
-	peerRetriever.peers[peerID3] = &peer.Peer{
+	peerRetriever.peers[peerID3] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: 0,
 	}
@@ -104,7 +103,7 @@ func TestCheckConnectionsAtTimeoutBoundary(t *testing.T) {
 
 	// Create peer exactly at timeout boundary (SHOULD be removed)
 	peerID := common.PeerId("peer-exact-timeout")
-	peerRetriever.peers[peerID] = &peer.Peer{
+	peerRetriever.peers[peerID] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: now - int64(PeerTimeout.Seconds()), // exactly 9 minutes ago
 	}
@@ -125,7 +124,7 @@ func TestCheckConnectionsJustBeforeTimeout(t *testing.T) {
 
 	// Create peer just before timeout boundary (should NOT be removed)
 	peerID := common.PeerId("peer-before-timeout")
-	peerRetriever.peers[peerID] = &peer.Peer{
+	peerRetriever.peers[peerID] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: now - int64(PeerTimeout.Seconds()) + 1, // 1 second before 9 min timeout
 	}
@@ -155,7 +154,7 @@ func TestCheckConnectionsPeerNotFound(t *testing.T) {
 
 	// Add a peer to the retriever
 	peerID := common.PeerId("peer-1")
-	peerRetriever.peers[peerID] = &peer.Peer{
+	peerRetriever.peers[peerID] = &common.Peer{
 		State:    common.StateConnected,
 		LastSeen: 0,
 	}

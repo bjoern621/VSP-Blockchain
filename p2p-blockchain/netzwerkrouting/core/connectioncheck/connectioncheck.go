@@ -5,7 +5,6 @@ package connectioncheck
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -25,7 +24,7 @@ type peerRetriever interface {
 	// GetPeersWithHandshakeStarted retrieves all peers' IDs that have started the handshake process.
 	GetPeersWithHandshakeStarted() []common.PeerId
 	// GetPeer retrieves a peer by its ID.
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
 }
 
 type peerDisconnector interface {

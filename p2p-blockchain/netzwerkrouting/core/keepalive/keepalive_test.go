@@ -2,7 +2,6 @@ package keepalive
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"testing"
 	"time"
 
@@ -29,16 +28,16 @@ func (m *mockHeartbeatMsgSender) SendHeartbeatBong(peerID common.PeerId) {
 
 // mockPeerRetriever is a mock implementation of PeerRetriever for testing.
 type mockPeerRetriever struct {
-	peers map[common.PeerId]*peer.Peer
+	peers map[common.PeerId]*common.Peer
 }
 
 func newMockPeerRetriever() *mockPeerRetriever {
 	return &mockPeerRetriever{
-		peers: make(map[common.PeerId]*peer.Peer),
+		peers: make(map[common.PeerId]*common.Peer),
 	}
 }
 
-func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
+func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	p, exists := m.peers[id]
 	return p, exists
 }
@@ -65,7 +64,7 @@ func TestHandleHeartbeatBing(t *testing.T) {
 
 	// Create a peer
 	peerID := common.PeerId("test-peer")
-	testPeer := &peer.Peer{State: common.StateConnected}
+	testPeer := &common.Peer{State: common.StateConnected}
 	peerRetriever.peers[peerID] = testPeer
 
 	// Initially LastSeen should be 0
@@ -97,7 +96,7 @@ func TestHandleHeartbeatBong(t *testing.T) {
 
 	// Create a peer
 	peerID := common.PeerId("test-peer")
-	testPeer := &peer.Peer{State: common.StateConnected}
+	testPeer := &common.Peer{State: common.StateConnected}
 	peerRetriever.peers[peerID] = testPeer
 
 	// Initially LastSeen should be 0

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
@@ -30,7 +29,7 @@ type networkInfoRemover interface {
 // peerRetriever is an interface for retrieving peers.
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
 }
 
 // peerRemover is an interface for removing peers.

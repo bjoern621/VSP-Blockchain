@@ -12,6 +12,10 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+type peerRetriever interface {
+	GetPeer(id common.PeerId) (*common.Peer, bool)
+}
+
 type Blockchain struct {
 	mempool                *Mempool
 	blockchainMsgSender    api.BlockchainAPI
@@ -24,6 +28,8 @@ type Blockchain struct {
 	chainReorganization ChainReorganizationAPI
 
 	observers mapset.Set[observer.BlockchainObserverAPI]
+
+	peerRetriever peerRetriever
 }
 
 func NewBlockchain(
@@ -33,6 +39,7 @@ func NewBlockchain(
 	blockValidator validation.BlockValidationAPI,
 	blockStore blockchain.BlockStoreAPI,
 	utxoService utxo.UTXOService,
+	peerRetriever peerRetriever,
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator, blockStore)
 	return &Blockchain{
@@ -47,6 +54,8 @@ func NewBlockchain(
 		chainReorganization: NewChainReorganization(blockStore, utxoService, mempool),
 
 		observers: mapset.NewSet[observer.BlockchainObserverAPI](),
+
+		peerRetriever: peerRetriever,
 	}
 }
 
