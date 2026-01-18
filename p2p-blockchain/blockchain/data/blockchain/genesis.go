@@ -20,7 +20,6 @@ func GenesisBlock() block.Block {
 				OutputIndex: 0xFFFFFFFF,                  // Coinbase specific
 				Signature:   []byte("Tagesschau 19.12.2025: Worüber im Bundesrat entschieden wird - Fast 100 Tagesordnungspunkte liegen dem Bundesrat zur letzten Sitzung in diesem Jahr vor. Darunter auch die zuvor umstrittenen Projekte zu Rente, Krankenkassenfinanzen und Wehrdienst. Ein Blick auf die wichtigsten Themen."),
 				PubKey:      transaction.PubKey{}, // Coinbase specific
-				Sequence:    0xFFFFFFFF,
 			},
 		},
 		Outputs: []transaction.Output{
@@ -31,12 +30,11 @@ func GenesisBlock() block.Block {
 				PubKeyHash: [common.PublicKeyHashSize]byte{0x55, 0xb7, 0x22, 0xcb, 0xae, 0x36, 0xb5, 0x8c, 0x2a, 0xd2, 0xf2, 0xdd, 0x64, 0x06, 0x35, 0xdc, 0x05, 0x42, 0x45, 0xe4},
 			},
 		},
-		LockTime: 0,
 	}
 
 	// Sanity check: Verify merkle root
 	merkleRoot := block.MerkleRootFromTransactions([]transaction.Transaction{coinbaseTx})
-	expectedMerkleRoot, err := hex.DecodeString("0cff1e741712b5b4671a88918dd003aaed08a76e234bd484b42e169dd844db03")
+	expectedMerkleRoot, err := hex.DecodeString("6eb30762d7b80c291cab70c869fb8e7fc4f6a29295bb3f62cb82e89e9634aeb9")
 	assert.IsNil(err, "failed to decode expected merkle root")
 	assert.Assert(slices.Compare(merkleRoot[:], expectedMerkleRoot) == 0, "calculated merkle root does not match expected merkle root")
 
@@ -46,7 +44,7 @@ func GenesisBlock() block.Block {
 		MerkleRoot:        merkleRoot,
 		Timestamp:         time.Date(2025, 12, 19, 8, 0, 0, 0, time.UTC).Unix(),
 		DifficultyTarget:  28, // StandardDifficultyTarget
-		Nonce:             190089269,
+		Nonce:             1389802128,
 	}
 
 	genesisBlock := block.Block{
@@ -55,7 +53,7 @@ func GenesisBlock() block.Block {
 	}
 
 	// Sanity check: Verify genesis block hash
-	expectedGenesisHash, err := hex.DecodeString("000000063acfc03f9652beadf92737461bb90443d006fd1a899a9a332d23ee17")
+	expectedGenesisHash, err := hex.DecodeString("00000000961cc158f2d959ef5980346066a2cc4aa7b3b0eb0d91f83fb918f292")
 	assert.IsNil(err, "failed to decode expected genesis hash")
 	actualGenesisHash := genesisBlock.Hash()
 	assert.Assert(slices.Compare(actualGenesisHash[:], expectedGenesisHash) == 0, "genesis block hash does not match expected hash")

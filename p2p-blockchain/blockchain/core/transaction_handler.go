@@ -13,7 +13,9 @@ import (
 func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 	logger.Infof("[transaction_handler] Tx Message received: %v from %v", tx, peerID)
 
-	isValid, err := b.transactionValidator.ValidateTransaction(&tx)
+	mainChainTip := b.blockStore.GetMainChainTip()
+	mainChainTipHash := mainChainTip.Hash()
+	isValid, err := b.transactionValidator.ValidateTransaction(tx, mainChainTipHash)
 	if !isValid {
 		logger.Errorf("[transaction_handler] Tx Message received from %v is invalid: %v", peerID, err)
 		return
