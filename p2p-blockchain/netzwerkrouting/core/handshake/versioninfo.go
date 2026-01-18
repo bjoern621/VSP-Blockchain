@@ -9,10 +9,9 @@ import (
 )
 
 var (
-	ErrDuplicateService            = errors.New("duplicate service")
-	ErrMutuallyExclusiveBlockchain = errors.New("blockchain_full and blockchain_simple are mutually exclusive")
-	ErrWalletRequiresBlockchain    = errors.New("wallet requires blockchain_full or blockchain_simple")
-	ErrMinerRequiresBlockchain     = errors.New("miner requires blockchain_full or blockchain_simple")
+	ErrDuplicateService         = errors.New("duplicate service")
+	ErrWalletRequiresBlockchain = errors.New("wallet requires blockchain_full")
+	ErrMinerRequiresBlockchain  = errors.New("miner requires blockchain_full")
 )
 
 type VersionInfo struct {
