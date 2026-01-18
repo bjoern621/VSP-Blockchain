@@ -40,14 +40,6 @@ service BlockchainService {
     //  - Block validated (PoW, transactions) and local chain updated.
     rpc Block(BlockMsg) returns (google.protobuf.Empty);
 
-    // MerkleBlock sends a block header and merkle proofs for specific transactions.
-    // Used by SPV nodes to verify inclusion of transactions matching their filter.
-    //
-    // Pre-conditions:
-    //  - Connection established.
-    //  - Response to a GetData(MSG_FILTERED_BLOCK) request.
-    rpc MerkleBlock(MerkleBlockMsg) returns (google.protobuf.Empty);
-
     // Tx sends a full transaction in response to a GetData message.
     //
     // Pre-conditions:
@@ -82,19 +74,6 @@ service BlockchainService {
     // Post-conditions:
     //  - PoW validated and local header chain extended.
     rpc Headers(BlockHeaders) returns (google.protobuf.Empty);
-
-    // SetFilter sets a filter for the connection based on public key hashes.
-    // Comparable to BIP 37 filterload.
-    //
-    // Pre-conditions:
-    //  - Connection established.
-    //  - Can only be sent by an SPV node to a Full Node.
-    //
-    // Post-conditions:
-    //  - The Full Node will filter future Inv messages for this connection.
-    //  - Only transactions involving the registered public key hashes will be announced.
-    //  - Block Inv messages are NOT filtered and will still be sent to keep the SPV node synced.
-    rpc SetFilter(SetFilterRequest) returns (google.protobuf.Empty);
 
     // Mempool requests the list of unconfirmed transaction hashes in the server's memory pool.
     // The server responds with an Inv message containing the tx hashes.
@@ -140,16 +119,8 @@ message BlockMsg {
     Block block = 1;
 }
 
-message MerkleBlockMsg {
-    MerkleBlock merkle_block = 1;
-}
-
 message TxMsg {
     Transaction transaction = 1;
-}
-
-message SetFilterRequest {
-    repeated bytes public_key_hashes = 1;
 }
 
 message Transaction {
@@ -180,15 +151,4 @@ message BlockHeader {
 message Block {
     BlockHeader header = 1;
     repeated Transaction transactions = 2;
-}
-
-message MerkleBlock {
-    BlockHeader header = 1;
-    repeated MerkleProof proofs = 2;
-}
-
-message MerkleProof {
-    Transaction transaction = 1;
-    repeated bytes siblings = 2; // The merkle path (hashes of sibling nodes), ordered by depth, deepest first
-    uint32 index = 3;            // Index of the transaction in the block
 }

@@ -69,14 +69,6 @@ func (b *Blockchain) AddSelfMinedBlock(selfMinedBlock block.Block) {
 	b.Block(selfMinedBlock, "")
 }
 
-func (b *Blockchain) SetFilter(_ block.SetFilterRequest, _ common.PeerId) {
-	panic("No longer supported and will be removed later")
-}
-
-func (b *Blockchain) MerkleBlock(_ block.MerkleBlock, _ common.PeerId) {
-	panic("No longer supported and will be removed later")
-}
-
 func (b *Blockchain) Attach(o observer.BlockchainObserverAPI) {
 	b.observers.Add(o)
 }

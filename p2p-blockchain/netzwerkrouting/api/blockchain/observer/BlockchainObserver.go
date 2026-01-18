@@ -16,10 +16,8 @@ type BlockchainObserverAPI interface {
 	Inv(inventory []*inv.InvVector, peerID common.PeerId)
 	GetData(inventory []*inv.InvVector, peerID common.PeerId)
 	Block(block block.Block, peerID common.PeerId)
-	MerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId)
 	Tx(tx transaction.Transaction, peerID common.PeerId)
 	GetHeaders(locator block.BlockLocator, peerID common.PeerId)
 	Headers(headers []*block.BlockHeader, peerID common.PeerId)
-	SetFilter(setFilterRequest block.SetFilterRequest, peerID common.PeerId)
 	Mempool(peerID common.PeerId)
 }
