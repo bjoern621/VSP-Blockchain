@@ -67,7 +67,7 @@ func (us *UtxoStore) InitializeGenesisPool(genesisBlock block.Block) error {
 
 	// Check if already initialized
 	if _, exists := us.blockHashToPool[genesisHash]; exists {
-		logger.Warnf("[utxoStore] genesis block %x already exists in UTXO store, skipping", genesisHash)
+		logger.Warnf("[utxoStore] genesis block %v already exists in UTXO store, skipping", genesisHash)
 		return nil
 	}
 
@@ -122,7 +122,7 @@ func (us *UtxoStore) ValidateBlock(blockToValidate block.Block) bool {
 func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex uint32, blockHash common.Hash) (transaction.Output, error) {
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
-		return transaction.Output{}, fmt.Errorf("UTXO pool for block %x not found", blockHash)
+		return transaction.Output{}, fmt.Errorf("UTXO pool for block %v not found", blockHash)
 	}
 
 	outpoint := Outpoint{
@@ -132,7 +132,7 @@ func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex 
 
 	output, exists := blockPool.UtxoData[outpoint]
 	if !exists {
-		return transaction.Output{}, fmt.Errorf("UTXO %x:%d not found in block %x", id, outputIndex, blockHash)
+		return transaction.Output{}, fmt.Errorf("UTXO %v:%d not found in block %v", id, outputIndex, blockHash)
 	}
 
 	return output, nil
@@ -141,7 +141,7 @@ func (us *UtxoStore) GetUtxoFromBlock(id transaction.TransactionID, outputIndex 
 func (us *UtxoStore) GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKeyHash, blockHash common.Hash) ([]transaction.UTXO, error) {
 	blockPool, exists := us.blockHashToPool[blockHash]
 	if !exists {
-		return nil, fmt.Errorf("UTXO pool for block %x not found", blockHash)
+		return nil, fmt.Errorf("UTXO pool for block %v not found", blockHash)
 	}
 
 	utxos := make([]transaction.UTXO, 0)
@@ -163,16 +163,16 @@ func (us *UtxoStore) GetUtxosByPubKeyHashFromBlock(pubKeyHash transaction.PubKey
 // AddNewBlock creates a new UTXO pool for the block by removing spent UTXOs and adding new outputs.
 // Skips orphan blocks and blocks already in the store.
 func (us *UtxoStore) AddNewBlock(newBlock block.Block) error {
-	logger.Infof("[utxoStore] adding new block %x to UTXO store", newBlock.Header.Hash())
+	logger.Infof("[utxoStore] adding new block %v to UTXO store", newBlock.Header.Hash())
 
 	newBlockHash := newBlock.Header.Hash()
 	if isOrphan, err := us.blockStore.IsOrphanBlock(newBlock); isOrphan {
-		logger.Warnf("[utxoStore] block %x is an orphan block: %v, skipping", newBlockHash, err)
+		logger.Warnf("[utxoStore] block %v is an orphan block: %v, skipping", newBlockHash, err)
 		return nil
 	}
 
 	if _, exists := us.blockHashToPool[newBlockHash]; exists {
-		logger.Warnf("[utxoStore] block %x already exists in UTXO store, skipping", newBlockHash)
+		logger.Warnf("[utxoStore] block %v already exists in UTXO store, skipping", newBlockHash)
 		return nil
 	}
 
