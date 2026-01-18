@@ -17,7 +17,7 @@ type Blockchain struct {
 	blockchainMsgSender    api.BlockchainAPI
 	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI
 
-	transactionValidator validation.ValidationAPI
+	transactionValidator validation.TransactionValidatorAPI
 	blockValidator       validation.BlockValidationAPI
 
 	blockStore          blockchain.BlockStoreAPI
@@ -29,10 +29,10 @@ type Blockchain struct {
 func NewBlockchain(
 	blockchainMsgSender api.BlockchainAPI,
 	fullInventoryMsgSender api.FullInventoryInformationMsgSenderAPI,
-	transactionValidator validation.ValidationAPI,
+	transactionValidator validation.TransactionValidatorAPI,
 	blockValidator validation.BlockValidationAPI,
 	blockStore blockchain.BlockStoreAPI,
-	utxoService utxo.UTXOService,
+	utxoService utxo.UtxoStoreAPI,
 ) *Blockchain {
 	mempool := NewMempool(transactionValidator, blockStore)
 	return &Blockchain{
