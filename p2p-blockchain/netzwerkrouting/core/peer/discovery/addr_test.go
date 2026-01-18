@@ -32,6 +32,11 @@ func TestHandleAddr_UpdatesPeerLastSeenTimestamp(t *testing.T) {
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	senderPeerID := common.PeerId("sender-peer")
+	senderPeer := &common.Peer{
+		State: common.StateConnected,
+	}
+	peerStore.AddPeerById(senderPeerID, senderPeer)
+
 	newTimestamp := time.Now().Unix()
 
 	// Call HandleAddr with a newer timestamp
@@ -128,6 +133,10 @@ func TestHandleAddr_HandlesMultipleAddresses(t *testing.T) {
 	peerStore.AddPeerById("peer-3", peer3)
 
 	senderPeerID := common.PeerId("sender-peer")
+	senderPeer := &common.Peer{
+		State: common.StateConnected,
+	}
+	peerStore.AddPeerById(senderPeerID, senderPeer)
 
 	// Call HandleAddr with multiple addresses
 	addresses := []PeerAddress{
@@ -216,6 +225,11 @@ func TestHandleAddr_ThreadSafe(t *testing.T) {
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	senderPeerID := common.PeerId("sender-peer")
+	senderPeer := &common.Peer{
+		State: common.StateConnected,
+	}
+	peerStore.AddPeerById(senderPeerID, senderPeer)
+
 	newTimestamp := now + 3600
 
 	// Call HandleAddr from multiple goroutines concurrently
@@ -258,9 +272,13 @@ func TestHandleAddr_PanicsIfPeerNotRegistered(t *testing.T) {
 
 	service := NewDiscoveryService(nil, addrSender, peerStore, getAddrSender)
 
-	// Don't add any peer to the store
-
+	// Add sender peer so the connection check passes
 	senderPeerID := common.PeerId("sender-peer")
+	senderPeer := &common.Peer{
+		State: common.StateConnected,
+	}
+	peerStore.AddPeerById(senderPeerID, senderPeer)
+
 	now := time.Now().Unix()
 
 	// Call HandleAddr with a peer that doesn't exist
@@ -315,6 +333,10 @@ func TestHandleAddr_UpdatesCorrectPeer(t *testing.T) {
 	peerStore.AddPeerById("peer-3", peer3)
 
 	senderPeerID := common.PeerId("sender-peer")
+	senderPeer := &common.Peer{
+		State: common.StateConnected,
+	}
+	peerStore.AddPeerById(senderPeerID, senderPeer)
 
 	// Call HandleAddr with only peer-2's address updated
 	newTimestamp := now

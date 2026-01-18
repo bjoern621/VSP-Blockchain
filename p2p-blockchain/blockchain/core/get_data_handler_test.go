@@ -133,6 +133,17 @@ func createTestTransactionForGetData() transaction.Transaction {
 	}
 }
 
+// mockPeerRetrieverForGetData is a mock for the peerRetriever interface that always returns a connected peer
+type mockPeerRetrieverForGetData struct{}
+
+func newMockPeerRetrieverForGetData() *mockPeerRetrieverForGetData {
+	return &mockPeerRetrieverForGetData{}
+}
+
+func (m *mockPeerRetrieverForGetData) GetPeer(_ common.PeerId) (*common.Peer, bool) {
+	return &common.Peer{State: common.StateConnected}, true
+}
+
 func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing.T) {
 	sender := &mockBlockchainMsgSender{
 		blockDone: make(chan int, 1),
@@ -159,6 +170,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	inventory := []*inv.InvVector{
@@ -199,6 +211,7 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingHash common.Hash
@@ -241,6 +254,7 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	txId := testTx.TransactionId()
@@ -282,6 +296,7 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingHash common.Hash
@@ -319,6 +334,7 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var hash common.Hash
@@ -369,6 +385,7 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	txId := testTx.TransactionId()
@@ -425,6 +442,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingTxHash common.Hash
@@ -467,6 +485,7 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	inventory := []*inv.InvVector{}

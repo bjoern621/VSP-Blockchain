@@ -34,6 +34,11 @@ func TestHandleGetAddr_SendsPeersToRequester(t *testing.T) {
 	peerStore.AddPeerById("peer-2", peer2)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr
 	service.HandleGetAddr(requesterPeerID)
@@ -157,6 +162,11 @@ func TestHandleGetAddr_IncludesLastActiveTimestamp(t *testing.T) {
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr
 	service.HandleGetAddr(requesterPeerID)
@@ -195,6 +205,11 @@ func TestHandleGetAddr_SendsAsynchronously(t *testing.T) {
 	peerStore.AddPeerById("peer-1", testPeer)
 
 	requesterPeerID := common.PeerId("requester-peer")
+	requesterPeer := &common.Peer{
+		Version: "1.0.0",
+		State:   common.StateConnected,
+	}
+	peerStore.AddPeerById(requesterPeerID, requesterPeer)
 
 	// Call HandleGetAddr - it should return immediately
 	service.HandleGetAddr(requesterPeerID)
