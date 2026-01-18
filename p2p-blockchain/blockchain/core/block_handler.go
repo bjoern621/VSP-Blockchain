@@ -41,7 +41,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 3. Handle orphans
 	if isOrphan, _ := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
-		logger.Debugf("[block_handler] Block is Orphan %v", &receivedBlock.Header)
+		logger.Debugf("[block_handler] Block is Orphan %v, Sending GetHeaders...", &receivedBlock.Header)
 		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
