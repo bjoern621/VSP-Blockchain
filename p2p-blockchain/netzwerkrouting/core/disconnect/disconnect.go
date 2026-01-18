@@ -85,5 +85,8 @@ func (s *disconnectService) Disconnect(peerID common.PeerId) error {
 	// Then remove from peer store
 	s.peerRemover.RemovePeer(peerID)
 
+	//panic("yay it triggered here as well!")
+	logger.Warnf("dwuhuhdwahiuwdahiuwadhuawdhuidwaiuhdwahwudai")
+
 	return nil
 }

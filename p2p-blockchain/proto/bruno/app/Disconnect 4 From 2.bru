@@ -1,12 +1,12 @@
 meta {
-  name: GetInternalPeerInfo Node 3
+  name: Disconnect 4 From 2
   type: grpc
-  seq: 3
+  seq: 7
 }
 
 grpc {
-  url: localhost:20003
-  method: /app.AppService/GetInternalPeerInfo
+  url: localhost:20004
+  method: /app.AppService/Disconnect
   body: grpc
   protoPath: ../../app.proto
   auth: inherit
@@ -16,6 +16,9 @@ grpc {
 body:grpc {
   name: message 1
   content: '''
-    {}
+    {
+      "ip_address": "rBwBDA==", 
+      "port": 50051
+    }
   '''
 }

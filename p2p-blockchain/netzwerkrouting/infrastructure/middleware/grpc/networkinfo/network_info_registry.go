@@ -3,18 +3,15 @@
 package networkinfo
 
 import (
-	"context"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	"slices"
 	"sync"
-	"time"
 
 	"bjoernblessin.de/go-utils/util/assert"
 	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 )
 
 const mustExists = "network info entry must exist for peer %s"
@@ -32,12 +29,6 @@ type peerCreator interface {
 	NewPeer() common.PeerId
 }
 
-// peerRemover is an interface for removing peers.
-// It is implemented by peer.PeerStore.
-type peerRemover interface {
-	RemovePeer(id common.PeerId)
-}
-
 // NetworkInfoRegistry maintains a registry of peers and their network addresses.
 // It allows representing peers by a generic ID and links:
 // - Listening endpoint (reachable address from VersionInfo)
@@ -50,16 +41,14 @@ type NetworkInfoRegistry struct {
 	inboundAddrToPeer       map[netip.AddrPort]common.PeerId
 	networkInfoEntries      map[common.PeerId]*NetworkInfoEntry
 	peerCreator             peerCreator
-	peerRemover             peerRemover
 }
 
-func NewNetworkInfoRegistry(peerCreator peerCreator, peerRemover peerRemover) *NetworkInfoRegistry {
+func NewNetworkInfoRegistry(peerCreator peerCreator) *NetworkInfoRegistry {
 	return &NetworkInfoRegistry{
 		listeningEndpointToPeer: make(map[netip.AddrPort]common.PeerId),
 		inboundAddrToPeer:       make(map[netip.AddrPort]common.PeerId),
 		networkInfoEntries:      make(map[common.PeerId]*NetworkInfoEntry),
 		peerCreator:             peerCreator,
-		peerRemover:             peerRemover,
 	}
 }
 
@@ -189,9 +178,6 @@ func (r *NetworkInfoRegistry) SetConnection(peerID common.PeerId, conn *grpc.Cli
 	assert.Assert(entry.OutboundConn == nil, "outbound connection already set for peer %s", peerID)
 
 	entry.OutboundConn = conn
-
-	// Monitor connection state changes
-	go r.monitorConnectionState(peerID, conn)
 }
 
 // GetConnection returns the outbound gRPC connection for a peer.
@@ -275,48 +261,6 @@ func (r *NetworkInfoRegistry) RemovePeer(peerID common.PeerId) {
 	delete(r.networkInfoEntries, peerID)
 
 	logger.Debugf("[network_info_registry] Removed peer %s from network info registry", peerID)
-}
-
-// monitorConnectionState monitors the gRPC connection state and logs when it closes.
-// This detects TCP connection resets and other network failures.
-func (r *NetworkInfoRegistry) monitorConnectionState(peerID common.PeerId, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	currentState := conn.GetState()
-
-	for {
-		// Wait for state change with timeout
-		if !conn.WaitForStateChange(ctx, currentState) {
-			// Context cancelled or connection closed
-			return
-		}
-
-		newState := conn.GetState()
-		logger.Debugf("[network_info_registry] Connection to peer %s state changed: %s -> %s", peerID, currentState, newState)
-
-		// Check if connection has failed or been shut down
-		if newState == connectivity.TransientFailure || newState == connectivity.Shutdown {
-			logger.Infof("[network_info_registry] Connection to peer %s closed/failed (state: %s)", peerID, newState)
-
-			// Give it a moment to see if it recovers
-			time.Sleep(100 * time.Millisecond)
-			finalState := conn.GetState()
-			if finalState == connectivity.Shutdown {
-				logger.Infof("[network_info_registry] Connection to peer %s is permanently closed, triggering cleanup", peerID)
-
-				// Remove from network info registry
-				r.RemovePeer(peerID)
-
-				// Then remove from peer store
-				r.peerRemover.RemovePeer(peerID)
-
-				return
-			}
-		}
-
-		currentState = newState
-	}
 }
 
 // formatAddrPortsAsAny converts AddrPorts to []any for structpb compatibility.

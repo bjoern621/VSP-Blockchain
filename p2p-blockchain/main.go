@@ -46,16 +46,15 @@ func main() {
 	logger.Infof("[main] Loglevel set to %v", logger.CurrentLevel())
 
 	peerStore := peer.NewPeerStore()
-	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore, peerStore)
-	grpcClient := grpc.NewClient(networkInfoRegistry)
+	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
+	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
+	grpcClient := grpc.NewClient(networkInfoRegistry, disconnectService)
 	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
-
-	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
 
 	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
