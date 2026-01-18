@@ -22,5 +22,5 @@ func NewTransactionValidator(api utxo.UtxoStoreAPI) TransactionValidatorAPI {
 
 func (t *TransactionValidator) ValidateTransaction(tx transaction.Transaction, blockHash common.Hash) (bool, error) {
 	//TODO implement me
-	panic("implement me")
+	return true, nil
 }
