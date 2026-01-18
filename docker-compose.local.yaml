@@ -120,7 +120,7 @@ services:
             vsp-net:
                 ipv4_address: 172.28.1.14
 
-    spv:
+    miner5:
         build:
             context: ./p2p-blockchain
             dockerfile: Dockerfile
