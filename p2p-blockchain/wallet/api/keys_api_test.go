@@ -1,9 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 	"testing"
+
+	k "s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+
+	"bjoernblessin.de/go-utils/util/assert"
 )
 
 // Private key Hex: 904c4260d266de0848bb7fba161242fe37b8982c3cdc552564dfebc4fd42a527
@@ -96,4 +101,13 @@ func TestKeyGeneratorApiImpl_GetKeysetFromWIF(t *testing.T) {
 	if keyset.VSAddress != sampleKeyset1.VSAddress {
 		t.Errorf("keyset.VSAddress does not match the given VSAddress")
 	}
+}
+
+func TestUmwandlung(t *testing.T) {
+	keyGeneratorApiImpl := SetupKeyGeneratorApiImpl()
+
+	keyset, err := keyGeneratorApiImpl.GetKeysetFromWIF("5JhJ25cnukDxxptPJTnTswPHP7DADKn81jdawxW2iBkq35UHkou")
+	assert.IsNil(err)
+	fmt.Println(keyset.PrivateKey)
+	fmt.Println(k.Hash160(keyset.PublicKey))
 }
