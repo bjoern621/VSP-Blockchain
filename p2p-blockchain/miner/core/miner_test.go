@@ -655,16 +655,20 @@ func TestStartMining_StopsMining(t *testing.T) {
 	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
 
 	miner := &minerService{
-		blockchain:  mockBlockchain,
-		utxoService: mockUTXO,
-		blockStore:  mockBlockStore,
+		blockchain:    mockBlockchain,
+		utxoService:   mockUTXO,
+		blockStore:    mockBlockStore,
+		miningEnabled: true,
 	}
 
 	// Start mining
 	txs := []transaction.Transaction{createTestTransaction(100, 90)}
 	miner.StartMining(txs)
 
-	// Stop mining immediately
+	// Allow time for StartMining to set up the cancel function
+	time.Sleep(50 * time.Millisecond)
+
+	// Stop mining
 	miner.StopMining()
 
 	// Give time for goroutine to stop
