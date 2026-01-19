@@ -2,7 +2,6 @@ package keepalive
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"testing"
 	"time"
 
@@ -29,21 +28,38 @@ func (m *mockHeartbeatMsgSender) SendHeartbeatBong(peerID common.PeerId) {
 
 // mockPeerRetriever is a mock implementation of PeerRetriever for testing.
 type mockPeerRetriever struct {
-	peers map[common.PeerId]*peer.Peer
+	peers map[common.PeerId]*common.Peer
 }
 
 func newMockPeerRetriever() *mockPeerRetriever {
 	return &mockPeerRetriever{
-		peers: make(map[common.PeerId]*peer.Peer),
+		peers: make(map[common.PeerId]*common.Peer),
 	}
 }
 
-func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
+func (m *mockPeerRetriever) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	p, exists := m.peers[id]
 	return p, exists
 }
 
-func (m *mockPeerRetriever) GetAllOutboundPeers() []common.PeerId { // TODO
+// mockErrorMsgSender is a mock implementation of errorMsgSender for testing.
+type mockErrorMsgSender struct {
+	sendRejectCalled bool
+	lastPeerID       common.PeerId
+	lastErrorType    int32
+	lastMessageType  string
+	lastData         []byte
+}
+
+func (m *mockErrorMsgSender) SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte) {
+	m.sendRejectCalled = true
+	m.lastPeerID = peerId
+	m.lastErrorType = errorType
+	m.lastMessageType = rejectedMessageType
+	m.lastData = data
+}
+
+func (m *mockPeerRetriever) GetAllConnectedPeers() []common.PeerId {
 	ids := make([]common.PeerId, 0)
 	for id, p := range m.peers {
 		if p.State == common.StateConnected {
@@ -61,11 +77,11 @@ func TestHandleHeartbeatBing(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
-	service := NewKeepaliveService(peerRetriever, mockSender)
+	service := NewKeepaliveService(peerRetriever, mockSender, nil)
 
 	// Create a peer
 	peerID := common.PeerId("test-peer")
-	testPeer := &peer.Peer{State: common.StateConnected}
+	testPeer := &common.Peer{State: common.StateConnected}
 	peerRetriever.peers[peerID] = testPeer
 
 	// Initially LastSeen should be 0
@@ -93,11 +109,11 @@ func TestHandleHeartbeatBong(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
 
-	service := NewKeepaliveService(peerRetriever, mockSender)
+	service := NewKeepaliveService(peerRetriever, mockSender, nil)
 
 	// Create a peer
 	peerID := common.PeerId("test-peer")
-	testPeer := &peer.Peer{State: common.StateConnected}
+	testPeer := &common.Peer{State: common.StateConnected}
 	peerRetriever.peers[peerID] = testPeer
 
 	// Initially LastSeen should be 0
@@ -120,8 +136,9 @@ func TestHandleHeartbeatBong(t *testing.T) {
 func TestHandleHeartbeatBingUnknownPeer(t *testing.T) {
 	peerRetriever := newMockPeerRetriever()
 	mockSender := &mockHeartbeatMsgSender{}
+	mockErrorMsgSender := &mockErrorMsgSender{}
 
-	service := NewKeepaliveService(peerRetriever, mockSender)
+	service := NewKeepaliveService(peerRetriever, mockSender, mockErrorMsgSender)
 
 	// Handle heartbeat bing for unknown peer - should not panic
 	unknownPeerID := common.PeerId("unknown")

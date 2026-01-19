@@ -11,7 +11,7 @@ import (
 
 // HeartbeatBing handles incoming HeartbeatBing messages from peers.
 // This method is called when another peer sends a bing to check liveness.
-// It updates the peer's LastSeen timestamp and responds with HeartbeatBong.
+// It updates the peer's LastSeen timestamp if in StateConnected and responds with HeartbeatBong.
 func (s *Server) HeartbeatBing(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 	logger.Debugf("[heartbeat] Received HeartbeatBing from peer %s", peerId)
@@ -23,7 +23,7 @@ func (s *Server) HeartbeatBing(ctx context.Context, _ *emptypb.Empty) (*emptypb.
 
 // HeartbeatBong handles incoming HeartbeatBong messages from peers.
 // This method is called when another peer responds to our HeartbeatBing.
-// It updates the peer's LastSeen timestamp.
+// It updates the peer's LastSeen timestamp if in StateConnected.
 func (s *Server) HeartbeatBong(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 	logger.Debugf("[heartbeat] Received HeartbeatBong from peer %s", peerId)

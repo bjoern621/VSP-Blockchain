@@ -29,3 +29,15 @@ func (s *MiningService) StopMining() error {
 	s.minerAPI.StopMining()
 	return nil
 }
+
+// EnableMining enables mining capability.
+func (s *MiningService) EnableMining() error {
+	s.minerAPI.EnableMining()
+	return nil
+}
+
+// DisableMining disables mining capability and stops any ongoing mining.
+func (s *MiningService) DisableMining() error {
+	s.minerAPI.DisableMining()
+	return nil
+}

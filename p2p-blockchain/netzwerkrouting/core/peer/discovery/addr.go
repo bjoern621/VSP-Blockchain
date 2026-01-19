@@ -16,6 +16,19 @@ type AddrMsgHandler interface {
 }
 
 func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress) {
+	peer, exists := s.peerRetriever.GetPeer(peerID)
+	if !exists {
+		logger.Warnf("[addr_handler] Received addr from unknown peer %s", peerID)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "addr", []byte("unknown peer"))
+		return
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[addr_handler] Received addr from peer %s which is not connected (state: %v)", peerID, peer.State)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "addr", []byte("peer not connected"))
+		return
+	}
+
 	logger.Tracef("[addr_handler] Received addr message from peer %s with %d addresses", peerID, len(addrs))
 
 	// There is not much to do here because the infrastructure layer has already handled the registration of PeerIds from the received addresses.
@@ -25,6 +38,10 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 	for _, addr := range addrs {
 		peer, exists := s.peerRetriever.GetPeer(addr.PeerId)
 		assert.Assert(exists, "peer should already be registered by infrastructure layer")
+
+		if peer.State != common.StateNew {
+			continue // Only update LastSeen for peers in StateNew via discovery
+		}
 
 		if peer.LastSeen < addr.LastActiveTimestamp {
 			peer.Lock()
@@ -47,7 +64,7 @@ func (s *DiscoveryService) HandleAddr(peerID common.PeerId, addrs []PeerAddress)
 //   - Do not forward an address to a peer that has already received it
 //   - For each address, independently select 2 random peers from connected peers to forward to
 func (s *DiscoveryService) forwardAddrs(addrs []PeerAddress, sender common.PeerId) {
-	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
+	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 
 	// Filter out the sender
 	eligiblePeers := slices.DeleteFunc(connectedPeers, func(peerID common.PeerId) bool {

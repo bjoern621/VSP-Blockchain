@@ -60,6 +60,7 @@ func main() {
 	routes := sw.ApiHandleFunctions{
 		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
 		PaymentAPI:  *sw.NewPaymentAPI(transactionApi, kontostandService, transaktionsverlaufService),
+		DevToolsAPI: *sw.NewDevToolsAPI(transactionApi),
 	}
 
 	logger.Infof("[rest_schnittstelle] Server started")

@@ -12,14 +12,14 @@ import (
 )
 
 type Mempool struct {
-	validator  validation.ValidationAPI
+	validator  validation.TransactionValidatorAPI
 	blockStore blockchain.BlockStoreAPI
 
 	transactions map[transaction.TransactionID]transaction.Transaction
 	lock         sync.Mutex
 }
 
-func NewMempool(validator validation.ValidationAPI, blockStore blockchain.BlockStoreAPI) *Mempool {
+func NewMempool(validator validation.TransactionValidatorAPI, blockStore blockchain.BlockStoreAPI) *Mempool {
 	return &Mempool{
 		validator:    validator,
 		blockStore:   blockStore,
@@ -54,7 +54,9 @@ func (m *Mempool) IsKnownTransactionId(txId transaction.TransactionID) bool {
 }
 
 func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
-	ok, err := m.validator.ValidateTransaction(&tx)
+	mainChainTip := m.blockStore.GetMainChainTip()
+	mainChainTipHash := mainChainTip.Hash()
+	ok, err := m.validator.ValidateTransaction(tx, mainChainTipHash)
 	assert.Assert(ok && err == nil, "Transaction is invalid: %v", err)
 
 	m.lock.Lock()
@@ -100,7 +102,10 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 
 		// Re-validate each transaction
 		tx := m.transactions[txId]
-		ok, _ := m.validator.ValidateTransaction(&tx)
+
+		mainChainTip := m.blockStore.GetMainChainTip()
+		mainChainTipHash := mainChainTip.Hash()
+		ok, _ := m.validator.ValidateTransaction(tx, mainChainTipHash)
 		if !ok {
 			// Transaction is no longer valid (UTXOs spent, conflicts with confirmed tx)
 			toRemove[txId] = true

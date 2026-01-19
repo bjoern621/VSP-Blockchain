@@ -1,11 +1,12 @@
 // Package connectioncheck provides periodic verification of peer connections.
-// It checks the LastSeen timestamp of connected peers every 16 minutes and
+// It checks the LastSeen timestamp of connected peers every 10 minutes and
 // removes unreachable peers to maintain a healthy P2P network.
+// It also handles cleanup of holddown peers after the holddown period expires.
 package connectioncheck
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/disconnect"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -25,36 +26,66 @@ type peerRetriever interface {
 	// GetPeersWithHandshakeStarted retrieves all peers' IDs that have started the handshake process.
 	GetPeersWithHandshakeStarted() []common.PeerId
 	// GetPeer retrieves a peer by its ID.
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
+	// GetHolddownPeers retrieves all peers in holddown state.
+	GetHolddownPeers() []common.PeerId
 }
 
-// peerRemover is an interface for removing peers.
+// peerRemover is an interface for permanently removing peers.
+// Used for final cleanup of holddown peers after the holddown period expires.
 type peerRemover interface {
-	// RemovePeer removes a peer from the internal state.
 	RemovePeer(id common.PeerId)
 }
 
+// networkInfoRemover is an interface for removing peers from network info registry.
+// Used for final cleanup of holddown peers.
+type networkInfoRemover interface {
+	RemovePeer(id common.PeerId)
+}
+
+type peerDisconnector interface {
+	// Disconnect puts a peer into holddown state.
+	Disconnect(id common.PeerId) error
+}
+
 // ConnectionCheckService provides periodic verification of peer connections.
+// It performs two types of checks:
+//  1. Connected peer health: Checks LastSeen timestamps and puts unreachable peers into holddown
+//  2. Holddown cleanup: Permanently removes peers whose holddown period has expired
 type ConnectionCheckService struct {
 	peerRetriever      peerRetriever
-	storePeerRemover   peerRemover
-	networkInfoCleaner peerRemover
+	peerDisconnector   peerDisconnector
+	peerRemover        peerRemover
+	networkInfoRemover networkInfoRemover
 	stopChan           chan struct{}
 	ticker             *time.Ticker
 }
 
 // NewConnectionCheckService creates a new ConnectionCheckService.
+//
+// Parameters:
+//   - peerRetriever: Provides peer lookup (PeerStore)
+//   - peerDisconnector: Puts peers into holddown (DisconnectService)
+//   - peerRemover: Permanently removes peers from store (PeerStore)
+//   - networkInfoRemover: Removes peers from network registry (NetworkInfoRegistry)
 func NewConnectionCheckService(
-	peerRetriever peerRetriever,
-	peerRemover peerRemover,
-	networkInfoCleaner peerRemover,
+	peerRetriever peerRetrieverWithHolddown,
+	peerDisconnector peerDisconnector,
+	networkInfoRemover networkInfoRemover,
 ) *ConnectionCheckService {
 	return &ConnectionCheckService{
 		peerRetriever:      peerRetriever,
-		storePeerRemover:   peerRemover,
-		networkInfoCleaner: networkInfoCleaner,
+		peerDisconnector:   peerDisconnector,
+		peerRemover:        peerRetriever,
+		networkInfoRemover: networkInfoRemover,
 		stopChan:           make(chan struct{}),
 	}
+}
+
+// peerRetrieverWithHolddown combines peerRetriever and peerRemover interfaces.
+type peerRetrieverWithHolddown interface {
+	peerRetriever
+	peerRemover
 }
 
 // Start begins the periodic connection check loop.
@@ -68,6 +99,7 @@ func (s *ConnectionCheckService) Start() {
 			select {
 			case <-s.ticker.C:
 				s.checkConnections()
+				s.cleanupHolddownPeers()
 			case <-s.stopChan:
 				return
 			}
@@ -140,11 +172,66 @@ func (s *ConnectionCheckService) checkConnections() {
 	}
 }
 
-// removePeer removes a peer from both the peer store and the network info registry.
-func (s *ConnectionCheckService) removePeer(peerID common.PeerId) {
-	// Remove from network info registry first (closes gRPC connection)
-	s.networkInfoCleaner.RemovePeer(peerID)
+// cleanupHolddownPeers permanently removes peers whose holddown period has expired.
+// Peers are put into holddown state by DisconnectService.Disconnect() and remain there
+// for HolddownDuration (15 minutes). After expiration, they are fully removed from
+// both the peer store and network info registry.
+func (s *ConnectionCheckService) cleanupHolddownPeers() {
+	holddownPeers := s.peerRetriever.GetHolddownPeers()
+	if len(holddownPeers) == 0 {
+		return
+	}
 
-	// Then remove from peer store
-	s.storePeerRemover.RemovePeer(peerID)
+	logger.Debugf("[conn-check] Checking %d holddown peers for cleanup", len(holddownPeers))
+
+	now := time.Now()
+	cleanedCount := 0
+
+	for _, peerID := range holddownPeers {
+		p, exists := s.peerRetriever.GetPeer(peerID)
+		if !exists {
+			continue
+		}
+
+		p.Lock()
+		holddownStart := p.HolddownStartTime
+		p.Unlock()
+
+		if holddownStart == 0 {
+			// No holddown start time set, clean up immediately
+			logger.Warnf("[conn-check] Holddown peer %s has no HolddownStartTime, removing", peerID)
+			s.permanentlyRemovePeer(peerID)
+			cleanedCount++
+			continue
+		}
+
+		holddownStartTime := time.Unix(holddownStart, 0)
+		timeSinceHolddown := now.Sub(holddownStartTime)
+
+		if timeSinceHolddown >= disconnect.HolddownDuration {
+			logger.Infof("[conn-check] Holddown expired for peer %s: in holddown for %v (threshold: %v), permanently removing",
+				peerID, timeSinceHolddown.Round(time.Second), disconnect.HolddownDuration)
+			s.permanentlyRemovePeer(peerID)
+			cleanedCount++
+		} else {
+			remaining := disconnect.HolddownDuration - timeSinceHolddown
+			logger.Debugf("[conn-check] Peer %s still in holddown: %v remaining", peerID, remaining.Round(time.Second))
+		}
+	}
+
+	if cleanedCount > 0 {
+		logger.Infof("[conn-check] Holddown cleanup completed: permanently removed %d peers", cleanedCount)
+	}
+}
+
+// removePeer puts a peer into holddown state (soft-delete).
+func (s *ConnectionCheckService) removePeer(peerID common.PeerId) {
+	_ = s.peerDisconnector.Disconnect(peerID)
+}
+
+// permanentlyRemovePeer removes a peer from both the peer store and network info registry.
+// This is the final cleanup after holddown expires.
+func (s *ConnectionCheckService) permanentlyRemovePeer(peerID common.PeerId) {
+	s.networkInfoRemover.RemovePeer(peerID)
+	s.peerRemover.RemovePeer(peerID)
 }

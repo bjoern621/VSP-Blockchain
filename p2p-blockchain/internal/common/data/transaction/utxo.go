@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"encoding/hex"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"sort"
 )
@@ -25,4 +26,8 @@ func selectUTXOs(utxos []UTXO, amount uint64) (selected []UTXO, total uint64) {
 		}
 	}
 	return
+}
+
+func (txId TransactionID) String() string {
+	return hex.EncodeToString(txId[:])
 }

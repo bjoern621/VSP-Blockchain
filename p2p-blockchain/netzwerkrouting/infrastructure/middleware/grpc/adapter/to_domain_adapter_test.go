@@ -93,23 +93,3 @@ func TestToBlockLocator(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-
-func TestToSetFilterRequestFromSetFilterRequest(t *testing.T) {
-	t.Run("Valid Request", func(t *testing.T) {
-		pbReq := &pb.SetFilterRequest{
-			PublicKeyHashes: [][]byte{make([]byte, common.HashSize)},
-		}
-		req, err := ToSetFilterRequestFromSetFilterRequest(pbReq)
-		assert.NoError(t, err)
-		assert.Len(t, req.PublicKeyHashes, 1)
-	})
-
-	t.Run("Invalid Hash Length", func(t *testing.T) {
-		pbReq := &pb.SetFilterRequest{
-			PublicKeyHashes: [][]byte{{1, 2, 3}},
-		}
-		_, err := ToSetFilterRequestFromSetFilterRequest(pbReq)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "bytes long")
-	})
-}

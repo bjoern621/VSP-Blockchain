@@ -4,7 +4,7 @@ metadata:
     name: rest-api
     namespace: vsp-blockchain
 spec:
-    replicas: 1
+    replicas: 5
     strategy:
         type: RollingUpdate
         rollingUpdate:
@@ -82,7 +82,6 @@ metadata:
     name: rest-api-service
     namespace: vsp-blockchain
 spec:
-    type: LoadBalancer
     selector:
         app: rest-api
     ports:

@@ -19,7 +19,7 @@ type mockPeerCounter struct {
 	peerIDs []common.PeerId
 }
 
-func (m *mockPeerCounter) GetAllOutboundPeers() []common.PeerId {
+func (m *mockPeerCounter) GetAllConnectedPeers() []common.PeerId {
 	return m.peerIDs
 }
 

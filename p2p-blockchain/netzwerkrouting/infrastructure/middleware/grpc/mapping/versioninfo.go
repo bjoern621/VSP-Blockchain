@@ -27,8 +27,6 @@ func serviceTypeFromProto(pbService pb.ServiceType) (common.ServiceType, bool) {
 		return common.ServiceType_Netzwerkrouting, true
 	case pb.ServiceType_SERVICE_BLOCKCHAIN_FULL:
 		return common.ServiceType_BlockchainFull, true
-	case pb.ServiceType_SERVICE_BLOCKCHAIN_SIMPLE:
-		return common.ServiceType_BlockchainSimple, true
 	case pb.ServiceType_SERVICE_WALLET:
 		return common.ServiceType_Wallet, true
 	case pb.ServiceType_SERVICE_MINER:
@@ -46,8 +44,6 @@ func serviceTypeToProto(service common.ServiceType) pb.ServiceType {
 		return pb.ServiceType_SERVICE_NETZWERKROUTING
 	case common.ServiceType_BlockchainFull:
 		return pb.ServiceType_SERVICE_BLOCKCHAIN_FULL
-	case common.ServiceType_BlockchainSimple:
-		return pb.ServiceType_SERVICE_BLOCKCHAIN_SIMPLE
 	case common.ServiceType_Wallet:
 		return pb.ServiceType_SERVICE_WALLET
 	case common.ServiceType_Miner:
