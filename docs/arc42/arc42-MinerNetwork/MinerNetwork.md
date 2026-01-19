@@ -79,7 +79,7 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Organisatorische Randbedingungen
 
 | **Randbedingung**          | **Erläuterung**                                                                                                                                                                                                          |
-|----------------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Entwicklungsteam**       | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                                                                                                                                                 |
 | **Zeit**                   | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
 | **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert.                                                                                                                     |
@@ -89,7 +89,7 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Rechtliche und sicherheitsrelevante Randbedingungen
 
 | **Randbedingung**     | **Erläuterung**                                                                                              |
-| --------------------- |--------------------------------------------------------------------------------------------------------------|
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **Verschlüsselung**   | Sämtliche externe Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                             |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
 
@@ -102,22 +102,23 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 </div>
 
 | Nachbar  | Beschreibung                                                    | Input                                                                                                          | Output                                                                                   |
-|----------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| -------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | REST-API | Eine Händler Schnittstelle um mit der Kryptowährung zu handeln. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
 
 ## Technischer Kontext
 
-| Nachbar          | Input technische Schnittstellen | Output technische Schnittstellen |
-| ---------------- | ------------------------------- | -------------------------------- |
-| REST-API         | gRPC                            | gRPC                             |
+| Nachbar  | Input technische Schnittstellen | Output technische Schnittstellen |
+| -------- | ------------------------------- | -------------------------------- |
+| REST-API | gRPC                            | gRPC                             |
 
 # Lösungsstrategie
--   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
--   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
--   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
--   das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
--   jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
--   Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) in den Architekturentscheidungen zu finden.
+
+- geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
+- klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
+- explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
+- das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
+- jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
+- Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) in den Architekturentscheidungen zu finden.
 
 # Bausteinsicht
 
@@ -138,24 +139,24 @@ Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekann
 
 Schnittstellen
 
--   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
--   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
+- `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
+- `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
 Siehe auch [Schnittstellen Registry Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) für eine genauere Beschreibung der Schnittstellen.
 
 Qualitäts-/Leistungsmerkmale
 
--   Distribution Transparency  
-    Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z.&nbsp;B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
--   Single Point of Failure  
-    Es existiert insgesamt nur eine zentrale Registry. Diese kann zum Bottleneck bzw. Single Point of Failure werden. Fällt die Registry aus, können neue Peers dem Netzwerk nicht mehr beitreten, da sie keine initialen IP-Adressen erhalten. Dies schränkt die [Resilience](#qualitätsanforderungen) des Gesamtsystems ein. Bereits verbundene Peers sind davon nicht betroffen, da sie über [Peer Discovery](#peer-discovery) weitere Verbindungen aufbauen können.
+- Distribution Transparency  
+  Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z.&nbsp;B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
+- Single Point of Failure  
+  Es existiert insgesamt nur eine zentrale Registry. Diese kann zum Bottleneck bzw. Single Point of Failure werden. Fällt die Registry aus, können neue Peers dem Netzwerk nicht mehr beitreten, da sie keine initialen IP-Adressen erhalten. Dies schränkt die [Resilience](#qualitätsanforderungen) des Gesamtsystems ein. Bereits verbundene Peers sind davon nicht betroffen, da sie über [Peer Discovery](#peer-discovery) weitere Verbindungen aufbauen können.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
--   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
--   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
+- [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
+- [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+- [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
 
 Offene Punkte/Probleme/Risiken  
 Wir haben bereits die Domain `vsgoin.informatik.haw-hamburg.de` aber es ist noch unklar, ob wir dort die DNS Einträge frei ändern können, da sie von der ICC verwaltet wird. Dieses Problem kann mit einer eigenen Domain umgangen werden. Außerdem hat die ICC möglicherweise nur eine externe IP und die einzelnen Nodes innerhalb des ICC Clusters (für Nodes siehe auch [Ebene 2](#ebene-2)) können möglicherweise nicht direkt angesteuert werden. Diese Probleme sollten noch getestet werden und Lösungen gefunden (getrackt in [Task-91](https://github.com/bjoern621/VSP-Blockchain/issues/91)). Siehe auch [Risiken](#risiken).
@@ -169,7 +170,7 @@ Hinweise: Der Name _Node(s)_ wurde gewählt, um Namenskonflikte mit späteren Da
 
 Schnittstellen
 
--   `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle. Siehe auch [AppAPI vs. P2P Protokoll API](#appapi-rpc-vs-p2p-protokoll-rpc) zur Abgrenzung.
+- `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle. Siehe auch [AppAPI vs. P2P Protokoll API](#appapi-rpc-vs-p2p-protokoll-rpc) zur Abgrenzung.
 
 ## Ebene 2
 
@@ -212,25 +213,25 @@ Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
 
 Weitere Informationen / Quellen:
 
--   [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
--   [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
--   [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
--   [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
--   [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
+- [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
+- [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
+- [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
+- [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
+- [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
 
 Schnittstellen
 
--   `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
--   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.
--   `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+- `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
+- `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.
+- `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - TODO
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
+- [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
 
 ### Wallet (Blackbox)
 
@@ -241,15 +242,15 @@ Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Bl
 
 Schnittstellen
 
--   `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+- `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - TODO
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Wallet (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Wallet%20(Teilsystem)%22>)
+- [Meilenstein Wallet (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Wallet%20(Teilsystem)%22>)
 
 ### Miner (Blackbox)
 
@@ -260,15 +261,15 @@ Der Miner sammelt unbestätigte Transaktionen aus dem Mempool des Blockchain-Tei
 
 Schnittstellen
 
--   `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+- `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - TODO
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Miner (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Miner%20(Teilsystem)%22>)
+- [Meilenstein Miner (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Miner%20(Teilsystem)%22>)
 
 ### Netzwerkrouting (Blackbox)
 
@@ -277,15 +278,15 @@ Das Teilsystem Netzwerkrouting bildet das Fundament der Kommunikation zwischen d
 
 Schnittstellen
 
--   `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
--   `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   `HandshakeAPI`
-        -   `InitiateHandshake(addrPort netip.AddrPort) error`
-    -   `NetworkInfoAPI`
-        -   `GetInternalPeerInfo() []PeerInfo`
-    -   `QueryRegistryAPI`
-        -   `QueryRegistry() ([]RegistryEntry, error)`
--   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist das Blockchain Teilsystem nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
+- `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+- `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - `HandshakeAPI`
+        - `InitiateHandshake(addrPort netip.AddrPort) error`
+    - `NetworkInfoAPI`
+        - `GetInternalPeerInfo() []PeerInfo`
+    - `QueryRegistryAPI`
+        - `QueryRegistry() ([]RegistryEntry, error)`
+- `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist das Blockchain Teilsystem nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
 
     | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                                                                                                         |
     | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -299,7 +300,7 @@ Die meisten Schnittstellen sind in der `api/`-Schicht zu finden. `P2P-Protokoll-
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Netzwerkrouting (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Netzwerkrouting%20(Teilsystem)%22>)
+- [Meilenstein Netzwerkrouting (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Netzwerkrouting%20(Teilsystem)%22>)
 
 ### App (Blackbox)
 
@@ -308,7 +309,7 @@ Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.
 
 Schnittstellen
 
--   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
+- `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
 
 ### Whitebox Registry Crawler
 
@@ -331,23 +332,23 @@ Zusätzlich filtert die Logik die Kandidaten anhand technischer Kriterien (z.&nb
 
 Schnittstellen
 
--   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+- `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
 
     Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
 
 Qualitäts-/Leistungsmerkmale
 
--   Skalierbarkeit  
-    Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
--   Resource Sharing  
-    Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
--   Resilience  
-    Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
+- Skalierbarkeit  
+  Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
+- Resource Sharing  
+  Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
+- Resilience  
+  Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+- [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
 
 ### Minimal Node (Blackbox)
 
@@ -356,11 +357,11 @@ Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P
 
 Schnittstellen
 
--   `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
-    -   `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
-    -   `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
-    -   (weitere aufschreiben TODO)
--   `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
+- `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
+    - `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
+    - `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
+    - (weitere aufschreiben TODO)
+- `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
 ## Ebene 3
 
@@ -389,10 +390,10 @@ Using Upcalls, S. 8).
 
 TODO: Timing / funktionisweise von background services beschireben
 
--   peermanagement
--   keepalive (heartbeats)
--   connectioncheck (clean old connections)
--   gossip background job
+- peermanagement
+- keepalive (heartbeats)
+- connectioncheck (clean old connections)
+- gossip background job
 
 ## State machine Miner: Allgemein
 
@@ -930,22 +931,22 @@ Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Key
 
 #### PubKey (öffentlicher Schlüssel)
 
--   Länge: **33 Byte**
--   Format: **komprimierter secp256k1-Public Key**
--   Verwendung:
-    -   Bestandteil der Signaturprüfung eines Inputs
-    -   Basis für die Adressgenerierung
+- Länge: **33 Byte**
+- Format: **komprimierter secp256k1-Public Key**
+- Verwendung:
+    - Bestandteil der Signaturprüfung eines Inputs
+    - Basis für die Adressgenerierung
 
 #### PubKeyHash
 
--   Länge: **20 Byte**
--   Bildung:
+- Länge: **20 Byte**
+- Bildung:
     1. SHA-256 über den 33-Byte-PubKey
     2. SHA-256 über den 32-Byte-Hash
     3. ersten 20 Byte als PubKeyHash nehmen
--   Verwendung:
-    -   Identifiziert die Empfänger eines Outputs
-    -   Dient als vereinfachter `scriptPubKey`
+- Verwendung:
+    - Identifiziert die Empfänger eines Outputs
+    - Dient als vereinfachter `scriptPubKey`
 
 #### V$Address
 
@@ -958,10 +959,10 @@ Ein UTXO beschreibt einen nicht ausgegebenen Output einer früheren Transaktion.
 
 Bestandteile:
 
--   `TransactionID` (32 Byte)
--   `OutputIndex` (uint32)
--   `Value` (uint64)
--   `PubKeyHash` (PubKeyHash)
+- `TransactionID` (32 Byte)
+- `OutputIndex` (uint32)
+- `Value` (uint64)
+- `PubKeyHash` (PubKeyHash)
 
 UTXOs repräsentieren das Guthaben einer Adresse innerhalb des Systems.
 
@@ -971,10 +972,10 @@ Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur de
 
 **Bestandteile:**
 
--   `PrevTxID` — 32-Byte ID der vorherigen Transaktion
--   `Index` — Output-Index innerhalb der referenzierten Transaktion
--   `Signature` — Byte-Array
--   `PubKey` — PubKey
+- `PrevTxID` — 32-Byte ID der vorherigen Transaktion
+- `Index` — Output-Index innerhalb der referenzierten Transaktion
+- `Signature` — Byte-Array
+- `PubKey` — PubKey
 
 **Zweck:**  
 Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszugeben.
@@ -987,8 +988,8 @@ Ein Output definiert einen neuen UTXO.
 
 **Bestandteile:**
 
--   `Value` — uint64, Wert des Outputs
--   `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
+- `Value` — uint64, Wert des Outputs
+- `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
 
 **Zweck:**  
 Legt fest, wohin der Wert übertragen wird.
@@ -1001,8 +1002,8 @@ Eine Transaktion besteht aus mehreren Ein- und Ausgaben.
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions besteht aus folgendem:
 
--   **Inputs**
--   **Outputs**
+- **Inputs**
+- **Outputs**
 
 Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eventueller Gebühren).
 
@@ -1014,18 +1015,18 @@ Die Validierung stellt sicher, dass Transaktionen korrekt, sicher und konsistent
 
 #### 1. Input-Referenzierung
 
--   Jeder Input muss einen existierenden UTXO referenzieren.
--   Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
--   Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
+- Jeder Input muss einen existierenden UTXO referenzieren.
+- Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
+- Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
 
 #### 2. Signatur und SIGHASH
 
 Für jeden Input wird ein SIGHASH berechnet:
 
--   Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
--   Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
--   Alle Outputs werden vollständig serialisiert.
--   Der Hash wird als **double-SHA-256** berechnet.
+- Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
+- Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
+- Alle Outputs werden vollständig serialisiert.
+- Der Hash wird als **double-SHA-256** berechnet.
 
 Signaturprüfung:
 
@@ -1071,9 +1072,9 @@ Obwohl in verteilten Systemen generell asynchrone Kommunikation bevorzugt wird (
 
 Da diese Pitfalls bei localhost zum Großteil nicht zutreffen, entfallen die Hauptargumente für asynchrone Kommunikation. Synchrone Kommunikation dagegen bietet in diesem Kontext Vorteile:
 
--   **Leichteres Debuggen**: Request-Response ist leichter zu debuggen, weil der Programmfluss Schritt für Schritt nachvollzogen werden kann. Es wird nie an einer unbestimmten anderen Stelle, zu unbestimmter Zeit geantwortet.
--   **Bessere Kontrolle**: Der Aufrufer erhält sofort eine Antwort und kann auf Fehler oder Bestätigungen direkt reagieren. Oft möchte der Benutzer (das externe System) eine direkte Antwort, ob die Operation geglückt ist.
--   **Geringere Komplexität**: Keine Notwendigkeit für Callback-Mechanismen oder Event-Handling.
+- **Leichteres Debuggen**: Request-Response ist leichter zu debuggen, weil der Programmfluss Schritt für Schritt nachvollzogen werden kann. Es wird nie an einer unbestimmten anderen Stelle, zu unbestimmter Zeit geantwortet.
+- **Bessere Kontrolle**: Der Aufrufer erhält sofort eine Antwort und kann auf Fehler oder Bestätigungen direkt reagieren. Oft möchte der Benutzer (das externe System) eine direkte Antwort, ob die Operation geglückt ist.
+- **Geringere Komplexität**: Keine Notwendigkeit für Callback-Mechanismen oder Event-Handling.
 
 Die AppAPI orientiert sich konzeptionell an der [Bitcoin Core JSON-RPC API](https://developer.bitcoin.org/reference/rpc/index.html), die ebenfalls eine synchrone lokale Schnittstelle zur Steuerung einer Node bereitstellt.
 
@@ -1095,8 +1096,8 @@ Eigenschaften:
 
 Die Funktionen `updatepeers` und `getpeers` gehören weder zur AppAPI noch zum V$Goin P2P Protokoll, da sie nicht zur Kommunikation zwischen Peers verwendet werden. Beide sind Teil der [Registry-Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry):
 
--   `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
--   `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
+- `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
+- `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
 
 ## V$Goin P2P Protokoll
 
@@ -1126,16 +1127,16 @@ Akzeptiert
 
 Positiv:
 
--   IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
--   Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
--   Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
--   Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
--   Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
--   Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
+- IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
+- Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
+- Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
+- Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
+- Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
 
 Negativ:
 
--   Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
+- Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
 
 ### Auswirkungen
 
@@ -1163,17 +1164,17 @@ Akzeptiert
 
 Positive Konsequenzen:
 
--   Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
--   Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
--   Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
--   Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
--   Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
--   Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
+- Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
+- Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
+- Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
+- Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
+- Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
+- Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
 
 Negative Konsequenzen:
 
--   Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
--   Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
+- Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
+- Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
 
 ### Auswirkungen
 
@@ -1201,20 +1202,20 @@ Akzeptiert
 
 Positive Konsequenzen:
 
--   Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
--   Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
--   Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
--   Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
--   Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
--   Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
--   Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
--   Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
--   Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert.
+- Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
+- Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
+- Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
+- Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
+- Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
+- Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
+- Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
+- Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+- Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert.
 
 Negative Konsequenzen:
 
--   Abhängigkeit vom gRPC Tool
--   Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
+- Abhängigkeit vom gRPC Tool
+- Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
 
 ### Auswirkung
 
@@ -1231,18 +1232,18 @@ Die Datenmenge wächst kontinuierlich, kann beliebig groß werden und wird bei j
 
 Anforderungen:
 
--   Persistente Speicherung über Node-Neustarts hinweg
--   Sehr schnelle Key-Value-Lookups
--   Hohe Schreibperformance bei Blockverarbeitung
--   In-Prozess-Datenbank (kein externer DB-Server)
--   Gute Integration in eine Go-Codebasis
--   Möglichkeit zur späteren Erweiterung um Caching-Strategien
+- Persistente Speicherung über Node-Neustarts hinweg
+- Sehr schnelle Key-Value-Lookups
+- Hohe Schreibperformance bei Blockverarbeitung
+- In-Prozess-Datenbank (kein externer DB-Server)
+- Gute Integration in eine Go-Codebasis
+- Möglichkeit zur späteren Erweiterung um Caching-Strategien
 
 Alternativen:
 
--   In-Memory Maps (nicht persistent, nicht skalierbar)
--   BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
--   LevelDB (bewährt, aber nicht nativ in Go)
+- In-Memory Maps (nicht persistent, nicht skalierbar)
+- BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
+- LevelDB (bewährt, aber nicht nativ in Go)
 
 ---
 
@@ -1252,9 +1253,9 @@ Für Full Nodes wird **BadgerDB** als persistente Key-Value-Datenbank zur Speich
 
 BadgerDB wird genutzt als:
 
--   Disk-basierte, autoritative UTXO-Datenbank
--   Backend für `(TxID, OutputIndex) → Output` Lookups
--   Grundlage für spätere In-Memory-Caches
+- Disk-basierte, autoritative UTXO-Datenbank
+- Backend für `(TxID, OutputIndex) → Output` Lookups
+- Grundlage für spätere In-Memory-Caches
 
 ---
 
@@ -1268,27 +1269,27 @@ Akzeptiert
 
 #### Positive Konsequenzen:
 
--   **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
--   **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
--   **Persistente Speicherung**, geeignet für große Datenmengen
--   **Transaktionen und Batches** ermöglichen atomare Block-Updates
--   Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
+- **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
+- **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
+- **Persistente Speicherung**, geeignet für große Datenmengen
+- **Transaktionen und Batches** ermöglichen atomare Block-Updates
+- Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
 
 #### Negative Konsequenzen:
 
--   Komplexere API als einfache Maps oder bbolt
--   Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
--   Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
+- Komplexere API als einfache Maps oder bbolt
+- Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
+- Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
 
 ---
 
 ### Auswirkung
 
--   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
--   Full Nodes können Transaktionen vollständig und unabhängig validieren
--   SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
--   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
--   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
+- Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
+- Full Nodes können Transaktionen vollständig und unabhängig validieren
+- SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+- Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
+- Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
 # Qualitätsanforderungen
 
