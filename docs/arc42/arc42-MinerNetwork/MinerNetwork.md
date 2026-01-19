@@ -386,6 +386,64 @@ Using Upcalls, S. 8).
 
 # Laufzeitsicht
 
+## Peer States
+
+```mermaid
+stateDiagram-v2
+    [*] --> StateNew: Peer entdeckt
+
+    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(Version())
+    StateNew --> StateAwaitingAck: Version-Nachricht empfangen<br/>(Version())
+
+    StateAwaitingVerack --> StateConnected: Verack empfangen<br/>(Verack())
+    StateAwaitingAck --> StateConnected: Ack gesendet<br/>(Ack())
+
+    StateConnected --> StateHolddown: Disconnect initiiert
+
+    StateHolddown --> [*]: Holddown-Zeit abgelaufen (15min)
+
+    StateAwaitingVerack<br/>StateAwaitingAck<br/>StateConnected --> StateHolddown: Timeout erkannt
+
+    note right of StateNew
+        Peer wurde entdeckt (Registry oder Gossip oder eingehende Verbindung erkannt),
+        aber noch nicht verbunden.
+    end note
+
+    note right of StateConnected
+        Handshake abgeschlossen,
+        Peer ist voll aktiv.
+    end note
+
+    note right of StateHolddown
+        Peer gilt als Disconnected.
+        Nach 15 Minuten wird der Peer
+        permanent entfernt.
+    end note
+```
+
+### Allgemein
+
+Die Peer State Machine beschreibt den Lebenszyklus eines Peers im P2P-Netzwerk. Jeder Peer durchläuft verschiedene Zustände, die den aktuellen Status der Verbindung zu diesem Peer repräsentieren. Die Zustandsmaschine ist im `PeerStore` implementiert und wird durch verschiedene Services gesteuert (Handshake, Keepalive, Disconnect).
+
+### Zustandsübergänge
+
+#### Verbindungsaufbau
+
+Während des Handshakes werden Informationen über die Fähigkeiten des Gegenübers ausgetauscht (z.&nbsp;B. unterstützte Teilsysteme wie Miner oder Wallet). Diese Information ist wichtig, um zu entscheiden, welche Arten von Nachrichten an diesen Peer gesendet werden können.
+
+#### Aktive Phase
+
+Im `StateConnected` tauschen die Peers reguläre Netzwerknachrichten aus, wie Transaktionen, Blöcke, Adressinformationen oder Keepalive-Signale. Der `LastSeen`-Zeitstempel des Peers wird bei jedem Heartbeat aktualisiert, um die Aktivität zu überwachen.
+
+#### Verbindungsabbruch und Holddown
+
+Ein Peer kann aus mehreren Gründen in den `StateHolddown` übergehen:
+
+- **Expliziter Disconnect**: Ein externes System oder ein interner Fehler löst `Disconnect()` auf. Die gRPC-Verbindung wird beim Sender sofort geschlossen.
+- **Timeout/Inaktivität**: Der `ConnectionCheckService` erkennt, dass ein Peer seit einer bestimmten Zeit keine Heartbeat-Nachrichten mehr gesendet hat. Der Peer gilt als inaktiv und wird in Holddown versetzt.
+
+Im `StateHolddown` wird jede Nachricht mit einer Reject-Nachricht abgelehnt. Nach einer Abklingphase von 15 Minuten wird der Peer permanent aus dem `PeerStore` entfernt. Dies gibt dem gegenüber genügend Zeit, eine geschlossene Verbindung zu erkennen.
+
 ## Background jobs
 
 TODO: Timing / funktionisweise von background services beschireben
