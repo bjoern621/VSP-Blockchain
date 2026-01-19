@@ -39,13 +39,12 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if !m.miningEnabled {
-		logger.Debugf("[miner] Mining is disabled, ignoring StartMining request")
-		return
+	if m.cancelMining != nil {
+		m.cancelMining()
 	}
 
-	if m.cancelMining != nil {
-		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StartMining request")
 		return
 	}
 
@@ -64,21 +63,12 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	go func() {
 		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
 		if err != nil {
-			m.mu.Lock()
-			m.cancelMining = nil
-			m.mu.Unlock()
 			logger.Infof("[miner] Mining stopped: %v", err)
 			return
 		}
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
 		logger.Tracef("[miner] Mined new block: %v", &candidateBlock.Header)
-
-		// Clear cancelMining BEFORE AddSelfMinedBlock, because it triggers NotifyStartMining
-		m.mu.Lock()
-		m.cancelMining = nil
-		m.mu.Unlock()
-
 		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
@@ -87,19 +77,7 @@ func (m *minerService) StopMining() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if !m.miningEnabled {
-		logger.Debugf("[miner] Mining is disabled, ignoring StopMining request")
-		return
-	}
-
-	if m.cancelMining == nil {
-		logger.Debugf("[miner] Not currently mining, ignoring StopMining request")
-		return
-	}
-
-	logger.Infof("[miner] Stopping mining")
 	m.cancelMining()
-	m.cancelMining = nil
 }
 
 func (m *minerService) EnableMining() {
@@ -131,7 +109,6 @@ func (m *minerService) DisableMining() {
 	if m.cancelMining != nil {
 		logger.Infof("[miner] Stopping ongoing mining due to disable")
 		m.cancelMining()
-		m.cancelMining = nil
 	}
 }
 

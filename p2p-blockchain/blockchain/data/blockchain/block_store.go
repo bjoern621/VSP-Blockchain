@@ -62,6 +62,10 @@ type BlockStoreAPI interface {
 	// Use GetMainChainTip to get the tip of the main chain.
 	GetCurrentHeight() uint64
 
+	// GetMainChainHeight returns the height of the main chain tip.
+	// The main chain is defined as the chain with the highest accumulated work.
+	GetMainChainHeight() uint64
+
 	// GetMainChainTip returns the tip block of the main chain.
 	// The main chain is defined as the chain with the highest accumulated work.
 	// In case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
@@ -407,6 +411,14 @@ func (s *BlockStore) GetCurrentHeight() uint64 {
 	return maxHeight
 }
 
+// GetMainChainHeight returns the height of the main chain tip.
+// The main chain is defined as the chain with the highest accumulated work.
+func (s *BlockStore) GetMainChainHeight() uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.getMainChainTipNode().Height
+}
+
 // GetMainChainTip returns the tip block of the main chain.
 // The main chain is defined as the chain with the highest accumulated work.
 // In the case of multiple chains with the same accumulated work, one of them is returned arbitrarily(!).
@@ -416,8 +428,8 @@ func (s *BlockStore) GetMainChainTip() block.Block {
 	return s.getMainChainTip()
 }
 
-// getMainChainTip is the internal implementation without locking.
-func (s *BlockStore) getMainChainTip() block.Block {
+// getMainChainTipNode is the internal implementation without locking that returns the node.
+func (s *BlockStore) getMainChainTipNode() *blockNode {
 	var mainChainTip *blockNode
 	var maxAccumulatedWork uint64
 
@@ -427,6 +439,12 @@ func (s *BlockStore) getMainChainTip() block.Block {
 			mainChainTip = leaf
 		}
 	}
+	return mainChainTip
+}
+
+// getMainChainTip is the internal implementation without locking.
+func (s *BlockStore) getMainChainTip() block.Block {
+	mainChainTip := s.getMainChainTipNode()
 
 	assert.IsNotNil(mainChainTip, "no main chain tip found in block store")
 

@@ -54,7 +54,7 @@ data:
           errors
           health
           ready
-          forward . /etc/resolv.conf
+          forward . 10.233.0.3
           cache 30
           reload
         }

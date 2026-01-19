@@ -39,7 +39,7 @@ services:
             - miner2
             - miner3
             - miner4
-            - spv
+            - miner5
             - registry
         dns:
             - 172.28.2.2
