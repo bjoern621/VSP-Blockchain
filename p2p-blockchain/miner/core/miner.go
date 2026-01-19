@@ -20,6 +20,8 @@ type minerService struct {
 	blockchain    blockchainApi.BlockchainAPI
 	utxoService   blockchainApi.UtxoStoreAPI
 	blockStore    blockchainApi.BlockStoreAPI
+
+	ownPubKeyHash *transaction.PubKeyHash
 }
 
 func NewMinerService(
@@ -32,6 +34,7 @@ func NewMinerService(
 		utxoService:   utxoServiceAPI,
 		blockStore:    blockStore,
 		miningEnabled: true,
+		ownPubKeyHash: nil,
 	}
 }
 
