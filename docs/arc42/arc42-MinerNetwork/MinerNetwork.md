@@ -79,9 +79,9 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Organisatorische Randbedingungen
 
 | **Randbedingung**          | **Erläuterung**                                                                                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|----------------------------| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Entwicklungsteam**       | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                                                                                                                                                 |
-| Zeit                       | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
+| **Zeit**                   | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
 | **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert.                                                                                                                     |
 
 ---
@@ -89,8 +89,8 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Rechtliche und sicherheitsrelevante Randbedingungen
 
 | **Randbedingung**     | **Erläuterung**                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Verschlüsselung**   | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                                     |
+| --------------------- |--------------------------------------------------------------------------------------------------------------|
+| **Verschlüsselung**   | Sämtliche externe Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                             |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
 
 # Kontextabgrenzung
@@ -101,24 +101,17 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
     <img src="images/business_context_fachlich.drawio.svg" alt="Fachlicher Kontext"  height="250">
 </div>
 
-| Nachbar          | Beschreibung                                                                                                                                                                                                                 | Input                                                                                                          | Output                                                                                   |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke \[[UC-7](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\]  | Blockchain \[[UC-5, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\]    |
-| Externer Händler | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Handel der Kryptowährung beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
-| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                                                  | Siehe Externer Händler                                                                                         | Siehe Externer Händler                                                                   |
-
-Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich sein.
+| Nachbar  | Beschreibung                                                    | Input                                                                                                          | Output                                                                                   |
+|----------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| REST-API | Eine Händler Schnittstelle um mit der Kryptowährung zu handeln. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
 
 ## Technischer Kontext
 
 | Nachbar          | Input technische Schnittstellen | Output technische Schnittstellen |
 | ---------------- | ------------------------------- | -------------------------------- |
-| Externer Miner   | gRPC                            | gRPC                             |
-| Externer Händler | gRPC                            | gRPC                             |
 | REST-API         | gRPC                            | gRPC                             |
 
 # Lösungsstrategie
-
 -   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
 -   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
 -   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
@@ -145,7 +138,7 @@ Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekann
 
 Schnittstellen
 
--   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
+-   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
 -   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
 Siehe auch [Schnittstellen Registry Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) für eine genauere Beschreibung der Schnittstellen.
