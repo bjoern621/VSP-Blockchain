@@ -101,6 +101,10 @@ func (m *mockBlockStore) GetCurrentHeight() uint64 {
 	return 0
 }
 
+func (m *mockBlockStore) GetMainChainHeight() uint64 {
+	return 0
+}
+
 func (m *mockBlockStore) GetMainChainTip() block.Block {
 	return m.tip
 }
