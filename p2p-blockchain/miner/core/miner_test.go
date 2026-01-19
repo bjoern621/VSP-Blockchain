@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/utxopool"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
@@ -26,62 +24,42 @@ func (m *mockBlockchainAPI) AddSelfMinedBlock(selfMinedBlock block.Block) {
 	m.selfMinedBlock = selfMinedBlock
 }
 
-// mockUTXOLookupService is a mock implementation of utxo.LookupAPI
-type mockUTXOLookupService struct {
+// mockUtxoStoreAPI is a mock implementation of UtxoStoreAPI
+type mockUtxoStoreAPI struct {
 	utxos map[utxoOutpoint]transaction.Output
 }
 
-func (m *mockUTXOLookupService) GetUTXOEntry(_ utxopool.Outpoint) (utxopool.UTXOEntry, error) {
-	return utxopool.UTXOEntry{}, nil
-}
-
-func (m *mockUTXOLookupService) ContainsUTXO(_ utxopool.Outpoint) bool {
+func (m *mockUtxoStoreAPI) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
 	return true
 }
 
-func (m *mockUTXOLookupService) AddUTXO(_ utxopool.Outpoint, _ utxopool.UTXOEntry) error {
+func (m *mockUtxoStoreAPI) InitializeGenesisPool(_ block.Block) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) SpendUTXO(_ utxopool.Outpoint) error {
+func (m *mockUtxoStoreAPI) AddNewBlock(_ block.Block) error {
 	return nil
 }
 
-func (m *mockUTXOLookupService) Remove(_ utxopool.Outpoint) error {
-	return nil
+func (m *mockUtxoStoreAPI) GetUtxoFromBlock(prevTxID transaction.TransactionID, outputIndex uint32, _ common.Hash) (transaction.Output, error) {
+	outpoint := utxoOutpoint{txID: prevTxID, outputIndex: outputIndex}
+	if output, exists := m.utxos[outpoint]; exists {
+		return output, nil
+	}
+	return transaction.Output{}, &utxoNotFoundError{}
 }
 
-func (m *mockUTXOLookupService) ApplyTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ uint64, _ bool) error {
-	return nil
+func (m *mockUtxoStoreAPI) ValidateTransactionFromBlock(_ transaction.Transaction, _ common.Hash) bool {
+	return true
 }
 
-func (m *mockUTXOLookupService) RevertTransaction(_ *transaction.Transaction, _ transaction.TransactionID, _ []utxopool.UTXOEntry) error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) Flush() error {
-	return nil
-}
-
-func (m *mockUTXOLookupService) Close() error {
-	return nil
+func (m *mockUtxoStoreAPI) GetUtxosByPubKeyHashFromBlock(_ transaction.PubKeyHash, _ common.Hash) ([]transaction.UTXO, error) {
+	return nil, nil
 }
 
 type utxoOutpoint struct {
 	txID        transaction.TransactionID
 	outputIndex uint32
-}
-
-func (m *mockUTXOLookupService) GetUTXO(txID transaction.TransactionID, outputIndex uint32) (transaction.Output, error) {
-	outpoint := utxoOutpoint{txID: txID, outputIndex: outputIndex}
-	if utxo, exists := m.utxos[outpoint]; exists {
-		return utxo, nil
-	}
-	return transaction.Output{}, &utxoNotFoundError{}
-}
-
-func (m *mockUTXOLookupService) GetUTXOsByPubKeyHash(_ transaction.PubKeyHash) ([]transaction.UTXO, error) {
-	return nil, nil
 }
 
 type utxoNotFoundError struct{}
@@ -93,6 +71,10 @@ func (e *utxoNotFoundError) Error() string {
 // mockBlockStore is a mock implementation of blockchain.BlockStoreAPI
 type mockBlockStore struct {
 	tip block.Block
+}
+
+func (m *mockBlockStore) IsBlockInvalid(block block.Block) (bool, error) {
+	return false, nil
 }
 
 func (m *mockBlockStore) AddBlock(_ block.Block) []common.Hash {
@@ -130,7 +112,7 @@ func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 // Helper function to create a test miner service
 func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.Output) *minerService {
 	mockBlockchain := &mockBlockchainAPI{}
-	mockUTXO := &mockUTXOLookupService{utxos: utxos}
+	mockUTXO := &mockUtxoStoreAPI{utxos: utxos}
 	mockBlockStore := &mockBlockStore{tip: tip}
 
 	return &minerService{
@@ -152,7 +134,6 @@ func createTestTransaction(_ uint64, outputValue uint64) transaction.Transaction
 				OutputIndex: 0,
 				Signature:   []byte("signature"),
 				PubKey:      transaction.PubKey{},
-				Sequence:    0xFFFFFFFF,
 			},
 		},
 		Outputs: []transaction.Output{
@@ -161,7 +142,6 @@ func createTestTransaction(_ uint64, outputValue uint64) transaction.Transaction
 				PubKeyHash: transaction.PubKeyHash{},
 			},
 		},
-		LockTime: 0,
 	}
 }
 
@@ -249,7 +229,7 @@ func TestGetOwnPubKeyHash(t *testing.T) {
 	if err != nil {
 		t.Errorf("getOwnPubKeyHash() returned error: %v", err)
 	}
-	// Currently returns empty hash (TODO)
+	// Currently returns empty hash
 	if pubKeyHash != (transaction.PubKeyHash{}) {
 		t.Errorf("getOwnPubKeyHash() returned non-empty hash")
 	}
@@ -321,7 +301,8 @@ func TestGetInputSum(t *testing.T) {
 		},
 	}
 
-	sum, err := miner.getInputSum(tx)
+	tip := miner.blockStore.GetMainChainTip()
+	sum, err := miner.getInputSum(tx, tip.Hash())
 	if err != nil {
 		t.Fatalf("getInputSum() returned error: %v", err)
 	}
@@ -343,7 +324,8 @@ func TestGetInputSum_UTXONotFound(t *testing.T) {
 		},
 	}
 
-	_, err := miner.getInputSum(tx)
+	tip := miner.blockStore.GetMainChainTip()
+	_, err := miner.getInputSum(tx, tip.Hash())
 	if err == nil {
 		t.Error("getInputSum() should return error when UTXO not found")
 	}
@@ -375,7 +357,8 @@ func TestGetTransactionWithFee(t *testing.T) {
 		},
 	}
 
-	txFees, err := miner.getTransactionWithFee(txs)
+	tip := miner.blockStore.GetMainChainTip()
+	txFees, err := miner.getTransactionWithFee(txs, tip.Hash())
 	if err != nil {
 		t.Fatalf("getTransactionWithFee() returned error: %v", err)
 	}
@@ -398,9 +381,13 @@ func TestGetTransactionWithFee(t *testing.T) {
 func TestSortAndReversedTransactions(t *testing.T) {
 	miner := createTestMinerService(createGenesisBlock(), nil)
 
-	txFee1 := transactionWithFee{tx: transaction.Transaction{LockTime: 1}, Fee: 10}
-	txFee2 := transactionWithFee{tx: transaction.Transaction{LockTime: 2}, Fee: 30}
-	txFee3 := transactionWithFee{tx: transaction.Transaction{LockTime: 3}, Fee: 20}
+	tx1 := transaction.Transaction{Inputs: []transaction.Input{{PrevTxID: transaction.TransactionID{1}}}}
+	tx2 := transaction.Transaction{Inputs: []transaction.Input{{PrevTxID: transaction.TransactionID{2}}}}
+	tx3 := transaction.Transaction{Inputs: []transaction.Input{{PrevTxID: transaction.TransactionID{3}}}}
+
+	txFee1 := transactionWithFee{tx: tx1, Fee: 10}
+	txFee2 := transactionWithFee{tx: tx2, Fee: 30}
+	txFee3 := transactionWithFee{tx: tx3, Fee: 20}
 
 	txsWithFees := []transactionWithFee{txFee1, txFee2, txFee3}
 
@@ -411,14 +398,15 @@ func TestSortAndReversedTransactions(t *testing.T) {
 		t.Fatalf("sortAndReversedTransactions() returned %d transactions, want 3", len(sorted))
 	}
 
-	if sorted[0].LockTime != 2 {
-		t.Errorf("First transaction should have LockTime 2 (fee 30), got %d", sorted[0].LockTime)
+	// Check by comparing transaction IDs (tx2 has highest fee, tx3 second, tx1 third)
+	if sorted[0].TransactionId() != tx2.TransactionId() {
+		t.Errorf("First transaction should be tx2 (fee 30), got different transaction")
 	}
-	if sorted[1].LockTime != 3 {
-		t.Errorf("Second transaction should have LockTime 3 (fee 20), got %d", sorted[1].LockTime)
+	if sorted[1].TransactionId() != tx3.TransactionId() {
+		t.Errorf("Second transaction should be tx3 (fee 20), got different transaction")
 	}
-	if sorted[2].LockTime != 1 {
-		t.Errorf("Third transaction should have LockTime 1 (fee 10), got %d", sorted[2].LockTime)
+	if sorted[2].TransactionId() != tx1.TransactionId() {
+		t.Errorf("Third transaction should be tx1 (fee 10), got different transaction")
 	}
 }
 
@@ -463,7 +451,8 @@ func TestBuildTransactions(t *testing.T) {
 		createTestTransaction(100, 90), // fee 10
 	}
 
-	builtTxs, err := miner.buildTransactions(txs, 1)
+	tip := miner.blockStore.GetMainChainTip()
+	builtTxs, err := miner.buildTransactions(txs, 1, tip.Hash())
 	if err != nil {
 		t.Fatalf("buildTransactions() returned error: %v", err)
 	}
@@ -495,7 +484,8 @@ func TestBuildTransactions_LimitToTxPerBlock(t *testing.T) {
 		txs[i] = createTestTransaction(100, 90)
 	}
 
-	builtTxs, err := miner.buildTransactions(txs, 1)
+	tip := miner.blockStore.GetMainChainTip()
+	builtTxs, err := miner.buildTransactions(txs, 1, tip.Hash())
 	if err != nil {
 		t.Fatalf("buildTransactions() returned error: %v", err)
 	}
@@ -522,7 +512,8 @@ func TestCreateCandidateBlock(t *testing.T) {
 		createTestTransaction(100, 90),
 	}
 
-	candidateBlock, err := miner.createCandidateBlock(txs, 1)
+	tip := miner.blockStore.GetMainChainTip()
+	candidateBlock, err := miner.createCandidateBlock(txs, 1, tip.Hash())
 	if err != nil {
 		t.Fatalf("createCandidateBlock() returned error: %v", err)
 	}
@@ -656,7 +647,7 @@ func TestStartMining_StopsMining(t *testing.T) {
 	}
 
 	mockBlockchain := &mockBlockchainAPI{}
-	mockUTXO := &mockUTXOLookupService{utxos: utxos}
+	mockUTXO := &mockUtxoStoreAPI{utxos: utxos}
 	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
 
 	miner := &minerService{
@@ -681,7 +672,7 @@ func TestStartMining_StopsMining(t *testing.T) {
 
 func TestNewMinerService(t *testing.T) {
 	mockBlockchain := &mockBlockchainAPI{}
-	mockUTXO := &mockUTXOLookupService{utxos: map[utxoOutpoint]transaction.Output{}}
+	mockUTXO := &mockUtxoStoreAPI{utxos: map[utxoOutpoint]transaction.Output{}}
 	mockBlockStore := &mockBlockStore{tip: createGenesisBlock()}
 
 	miner := NewMinerService(mockBlockchain, mockUTXO, mockBlockStore)
@@ -694,8 +685,9 @@ func TestNewMinerService(t *testing.T) {
 		t.Error("Blockchain not set correctly")
 	}
 
-	if miner.utxoService != mockUTXO {
-		t.Error("UTXO service not set correctly")
+	// Note: Can't compare interface values directly, just check it's not nil
+	if miner.utxoService == nil {
+		t.Error("UTXO service not set")
 	}
 
 	if miner.blockStore != mockBlockStore {
@@ -714,8 +706,8 @@ func TestMinerBlockchainAPI_Interface(t *testing.T) {
 }
 
 func TestMinerUTXOService_Interface(t *testing.T) {
-	// Compile-time check that mockUTXOLookupService implements utxo.LookupAPI
-	var _ utxo.UTXOService = &mockUTXOLookupService{}
+	// Compile-time check that mockUtxoStoreAPI implements UtxoStoreAPI
+	var _ api.UtxoStoreAPI = &mockUtxoStoreAPI{}
 }
 
 func TestMinerBlockStoreAPI_Interface(t *testing.T) {

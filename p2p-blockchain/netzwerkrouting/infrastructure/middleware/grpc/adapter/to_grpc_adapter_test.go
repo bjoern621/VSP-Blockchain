@@ -66,7 +66,6 @@ func TestToGrpcBlockMsg(t *testing.T) {
 					OutputIndex: 0,
 					Signature:   []byte{0x01, 0x02},
 					PubKey:      transaction.PubKey{0x03, 0x04},
-					Sequence:    0xffffffff,
 				},
 			},
 			Outputs: []transaction.Output{
@@ -75,7 +74,6 @@ func TestToGrpcBlockMsg(t *testing.T) {
 					PubKeyHash: transaction.PubKeyHash{13, 14, 15, 16},
 				},
 			},
-			LockTime: 0,
 		}
 
 		b := &block.Block{
@@ -128,7 +126,6 @@ func TestToGrpcTxMsg(t *testing.T) {
 					OutputIndex: 1,
 					Signature:   []byte{0xaa, 0xbb, 0xcc},
 					PubKey:      pubKey,
-					Sequence:    0xffffffff,
 				},
 			},
 			Outputs: []transaction.Output{
@@ -137,7 +134,6 @@ func TestToGrpcTxMsg(t *testing.T) {
 					PubKeyHash: pubKeyHash,
 				},
 			},
-			LockTime: 100,
 		}
 
 		msg, err := ToGrpcTxMsg(tx)
@@ -148,14 +144,12 @@ func TestToGrpcTxMsg(t *testing.T) {
 		pbTx := msg.Transaction
 		assert.Equal(t, 1, len(pbTx.Inputs))
 		assert.Equal(t, 1, len(pbTx.Outputs))
-		assert.Equal(t, uint64(100), pbTx.LockTime)
 
 		pbInput := pbTx.Inputs[0]
 		assert.Equal(t, prevTxID[:], pbInput.PrevTxHash)
 		assert.Equal(t, uint32(1), pbInput.OutputIndex)
 		assert.Equal(t, []byte{0xaa, 0xbb, 0xcc}, pbInput.Signature)
 		assert.Equal(t, pubKey[:], pbInput.PublicKey)
-		assert.Equal(t, uint32(0xffffffff), pbInput.Sequence)
 
 		pbOutput := pbTx.Outputs[0]
 		assert.Equal(t, uint64(500), pbOutput.Value)

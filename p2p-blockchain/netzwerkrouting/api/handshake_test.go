@@ -11,7 +11,7 @@ import (
 )
 
 type mockPeerRetriever interface {
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
+	GetPeer(id common.PeerId) (*common.Peer, bool)
 }
 
 type mockHandshakeInitiator struct {

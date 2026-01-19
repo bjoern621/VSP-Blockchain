@@ -14,23 +14,24 @@ import (
 )
 
 type minerService struct {
-	mu           sync.RWMutex
-	isMining     bool
-	cancelMining context.CancelFunc
-	blockchain   blockchainApi.BlockchainAPI
-	utxoService  blockchainApi.UtxoServiceAPI
-	blockStore   blockchainApi.BlockStoreAPI
+	mu            sync.RWMutex
+	miningEnabled bool
+	cancelMining  context.CancelFunc
+	blockchain    blockchainApi.BlockchainAPI
+	utxoService   blockchainApi.UtxoStoreAPI
+	blockStore    blockchainApi.BlockStoreAPI
 }
 
 func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
-	utxoServiceAPI blockchainApi.UtxoServiceAPI,
+	utxoServiceAPI blockchainApi.UtxoStoreAPI,
 	blockStore blockchainApi.BlockStoreAPI,
 ) *minerService {
 	return &minerService{
-		blockchain:  blockchain,
-		utxoService: utxoServiceAPI,
-		blockStore:  blockStore,
+		blockchain:    blockchain,
+		utxoService:   utxoServiceAPI,
+		blockStore:    blockStore,
+		miningEnabled: true,
 	}
 }
 
@@ -38,7 +39,12 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.isMining {
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StartMining request")
+		return
+	}
+
+	if m.cancelMining != nil {
 		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
 		return
 	}
@@ -46,7 +52,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	tip := m.blockStore.GetMainChainTip()
 	previousBlockHash := tip.Hash()
 	logger.Infof("[miner] Started mining new block with %d transactions and PrevBlockHash %v", len(transactions), previousBlockHash)
-	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1)
+	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1, previousBlockHash)
 	if err != nil {
 		logger.Errorf("[miner] Failed to create candidate block: %v", err)
 		return
@@ -54,24 +60,25 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
-	m.isMining = true
 
 	go func() {
-		defer func() {
-			m.mu.Lock()
-			m.isMining = false
-			m.cancelMining = nil
-			m.mu.Unlock()
-		}()
-
 		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
 		if err != nil {
+			m.mu.Lock()
+			m.cancelMining = nil
+			m.mu.Unlock()
 			logger.Infof("[miner] Mining stopped: %v", err)
 			return
 		}
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
 		logger.Tracef("[miner] Mined new block: %v", &candidateBlock.Header)
+
+		// Clear cancelMining BEFORE AddSelfMinedBlock, because it triggers NotifyStartMining
+		m.mu.Lock()
+		m.cancelMining = nil
+		m.mu.Unlock()
+
 		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
@@ -80,14 +87,52 @@ func (m *minerService) StopMining() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if !m.isMining || m.cancelMining == nil {
-		logger.Infof("[miner] Not currently mining, ignoring StopMining request")
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StopMining request")
+		return
+	}
+
+	if m.cancelMining == nil {
+		logger.Debugf("[miner] Not currently mining, ignoring StopMining request")
 		return
 	}
 
 	logger.Infof("[miner] Stopping mining")
 	m.cancelMining()
 	m.cancelMining = nil
+}
+
+func (m *minerService) EnableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.miningEnabled {
+		logger.Infof("[miner] Mining already enabled")
+		return
+	}
+
+	logger.Infof("[miner] Enabling mining")
+	m.miningEnabled = true
+}
+
+func (m *minerService) DisableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if !m.miningEnabled {
+		logger.Infof("[miner] Mining already disabled")
+		return
+	}
+
+	logger.Infof("[miner] Disabling mining")
+	m.miningEnabled = false
+
+	// Stop any ongoing mining
+	if m.cancelMining != nil {
+		logger.Infof("[miner] Stopping ongoing mining due to disable")
+		m.cancelMining()
+		m.cancelMining = nil
+	}
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target

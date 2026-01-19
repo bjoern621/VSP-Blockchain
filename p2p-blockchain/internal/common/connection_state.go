@@ -9,6 +9,7 @@ const (
 	StateAwaitingVerack
 	StateAwaitingAck
 	StateConnected // Handshake complete
+	StateHolddown  // Peer is in holddown period after disconnect, rejecting new connections
 )
 
 func (s PeerConnectionState) String() string {
@@ -21,6 +22,8 @@ func (s PeerConnectionState) String() string {
 		return "awaiting_ack"
 	case StateConnected:
 		return "connected"
+	case StateHolddown:
+		return "holddown"
 	default:
 		assert.Never("unhandled PeerConnectionState")
 		return "unknown"

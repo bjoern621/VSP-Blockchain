@@ -1,6 +1,7 @@
 package core
 
 import (
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"slices"
@@ -17,8 +18,8 @@ type transactionWithFee struct {
 
 const TxPerBlock = 100
 
-func (m *minerService) createCandidateBlock(transactions []transaction.Transaction, height uint64) (block.Block, error) {
-	tx, err := m.buildTransactions(transactions, height)
+func (m *minerService) createCandidateBlock(transactions []transaction.Transaction, height uint64, currentTip common.Hash) (block.Block, error) {
+	tx, err := m.buildTransactions(transactions, height, currentTip)
 	if err != nil {
 		return block.Block{}, err
 	}
@@ -53,8 +54,8 @@ func (m *minerService) createCandidateBlockHeader(transactions []transaction.Tra
 	return blockHeader, nil
 }
 
-func (m *minerService) buildTransactions(transactions []transaction.Transaction, height uint64) ([]transaction.Transaction, error) {
-	transactionsWithFees, err := m.getTransactionWithFee(transactions)
+func (m *minerService) buildTransactions(transactions []transaction.Transaction, height uint64, currentTip common.Hash) ([]transaction.Transaction, error) {
+	transactionsWithFees, err := m.getTransactionWithFee(transactions, currentTip)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +103,11 @@ func (m *minerService) createCoinbaseTransaction(transactions []transactionWithF
 	return coinbaseTransaction, nil
 }
 
-func (m *minerService) getTransactionWithFee(transactions []transaction.Transaction) ([]transactionWithFee, error) {
+func (m *minerService) getTransactionWithFee(transactions []transaction.Transaction, currentTip common.Hash) ([]transactionWithFee, error) {
 	transactionsWithFees := make([]transactionWithFee, len(transactions))
 	for i, tx := range transactions {
 		var inputSum uint64
-		inputSum, err := m.getInputSum(tx)
+		inputSum, err := m.getInputSum(tx, currentTip)
 		if err != nil {
 			return nil, err
 		}
@@ -120,9 +121,9 @@ func (m *minerService) getTransactionWithFee(transactions []transaction.Transact
 	return transactionsWithFees, nil
 }
 
-func (m *minerService) getInputSum(tx transaction.Transaction) (inputSum uint64, err error) {
+func (m *minerService) getInputSum(tx transaction.Transaction, currentTip common.Hash) (inputSum uint64, err error) {
 	for _, input := range tx.Inputs {
-		utxoResult, err := m.utxoService.GetUTXO(input.PrevTxID, input.OutputIndex)
+		utxoResult, err := m.utxoService.GetUtxoFromBlock(input.PrevTxID, input.OutputIndex, currentTip)
 		if err != nil {
 			return 0, err
 		}

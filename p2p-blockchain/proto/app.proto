@@ -72,6 +72,16 @@ service AppService {
     //  - Returns list of assets (UTXO values) for the address.
     rpc GetAssets(GetAssetsRequest) returns (GetAssetsResponse);
 
+    // GetHistory returns the transaction history for a given V$Address.
+    // Returns all main chain transactions where the address was involved (as sender or recipient).
+    //
+    // Pre-conditions:
+    //  - V$Address must be a valid Base58Check encoded public key hash.
+    //
+    // Post-conditions:
+    //  - Returns list of transactions involving the address.
+    rpc GetHistory(GetHistoryRequest) returns (GetHistoryResponse);
+
     // GetBlockchainVisualization returns a DOT file representation of the blockchain structure.
     // This can be used with Graphviz to visualize the blockchain including the main chain,
     // side chains, and orphan blocks.
@@ -213,6 +223,20 @@ message GetAssetsResponse {
 // Asset represents a single unspent output value.
 message Asset {
     uint64 value = 1;
+}
+
+// GetHistoryRequest contains the V$Address to query the transaction history for.
+message GetHistoryRequest {
+    // The V$Address (Base58Check encoded) to query
+    string vs_address = 1;
+}
+
+// GetHistoryResponse contains the transaction history result.
+message GetHistoryResponse {
+    bool success = 1;
+    string error_message = 2;
+    // List of transaction descriptions involving the address
+    repeated string transactions = 3;
 }
 
 // CreateTransactionResponse contains the result of the transaction creation.

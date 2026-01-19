@@ -71,27 +71,6 @@ func ToBlockFromBlockMsg(pbMsg *pb.BlockMsg) (block.Block, error) {
 	}, nil
 }
 
-func ToMerkleBlockFromMerkleBlockMsg(pbMsg *pb.MerkleBlockMsg) (block.MerkleBlock, error) {
-	if pbMsg == nil || pbMsg.MerkleBlock == nil {
-		return block.MerkleBlock{}, fmt.Errorf("merkle block msg must not be nil")
-	}
-
-	header, err := toHeader(pbMsg.MerkleBlock.Header)
-	if err != nil {
-		return block.MerkleBlock{}, err
-	}
-
-	proofs, err := toMerkleProofs(pbMsg.MerkleBlock.Proofs)
-	if err != nil {
-		return block.MerkleBlock{}, err
-	}
-
-	return block.MerkleBlock{
-		BlockHeader: header,
-		Proofs:      proofs,
-	}, nil
-}
-
 func ToTxFromTxMsg(pbMsg *pb.TxMsg) (transaction.Transaction, error) {
 	if pbMsg == nil {
 		return transaction.Transaction{}, fmt.Errorf("tx msg must not be nil")
@@ -151,33 +130,6 @@ func ToHeadersFromHeadersMsg(pbMsg *pb.BlockHeaders) ([]*block.BlockHeader, erro
 	}
 
 	return headers, nil
-}
-
-func ToSetFilterRequestFromSetFilterRequest(pb *pb.SetFilterRequest) (block.SetFilterRequest, error) {
-	if pb == nil {
-		return block.SetFilterRequest{}, fmt.Errorf("set filter request must not be nil")
-	}
-	if pb.PublicKeyHashes == nil {
-		return block.SetFilterRequest{}, fmt.Errorf("set filter request public key hashes must not be nil")
-	}
-
-	hashes := make([]block.PublicKeyHash, len(pb.PublicKeyHashes))
-	for i, h := range pb.PublicKeyHashes {
-		if h == nil {
-			return block.SetFilterRequest{}, fmt.Errorf("set filter request public key hashes[%d] must not be nil", i)
-		}
-		if len(h) != common.HashSize {
-			return block.SetFilterRequest{}, fmt.Errorf("set filter request public key hashes[%d] must be %d bytes long", i, common.HashSize)
-		}
-
-		var hash block.PublicKeyHash
-		copy(hash[:], h[:])
-		hashes[i] = hash
-	}
-
-	return block.SetFilterRequest{
-		PublicKeyHashes: hashes,
-	}, nil
 }
 
 func toHeader(pb *pb.BlockHeader) (block.BlockHeader, error) {
@@ -255,9 +207,8 @@ func toTx(tx *pb.Transaction) (transaction.Transaction, error) {
 	}
 
 	return transaction.Transaction{
-		Inputs:   inputs,
-		Outputs:  outputs,
-		LockTime: tx.LockTime,
+		Inputs:  inputs,
+		Outputs: outputs,
 	}, nil
 }
 
@@ -294,7 +245,6 @@ func toInput(in *pb.TxInput) (transaction.Input, error) {
 		OutputIndex: in.OutputIndex,
 		Signature:   in.Signature,
 		PubKey:      pubKey,
-		Sequence:    in.Sequence,
 	}, nil
 }
 
@@ -325,58 +275,5 @@ func toOutput(outPb *pb.TxOutput) (transaction.Output, error) {
 	return transaction.Output{
 		Value:      outPb.Value,
 		PubKeyHash: pubKeyHash,
-	}, nil
-}
-
-func toMerkleProofs(proofsPb []*pb.MerkleProof) ([]block.MerkleProof, error) {
-	if proofsPb == nil {
-		return nil, fmt.Errorf("proofs must not be nil")
-	}
-
-	proofs := make([]block.MerkleProof, len(proofsPb))
-	for i, p := range proofsPb {
-		if p == nil {
-			return nil, fmt.Errorf("proofs[%d] must not be nil", i)
-		}
-
-		proof, err := toMerkleProof(p)
-		if err != nil {
-			return nil, err
-		}
-
-		proofs[i] = proof
-	}
-
-	return proofs, nil
-}
-
-func toMerkleProof(pb *pb.MerkleProof) (block.MerkleProof, error) {
-	if pb == nil {
-		return block.MerkleProof{}, fmt.Errorf("merkle proof must not be nil")
-	}
-	if pb.Siblings == nil {
-		return block.MerkleProof{}, fmt.Errorf("merkle proof siblings must not be nil")
-	}
-
-	tx, err := toTx(pb.Transaction)
-	if err != nil {
-		return block.MerkleProof{}, err
-	}
-
-	siblings := make([]common.Hash, len(pb.Siblings))
-	for i, s := range pb.Siblings {
-		if len(s) != common.HashSize {
-			return block.MerkleProof{}, fmt.Errorf("merkle proof sibling[%d] must be %d bytes long", i, common.HashSize)
-		}
-
-		var hash common.Hash
-		copy(hash[:], s[:])
-		siblings[i] = hash
-	}
-
-	return block.MerkleProof{
-		Transaction: tx,
-		Siblings:    siblings,
-		Index:       pb.Index,
 	}, nil
 }
