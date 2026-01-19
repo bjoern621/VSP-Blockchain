@@ -93,12 +93,8 @@ func (m *minerService) createCoinbaseTransaction(transactions []transactionWithF
 	if err != nil {
 		return transaction.Transaction{}, err
 	}
-	ownPubKeyHash, err := getOwnPubKeyHash()
-	if err != nil {
-		return transaction.Transaction{}, err
-	}
 
-	coinbaseTransaction := transaction.NewCoinbaseTransaction(ownPubKeyHash, sumOfFees+reward, height)
+	coinbaseTransaction := transaction.NewCoinbaseTransaction(m.ownPubKeyHash, sumOfFees+reward, height)
 
 	return coinbaseTransaction, nil
 }
@@ -138,11 +134,4 @@ func GetCurrentTargetBits() (uint8, error) {
 
 func GetCurrentReward() (uint64, error) {
 	return 50, nil
-}
-
-func (m *minerService) getOwnPubKeyHash() (transaction.PubKeyHash, error) {
-	if m.ownPubKeyHash == nil {
-		m.ownPubKeyHash = chooseRandomOwnPubKeyHash()
-	}
-	return *m.ownPubKeyHash, nil
 }
