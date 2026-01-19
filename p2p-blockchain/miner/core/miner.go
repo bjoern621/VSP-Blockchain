@@ -41,7 +41,6 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 
 	if m.cancelMining != nil {
 		m.cancelMining()
-		return
 	}
 
 	if !m.miningEnabled {
