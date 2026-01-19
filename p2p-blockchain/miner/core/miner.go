@@ -42,6 +42,7 @@ func NewMinerService(
 func ChoosePubKeyHash() transaction.PubKeyHash {
 	keys := data.GetKeys()
 	index := rand.Intn(4)
+	logger.Debugf("[miner] Chose pubkeyhash at index %d", index)
 	return keys[index]
 }
 
