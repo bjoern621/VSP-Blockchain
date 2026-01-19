@@ -1,7 +1,6 @@
 package core
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 
@@ -36,9 +35,7 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 
 	// If no common ancestor found in locator, use genesis
 	if commonAncestorHash == (common.Hash{}) {
-		genesisHeader := blockchain.GenesisBlock().Header
-		b.sendHeadersBackToPeer([]*block.BlockHeader{&genesisHeader}, peerID, 0)
-		return
+		commonAncestorHeight = 0
 	}
 
 	// Collect headers starting from the block after the common ancestor
