@@ -8,6 +8,7 @@ import (
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/miner/data"
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -20,6 +21,8 @@ type minerService struct {
 	blockchain    blockchainApi.BlockchainAPI
 	utxoService   blockchainApi.UtxoStoreAPI
 	blockStore    blockchainApi.BlockStoreAPI
+
+	ownPubKeyHash transaction.PubKeyHash
 }
 
 func NewMinerService(
@@ -32,7 +35,15 @@ func NewMinerService(
 		utxoService:   utxoServiceAPI,
 		blockStore:    blockStore,
 		miningEnabled: true,
+		ownPubKeyHash: ChoosePubKeyHash(),
 	}
+}
+
+func ChoosePubKeyHash() transaction.PubKeyHash {
+	keys := data.GetKeys()
+	index := rand.Intn(4)
+	logger.Debugf("[miner] Chose pubkeyhash at index %d", index)
+	return keys[index]
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {

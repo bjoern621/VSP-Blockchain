@@ -228,17 +228,6 @@ func TestGetCurrentReward(t *testing.T) {
 	}
 }
 
-func TestGetOwnPubKeyHash(t *testing.T) {
-	pubKeyHash, err := getOwnPubKeyHash()
-	if err != nil {
-		t.Errorf("getOwnPubKeyHash() returned error: %v", err)
-	}
-	// Currently returns empty hash
-	if pubKeyHash != (transaction.PubKeyHash{}) {
-		t.Errorf("getOwnPubKeyHash() returned non-empty hash")
-	}
-}
-
 func TestCreateCandidateBlockHeader(t *testing.T) {
 	genesis := createGenesisBlock()
 	miner := createTestMinerService(genesis, nil)
