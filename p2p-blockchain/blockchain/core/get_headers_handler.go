@@ -17,8 +17,8 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 
 	// Find the common ancestor by checking the block locator hashes
 	// The locator hashes are ordered from newest to oldest
-	var commonAncestorHash common.Hash
 	var commonAncestorHeight uint64
+	foundAncestor := false
 
 	for _, hash := range locator.BlockLocatorHashes {
 		// Check if this hash exists in our block store
@@ -26,15 +26,15 @@ func (b *Blockchain) GetHeaders(locator block.BlockLocator, peerID common.PeerId
 			// Found a block that exists in our chain - this is a potential common ancestor
 			// Verify it's on our main chain
 			if b.blockStore.IsPartOfMainChain(block) {
-				commonAncestorHash = hash
 				commonAncestorHeight = b.findBlockHeight(hash)
+				foundAncestor = true
 				break
 			}
 		}
 	}
 
-	// If no common ancestor found in locator, use genesis
-	if commonAncestorHash == (common.Hash{}) {
+	// If no common ancestor found in locator, use genesis (height 0)
+	if !foundAncestor {
 		commonAncestorHeight = 0
 	}
 
