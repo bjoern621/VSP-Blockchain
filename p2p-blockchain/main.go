@@ -113,6 +113,10 @@ func main() {
 		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
+		// Initialize history API and handler
+		historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
+		historyHandler := adapters.NewHistoryAdapter(historyAPI)
+
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
@@ -135,11 +139,11 @@ func main() {
 			transactionHandler,
 			discoveryAppService,
 			kontoHandler,
+			historyHandler,
 			visualizationHandler,
 			miningService,
 			disconnectAppService,
 		)
-
 		err := appServer.Start(common.AppPort())
 		if err != nil {
 			logger.Warnf("[main] couldn't start App server: %v", err)

@@ -32,6 +32,7 @@ type Server struct {
 	keysApi              api.KeyGeneratorApi
 	transactionHandler   *adapters.TransactionHandlerAdapter
 	kontoHandler         *adapters.KontoHandlerAdapter
+	historyHandler       *adapters.HistoryHandlerAdapter
 	visualizationHandler *adapters.VisualizationHandlerAdapter
 	miningService        *core.MiningService
 }
@@ -45,6 +46,7 @@ func NewServer(
 	transactionHandler *adapters.TransactionHandlerAdapter,
 	discoveryService *core.DiscoveryService,
 	kontoHandler *adapters.KontoHandlerAdapter,
+	historyHandler *adapters.HistoryHandlerAdapter,
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
 	miningService *core.MiningService,
 	disconnectService *core.DisconnectService,
@@ -58,6 +60,7 @@ func NewServer(
 		keysApi:              keysApi,
 		transactionHandler:   transactionHandler,
 		kontoHandler:         kontoHandler,
+		historyHandler:       historyHandler,
 		visualizationHandler: visualizationHandler,
 		miningService:        miningService,
 	}
@@ -270,6 +273,10 @@ func (s *Server) SendGetAddr(_ context.Context, req *pb.SendGetAddrRequest) (*pb
 
 func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
 	return s.kontoHandler.GetAssets(req), nil
+}
+
+func (s *Server) GetHistory(_ context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
+	return s.historyHandler.GetHistory(req), nil
 }
 
 func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockchainVisualizationRequest) (*pb.GetBlockchainVisualizationResponse, error) {
