@@ -97,25 +97,67 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 ## Fachlicher Kontext
 
-<div align="center">
-    <img src="images/business_context_fachlich.drawio.svg" alt="Fachlicher Kontext"  height="250">
-</div>
+![Diagramm](https://www.plantuml.com/plantuml/png/NP1HIiKm44N_NSMb27vb2_9KH8I7Y1N_vwMX2KrdGZjsHUx4ZPcqO1x9H-2G4-wTEQrAYtxFyGRvx1VBuD1zFFUVU7X_HU-MBLZNWLPG2jMpCYTXnuhkB1D5Xw_R5mcCDnaEFOgbMAZr3z4yPc6odWBl-gNWKy4QSeUpn1YI9DDRpq5rLHTp5ireArxzgc_-zuT7nIQC6WUw5A_C0sFkcwB_1BE4qMisccudnqFUsHy0)
 
-| Nachbar          | Beschreibung                                                                                                                                                                                                                 | Input                                                                                                          | Output                                                                                   |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke \[[UC-7](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\]  | Blockchain \[[UC-5, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\]    |
-| Externer Händler | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Handel der Kryptowährung beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
-| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                                                  | Siehe Externer Händler                                                                                         | Siehe Externer Händler                                                                   |
+<details>
+    <summary>Code</summary>
+
+    ````plantuml
+    @startuml
+
+    node "REST API Service" as api
+    
+    component "Lokale V$Goin Node" as localNode
+    component "V$Goin-Blockchain" as blockChain
+    
+    ' Lollipop-Schnittstelle am REST API Service
+    
+    ' REST API hängt von Blockchain ab
+    api --> localNode
+    localNode -right--> blockChain
+    @enduml
+    ````
+
+</details>
+
+| Nachbar            | Beschreibung                                                                                                                                                                                            | Input                                                                                                                            | Output                                                                                                                           |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| V$Goin-Blockchain  | Eine Node, welche die Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) implementiert und somit an der V$Goin-Blockchain teilnehmen kann                                        | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto)                                                        | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto)                                                        |
+| lokale V$Goin Node | Eine Node, welche zusätzliche zu einer Noder der V$Goin-Blockchain auch noch funktionalitäten für externe Händler wie die REST-API über [APP-API](../../../p2p-blockchain/proto/app.proto) bereitstellt | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) und [APP-API](../../../p2p-blockchain/proto/app.proto) | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) und [APP-API](../../../p2p-blockchain/proto/app.proto) |
+| REST-API           | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                             | Transaktionsdaten, Adressen siehe [REST API Arc42](../arc42-Api/API.md)                                                          | neu generierte Adressen und Schlüssel, Konstostände und Transaktionsverläufe                                                     |
 
 Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich sein.
 
 ## Technischer Kontext
 
-| Nachbar          | Input technische Schnittstellen | Output technische Schnittstellen |
-| ---------------- | ------------------------------- | -------------------------------- |
-| Externer Miner   | gRPC                            | gRPC                             |
-| Externer Händler | gRPC                            | gRPC                             |
-| REST-API         | gRPC                            | gRPC                             |
+![Diagram](https://www.plantuml.com/plantuml/png/NS_1IiGm40RWkq_nKmIzv0KyoAuY8YmYLhpFfkCcR3fJqja5tyStySNSfeVKNW8p-OQPVpCQPJlrwGe0oYFQCPhtf_O3sxSNj9pFqNC36a53hCvhFwYm69gT7YanFg-VDGfUjPjvKazfgjP-XkxX0eu-K9J2zrFvE9LroGrscb8ST72j3nBDHkEK6DHZVU9Yglw5tnyv6CuggEj0--AY6ESlyem6zOH2jdFK_nqujmf5fNcxOdSOlyM7h2L97O7ByH3CtI-oNZ0jzOQbE_Nf3m00)
+
+<details>
+    <summary>Code</summary>
+
+    ````plantuml
+    @startuml
+    
+    node "REST API Service" as api
+    
+    component "Lokale V$Goin Node" as localNode
+    component "V$Goin-Blockchain" as blockChain
+    
+    ' REST API hängt von Blockchain ab
+    interface " " as blockchainApi
+    blockchainApi -- localNode
+    api --( blockchainApi : synchron
+    localNode -right-> blockChain : asynchron
+    @enduml
+    ````
+</details>
+
+
+| **Kommunikationspartner**    | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung**                                                                                      |
+|------------------------------|--------------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **REST API**                 | HTTPS REST-API                       | JSON                        | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen                                                  |
+| **Lokale V$Goin Node**       | gRPC                                 | Byte                        | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen, sowie erhalten von Transaktionsdaten |
+| **V$Goin Blockchain-System** | gRPC                                 | Byte                        | Weiterleiten der erstellten Transaktion an alle weiteren Knoten                                                   |
 
 # Lösungsstrategie
 
@@ -227,10 +269,9 @@ Weitere Informationen / Quellen:
 
 Schnittstellen
 
--   `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
--   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.
--   `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+-   `UtxoStoreAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
+-   `BlockStoreAPI` bietet die Möglichkeit, Informationen über bestehende Blöcke zu lesen.
+-   `BlockchainAPI` bietet die Möglichkeit, neue Blöcke hinzuzufügen und zu validieren.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -248,8 +289,8 @@ Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Bl
 
 Schnittstellen
 
--   `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+-   `KeyGeneratorAPI` erlaubt das erstellen von neuen Schlüsselpaaren und Adressen.
+-   `TransactionCreationAPI` erlaubt das Erstellen und Signieren von neuen Transaktionen.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -315,7 +356,11 @@ Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.
 
 Schnittstellen
 
--   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
+-   `TransactionAPI` bündelt die API für externe Systeme neue Transaktionen zu erstellen und zu senden. 
+-   `KontoAPI` die API für externe Systeme neue Schlüssel und Adressen zu erstellen, sowie den Kontostand solcher in Form von allen verfügbaren Zahlungsmittel abzufragen
+-   `HistoryAPI` die API für externe Systeme den Transaktionsverlauf eines Kontos abzufragen
+
+Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
 
 ### Whitebox Registry Crawler
 

@@ -149,9 +149,9 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 | **Kommunikationspartner**    | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung**                                                                                      |
 |------------------------------|--------------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------|
-| **Frontend (Web-Client)**    | HTTPS REST-API                       | JSON                        | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen                                                  |
-| **Lokale V$Goin Node**       | RPC                                  | Byte                        | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen, sowie erhalten von Transaktionsdaten |
-| **V$Goin Blockchain-System** | RPC                                  | Byte                        | Weiterleiten der erstellten Transaktion an alle weiteren Knoten                                                   |
+| **REST API**                 | HTTPS REST-API                       | JSON                        | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen                                                  |
+| **Lokale V$Goin Node**       | gRPC                                 | Byte                        | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen, sowie erhalten von Transaktionsdaten |
+| **V$Goin Blockchain-System** | gRPC                                 | Byte                        | Weiterleiten der erstellten Transaktion an alle weiteren Knoten                                                   |
 
 # Lösungsstrategie
 ## Technologieentscheidungen
