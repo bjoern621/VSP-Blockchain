@@ -15,6 +15,7 @@ import (
 	"s3b/vsp-blockchain/rest-api/internal/common"
 	"s3b/vsp-blockchain/rest-api/konto"
 	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
+	"s3b/vsp-blockchain/rest-api/transaktionsverlauf"
 
 	"bjoernblessin.de/go-utils/util/logger"
 	"github.com/gin-gonic/gin"
@@ -23,15 +24,17 @@ import (
 const internalServerError = "Internal server error"
 
 type PaymentAPI struct {
-	transactionService *transactionapi.TransaktionAPI
-	kontostandService  *konto.KontostandService
+	transactionService         *transactionapi.TransaktionAPI
+	kontostandService          *konto.KontostandService
+	transaktionsverlaufService *transaktionsverlauf.TransaktionsverlaufService
 }
 
 // NewPaymentAPI creates a new PaymentAPI with the given services.
-func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostandService *konto.KontostandService) *PaymentAPI {
+func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostandService *konto.KontostandService, transaktionsverlaufService *transaktionsverlauf.TransaktionsverlaufService) *PaymentAPI {
 	return &PaymentAPI{
-		transactionService: transactionService,
-		kontostandService:  kontostandService,
+		transactionService:         transactionService,
+		kontostandService:          kontostandService,
+		transaktionsverlaufService: transaktionsverlaufService,
 	}
 }
 
@@ -44,13 +47,13 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 	result, err := api.kontostandService.GetBalance(vsAddress)
 	if errors.Is(err, common.ErrInvalidAddress) {
 		logger.Warnf("[api_payment] Balance request validation failed: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid V$Address"})
 		return
 	}
 	var assetErr *common.AssetError
 	if errors.As(err, &assetErr) {
 		logger.Warnf("[api_payment] Balance request asset error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": assetErr.Message})
 		return
 	}
 	if err != nil {
@@ -66,8 +69,30 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 // Get /history
 // Returns the history of transactions involving the given key hash
 func (api *PaymentAPI) HistoryGet(c *gin.Context) {
-	// Your handler implementation
-	c.JSON(200, gin.H{"status": "OK"})
+	// Extract VSAddress from query parameter
+	vsAddress := c.Query("vsAddress")
+
+	// Call the domain service
+	transactions, err := api.transaktionsverlaufService.GetHistory(vsAddress)
+	if errors.Is(err, common.ErrInvalidAddress) {
+		logger.Warnf("[api_payment] History request validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid V$Address"})
+		return
+	}
+	var assetErr *common.AssetError
+	if errors.As(err, &assetErr) {
+		logger.Warnf("[api_payment] History request asset error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": assetErr.Message})
+		return
+	}
+	if err != nil {
+		logger.Warnf("[api_payment] Failed to get history: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
+		return
+	}
+
+	// Return successful response
+	c.JSON(http.StatusOK, HistoryGet200Response{Transactions: transactions})
 }
 
 // Post /transaction
