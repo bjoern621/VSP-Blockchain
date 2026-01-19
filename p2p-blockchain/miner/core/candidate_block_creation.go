@@ -140,6 +140,9 @@ func GetCurrentReward() (uint64, error) {
 	return 50, nil
 }
 
-func getOwnPubKeyHash() (transaction.PubKeyHash, error) {
-	return transaction.PubKeyHash{}, nil //TODO
+func (m *minerService) getOwnPubKeyHash() (transaction.PubKeyHash, error) {
+	if m.ownPubKeyHash == nil {
+		m.ownPubKeyHash = chooseRandomOwnPubKeyHash()
+	}
+	return *m.ownPubKeyHash, nil
 }
