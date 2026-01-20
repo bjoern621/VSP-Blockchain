@@ -1,0 +1,20 @@
+meta {
+  name: Visualization
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/blockchain/visualization
+  body: none
+  auth: inherit
+}
+
+headers {
+  includeDetails: true
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
