@@ -61,7 +61,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 
 	tip := m.blockStore.GetMainChainTip()
 	previousBlockHash := tip.Hash()
-	logger.Infof("[miner] Started mining new block with %d transactions and PrevBlockHash %v", len(transactions), previousBlockHash)
+	logger.Infof("[miner] Started mining new block with %d transactions (+1 Coinbase) and PrevBlockHash %v", len(transactions), previousBlockHash)
 	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1, previousBlockHash)
 	if err != nil {
 		logger.Errorf("[miner] Failed to create candidate block: %v", err)
