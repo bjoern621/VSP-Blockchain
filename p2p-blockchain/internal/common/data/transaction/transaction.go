@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
@@ -220,4 +221,9 @@ func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, h
 			},
 		},
 	}
+}
+
+func (tx *Transaction) String() string {
+	hash := tx.Hash()
+	return hex.EncodeToString(hash[:])
 }
