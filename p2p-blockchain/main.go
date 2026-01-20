@@ -12,6 +12,7 @@ import (
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	minerapi "s3b/vsp-blockchain/p2p-blockchain/miner/api"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
@@ -98,9 +99,12 @@ func main() {
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	minerImpl := minerCore.NewMinerService(blockchain, utxoStore, blockStore)
-	blockchain.Attach(minerImpl)
-	minerImpl.StartMining(make([]transaction.Transaction, 0))
+	var minerImpl minerapi.MinerAPI
+	if common.MinerEnabled() {
+		minerImpl = minerCore.NewMinerService(blockchain, utxoStore, blockStore)
+		blockchain.Attach(minerImpl)
+		minerImpl.StartMining(make([]transaction.Transaction, 0))
+	}
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
@@ -127,8 +131,10 @@ func main() {
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
 
-		// Initialize mining service
-		miningService := appcore.NewMiningService(minerImpl)
+		var miningService *appcore.MiningService
+		if common.MinerEnabled() {
+			miningService = appcore.NewMiningService(minerImpl)
+		}
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)

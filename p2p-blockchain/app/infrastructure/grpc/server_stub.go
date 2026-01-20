@@ -284,6 +284,13 @@ func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockc
 }
 
 func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMiningResponse, error) {
+	if s.miningService == nil {
+		return &pb.StartMiningResponse{
+			Success:      false,
+			ErrorMessage: "mining service is not enabled",
+		}, nil
+	}
+
 	err := s.miningService.EnableMining()
 	if err != nil {
 		return &pb.StartMiningResponse{
@@ -308,6 +315,13 @@ func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMini
 }
 
 func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMiningResponse, error) {
+	if s.miningService == nil {
+		return &pb.StopMiningResponse{
+			Success:      false,
+			ErrorMessage: "mining service is not enabled",
+		}, nil
+	}
+
 	err := s.miningService.DisableMining()
 	if err != nil {
 		return &pb.StopMiningResponse{
