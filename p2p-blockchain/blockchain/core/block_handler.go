@@ -70,7 +70,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
 	if err != nil {
-		logger.Errorf("[block_handler] Chain reorganization failed: %v", err)
+		logger.Warnf("[block_handler] Chain reorganization failed: %v", err)
 		return
 	}
 
