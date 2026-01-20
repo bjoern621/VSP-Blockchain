@@ -10,5 +10,5 @@
 package openapi
 
 type BlockchainVisualizationGet200Response struct {
-	URL string `json:"URL,omitempty"`
+	URL string `json:"URL"`
 }

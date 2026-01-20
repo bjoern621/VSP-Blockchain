@@ -10,5 +10,5 @@
 package openapi
 
 type BalanceGet200Response struct {
-	Balance int32 `json:"balance,omitempty"`
+	Balance int32 `json:"balance"`
 }
