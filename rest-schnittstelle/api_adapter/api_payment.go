@@ -61,7 +61,6 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}
-
 	// Return successful response
 	c.JSON(http.StatusOK, BalanceGet200Response{Balance: int32(result)})
 }

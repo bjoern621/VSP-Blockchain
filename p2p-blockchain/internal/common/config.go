@@ -37,8 +37,7 @@ func SetP2PListeningIpAddr(ip netip.Addr) {
 // I.e. ["blockchain_full", "wallet", ...].
 // Never includes "app" (which is not a subsystem).
 // Always includes "netzwerkrouting".
-// All available subsystems are: "blockchain_full", "blockchain_simple", "wallet", "miner", "netzwerkrouting".
-// "blockchain_full" and "blockchain_simple" are mutually exclusive.
+// All available subsystems are: "blockchain_full", "wallet", "miner", "netzwerkrouting".
 // The slice is not sorted in any particular order.
 func EnabledTeilsystemeNames() []string {
 	services := getAdditionalServices()
@@ -57,10 +56,6 @@ func MinerEnabled() bool {
 
 func BlockchainFullEnabled() bool {
 	return slices.Contains(getAdditionalServices(), "blockchain_full")
-}
-
-func BlockchainSimpleEnabled() bool {
-	return slices.Contains(getAdditionalServices(), "blockchain_simple")
 }
 
 func AppEnabled() bool {
