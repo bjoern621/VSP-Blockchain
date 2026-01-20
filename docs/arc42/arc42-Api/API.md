@@ -427,32 +427,76 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 ## Infrastruktur Ebene 1
 
-***\<Übersichtsdiagramm\>***
+````plantuml
+@startuml
+skinparam componentStyle rectangle
 
-Begründung  
-*\<Erläuternder Text\>*
+cloud "Internet" {
+  node "Client" as Client
+}
 
-Qualitäts- und/oder Leistungsmerkmale  
-*\<Erläuternder Text\>*
 
-Zuordnung von Bausteinen zu Infrastruktur  
-*\<Beschreibung der Zuordnung\>*
+node "«Environment»\nHAW-ICC" {
+    top to bottom direction
+    node "«Ingress»\n reverse proxy"  as ingress
+    node "«Service»\n restAPI" {
+      
+      component "«Pod»\n restAPI replica: 1" as restApi1
+      component "«Pod»\n restAPI replica: 2" as restApi2
+      component "«Pod»\n restAPI replica: n" as restApin
+    }
+}
+Client --> ingress : HTTPS
+ingress --> restApi1 : HTTP
+ingress --> restApi2 : HTTP
+ingress --> restApin : HTTP
+
+@enduml
+````
+
+### Umstände 
+In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen.
+Unsere Komponenten werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von
+[Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
+Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
+Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden.
+Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
+
+### Beschreibung
+Aufrufe von Clients kommen per HTTPS über den Ingress in das Cluster. Der Ingress wird durch einen NGINX-basierten Reverse Proxy realisiert, der die TLS-Terminierung übernimmt.
+Dieser fungiert gleichzeitig als Loadbalancer, welcher den Traffic auf beliebig viele Replicas der restAPI Pods per Round-Robin-Verfahren verteilt.
+Die Anzahl der Replicas kann über den restAPI Service manuell statisch eingestellt werden.
+
+### Qualitäts- und/oder Leistungsmerkmale
+Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
+
+| CPU      | RAM   | Speicher | #Pods | #Services | #PVCs |
+|----------|-------| -------- | ----- | --------- | ----- |
+| 16 Kerne | 16 GB | 100 GB   | 50    | 10        | 5     |
+Diese Ressourcen müssen sich mit dem Minernetwork geteilt werden, da diese im gleichen Cluster laufen.
+
+Diese Limits wurden bereits nach Nachfrage per E-Mail angehoben. Es gilt weiter den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
+
 
 ## Infrastruktur Ebene 2
+````plantuml
+@startuml
+skinparam componentStyle rectangle
+  left to right direction
+        
+      node "«Pod»\n restApi"{
+        component "«Container»\n restAPI" as api
+        component "«Container»\n full Node" as fullNode
+      }
+      api <--> fullNode : gRPC
+@enduml
+````
+### Beschreibung
+In dem restAPI Pod ist die restAPI und eine full Node enthalten.
+Die restAPI ist die Komponente, welche in diesem Dokument beschrieben wird. 
+Die full Node ist eine Komponente aus dem Miner Network Projekt. Diese liefert dem restAPI Container die benötigten Inhalte aus dem Miner Network.
+Zusätzlich ist der Full Node Container über gRPC mit anderen Full Nodes im Miner Network verbunden, um die Datenversorgung sicherzustellen.
 
-### *\<Infrastrukturelement 1\>*
-
-*\<Diagramm + Erläuterungen\>*
-
-### *\<Infrastrukturelement 2\>*
-
-*\<Diagramm + Erläuterungen\>*
-
-…​
-
-### *\<Infrastrukturelement n\>*
-
-*\<Diagramm + Erläuterungen\>*
 
 # Querschnittliche Konzepte
 
