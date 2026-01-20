@@ -408,7 +408,6 @@ Schnittstellen
 - `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
     - `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
     - `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
-    - (weitere aufschreiben TODO)
 - `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
 ## Ebene 3
@@ -494,12 +493,77 @@ Im `StateHolddown` wird jede Nachricht mit einer Reject-Nachricht abgelehnt. Nac
 
 ## Background jobs
 
-TODO: Timing / funktionisweise von background services beschireben
+### Keepalive Service (Heartbeats)
 
-- peermanagement
-- keepalive (heartbeats)
-- connectioncheck (clean old connections)
-- gossip background job
+Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers verantwortlich. Er sendet in regelmäßigen Abständen Heartbeat-Nachrichten (`HeartbeatBing`) an alle verbundenen Peers.
+
+| Parameter | Wert | Beschreibung |
+|-----------|------|--------------|
+| **Intervall** | 4 Minuten | Zeitintervall zwischen Heartbeat-Runden |
+| **Nachrichtentyp (ausgehend)** | `HeartbeatBing` | Ping-Nachricht an alle verbundenen Peers |
+| **Nachrichtentyp (Antwort)** | `HeartbeatBong` | Pong-Antwort auf empfangene Pings |
+
+**Funktionsweise:**
+1. Alle 4 Minuten werden `HeartbeatBing`-Nachrichten an alle verbundenen Peers gesendet
+2. Bei Empfang eines `HeartbeatBing` antwortet der Peer mit einem `HeartbeatBong`
+3. Sowohl Bing als auch Bong aktualisieren den `LastSeen`-Timestamp des sendenden Peers
+4. Falls ein Peer nicht im Status `StateConnected` ist, wird eine `Reject`-Nachricht zurückgesendet
+
+### ConnectionCheck Service
+
+Der `ConnectionCheckService` überprüft periodisch die Gesundheit aller Peer-Verbindungen anhand des `LastSeen`-Timestamps. Inaktive Peers werden in den Holddown-Zustand versetzt und nach Ablauf der Holddown-Periode permanent entfernt.
+
+| Parameter | Wert | Beschreibung |
+|-----------|------|--------------|
+| **Intervall** | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen |
+| **Peer Timeout** | 9 Minuten | Zeit ohne Heartbeat bis zur Holddown-Versetzung |
+| **Holddown-Dauer** | 15 Minuten | Zeit im Holddown-Status vor permanenter Entfernung |
+
+**Funktionsweise:**
+1. Alle 10 Minuten werden alle Peers mit gestarteter Handshake-Phase überprüft
+2. Peers mit `LastSeen = 0` oder älter als 9 Minuten werden in den `StateHolddown` versetzt
+3. Bei jedem Durchlauf werden auch Holddown-Peers überprüft
+4. Holddown-Peers, deren 15-Minuten-Periode abgelaufen ist, werden permanent aus dem `PeerStore` und `NetworkInfoRegistry` entfernt
+
+**Beziehung zum Keepalive:**
+- Der 9-Minuten-Timeout stellt sicher, dass ein Peer mindestens 2 Heartbeat-Zyklen (à 4 Minuten) verpasst haben muss, bevor er als inaktiv gilt
+
+### Periodic Discovery Service (Gossip)
+
+Der `PeriodicDiscoveryService` führt regelmäßig Peer-Discovery durch, um neue Peers im Netzwerk zu entdecken. Dies geschieht sowohl über Gossip (Anfragen an bestehende Peers) als auch über Registry-Abfragen.
+
+
+**Funktionsweise:**
+1. Jede Minute werden zwei parallele Discovery-Aktionen ausgeführt:
+   - **Registry Discovery:** DNS-Abfrage an die Registry für neue Peer-Adressen
+   - **Gossip Discovery:** `GetAddr`-Nachrichten an bis zu 3 zufällig ausgewählte, verbundene Peers
+2. Beim ersten Durchlauf wird die Gossip-Discovery übersprungen, um Zeit für initiale Verbindungen zu lassen
+3. Empfangene Peer-Adressen werden im `NetworkInfoRegistry` gespeichert
+
+### Peer Management Service
+
+Der `PeerManagementService` überwacht die Anzahl aktiver Verbindungen und stellt automatisch neue Verbindungen her, wenn die Anzahl unter einen Schwellenwert fällt.
+
+**Funktionsweise:**
+1. Alle 1,5 Minuten wird die Anzahl verbundener Peers überprüft
+2. Falls weniger als 8 Peers verbunden sind, werden neue Verbindungen hergestellt
+3. Aus bekannten, aber nicht verbundenen Peers werden zufällig bis zu 3 ausgewählt
+4. Für jeden ausgewählten Peer wird ein Handshake initiiert
+
+### Zusammenspiel der Services
+
+Die vier Background-Services arbeiten zusammen, um ein gesundes Peer-Netzwerk aufrechtzuerhalten:
+
+1. **PeriodicDiscoveryService** entdeckt neue potenzielle Peers
+2. **PeerManagementService** stellt Verbindungen zu entdeckten Peers her
+3. **KeepaliveService** hält Verbindungen aktiv und aktualisiert `LastSeen`
+4. **ConnectionCheckService** entfernt inaktive Peers und gibt Ressourcen frei
+
+Diese Kombination gewährleistet:
+- Kontinuierliche Entdeckung neuer Netzwerkteilnehmer
+- Aufrechterhaltung einer Mindestanzahl aktiver Verbindungen
+- Erkennung und Bereinigung toter Verbindungen
+- Schutz vor Ressourcenerschöpfung durch veraltete Peer-Einträge
 
 ## State machine Miner: Allgemein
 
