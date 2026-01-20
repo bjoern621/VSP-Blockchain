@@ -893,12 +893,11 @@ Qualitäts- und/oder Leistungsmerkmale
 
 Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
 
-| CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
-| ------- | ---- | -------- | ----- | --------- | ----- |
-| 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
+| CPU      | RAM   | Speicher | #Pods | #Services | #PVCs |
+|----------|-------| -------- | ----- | --------- | ----- |
+| 16 Kerne | 16 GB | 100 GB   | 50    | 10        | 5     |
 
-Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen,
-da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
+Diese Limits wurden bereits nach Nachfrage per E-Mail angehoben. Es gilt weiter den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
 
 Zuordnung von Bausteinen zu Infrastruktur  
 Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
