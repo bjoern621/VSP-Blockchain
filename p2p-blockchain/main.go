@@ -78,6 +78,8 @@ func main() {
 
 	mempool := core.NewMempool(transactionValidator, blockStore)
 
+	mempool := core.NewMempool(transactionValidator, blockStore)
+
 	blockchain := core.NewBlockchain(
 		blockchainMsgService,
 		grpcClient,

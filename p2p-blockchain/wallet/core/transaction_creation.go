@@ -70,6 +70,7 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 	if err != nil || len(utxos) == 0 {
 		return s.handleInsufficientFunds(err)
 	}
+
 	privKey := transaction.PrivateKey(keyset.PrivateKey)
 	tx, err := transaction.NewTransaction(utxos, recipientPubKeyHash, amount, common.TransactionFee, privKey)
 	if err != nil {
