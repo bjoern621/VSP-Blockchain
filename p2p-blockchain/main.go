@@ -68,12 +68,13 @@ func main() {
 	blockStore := blockchainData.NewBlockStore(genesisBlock, blockValidator)
 
 	utxoStore := utxo.NewUtxoStore(blockStore)
+	transactionValidator := validation.NewTransactionValidator(utxoStore)
 	err := utxoStore.InitializeGenesisPool(genesisBlock)
 	assert.IsNil(err, "Failed to initialize genesis UTXO pool")
 
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	transactionValidator := validation.NewTransactionValidator(utxoStore)
+	blockValidator.SetDependencies(transactionValidator, utxoStore)
 
 	mempool := core.NewMempool(transactionValidator, blockStore)
 

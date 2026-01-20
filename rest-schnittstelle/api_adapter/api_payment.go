@@ -57,7 +57,7 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		logger.Errorf("[api_payment] Failed to get balance: %v", err)
+		logger.Warnf("[api_payment] Failed to get balance: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}

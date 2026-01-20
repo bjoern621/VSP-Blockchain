@@ -70,6 +70,7 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 	if err != nil || len(utxos) == 0 {
 		return s.handleInsufficientFunds(err)
 	}
+
 	privKey := transaction.PrivateKey(keyset.PrivateKey)
 	tx, err := transaction.NewTransaction(utxos, recipientPubKeyHash, amount, common.TransactionFee, privKey)
 	if err != nil {
@@ -90,7 +91,7 @@ func (s *TransactionCreationService) handleSuccess(tx *transaction.Transaction) 
 	}
 	s.mempoolAPI.AddTransaction(*tx)
 	s.blockchainAPI.BroadcastInvExclusionary(invVectors, "") // TODO: Replace with broadcast to all when implemented
-	logger.Infof("[wallet] following transaction amounts: %s", s.mempoolAPI.GetTransactionValues())
+	logger.Tracef("[wallet] following transaction amounts: %s", s.mempoolAPI.GetTransactionValues())
 
 	logger.Infof("[wallet] Transaction created and broadcast successfully: %s", txIDHex)
 
