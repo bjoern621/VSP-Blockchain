@@ -23,7 +23,7 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 				unknownData = append(unknownData, v)
 			}
 		case inv.InvTypeMsgTx:
-			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
+			if !b.mempool.IsKnownTransactionHash(v.Hash) {
 				unknownData = append(unknownData, v)
 			}
 		case inv.InvTypeMsgFilteredBlock:
