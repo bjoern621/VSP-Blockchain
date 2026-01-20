@@ -110,7 +110,7 @@ func main() {
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 
 		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl)
+		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
 		// Initialize history API and handler

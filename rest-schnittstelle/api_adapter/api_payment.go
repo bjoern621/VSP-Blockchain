@@ -42,7 +42,7 @@ func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostand
 // Returns the balance tied to the given public key hash
 func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 	// Extract VSAddress from query parameter
-	vsAddress := c.Query("vsAddress")
+	vsAddress := c.Query("VSAddress")
 	// Call the domain service
 	result, err := api.kontostandService.GetBalance(vsAddress)
 	if errors.Is(err, common.ErrInvalidAddress) {

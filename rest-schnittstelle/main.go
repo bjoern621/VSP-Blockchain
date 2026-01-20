@@ -31,7 +31,7 @@ func main() {
 
 	grpcAddrPort := strings.TrimSpace(os.Getenv("APP_GRPC_ADDR_PORT"))
 	if grpcAddrPort == "" {
-		grpcAddrPort = "localhost:50050"
+		grpcAddrPort = "localhost:20001"
 	}
 
 	conn, err := grpc.NewClient(grpcAddrPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
