@@ -271,7 +271,7 @@ func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 		sanityCheckResult:    true,
 		validateHeaderResult: true,
 		fullValidationResult: true,
-	}, nil, peerRetriever, nil, nil)
+	}, nil, peerRetriever, nil, nil, NewMempool(nil, nil))
 
 	var h common.Hash
 	h[0] = 0xAB // arbitrary non-zero hash to make assertions clearer

@@ -31,6 +31,7 @@ func TestOnPeerConnected_OutboundSendsGetHeaders(t *testing.T) {
 		nil,
 		validation.NewTransactionValidator(nil),
 		nil,
+		nil,
 	)
 
 	testPeerID := common.PeerId("test-peer-123")
@@ -82,6 +83,7 @@ func TestOnPeerConnected_InboundDoesNotTriggerIBD(t *testing.T) {
 		nil,
 		validation.NewTransactionValidator(nil),
 		nil,
+		nil,
 	)
 
 	testPeerID := common.PeerId("test-peer-123")
@@ -120,6 +122,7 @@ func TestOnPeerConnected_BlockLocatorUsesFibonacci(t *testing.T) {
 		mockBlockStore,
 		nil,
 		validation.NewTransactionValidator(nil),
+		nil,
 		nil,
 	)
 
