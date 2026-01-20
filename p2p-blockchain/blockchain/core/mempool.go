@@ -28,19 +28,6 @@ func NewMempool(validator validation.TransactionValidatorAPI, blockStore blockch
 	}
 }
 
-// GetTransactionsForMiningAndClear returns all transactions that are eligible for mining and CLEARS the mempool
-// THIS IS ONLY TO BE USED BY THE MINER
-func (m *Mempool) GetTransactionsForMiningAndClear() []transaction.Transaction {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	txs := m.getTransactionsForMining()
-	clear(m.transactions)
-
-	logger.Infof("[mempool] Returning %d transactions for mining and clearing mempool", len(m.transactions))
-	return txs
-}
-
 // GetTransactionsForMining returns all transactions that are eligible for mining
 func (m *Mempool) GetTransactionsForMining() []transaction.Transaction {
 	m.lock.Lock()
@@ -117,14 +104,12 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 		}
 	}
 
-	// Re-validate each transaction and remove invalid ones
 	for txId := range m.transactions {
 		// Skip if already marked for removal
 		if toRemove[txId] {
 			continue
 		}
 
-		// Re-validate each transaction
 		tx := m.transactions[txId]
 
 		mainChainTip := m.blockStore.GetMainChainTip()
@@ -136,10 +121,17 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 		}
 	}
 
+	removeCount := 0
 	// Remove all marked transactions
 	for txId := range toRemove {
+		_, exists := m.transactions[txId]
+		if exists {
+			removeCount++
+		}
 		delete(m.transactions, txId)
 	}
+
+	logger.Infof("[mempool] Removed %d transactions from the mempool after new block arrived", removeCount)
 }
 
 // GetAllTransactionHashes returns all transaction hashes currently in the mempool.
