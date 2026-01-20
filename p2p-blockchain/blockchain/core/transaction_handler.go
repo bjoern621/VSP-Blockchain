@@ -15,7 +15,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		return
 	}
 
-	logger.Infof("[transaction_handler] Tx Message received: %v from %v", tx, peerID)
+	logger.Infof("[transaction_handler] Tx Message received: %v from %v", &tx, peerID)
 
 	mainChainTip := b.blockStore.GetMainChainTip()
 	mainChainTipHash := mainChainTip.Hash()
@@ -27,7 +27,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		return
 	}
 	if b.mempool.IsKnownTransactionId(tx.TransactionId()) {
-		logger.Infof("[transaction_handler] Tx Message already known: %v from %v", tx, peerID)
+		logger.Infof("[transaction_handler] Tx Message already known: %v from %v", &tx, peerID)
 		return
 	}
 
