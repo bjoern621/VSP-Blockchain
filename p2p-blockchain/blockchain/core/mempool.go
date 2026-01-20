@@ -27,16 +27,36 @@ func NewMempool(validator validation.TransactionValidatorAPI, blockStore blockch
 	}
 }
 
+// GetTransactionsForMiningAndClear returns all transactions that are eligible for mining and CLEARS the mempool
+// THIS IS ONLY TO BE USED BY THE MINER
+func (m *Mempool) GetTransactionsForMiningAndClear() []transaction.Transaction {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	txs := m.getTransactionsForMining()
+	clear(m.transactions)
+
+	logger.Infof("[mempool] Returning %d transactions for mining and clearing mempool", len(m.transactions))
+	return txs
+}
+
+// GetTransactionsForMining returns all transactions that are eligible for mining
 func (m *Mempool) GetTransactionsForMining() []transaction.Transaction {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	txs := m.getTransactionsForMining()
+
+	logger.Infof("[mempool] Returning %d transaction eligible for mining", len(txs))
+	return txs
+}
+
+func (m *Mempool) getTransactionsForMining() []transaction.Transaction {
 	txs := make([]transaction.Transaction, 0, len(m.transactions))
 	for _, tx := range m.transactions {
 		txs = append(txs, tx)
 	}
 
-	clear(m.transactions)
 	return txs
 }
 
