@@ -770,72 +770,161 @@ Nach jedem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau) senden die Node
 
 # Verteilungssicht
 
-## Infrastruktur Ebene 1
+## ICC Kubernetes Infrastruktur
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_1.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
-</div>
+Die V$Goin-Blockchain wird vollständig auf der HAW-ICC (Informatik Compute Cloud) im Kubernetes-Cluster betrieben. Alle Komponenten sind im Namespace `vsp-blockchain` deployt.
 
-Begründung  
-In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
-Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
-Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von
-[Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
-Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
-Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden.
-Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
+Die folgende Abbildung zeigt die Verteilungssicht der V$Goin-Blockchain auf der HAW-ICC:
+![Diagramm](https://www.plantuml.com/plantuml/png/fL9DZzCm4BtlhnXL7E3WA1GghJYWNGg25G95NRISNMT8hFeZcd4A5UA_uwJ64OfGYjQNZ3tllNdpsXiEaa9lpHMammVjEadIWlAsymvTk0ydWq2eWdIDmGpDHT0X0XwG0chJkuPPgpQ0W8SdxxrsyCPuTL2jZANily67sw_YRhkTwpXV8wnI6pxsUoI70HcsfkU0j8AV6JlXZzo9_JJXixJ8dLGueQSpUuZ0WsoYoWuRpO5EKFawCMSd9m8hgvssqeZ1mWeaWtLB54eJX2BvtI2DD59BDEK9QySZEdvdy5__iUGdxP263HcU_bXldbssA98eYsBzShGmtX_dOlVk_ekuhUx-6Bd81tV7SNxyBWVDGSXEZ_ZXSfdRvH-EZmfURLuatIPUhnQJQr7M1faZiImtpyyPjecwjC5vudLvNUPTCZElCgzoOHq80HGreDbLsxE7ChT9nVPhg1r702FMHUivyDH73X4nPFuFXLoCSMIvoK2RNgV_pIITMcCzLoG5HP5uWx-tcfK_8fqo8jhw6rAjgnJpNEu6NTrRyni0)
+<details>
+<summary>PlantUML Code (Diagramm)</summary>
+    
+    ```plantuml
+        @startuml
+        skinparam componentStyle rectangle
+        
+        title Verteilungssicht - V$Goin Blockchain auf HAW-ICC
+        
+        node "HAW-ICC Kubernetes Cluster" {
+            node "vsp-blockchain Namespace" {
+                
+                package "Registry Pod" {
+                    component "minimal-node" as mn
+                    component "registry-crawler" as rc
+                    component "coredns" as dns
+                }
+                
+                package "Miner Pods (x25)" {
+                    component "miner-0..24" as miners
+                }
+                
+                package "REST-API Pods (x5)" {
+                    component "spv" as spv
+                    component "rest-api" as rest
+                }
+                
+                component "registry-svc :53" as regsvc
+                component "miner-headless :50051" as mhsvc
+                component "rest-api-svc :8080" as restsvc
+            }
+        }
+        
+        mn -- rc : gRPC :50050
+        rc --> dns : seed.hosts
+        rest -- spv : gRPC :50050
+        
+        regsvc --> dns
+        mhsvc --> miners
+        restsvc --> rest
+        
+        rc ..> miners : Discovery
+        spv ..> miners : P2P :50051
+        
+        @enduml
+    `````
 
-Qualitäts- und/oder Leistungsmerkmale
+</details>
 
-Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
+<p align="center"><em>Abbildung: Verteilungssicht - V$Goin Blockchain auf HAW-ICC</em></p>
 
-| CPU     | RAM  | Speicher | #Pods | #Services | #PVCs |
-| ------- | ---- | -------- | ----- | --------- | ----- |
-| 8 Kerne | 4 GB | 100 GB   | 50    | 10        | 5     |
+### Begründung
 
-Bei Bedarf können diese Limits durch eine Anfrage eventuell erhöht werden. Ob dies nötig ist, lässt sich aktuell noch nicht Beurteilen,
-da wir den Ressourcenverbrauch unserer Komponenten noch nicht kennen. Es gilt den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
+Die Infrastruktur nutzt die HAW-ICC Kubernetes-Umgebung und ist für die gegebenen Ressourcenbeschränkungen optimiert. Die Architektur folgt dem Prinzip der Container-Orchestrierung und ermöglicht horizontale Skalierung der Miner- und REST-API-Komponenten.
 
-Zuordnung von Bausteinen zu Infrastruktur  
-Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
+### Komponenten
 
-## Infrastruktur Ebene 2
+#### Registry Deployment (1 Pod, 3 Container)
 
-### P2P Netzwerk
+Das Registry Deployment besteht aus einem einzelnen Pod mit drei Containern:
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2 P2P-Netzwerk</em></p>
-</div>
+| Container | Image | Funktion | Ressourcen |
+|-----------|-------|----------|------------|
+| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner` | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi |
+| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS | CPU: 50-200m, RAM: 64-128Mi |
+| **coredns** | `coredns/coredns:1.11.3` | DNS-Server für Seed-Auflösung auf seed.local | CPU: 25-100m, RAM: 128-256Mi |
 
-#### Registry Crawler
+Die drei Container teilen sich einen Pod und kommunizieren über localhost. Der registry-crawler verbindet sich zum minimal-node über gRPC (Port 50050), um die App-Schnittstelle zu nutzen. Er schreibt die entdeckten Peers in eine gemeinsame hosts-Datei, die von CoreDNS gelesen wird.
 
-In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
-Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein.
+**Kubernetes Service:** `registry` (ClusterIP: 10.233.1.72) exponiert DNS auf Port 53.
 
-#### Nodes (SPV-Node und Full-Node)
+#### Miner StatefulSet (25 Pods)
 
-SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment.
-Zu Beginn werden drei Instanzen eines Nodes hochgefahren.
-Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
-Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
-Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
-Die Nodes laufen alle unter dem P2P-Netzwerkservice.
-Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
-den gleichen Namen und DNS Eintrag.
+Das Miner-StatefulSet betreibt 25 Full-Node Miner, die das Rückgrat des P2P-Netzwerks bilden:
 
-### Registry
+| Eigenschaft | Wert |
+|-------------|------|
+| **Image** | `ghcr.io/bjoern621/vsp-blockchain-miner` |
+| **Replicas** | 25 |
+| **Services** | miner, blockchain_full, app |
+| **Ports** | App: 50050, P2P: 50051 |
+| **Ressourcen** | CPU: 100-200m, RAM: 64-128Mi pro Pod |
+| **Pod Management** | Parallel (alle Pods starten gleichzeitig) |
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_2_registry.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2 Registry</em></p>
-</div>
+Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) erhalten die Pods stabile Netzwerkidentitäten (`miner-0`, `miner-1`, ..., `miner-24`), die auch nach Neustarts erhalten bleiben. Dies ermöglicht zuverlässige Adressierung über den Headless Service `miner-headless`.
 
-Die Aufgaben der Registry sind [hier](#registry-blackbox) beschrieben. Dazu wird ein Service in der ICC deployt, welcher ein
-DNS-Server beherbergt. Der verwendete Container muss noch ausgewählt werden, doch muss dieser über eine API verfügen, welche
-von dem Registry Crawler angesprochen werden kann.
+**Kubernetes Services:**
+- `miner-headless` (Headless): Ermöglicht direkte Pod-zu-Pod-Kommunikation über DNS (z.B. `miner-0.miner-headless.vsp-blockchain.svc`)
+- `miner-seed` (Headless): Bootstrap-Endpunkte für den Registry-Crawler
 
+**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless:50051` und `miner-1.miner-headless:50051` als initiale Bootstrap-Peers.
+
+#### REST-API Deployment (5 Pods, 2 Container pro Pod)
+
+Das REST-API Deployment stellt die HTTP-Schnittstelle für externe Clients bereit:
+
+| Container | Image | Funktion | Ressourcen |
+|-----------|-------|----------|------------|
+| **spv** | `ghcr.io/bjoern621/vsp-blockchain-miner` | SPV-Node mit wallet, blockchain_simple, app | CPU: 50-200m, RAM: 64-128Mi |
+| **rest-api** | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080 | CPU: 50-200m, RAM: 64-128Mi |
+
+Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SPV-Node über localhost gRPC (Port 50050). SPV-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
+
+**Kubernetes Service:** `rest-api-service` (ClusterIP) auf Port 8080.
+
+### Ressourcenquoten der HAW-ICC
+
+Die Infrastruktur muss die [Ressourcenquoten der HAW-ICC](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/) einhalten:
+
+| Ressource | Limit | Aktuell genutzt |
+|-----------|-------|-----------------|
+| CPU | 16 Kerne | ~4,8 Kerne (requests) |
+| RAM | 16 GB | ~2,5 GB (requests) |
+| Speicher | 100 GB | - |
+| #Pods | 50 | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
+| #Services | 10 | 4 Services |
+| #PVCs | 5 | 0 |
+
+Diese Limits wurden nach Nachfrage per E-Mail angehoben. Die aktuelle Konfiguration hält sich innerhalb der Grenzen.
+
+### DNS-Konfiguration
+
+Alle Pods nutzen die Registry als DNS-Server (dnsPolicy: None, nameserver: 10.233.1.72). Die CoreDNS-Konfiguration leitet Anfragen an `seed.local` an die lokale hosts-Datei weiter, alle anderen Anfragen werden an den Standard-DNS weitergeleitet.
+
+```yaml
+seed.local:53 {
+  hosts /seed/seed.hosts {
+    ttl 1
+    reload 5s
+  }
+}
+
+.:53 {
+  forward . /etc/resolv.conf
+  cache 30
+}
+```
+
+### Kommunikationspfade
+
+| Von | Nach | Protokoll | Port | Beschreibung |
+|-----|------|-----------|------|--------------|
+| registry-crawler | minimal-node | gRPC | 50050 | App-Schnittstelle (localhost) |
+| registry-crawler | miner-* | gRPC | 50051 | Peer Discovery |
+| rest-api | spv | gRPC | 50050 | App-Schnittstelle (localhost) |
+| spv | miner-* | gRPC | 50051 | P2P-Kommunikation |
+| miner-* | miner-* | gRPC | 50051 | P2P-Kommunikation |
+| Externe Clients | rest-api-service | HTTP | 8080 | REST-API |
+| Alle Pods | registry | DNS | 53 | Seed-Auflösung |
 # Querschnittliche Konzepte
 
 ## Ausgehende vs. Eingehende Verbindungen
