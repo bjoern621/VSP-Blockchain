@@ -43,6 +43,13 @@ func NewTransactionCreationService(
 
 // CreateTransaction creates and broadcasts a new transaction.
 func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string, amount uint64, senderPrivateKeyWIF string) transaction.TransactionResult {
+
+	keyset, err := s.keyGenerator.GetKeysetFromWIF(senderPrivateKeyWIF)
+	if err != nil {
+		return s.handleInvalidPrivateKey(err)
+	}
+	senderPubKeyHash, err := s.decodeVSAddress(keyset.VSAddress)
+
 	recipientPubKeyHash, err := s.decodeVSAddress(recipientVSAddress)
 	if err != nil {
 		return s.handleInvalidAddress(err)
@@ -50,14 +57,11 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 
 	mainChainTip := s.blockStore.GetMainChainTip()
 	mainChainTipHash := mainChainTip.Hash()
-	utxos, err := s.utxoAPI.GetUtxosByPubKeyHashFromBlock(recipientPubKeyHash, mainChainTipHash)
+	utxos, err := s.utxoAPI.GetUtxosByPubKeyHashFromBlock(senderPubKeyHash, mainChainTipHash)
 	if err != nil || len(utxos) == 0 {
 		return s.handleInsufficientFunds(err)
 	}
-	keyset, err := s.keyGenerator.GetKeysetFromWIF(senderPrivateKeyWIF)
-	if err != nil {
-		return s.handleInvalidPrivateKey(err)
-	}
+
 	privKey := transaction.PrivateKey(keyset.PrivateKey)
 	tx, err := transaction.NewTransaction(utxos, recipientPubKeyHash, amount, common.TransactionFee, privKey)
 	if err != nil {
