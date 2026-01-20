@@ -283,13 +283,13 @@ Trägt zur Erfüllung dieser Anforderungen bei:
 ### Wallet (Blackbox)
 
 Zweck/Verantwortung  
-Das Teilsystem Wallet ist für die Verwaltung der digitalen Geldbörse zuständig. Kernaufgaben sind die sichere Erzeugung und Speicherung von kryptographischen Schlüsselpaaren (Private und Public Keys) sowie das Erstellen und Signieren von Transaktionen.
+Das Teilsystem Wallet ist für die Verwaltung der digitalen Geldbörse zuständig. Kernaufgaben sind die kryptographisch sichere Erzeugung und Konvertierung von Schlüsselpaaren (Private und Public Keys) sowie das Erstellen und Signieren von Transaktionen.
 
 Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Blockchain-Teilsystems zurück. Es identifiziert die dem Nutzer zugehörigen Unspent Transaction Outputs (UTXOs) und nutzt diese als Input für neue Transaktionen. Das Wallet dient somit als primäre Schnittstelle für Händler, um am Zahlungsverkehr teilzunehmen.
 
 Schnittstellen
 
--   `KeyGeneratorAPI` erlaubt das erstellen von neuen Schlüsselpaaren und Adressen.
+-   `KeyGeneratorAPI` erlaubt das Erstellen und Konvertieren Schlüsselpaaren und Adressen.
 -   `TransactionCreationAPI` erlaubt das Erstellen und Signieren von neuen Transaktionen.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
