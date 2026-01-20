@@ -63,7 +63,7 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 		return
 	}
 
-	logger.Infof("[block_handler] Block %v passed full validation", &receivedBlock.Header)
+	logger.Debugf("[block_handler] Block %v passed full validation", &receivedBlock.Header)
 
 	// 5. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
