@@ -79,21 +79,24 @@ func main() {
 
 	mempool := core.NewMempool(transactionValidator, blockStore)
 
-	blockchain := core.NewBlockchain(
-		blockchainMsgService,
-		grpcClient,
-		grpcClient,
-		blockValidator,
-		blockStore,
-		peerStore,
-		transactionValidator,
-		utxoStore,
-		mempool,
-	)
+	var blockchain *core.Blockchain
+	if common.BlockchainFullEnabled() {
+		blockchain = core.NewBlockchain(
+			blockchainMsgService,
+			grpcClient,
+			grpcClient,
+			blockValidator,
+			blockStore,
+			peerStore,
+			transactionValidator,
+			utxoStore,
+			mempool,
+		)
 
-	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
-	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
-	handshakeService.Attach(blockchain)
+		// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
+		// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
+		handshakeService.Attach(blockchain)
+	}
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
@@ -171,7 +174,9 @@ func main() {
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService, peerStore)
 
-	grpcServer.Attach(blockchain)
+	if common.BlockchainFullEnabled() {
+		grpcServer.Attach(blockchain)
+	}
 
 	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
