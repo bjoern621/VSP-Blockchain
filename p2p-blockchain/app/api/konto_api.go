@@ -25,8 +25,9 @@ type VSAddressDecoder interface {
 }
 
 // NewKontoAPIImpl creates a new KontoAPIImpl with the given dependencies.
-func NewKontoAPIImpl(utxoAPI blockapi.UtxoStoreAPI, keyDecoder VSAddressDecoder) *KontoAPIImpl {
+func NewKontoAPIImpl(utxoAPI blockapi.UtxoStoreAPI, keyDecoder VSAddressDecoder, blockStore blockapi.BlockStoreAPI) *KontoAPIImpl {
 	return &KontoAPIImpl{
+		blockStore: blockStore,
 		utxoAPI:    utxoAPI,
 		keyDecoder: keyDecoder,
 	}
