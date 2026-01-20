@@ -12,8 +12,8 @@ package openapi
 type AddressPost200Response struct {
 
 	// Base58Check-encoded compressed PublicKeyHash with 0x00 as prefix. Has a length of 33 or 34 characters.  The VSAddress provides a point where VSGoins can be send to. It is public and can be freely shared with others.  Way to generate a PublicKey 1. Use the equation K = k * G   - K is the PublicKey (with two points x,y)   - k is the PrivateKey   - G is the generator point defined in the secp256k1 standard   - * denotes scalar multiplication on the elliptic curve  Way to generate a compressed PublicKey 1. get x-coordinate from the PublicKey 2. if the y-coordinate from the Public key is even, the prefix is 0x02, otherwise it is 0x03 3. the compressed PublicKey is the prefix followed by the x-coordinate  -> (the y-coordinate can afterwards easily be calculated with y^2 mod p = (x^3 + 7))  Way to generate a compressed PublicKeyHash 1. Create a SHA 256 the compressed PublicKey 2. Create a SHA 256 of the result 3. the first 160 bits are the compressed PublicKeyHash
-	NewVSAddress string `json:"newVSAddress,omitempty"`
+	NewVSAddress string `json:"newVSAddress"`
 
 	// Base58Check-encoded private key with 0x80 as prefix (Wallet Import Format, WIF)  The private Key (WIF) gives access to the VSGoins send to the corresponding VSAddress. Be careful not to shared it with others.  Way to generate a PrivateKey: 1. Generate random 256 bit unsigned number 2. Check if number is greater than or equal to 1 3. Check if number is smaller than the order n of the generator G on Secp256k1 4. If the number is invalid, go back to 1 5. Create a SHA256 of the random number
-	NewPrivateKeyWIF string `json:"newPrivateKeyWIF,omitempty" validate:"regexp=^5[1-9A-HJ-NP-Za-km-z]{50}$"`
+	NewPrivateKeyWIF string `json:"newPrivateKeyWIF" validate:"regexp=^5[1-9A-HJ-NP-Za-km-z]{50}$"`
 }

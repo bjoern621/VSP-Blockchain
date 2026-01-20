@@ -11,6 +11,7 @@ package openapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"s3b/vsp-blockchain/rest-api/internal/common"
 	"s3b/vsp-blockchain/rest-api/konto"
@@ -61,9 +62,9 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}
-
+	fmt.Print(result)
 	// Return successful response
-	c.JSON(http.StatusOK, BalanceGet200Response{Balance: int32(result)})
+	c.JSON(http.StatusOK, BalanceGet200Response{Balance: 0})
 }
 
 // Get /history

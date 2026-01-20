@@ -10,5 +10,5 @@
 package openapi
 
 type HistoryGet200Response struct {
-	Transactions []string `json:"transactions,omitempty"`
+	Transactions []string `json:"transactions"`
 }
