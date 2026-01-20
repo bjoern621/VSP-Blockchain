@@ -4,6 +4,8 @@ package konto
 import (
 	"s3b/vsp-blockchain/rest-api/internal/common"
 	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // KontostandService handles balance/kontostand domain logic.
@@ -46,6 +48,7 @@ func (s *KontostandService) GetBalance(vsAddress string) (uint64, error) {
 // validateAddress validates the VSAddress format.
 func (s *KontostandService) validateAddress(vsAddress string) error {
 	if vsAddress == "" || !common.VsAddressPattern.MatchString(vsAddress) {
+		logger.Warnf("The address %s is invalid", vsAddress)
 		return common.ErrInvalidAddress
 	}
 

@@ -43,8 +43,8 @@ func NewBlockchain(
 	peerRetriever peerRetriever,
 	transactionValidator validation.TransactionValidatorAPI,
 	utxoService utxo.UtxoStoreAPI,
+	mempool *Mempool,
 ) *Blockchain {
-	mempool := NewMempool(transactionValidator, blockStore)
 	genesis := blockchain.GenesisBlock()
 	genesisHash := genesis.Hash()
 	return &Blockchain{
@@ -78,7 +78,7 @@ func (b *Blockchain) Detach(o observer.BlockchainObserverAPI) {
 }
 
 func (b *Blockchain) NotifyStartMining() {
-	transactions := b.mempool.GetTransactionsForMining()
+	transactions := b.mempool.GetTransactionsForMiningAndClear()
 	for o := range b.observers.Iter() {
 		o.StartMining(transactions)
 	}
