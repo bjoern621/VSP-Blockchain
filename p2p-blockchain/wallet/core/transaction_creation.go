@@ -49,7 +49,9 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 		return s.handleInvalidPrivateKey(err)
 	}
 	senderPubKeyHash, err := s.decodeVSAddress(keyset.VSAddress)
-
+	if err != nil {
+		return s.handleInvalidAddress(err)
+	}
 	recipientPubKeyHash, err := s.decodeVSAddress(recipientVSAddress)
 	if err != nil {
 		return s.handleInvalidAddress(err)
