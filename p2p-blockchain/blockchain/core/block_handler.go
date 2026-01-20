@@ -59,8 +59,11 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 			blockHash := receivedBlock.Hash()
 			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
 		}
+		logger.Warnf("[block_handler] Block %v is invalid after full validation, removing from block store", &receivedBlock.Header)
 		return
 	}
+
+	logger.Infof("[block_handler] Block %v passed full validation", &receivedBlock.Header)
 
 	// 5. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
