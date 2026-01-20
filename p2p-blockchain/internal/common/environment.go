@@ -68,7 +68,7 @@ func readAdditionalServices() []string {
 		svc := strings.TrimSpace(part)
 
 		switch svc {
-		case "blockchain_full", "blockchain_simple", "wallet", "miner", "app":
+		case "blockchain_full", "wallet", "miner", "app":
 			services = append(services, svc)
 		default:
 			logger.Errorf("unknown service in %s: %s", additionalServicesEnvVar, svc)
@@ -104,15 +104,10 @@ func validateAddionalServices(services []string) {
 	_, hasWallet := seen["wallet"]
 	_, hasMiner := seen["miner"]
 	_, hasBlockchainFull := seen["blockchain_full"]
-	_, hasBlockchainSimple := seen["blockchain_simple"]
 
 	needsBlockchain := hasWallet || hasMiner
-	if needsBlockchain && !hasBlockchainFull && !hasBlockchainSimple {
-		logger.Errorf("wallet or miner service requires blockchain_full or blockchain_simple to be enabled")
-	}
-
-	if hasBlockchainFull && hasBlockchainSimple {
-		logger.Errorf("blockchain_full and blockchain_simple services are mutually exclusive")
+	if needsBlockchain && !hasBlockchainFull {
+		logger.Errorf("wallet or miner service requires blockchain_full to be enabled")
 	}
 }
 

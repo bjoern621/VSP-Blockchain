@@ -17,8 +17,7 @@ import (
 //	SERVICE_WALLET                  0       ServiceType_Netzwerkrouting    0
 //	SERVICE_MINER                   1       ServiceType_BlockchainFull     1
 //	SERVICE_BLOCKCHAIN_FULL         2       ServiceType_BlockchainSimple   2
-//	SERVICE_BLOCKCHAIN_SIMPLE       3       ServiceType_Wallet             3
-//	SERVICE_NETZWERKROUTING         4       ServiceType_Miner              4
+//	SERVICE_NETZWERKROUTING         3       ServiceType_Miner              3
 
 // serviceTypeFromProto converts a protobuf ServiceType to the domain ServiceType.
 func serviceTypeFromProto(pbService pb.ServiceType) (common.ServiceType, bool) {
