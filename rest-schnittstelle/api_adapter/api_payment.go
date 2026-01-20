@@ -69,7 +69,7 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 // Returns the history of transactions involving the given key hash
 func (api *PaymentAPI) HistoryGet(c *gin.Context) {
 	// Extract VSAddress from query parameter
-	vsAddress := c.Query("vsAddress")
+	vsAddress := c.Query("VSAddress")
 
 	// Call the domain service
 	transactions, err := api.transaktionsverlaufService.GetHistory(vsAddress)
