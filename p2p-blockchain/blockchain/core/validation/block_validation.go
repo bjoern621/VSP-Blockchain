@@ -93,7 +93,15 @@ func headerHashSmallerThanTarget(header block.BlockHeader) bool {
 	return intHash.Cmp(target) < 0
 }
 
-// FullValidation Comprehensive validation including transactions and UTXO set
+// FullValidation performs comprehensive validation including transactions and UTXO set.
+//
+// Validation steps:
+//  1. Verify merkle root matches calculated value
+//  2. For each transaction:
+//     a. Ensure only one coinbase transaction exists (first tx)
+//     b. Check for double-spending within the block
+//     c. Validate transaction via txValidator
+//     d. Verify all input signatures against referenced UTXOs
 func (bvs *BlockValidationService) FullValidation(block block.Block) (bool, error) {
 	// Validate merkle root
 	if !isMerkleRootValid(block) {
