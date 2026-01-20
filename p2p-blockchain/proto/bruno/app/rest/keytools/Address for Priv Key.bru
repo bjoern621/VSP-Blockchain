@@ -1,0 +1,24 @@
+meta {
+  name: Address for Priv Key
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/address
+  body: none
+  auth: inherit
+}
+
+headers {
+  privateKeyWIF: {{address1PrivateKey}}
+}
+
+assert {
+  res.body.VSAddress: eq {{address1}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
