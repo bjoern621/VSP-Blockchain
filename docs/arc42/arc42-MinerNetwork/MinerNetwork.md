@@ -306,8 +306,7 @@ Der Miner sammelt unbestätigte Transaktionen aus dem Mempool des Blockchain-Tei
 
 Schnittstellen
 
-- `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    - TODO
+- `MinerAPI` ermöglicht das Starten und Stoppen des Mining-Prozesses.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
