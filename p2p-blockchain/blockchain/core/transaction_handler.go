@@ -26,7 +26,7 @@ func (b *Blockchain) Tx(tx transaction.Transaction, peerID common.PeerId) {
 		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "tx", txId[:])
 		return
 	}
-	if b.mempool.IsKnownTransactionId(tx.TransactionId()) || b.IsTransactionKnownById(tx.TransactionId()) {
+	if b.mempool.IsKnownTransactionId(tx.TransactionId()) {
 		logger.Infof("[transaction_handler] Tx Message already known: %v from %v", tx, peerID)
 		return
 	}
