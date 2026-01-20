@@ -7,10 +7,10 @@ import (
 
 func (b *Blockchain) IsTransactionKnown(hash common.Hash) bool {
 	//TODO: Implement
-	return true
+	return false
 }
 
 func (b *Blockchain) IsTransactionKnownById(hash transaction.TransactionID) bool {
 	// TODO: Irgendwie auf BlockStore gucken, ob die Transaction schon bekannt ist
-	return true
+	return false
 }
