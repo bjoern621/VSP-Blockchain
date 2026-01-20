@@ -43,8 +43,8 @@ func NewBlockchain(
 	peerRetriever peerRetriever,
 	transactionValidator validation.TransactionValidatorAPI,
 	utxoService utxo.UtxoStoreAPI,
+	mempool *Mempool,
 ) *Blockchain {
-	mempool := NewMempool(transactionValidator, blockStore)
 	genesis := blockchain.GenesisBlock()
 	genesisHash := genesis.Hash()
 	return &Blockchain{
