@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type Mempool struct {
@@ -85,7 +86,10 @@ func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
 	txId := tx.TransactionId()
 	_, ok = m.transactions[txId]
 	if !ok {
+		logger.Infof("[mempool] Adding new transaction %v to the mempool", txId)
 		m.transactions[txId] = tx
+	} else {
+		logger.Infof("[mempool] Transaction %v is already known to the mempool", txId)
 	}
 
 	return !ok
