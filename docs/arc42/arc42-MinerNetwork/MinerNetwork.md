@@ -775,7 +775,7 @@ Nach jedem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau) senden die Node
 Die V$Goin-Blockchain wird vollständig auf der HAW-ICC (Informatik Compute Cloud) im Kubernetes-Cluster betrieben. Alle Komponenten sind im Namespace `vsp-blockchain` deployt.
 
 Die folgende Abbildung zeigt die Verteilungssicht der V$Goin-Blockchain auf der HAW-ICC:
-![Diagramm](https://www.plantuml.com/plantuml/png/fL9DZzCm4BtlhnXL7E3WA1GghJYWNGg25G95NRISNMT8hFeZcd4A5UA_uwJ64OfGYjQNZ3tllNdpsXiEaa9lpHMammVjEadIWlAsymvTk0ydWq2eWdIDmGpDHT0X0XwG0chJkuPPgpQ0W8SdxxrsyCPuTL2jZANily67sw_YRhkTwpXV8wnI6pxsUoI70HcsfkU0j8AV6JlXZzo9_JJXixJ8dLGueQSpUuZ0WsoYoWuRpO5EKFawCMSd9m8hgvssqeZ1mWeaWtLB54eJX2BvtI2DD59BDEK9QySZEdvdy5__iUGdxP263HcU_bXldbssA98eYsBzShGmtX_dOlVk_ekuhUx-6Bd81tV7SNxyBWVDGSXEZ_ZXSfdRvH-EZmfURLuatIPUhnQJQr7M1faZiImtpyyPjecwjC5vudLvNUPTCZElCgzoOHq80HGreDbLsxE7ChT9nVPhg1r702FMHUivyDH73X4nPFuFXLoCSMIvoK2RNgV_pIITMcCzLoG5HP5uWx-tcfK_8fqo8jhw6rAjgnJpNEu6NTrRyni0)
+![Diagramm](https://www.plantuml.com/plantuml/png/fL9DZzCm4BtlhnXL7E3WAXGghJYWNGg25G95NRISlSwGMFL7DECKAiH_nscDJHMXBE1Bnfdtdjyy-ug3f31OSm5fyKwxNfAqeBpjlKCNRiF1812g85rhC4Dp4NI8W3kaWDeChcNMgWiWuExHMwyTl39UxLGdOoc7B_3k-hEusMocEiut28lKXlV3FPB3W0mRCt10Mi3tZ2tuFVVYlfpmKLhaNYeiwB8cFo9m9zkeiiLMSw03rBufpBDL4e65rKvRQSHeOG6ImRev2gKJX2BvrI0TQQJcQCeJDewFwFYTm7_ynP0Vj4CQ9sHu_6srVlAmGP54jLokdf_c7FV_vsBxvlQJkAvlVXc9FluXSExtyubp4BBNH_ouUPZj-HlalO8NwsT9jutRYza8EvIDGUP8hAhrqrEONQBEJN0wyRAwhF8icJaPfLIvi0w408eQq6xhpSb3bTkaOllb-BmYW16RPUSvSEaZXuWOC_-3Ge6ESMIvOg1BVyi3AjAfTNv5lvjRBXDlzFTQi_9xf4D6H5lda7fLfvYdSbVeci6Qdm00)
 <details>
 <summary>PlantUML Code (Diagramm)</summary>
     
@@ -799,7 +799,7 @@ Die folgende Abbildung zeigt die Verteilungssicht der V$Goin-Blockchain auf der 
                 }
                 
                 package "REST-API Pods (x5)" {
-                    component "spv" as spv
+                    component "minimal-node" as spv
                     component "rest-api" as rest
                 }
                 
@@ -849,7 +849,7 @@ Die drei Container teilen sich einen Pod und kommunizieren über localhost. Der 
 
 #### Miner StatefulSet (25 Pods)
 
-Das Miner-StatefulSet betreibt 25 Full-Node Miner, die das Rückgrat des P2P-Netzwerks bilden:
+Das Miner-StatefulSet betreibt eine frei konfigurierbare Anzahl innerhalb des Limits (momentan 25), die das Rückgrat des P2P-Netzwerks bilden:
 
 | Eigenschaft | Wert |
 |-------------|------|
