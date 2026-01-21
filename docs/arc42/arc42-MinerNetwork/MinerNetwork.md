@@ -718,8 +718,7 @@ flowchart TB
         direction TB
         StartRollback[Setze Zeiger auf aktuellen Tip] --> CheckSplit{Ist Zeiger ==<br/>Fork Point?}
 
-        CheckSplit -- Nein --> UndoState["Mache Block-Zustand rückgängig (UTXO Rollback)"]
-        UndoState --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
+        CheckSplit -- Nein --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
         TxToMempool --> StepPrev[Setze Zeiger auf vorherigen Block]
         StepPrev --> CheckSplit
     end
@@ -730,8 +729,7 @@ flowchart TB
         direction TB
         GetNewPath[Lade Liste der neuen Blöcke von Fork Point bis zum neuen Tip] --> CheckList{Liste leer?}
 
-        CheckList -- Nein --> ApplyBlock["Wende Block an Transaktionen ausführen (UTXO Update)"]
-        ApplyBlock --> CleanMempool[Lösche bestätigte TXs aus Mempool]
+        CheckList -- Nein --> CleanMempool[Lösche bestätigte TXs aus Mempool]
         CleanMempool --> StepNext[Nimm nächsten Block]
         StepNext --> CheckList
     end
