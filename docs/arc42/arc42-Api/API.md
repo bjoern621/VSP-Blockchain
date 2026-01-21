@@ -609,7 +609,60 @@ REST/JSON ist leicht verständlich und dokumentierbar und funktioniert ohne spez
 
 ## Qualitätsszenarien
 
+### Szenario 1: Sichere Transaktionsverarbeitung
+| **Attribut**        | **Beschreibung**                                                                                                   |
+|---------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Qualitätsziel**   | Sicherheit                                                                                                          |
+| **Stimulus**        | Ein Nutzer sendet einen Transaktionsauftrag mit ungültigem Private Key WIF                                          |
+| **Quelle**          | Endnutzer über REST API                                                                                             |
+| **Umgebung**        | Normaler Betrieb                                                                                                    |
+| **Artefakt**        | POST `/transaction` Endpunkt                                                                                        |
+| **Antwort**         | Das System validiert das WIF-Format und lehnt ungültige Keys mit HTTP 401 ab |
+| **Metrik**          | 100% der ungültigen Keys werden erkannt und abgelehnt                                 |
+
+### Szenario 2: Performance bei Kontostandabfragen
+| **Attribut**        | **Beschreibung**                                                                                                   |
+|---------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Qualitätsziel**   | Performance                                                                                                         |
+| **Stimulus**        | Ein Nutzer ruft seinen Kontostand ab                                                                                |
+| **Quelle**          | Endnutzer über REST API                                                                                             |
+| **Umgebung**        | Normaler Betrieb mit funktionierender lokaler Node                                                                  |
+| **Artefakt**        | GET `/balance` Endpunkt, `KontoAdapter`                                                                             |
+| **Antwort**         | Der Request wird synchron über gRPC an die lokale Node weitergeleitet und die Summe der Assets berechnet            |
+| **Metrik**          | 99% aller Antworten in < 2 Sekunden                                                                                 |
+
+### Szenario 3: Modulare Erweiterbarkeit
+| **Attribut**        | **Beschreibung**                                                                                                   |
+|---------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Qualitätsziel**   | Wartbarkeit                                                                                                         |
+| **Stimulus**        | Ein Entwickler möchte einen neuen Endpunkt hinzufügen                                                               |
+| **Quelle**          | Entwicklungsteam                                                                                                    |
+| **Umgebung**        | Entwicklungszeit                                                                                                    |
+| **Artefakt**        | Adapter-Schicht (`vsgoin_node_adapter`), API-Adapter (`api_adapter`)                                                |
+| **Antwort**         | Durch strikte Trennung von API-Layer, Domain-Layer und Adapter-Layer kann ein neuer Endpunkt in < 1 Tag umgesetzt werden |
+| **Metrik**          | Änderungen an der gRPC-Schnittstelle erfordern nur Anpassungen im `vsgoin_node_adapter`-Package                     |
+
+
 # Risiken und technische Schulden
+
+## Risiken
+
+| **Risiko**                                     | **Beschreibung**                                                                                                                                                              | **Eintrittswahrscheinlichkeit** | **Auswirkung** | **Maßnahmen**                                                                                          |
+|------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|----------------|--------------------------------------------------------------------------------------------------------|
+| **Ausfall der lokalen V$Goin Node**            | Die REST API ist vollständig abhängig von der lokalen Node. Bei Ausfall der Node sind keine Transaktionen oder Abfragen möglich.                                              | Mittel                          | Hoch           | Monitoring, Health-Checks, ggf. Fallback auf alternative Node                                          |
+| **gRPC-Verbindungsprobleme**                   | Netzwerkprobleme zwischen REST API Container und Node Container können zu Timeouts führen.                                                                                    | Niedrig                         | Mittel         | Connection Pooling, Retry-Logik (aktuell nicht implementiert)                                          |
+| **Ressourcenengpässe im ICC-Cluster**          | Die HAW-ICC Ressourcenquoten (16 CPU, 16 GB RAM) müssen mit dem Miner-Network geteilt werden.                                                                                  | Mittel                          | Mittel         | Regelmäßiges Monitoring, bei Bedarf Quota-Erhöhung beantragen                                          |
+| **Änderungen an der V$Goin-Node-Schnittstelle**| Änderungen am gRPC-Protokoll der Node erfordern Anpassungen im Adapter.                                                                                                       | Mittel                          | Niedrig        | Adapter-Pattern isoliert Änderungen, klare Versionierung der Protobuf-Dateien                          |
+
+## Technische Schulden
+
+| **Schuld**                                        | **Beschreibung**                                                                                                                          | **Priorität** | **Aufwand**    | **Maßnahmen**                                                                                          |
+|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------|--------------------------------------------------------------------------------------------------------|
+| **Keine TLS/mTLS für interne gRPC-Kommunikation** | Die gRPC-Verbindung zur lokalen Node nutzt `insecure.NewCredentials()`. Die Kommunikation ist unverschlüsselt.                            | Mittel | Mittel | Einführung von TLS-Zertifikaten für Pod-zu-Pod-Kommunikation |
+| **Fehlende Retry-Logik bei gRPC-Aufrufen**        | Bei temporären Verbindungsproblemen zur Node gibt es keine automatischen Wiederholungsversuche.                                           | Niedrig       | Niedrig        | Implementierung von Exponential Backoff mit gRPC-Interceptors                                          |
+| **Fehlende Integrationstests der Endpunkte**      | Es fehlen dedizierte Integrationstests für die API-Endpunkte. Momentan gibt es nur manuelle Tests der Endpunkte mittels Bruno             | Hoch          | Mittel         | Integrationstests mit Mock-Node oder Testcontainers implementieren                                     |
+| **Generierter Code im api_adapter-Package**       | Teile des `api_adapter`-Packages sind vom OpenAPI Generator generiert. Manuelle Änderungen können bei Regenerierung überschrieben werden. | Niedrig       | Niedrig        | Klare Trennung von generiertem und manuellem Code, Nutzung von Erweiterungs-Dateien                    |
+| **Fehlende Timeouts bei gRPC-Calls**              | gRPC-Aufrufe nutzen `context.Background()` ohne Timeout. Bei hängenden Nodes könnten Requests unbegrenzt warten.                          | Mittel        | Niedrig        | `context.WithTimeout()` für alle gRPC-Aufrufe einführen                                                |
 
 # Glossar
 
