@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"s3b/vsp-blockchain/registry-crawler/common"
+
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 // ResolveBootstrapEndpoints resolves bootstrap endpoints to IP addresses.
@@ -35,6 +37,7 @@ func resolveEndpointToIPv4Set(ctx context.Context, endpoint string, acceptedPort
 		return
 	}
 
+	logger.Infof("[bootstrap] resolving DNS for host %q", host)
 	resolveDNSToIPv4Set(ctx, host, result)
 }
 

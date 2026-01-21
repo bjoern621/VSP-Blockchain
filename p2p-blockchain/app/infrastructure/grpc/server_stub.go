@@ -2,11 +2,13 @@ package grpc
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
+	blockcahin_api "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 
@@ -36,6 +38,7 @@ type Server struct {
 	historyAPI           api.HistoryAPI
 	visualizationHandler *adapters.VisualizationHandlerAdapter
 	miningService        *core.MiningService
+	blockStore           blockcahin_api.BlockStoreAPI
 }
 
 // NewServer creates a new external API server.
@@ -51,6 +54,7 @@ func NewServer(
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
 	miningService *core.MiningService,
 	disconnectService *core.DisconnectService,
+	blockStore blockcahin_api.BlockStoreAPI,
 ) *Server {
 	return &Server{
 		connService:          connService,
@@ -64,6 +68,7 @@ func NewServer(
 		historyAPI:           historyAPI,
 		visualizationHandler: visualizationHandler,
 		miningService:        miningService,
+		blockStore:           blockStore,
 	}
 }
 
@@ -213,6 +218,14 @@ func (s *Server) QueryRegistry(_ context.Context, _ *pb.QueryRegistryRequest) (*
 	return response, nil
 }
 func (s *Server) CreateTransaction(_ context.Context, req *pb.CreateTransactionRequest) (*pb.CreateTransactionResponse, error) {
+	if s.transactionAPI == nil {
+		return &pb.CreateTransactionResponse{
+			Success:      false,
+			ErrorCode:    pb.TransactionErrorCode_VALIDATION_FAILED,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
+
 	// Validate request fields
 	if req.RecipientVsAddress == "" {
 		return &pb.CreateTransactionResponse{
@@ -320,6 +333,13 @@ func (s *Server) SendGetAddr(_ context.Context, req *pb.SendGetAddrRequest) (*pb
 }
 
 func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
+	if s.kontoAPI == nil {
+		return &pb.GetAssetsResponse{
+			Success:      false,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
+
 	if req.VsAddress == "" {
 		return &pb.GetAssetsResponse{
 			Success:      false,
@@ -351,6 +371,13 @@ func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.Get
 }
 
 func (s *Server) GetHistory(_ context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
+	if s.historyAPI == nil {
+		return &pb.GetHistoryResponse{
+			Success:      false,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
+
 	if req.VsAddress == "" {
 		return &pb.GetHistoryResponse{
 			Success:      false,
@@ -397,6 +424,13 @@ func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockc
 }
 
 func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMiningResponse, error) {
+	if s.miningService == nil {
+		return &pb.StartMiningResponse{
+			Success:      false,
+			ErrorMessage: "mining subsystem is not enabled",
+		}, nil
+	}
+
 	err := s.miningService.EnableMining()
 	if err != nil {
 		return &pb.StartMiningResponse{
@@ -421,6 +455,13 @@ func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMini
 }
 
 func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMiningResponse, error) {
+	if s.miningService == nil {
+		return &pb.StopMiningResponse{
+			Success:      false,
+			ErrorMessage: "mining subsystem is not enabled",
+		}, nil
+	}
+
 	err := s.miningService.DisableMining()
 	if err != nil {
 		return &pb.StopMiningResponse{
@@ -433,4 +474,29 @@ func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMining
 		Success:      true,
 		ErrorMessage: "",
 	}, nil
+}
+
+func (s *Server) GetConfirmationStatus(_ context.Context, request *pb.GetConfirmationStatusRequest) (*pb.GetConfirmationStatusResponse, error) {
+	txIDString := request.GetTransactionId()
+
+	txIDSlice, err := hex.DecodeString(txIDString)
+	if err != nil {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	var txID transaction.TransactionID
+
+	if len(txIDSlice) != len(txID) {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	copy(txID[:], txIDSlice)
+
+	result, err := s.blockStore.IsTransactionAccepted(txID)
+
+	if err != nil {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	return &pb.GetConfirmationStatusResponse{Accepted: result}, nil
 }

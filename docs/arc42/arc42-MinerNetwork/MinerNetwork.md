@@ -10,6 +10,8 @@ Template Version 9.0-DE. (basiert auf der AsciiDoc Version), Juli 2025
 Created, maintained and © by Dr. Peter Hruschka, Dr. Gernot Starke and
 contributors. Siehe <https://arc42.org>.
 
+Ausarbeitung von Björn Blessing, Bjarne Rathjen, Stian Geeb, Bennet Krzenzck
+
 # Einführung und Ziele
 
 Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder Teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewisser Rechenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden.
@@ -231,7 +233,7 @@ Schnittstellen
 Begründung  
 Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _SPV Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _Minimal Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
 
 Das Netzwerk besteht aus mehreren Nodes (Peers), die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein. Die Peers kommunizieren über die P2P-Protokoll-API (bestehend aus [1](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) und [2](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto)).
 
@@ -425,7 +427,7 @@ Schnittstellen
 Begründung  
 Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems.
 
-Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
+Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Modellierung von Entitäten, das Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
 
 Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein.
 
@@ -500,11 +502,11 @@ Im `StateHolddown` wird keine Nachricht des Peers verarbeitet. Nach einer Abklin
 
 Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers verantwortlich. Er sendet in regelmäßigen Abständen Heartbeat-Nachrichten (`HeartbeatBing`) an alle verbundenen Peers.
 
-| Parameter | Wert | Beschreibung |
-|-----------|------|--------------|
-| **Intervall** | 4 Minuten | Zeitintervall zwischen Heartbeat-Runden |
+| Parameter                      | Wert            | Beschreibung                             |
+|--------------------------------|-----------------|------------------------------------------|
+| **Intervall**                  | 4 Minuten       | Zeitintervall zwischen Heartbeat-Runden  |
 | **Nachrichtentyp (ausgehend)** | `HeartbeatBing` | Ping-Nachricht an alle verbundenen Peers |
-| **Nachrichtentyp (Antwort)** | `HeartbeatBong` | Pong-Antwort auf empfangene Pings |
+| **Nachrichtentyp (Antwort)**   | `HeartbeatBong` | Pong-Antwort auf empfangene Pings        |
 
 **Funktionsweise:**
 1. Alle 4 Minuten werden `HeartbeatBing`-Nachrichten an alle verbundenen Peers gesendet
@@ -516,10 +518,10 @@ Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers 
 
 Der `ConnectionCheckService` überprüft periodisch die Gesundheit aller Peer-Verbindungen anhand des `LastSeen`-Timestamps. Inaktive Peers werden in den Holddown-Zustand versetzt und nach Ablauf der Holddown-Periode permanent entfernt.
 
-| Parameter | Wert | Beschreibung |
-|-----------|------|--------------|
-| **Intervall** | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen |
-| **Peer Timeout** | 9 Minuten | Zeit ohne Heartbeat bis zur Holddown-Versetzung |
+| Parameter          | Wert       | Beschreibung                                       |
+|--------------------|------------|----------------------------------------------------|
+| **Intervall**      | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen        |
+| **Peer Timeout**   | 9 Minuten  | Zeit ohne Heartbeat bis zur Holddown-Versetzung    |
 | **Holddown-Dauer** | 15 Minuten | Zeit im Holddown-Status vor permanenter Entfernung |
 
 **Funktionsweise:**
@@ -930,70 +932,167 @@ Nach jedem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau) senden die Node
 
 # Verteilungssicht
 
-## Infrastruktur Ebene 1
+## ICC Kubernetes Infrastruktur
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_1.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 1</em></p>
-</div>
+Die V$Goin-Blockchain wird vollständig auf der HAW-ICC (Informatik Compute Cloud) im Kubernetes-Cluster betrieben. Alle Komponenten sind im Namespace `vsp-blockchain` deployt.
 
-Begründung  
-In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen. Externe
-Nodes stehen nicht in unserem Einfluss und spielen für uns daher keine Rolle.
-Komponenten in unserer Verantwortlichkeit werden in der HAW-ICC betrieben. Sämtliche von uns betriebenen Komponenten müssen folglich eine der von
-[Kubernetes unterstützen Container Runtime](https://kubernetes.io/docs/concepts/containers/#container-runtimes) implementieren.
-Für uns bedeutet dies, dass jede Komponente als Docker-Container gebaut und deployt wird.
-Diese nutzen ein Debian Image als Grundlage. Die Kommunikation zwischen den Containern wird durch gRPC erfolgen. Dazu muss an jedem Container ein Port geöffnet werden.
-Alle Container, welche Teil des Mining-Systems sind, werden als ein gemeinsamer Service deployt.
+Die folgende Abbildung zeigt die Verteilungssicht der V$Goin-Blockchain auf der HAW-ICC:
+![Diagramm](https://www.plantuml.com/plantuml/png/fL9DZzCm4BtlhnXL7E3WAXGghJYWNGg25G95NRISlSwGMFL7DECKAiH_nscDJHMXBE1Bnfdtdjyy-ug3f31OSm5fyKwxNfAqeBpjlKCNRiF1812g85rhC4Dp4NI8W3kaWDeChcNMgWiWuExHMwyTl39UxLGdOoc7B_3k-hEusMocEiut28lKXlV3FPB3W0mRCt10Mi3tZ2tuFVVYlfpmKLhaNYeiwB8cFo9m9zkeiiLMSw03rBufpBDL4e65rKvRQSHeOG6ImRev2gKJX2BvrI0TQQJcQCeJDewFwFYTm7_ynP0Vj4CQ9sHu_6srVlAmGP54jLokdf_c7FV_vsBxvlQJkAvlVXc9FluXSExtyubp4BBNH_ouUPZj-HlalO8NwsT9jutRYza8EvIDGUP8hAhrqrEONQBEJN0wyRAwhF8icJaPfLIvi0w408eQq6xhpSb3bTkaOllb-BmYW16RPUSvSEaZXuWOC_-3Ge6ESMIvOg1BVyi3AjAfTNv5lvjRBXDlzFTQi_9xf4D6H5lda7fLfvYdSbVeci6Qdm00)
+<details>
+<summary>PlantUML Code (Diagramm)</summary>
+    
+    ```plantuml
+        @startuml
+        skinparam componentStyle rectangle
+        
+        title Verteilungssicht - V$Goin Blockchain auf HAW-ICC
+        
+        node "HAW-ICC Kubernetes Cluster" {
+            node "vsp-blockchain Namespace" {
+                
+                package "Registry Pod" {
+                    component "minimal-node" as mn
+                    component "registry-crawler" as rc
+                    component "coredns" as dns
+                }
+                
+                package "Miner Pods (x25)" {
+                    component "miner-0..24" as miners
+                }
+                
+                package "REST-API Pods (x5)" {
+                    component "minimal-node" as spv
+                    component "rest-api" as rest
+                }
+                
+                component "registry-svc :53" as regsvc
+                component "miner-headless :50051" as mhsvc
+                component "rest-api-svc :8080" as restsvc
+            }
+        }
+        
+        mn -- rc : gRPC :50050
+        rc --> dns : seed.hosts
+        rest -- spv : gRPC :50050
+        
+        regsvc --> dns
+        mhsvc --> miners
+        restsvc --> rest
+        
+        rc ..> miners : Discovery
+        spv ..> miners : P2P :50051
+        
+        @enduml
+    `````
 
-Qualitäts- und/oder Leistungsmerkmale
+</details>
 
-Es muss sich an die von der HAW-ICC vorgeschriebenen Ressourcenquoten gehalten werden. Aktuell sind diese Limits wie folgt:
+<p align="center"><em>Abbildung: Verteilungssicht - V$Goin Blockchain auf HAW-ICC</em></p>
 
-| CPU      | RAM   | Speicher | #Pods | #Services | #PVCs |
-|----------|-------| -------- | ----- | --------- | ----- |
-| 16 Kerne | 16 GB | 100 GB   | 50    | 10        | 5     |
+### Begründung
 
-Diese Limits wurden bereits nach Nachfrage per E-Mail angehoben. Es gilt weiter den Ressourcenverbrauch im Auge zu behalten und ggfs. zu reagieren.
+Die Infrastruktur nutzt die HAW-ICC Kubernetes-Umgebung und ist für die gegebenen Ressourcenbeschränkungen optimiert. Die Architektur folgt dem Prinzip der Container-Orchestrierung und ermöglicht horizontale Skalierung der Miner- und REST-API-Komponenten.
 
-Zuordnung von Bausteinen zu Infrastruktur  
-Die Registry sowie das P2P Netzwerk werden auf der HAW-ICC in Kubernetes laufen.
+### Komponenten
 
-## Infrastruktur Ebene 2
+#### Registry Deployment (1 Pod, 3 Container)
 
-### P2P Netzwerk
+Das Registry Deployment besteht aus einem einzelnen Pod mit drei Containern:
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_2_p2p_network.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2 P2P-Netzwerk</em></p>
-</div>
+| Container            | Image                                               | Funktion                                                   | Ressourcen                   |
+|----------------------|-----------------------------------------------------|------------------------------------------------------------|------------------------------|
+| **minimal-node**     | `ghcr.io/bjoern621/vsp-blockchain-miner`            | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi  |
+| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS            | CPU: 50-200m, RAM: 64-128Mi  |
+| **coredns**          | `coredns/coredns:1.11.3`                            | DNS-Server für Seed-Auflösung auf seed.local               | CPU: 25-100m, RAM: 128-256Mi |
 
-#### Registry Crawler
 
-In unserer Verteilung wird es einen Registry Crawler geben. Dieser übernimmt die in der [Blackbox Sicht](#registry-crawler-blackbox) beschriebenen Aufgaben.
-Dieser wird in Form von einem Pod deployt. Es ist eine Instanz geplant. Der Registry-Crawler soll teil des P2P-Netzwerkservices sein.
 
-#### Nodes (SPV-Node und Full-Node)
+Die drei Container teilen sich einen Pod und kommunizieren über localhost. Der registry-crawler verbindet sich zum minimal-node über gRPC (Port 50050), um die App-Schnittstelle zu nutzen. Er schreibt die entdeckten Peers in eine gemeinsame hosts-Datei, die von CoreDNS gelesen wird.
+**Kubernetes Service:** `registry` (ClusterIP: 10.233.1.72) exponiert DNS auf Port 53.
 
-SPV- wie auch Full-Node unterscheiden sich zwar in der Implementierung und ihren Features, allerdings nicht im Deployment.
-Zu Beginn werden drei Instanzen eines Nodes hochgefahren.
-Diese Zahl sollte später reevaluiert werden, wenn der tatsächliche Ressourcenverbrauch bestimmt ist.
-Diese Anzahl kann auch im Betrieb bei Bedarf weiter hochskaliert werden.
-Jeder Node ist ein eigener Pod, welcher aus einem einzigen Container besteht.
-Die Nodes laufen alle unter dem P2P-Netzwerkservice.
-Um Node-Container zuverlässig untereinander adressieren zu können, verwenden wir ein "[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)". Somit erhält jeder Node über Neustartes hinweg
-den gleichen Namen und DNS Eintrag.
+#### Miner StatefulSet (25 Pods)
 
-### Registry
+Das Miner-StatefulSet betreibt eine frei konfigurierbare Anzahl innerhalb des Limits (momentan 25), die das Rückgrat des P2P-Netzwerks bilden:
 
-<div align="center">
-    <img src="images/verteilungssicht_ebene_2_registry.svg"  height="250">
-    <p><em>Abbildung: Verteilungssicht Layer 2 Registry</em></p>
-</div>
+| Eigenschaft        | Wert                                      |
+|--------------------|-------------------------------------------|
+| **Image**          | `ghcr.io/bjoern621/vsp-blockchain-miner`  |
+| **Replicas**       | 25                                        |
+| **Services**       | miner, blockchain_full, app               |
+| **Ports**          | App: 50050, P2P: 50051                    |
+| **Ressourcen**     | CPU: 100-200m, RAM: 64-128Mi pro Pod      |
+| **Pod Management** | Parallel (alle Pods starten gleichzeitig) |
 
-Die Aufgaben der Registry sind [hier](#registry-blackbox) beschrieben. Dazu wird ein Service in der ICC deployt, welcher ein
-DNS-Server beherbergt. Der verwendete Container muss noch ausgewählt werden, doch muss dieser über eine API verfügen, welche
-von dem Registry Crawler angesprochen werden kann.
+Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) erhalten die Pods stabile Netzwerkidentitäten (`miner-0`, `miner-1`, ..., `miner-24`), die auch nach Neustarts erhalten bleiben. Dies ermöglicht zuverlässige Adressierung über den Headless Service `miner-headless`.
+
+**Kubernetes Services:**
+- `miner-headless` (Headless): Ermöglicht direkte Pod-zu-Pod-Kommunikation über DNS (z.B. `miner-0.miner-headless.vsp-blockchain.svc`)
+- `miner-seed` (Headless): Bootstrap-Endpunkte für den Registry-Crawler
+
+**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` und `miner-1.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` als initiale Bootstrap-Peers.
+
+#### REST-API Deployment (5 Pods, 2 Container pro Pod)
+
+Das REST-API Deployment stellt die HTTP-Schnittstelle für externe Clients bereit:
+
+| Container        | Image                                       | Funktion                                      | Ressourcen                  |
+|------------------|---------------------------------------------|-----------------------------------------------|-----------------------------|
+| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner`    | Minimal-Node mit wallet, blockchain_full, app | CPU: 50-200m, RAM: 64-128Mi |
+| **rest-api**     | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080                   | CPU: 50-200m, RAM: 64-128Mi |
+
+Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit der Minimal-Node über localhost gRPC (Port 50050). Minimal-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
+
+**Kubernetes Service:** `rest-api-service` (ClusterIP) auf Port 8080.
+
+### Ressourcenquoten der HAW-ICC
+
+Die Infrastruktur muss die [Ressourcenquoten der HAW-ICC](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/) einhalten:
+
+| Ressource | Limit    | Aktuell genutzt                              |
+|-----------|----------|----------------------------------------------|
+| CPU       | 16 Kerne | ~4,8 Kerne (requests)                        |
+| RAM       | 16 GB    | ~2,5 GB (requests)                           |
+| Speicher  | 100 GB   | -                                            |
+| #Pods     | 50       | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
+| #Services | 10       | 4 Services                                   |
+| #PVCs     | 5        | 0                                            |
+
+Diese Limits wurden nach Nachfrage per E-Mail angehoben. Die aktuelle Konfiguration hält sich innerhalb der Grenzen.
+
+### DNS-Konfiguration
+
+Alle Pods nutzen die Registry als DNS-Server (dnsPolicy: None, nameserver: 10.233.1.72). Die CoreDNS-Konfiguration leitet Anfragen an `seed.local` an die lokale hosts-Datei weiter, alle anderen Anfragen werden an den Standard-DNS weitergeleitet.
+
+```yaml
+seed.local:53 {
+  hosts /seed/seed.hosts {
+    ttl 1
+    reload 5s
+  }
+}
+
+.:53 {
+  forward . /etc/resolv.conf
+  cache 30
+}
+```
+
+### Kommunikationspfade
+
+| Von              | Nach             | Protokoll | Port  | Beschreibung                  |
+|------------------|------------------|-----------|-------|-------------------------------|
+| registry-crawler | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| registry-crawler | miner-*          | gRPC      | 50051 | Peer Discovery                |
+| rest-api         | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| minimal-node     | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| miner-*          | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| Externe Clients  | rest-api-service | HTTP      | 8080  | REST-API                      |
+| Alle Pods        | registry         | DNS       | 53    | Seed-Auflösung                |
+
+### Einschränkungen
+Das Blockchainsystem kann nach der Architektur und Implementierung durch beliebig viele Miner von innen und außen ergänzt werden. 
+Doch aufgrund der Nutzung von gRPC als Kommunikationsprotokoll sind direkte Verbindungen von außerhalb der HAW-ICC mit einer beliebig skalierenden Anzahl Miner nicht möglich.
+Folglich werden in dieser Umsetzung in der HAW-ICC nur interne Miner dem Netzwerk beitreten können. In einer anderen Umgebung spricht allerdings nichts gegen das Verbinden von anderen externen Minern.
 
 # Querschnittliche Konzepte
 
@@ -1003,12 +1102,12 @@ Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten
 
 Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
 
-Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
+Wichtig in diesem Zusammenhang ist, dass Minimal-Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass Minimal-Nodes niemals zu anderen Minimal-Nodes verbunden sind sondern Minimal stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 ## Validiert/verifiziert vs. bestätigt
 
 | Begriff               | Bedeutung                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Validiert/Verifiziert | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen? Liste der Anforderungen zur Validierung aus [diesem Buch](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805). Für Transaktionen aus Kapitel: "Unabhängige Verifikation von Transaktionen". Für Validierung von Blöcken Kapitel: "Einen neuen Block validieren" |
 | Bestätigt             | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist.                                                                                                                                                                                                                                                                                   |
 
@@ -1021,7 +1120,7 @@ Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmeng
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
 Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
 In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
-Dies wird dann speziell von SPV-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
+Dies wird dann speziell von Minimal-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
 müssen diese nur den Merklepfad nachfolgen und das Ergebnis mit dem Merkle-Root (enthalten im Block-Header) vergleichen. Somit kann eine
 Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen.
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
@@ -1096,22 +1195,22 @@ Das WIF Format bietet eine fehlererkenende und klare Darstellung des Private Key
 
 #### PubKey (öffentlicher Schlüssel)
 
-- Länge: **33 Byte**
-- Format: **komprimierter secp256k1-Public Key**
-- Verwendung:
-    - Bestandteil der Signaturprüfung eines Inputs
-    - Basis für die Adressgenerierung
+-   Länge: **33 Byte**
+-   Format: **komprimierter secp256k1-Public Key**
+-   Verwendung:
+    -   Bestandteil der Signaturprüfung eines Inputs
+    -   Basis für die Adressgenerierung
 
 #### PubKeyHash
 
-- Länge: **20 Byte**
-- Bildung:
+-   Länge: **20 Byte**
+-   Bildung:
     1. SHA-256 über den 33-Byte-PubKey
     2. SHA-256 über den 32-Byte-Hash
     3. ersten 20 Byte als PubKeyHash nehmen
-- Verwendung:
-    - Identifiziert die Empfänger eines Outputs
-    - Dient als vereinfachter `scriptPubKey`
+-   Verwendung:
+    -   Identifiziert die Empfänger eines Outputs
+    -   Dient als vereinfachter `scriptPubKey`
 
 #### V$Address
 
@@ -1124,10 +1223,10 @@ Ein UTXO beschreibt einen nicht ausgegebenen Output einer früheren Transaktion.
 
 Bestandteile:
 
-- `TransactionID` (32 Byte)
-- `OutputIndex` (uint32)
-- `Value` (uint64)
-- `PubKeyHash` (PubKeyHash)
+-   `TransactionID` (32 Byte)
+-   `OutputIndex` (uint32)
+-   `Value` (uint64)
+-   `PubKeyHash` (PubKeyHash)
 
 UTXOs repräsentieren das Guthaben einer Adresse innerhalb des Systems.
 
@@ -1137,10 +1236,10 @@ Ein Input verweist auf einen bestehenden UTXO und beweist durch eine Signatur de
 
 **Bestandteile:**
 
-- `PrevTxID` — 32-Byte ID der vorherigen Transaktion
-- `Index` — Output-Index innerhalb der referenzierten Transaktion
-- `Signature` — Byte-Array
-- `PubKey` — PubKey
+-   `PrevTxID` — 32-Byte ID der vorherigen Transaktion
+-   `Index` — Output-Index innerhalb der referenzierten Transaktion
+-   `Signature` — Byte-Array
+-   `PubKey` — PubKey
 
 **Zweck:**  
 Verifikation, ob der Signierende berechtigt ist, den referenzierten Output auszugeben.
@@ -1153,8 +1252,8 @@ Ein Output definiert einen neuen UTXO.
 
 **Bestandteile:**
 
-- `Value` — uint64, Wert des Outputs
-- `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
+-   `Value` — uint64, Wert des Outputs
+-   `PubKeyHash` — 20-Byte HASH160 einer Adresse bzw. eines Public Keys
 
 **Zweck:**  
 Legt fest, wohin der Wert übertragen wird.
@@ -1167,8 +1266,8 @@ Eine Transaktion besteht aus mehreren Ein- und Ausgaben.
 Ein Transaktions-Hash kann durch das zweifache Hashen der Transaktion erstellt werden und identifiziert eine Transaktion eindeutig.
 Ein Transaktions besteht aus folgendem:
 
-- **Inputs**
-- **Outputs**
+-   **Inputs**
+-   **Outputs**
 
 Die Summe der Input-Werte muss die Summe der Output-Werte decken (abzüglich eventueller Gebühren).
 
@@ -1180,18 +1279,18 @@ Die Validierung stellt sicher, dass Transaktionen korrekt, sicher und konsistent
 
 #### 1. Input-Referenzierung
 
-- Jeder Input muss einen existierenden UTXO referenzieren.
-- Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
-- Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
+-   Jeder Input muss einen existierenden UTXO referenzieren.
+-   Die Kombination `(PrevTxID, OutputIndex)` muss eindeutig sein.
+-   Ein UTXO darf innerhalb derselben Transaktion nicht mehrfach referenziert werden.
 
 #### 2. Signatur und SIGHASH
 
 Für jeden Input wird ein SIGHASH berechnet:
 
-- Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
-- Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
-- Alle Outputs werden vollständig serialisiert.
-- Der Hash wird als **double-SHA-256** berechnet.
+-   Nur der zu signierende Input enthält seinen `PubKeyHash` und `Value`.
+-   Alle anderen Inputs werden hinsichtlich Script-Feldern geleert.
+-   Alle Outputs werden vollständig serialisiert.
+-   Der Hash wird als **double-SHA-256** berechnet.
 
 Signaturprüfung:
 
@@ -1237,9 +1336,9 @@ Obwohl in verteilten Systemen generell asynchrone Kommunikation bevorzugt wird (
 
 Da diese Pitfalls bei localhost zum Großteil nicht zutreffen, entfallen die Hauptargumente für asynchrone Kommunikation. Synchrone Kommunikation dagegen bietet in diesem Kontext Vorteile:
 
-- **Leichteres Debuggen**: Request-Response ist leichter zu debuggen, weil der Programmfluss Schritt für Schritt nachvollzogen werden kann. Es wird nie an einer unbestimmten anderen Stelle, zu unbestimmter Zeit geantwortet.
-- **Bessere Kontrolle**: Der Aufrufer erhält sofort eine Antwort und kann auf Fehler oder Bestätigungen direkt reagieren. Oft möchte der Benutzer (das externe System) eine direkte Antwort, ob die Operation geglückt ist.
-- **Geringere Komplexität**: Keine Notwendigkeit für Callback-Mechanismen oder Event-Handling.
+-   **Leichteres Debuggen**: Request-Response ist leichter zu debuggen, weil der Programmfluss Schritt für Schritt nachvollzogen werden kann. Es wird nie an einer unbestimmten anderen Stelle, zu unbestimmter Zeit geantwortet.
+-   **Bessere Kontrolle**: Der Aufrufer erhält sofort eine Antwort und kann auf Fehler oder Bestätigungen direkt reagieren. Oft möchte der Benutzer (das externe System) eine direkte Antwort, ob die Operation geglückt ist.
+-   **Geringere Komplexität**: Keine Notwendigkeit für Callback-Mechanismen oder Event-Handling.
 
 Die AppAPI orientiert sich konzeptionell an der [Bitcoin Core JSON-RPC API](https://developer.bitcoin.org/reference/rpc/index.html), die ebenfalls eine synchrone lokale Schnittstelle zur Steuerung einer Node bereitstellt.
 
@@ -1261,9 +1360,14 @@ Eigenschaften:
 
 Die Funktionen `updatepeers` und `getpeers` gehören weder zur AppAPI noch zum V$Goin P2P Protokoll, da sie nicht zur Kommunikation zwischen Peers verwendet werden. Beide sind Teil der [Registry-Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry):
 
-- `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
-- `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
+-   `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
+-   `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
 
+## V$Goin P2P Protokoll
+
+## _\<Konzept n\>_
+
+_\<Erklärung\>_
 
 # Architekturentscheidungen
 
@@ -1287,16 +1391,16 @@ Akzeptiert
 
 Positiv:
 
-- IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
-- Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
-- Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
-- Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
-- Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
-- Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
+-   IDL-basierte Definitionen sind maschinenlesbar, wodurch die Datentypen automatisch in der Pipeline generiert werden können.
+-   Hohe Typsicherheit, was potenzielle Laufzeitfehler reduziert.
+-   Sehr kompaktes Datenformat, deutlich kleiner als XML oder JSON.
+-   Geringere Einarbeitungszeit, da einige Entwickler im Team bereits Erfahrung mit Protobuf haben.
+-   Weitverbreiteter Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+-   Die verwendeten Datentypen werden in einer IDL beschrieben. Dadurch können sie automatisch generiert werden, was den Entwicklungsprozess erleichtert.
 
 Negativ:
 
-- Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
+-   Generierung von Code außerhalb der Pipeline erfordert [Installation von Protoc.](https://protobuf.dev/installation/)
 
 ### Auswirkungen
 
@@ -1324,17 +1428,17 @@ Akzeptiert
 
 Positive Konsequenzen:
 
-- Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
-- Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
-- Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
-- Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
-- Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
-- Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
+-   Keine Abhängigkeit von der Antwort einzelner Nodes, da Antworten nie garantiert sind.
+-   Erhöhte Fehlertoleranz, da die Kommunikation unabhängig von Auslastung oder Ausfall einzelner Nodes funktioniert.
+-   Asynchrone Verarbeitung ermöglicht parallele Abläufe, sodass Nodes ihre Arbeit fortsetzen können, während Antworten noch ausstehen.
+-   Verbesserte Skalierbarkeit, da eine steigende Anzahl von Nodes nicht zu proportional steigenden Wartezeiten führt.
+-   Zustandslose Kommunikation erleichtert die Implementierung und trägt zu einer leichteren Skalierung bei.
+-   Transienter Betrieb reduziert Komplexität, da Nachrichten nicht dauerhaft gespeichert werden müssen und der Zustand nur zur Laufzeit im Speicher gehalten wird.
 
 Negative Konsequenzen:
 
-- Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
-- Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
+-   Informationen müssen ggf. in jeder Nachricht erneut mitgesendet werden
+-   Verlust von Nachrichten, falls diese fehlerhaft ankommen und nicht auf die Antwort gewartet wird.
 
 ### Auswirkungen
 
@@ -1362,20 +1466,20 @@ Akzeptiert
 
 Positive Konsequenzen:
 
-- Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
-- Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
-- Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
-- Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
-- Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
-- Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
-- Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
-- Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
-- Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert.
+-   Effiziente Serialisierung durch Protobuf, wodurch die Nachrichtengröße reduziert wird.
+-   Automatische Generierung von Client- und Server-Stubs, was den Implementierungsaufwand reduziert.
+-   Klare Trennung zwischen Schnittstelle und Anwendung durch die Nutzung einer IDL.
+-   Niedrige Latenz durch die Nutzung von HTTP/2 (mit Keepalive Intervall).
+-   Garantierte Vollständigkeit und Reihenfolge der Nachrichten, wodurch Daten korrekt bei anderen Nodes ankommen. Wichtig für Blockchain-Systeme, da die Korrektheit der Daten integraler Bestandteil des Konsensmechanismus ist
+-   Entfall von zusätzlichem Implementierungsaufwand, um Vollständigkeit und Reihenfolge der Übertragung selbst sicherzustellen.
+-   Unterstützung für Verschlüsselung, wodurch die Sicherheit der Kommunikation erhöht wird.
+-   Weitverbreiteter und offener Standard, der das [Ziel der technologischen Offenheit](#qualitätsziele) unterstützt.
+-   Einige Entwickler des Teams haben bereits Erfahrung mit gRPC, was den Einarbeitungsaufwand reduziert.
 
 Negative Konsequenzen:
 
-- Abhängigkeit vom gRPC Tool
-- Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
+-   Abhängigkeit vom gRPC Tool
+-   Aufsetzen von gRPC Tooling für lokale Entwicklung aufwendig
 
 ### Auswirkung
 
@@ -1383,6 +1487,73 @@ Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher u
 Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
 Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
 
+## ADR 4: Einsatz von BadgerDB zur Speicherung des vollständigen UTXO-Sets in Full Nodes
+
+### Kontext
+
+Ein Full Node muss das vollständige **UTXO-Set (Unspent Transaction Outputs)** persistent speichern und effizient nach `(TxID, OutputIndex)` auflösen können.  
+Die Datenmenge wächst kontinuierlich, kann beliebig groß werden und wird bei jeder Blockverarbeitung intensiv gelesen und geschrieben.
+
+Anforderungen:
+
+-   Persistente Speicherung über Node-Neustarts hinweg
+-   Sehr schnelle Key-Value-Lookups
+-   Hohe Schreibperformance bei Blockverarbeitung
+-   In-Prozess-Datenbank (kein externer DB-Server)
+-   Gute Integration in eine Go-Codebasis
+-   Möglichkeit zur späteren Erweiterung um Caching-Strategien
+
+Alternativen:
+
+-   In-Memory Maps (nicht persistent, nicht skalierbar)
+-   BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
+-   LevelDB (bewährt, aber nicht nativ in Go)
+
+---
+
+### Entscheidung
+
+Für Full Nodes wird **BadgerDB** als persistente Key-Value-Datenbank zur Speicherung des vollständigen UTXO-Sets eingesetzt.
+
+BadgerDB wird genutzt als:
+
+-   Disk-basierte, autoritative UTXO-Datenbank
+-   Backend für `(TxID, OutputIndex) → Output` Lookups
+-   Grundlage für spätere In-Memory-Caches
+
+---
+
+### Status
+
+Akzeptiert
+
+---
+
+### Konsequenzen
+
+#### Positive Konsequenzen:
+
+-   **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
+-   **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
+-   **Persistente Speicherung**, geeignet für große Datenmengen
+-   **Transaktionen und Batches** ermöglichen atomare Block-Updates
+-   Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
+
+#### Negative Konsequenzen:
+
+-   Komplexere API als einfache Maps oder bbolt
+-   Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
+-   Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
+
+---
+
+### Auswirkung
+
+-   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
+-   Full Nodes können Transaktionen vollständig und unabhängig validieren
+-   Minimal Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+-   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
+-   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
 # Qualitätsanforderungen
 
@@ -1411,12 +1582,12 @@ Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größ
 Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt. Verwendete Werte sind, wenn nicht anders angegeben, Educated Guesses.
 
 | ID   | Szenario                                                                                                                                                                                                                                  | Akzeptanzkriterium                                                                                                                                        | Relevante Qualitätsanforderungen                                                                                                                                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).                                                                                                            | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                               | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)                                                                                                                                                                       |
 | QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                                                                                                                                 | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                                     | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)<br/>Efficient > [Responsiveness](https://quality.arc42.org/qualities/responsiveness)                                                                                  |
 | QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                                                                                                                      | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Synchronisation beginnt innerhalb von 10 Sekunden.                 | Reliable > [Recoverability](https://quality.arc42.org/qualities/recoverability)                                                                                                                                                                  |
 | QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. Siehe [Aufgabenstellung](#aufgabenstellung) für Unterscheidung zwischen Händler-/Mining-Funktionen | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar. Es besteht keine Abhängigkeit von Wallet zu Miner-Teilsystem.                                | Flexible > [Modularity](https://quality.arc42.org/qualities/modularity)<br/>Flexible > [Composability](https://quality.arc42.org/qualities/composability)                                                                                        |
-| QS-5 | Eine SPV Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                                   | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
+| QS-5 | Eine Minimal Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                               | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
 | QS-6 | Ein Reviewer prüft eine Code-Änderung.                                                                                                                                                                                                    | Die Änderung ist durch Kommentare und Dokumentation unterstützt. Go Best Practices wurden eingehalten. Tool: [Golangci-lint](https://golangci-lint.run/). | Flexible > [Maintainability](https://quality.arc42.org/qualities/maintainability)                                                                                                                                                                |
 | QS-7 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                                                                                                                    | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                                   | Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance) <br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)<br/>Secure > [Data Integrity](https://quality.arc42.org/qualities/data-integrity) |
 | QS-8 | 5 % gleichmäßig im Netzwerk verteilte Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                                                                                                                 | Die verbleibenden Nodes können weiterhin [alle Anforderungen](#aufgabenstellung) erfüllen.                                                                | Reliable > [Resilience](https://quality.arc42.org/qualities/resilience)<br/>Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance)                                                                                    |
@@ -1488,7 +1659,7 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 # Glossar
 
 | Begriff         | Definition                                                                                                                                                                                                            |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Externes System | Software-System außerhalb der Node, das die Funktionalität einer (lokalen) Node erweitert und dafür die `AppAPI`-Schnittstelle nutzt.<br/>Beispiele: REST-API, Registry Crawler.                                      |
 | Genesis Block   | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
 | gRPC            | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
@@ -1497,6 +1668,5 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 | Miner Node      | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
 | Node            | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
 | Protobuf        | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
-| SPV             | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node        | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
+| Minimal Node    | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
 | UTXO            | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |

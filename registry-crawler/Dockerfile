@@ -10,10 +10,16 @@ RUN go build -o start-app
 
 # Go build complete
 
-FROM gcr.io/distroless/base-debian12
+#TODO Switch to distroless later
+FROM debian:bookworm-slim
 WORKDIR /app
 
 COPY --from=go-build /app/start-app ./
+
+#TODO STart debug
+RUN apt update
+RUN apt install curl -y
+#TODO End debug
 
 # Copied binary to distroless image
 
