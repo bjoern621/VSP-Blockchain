@@ -212,6 +212,13 @@ func (s *Server) QueryRegistry(_ context.Context, _ *pb.QueryRegistryRequest) (*
 	return response, nil
 }
 func (s *Server) CreateTransaction(_ context.Context, req *pb.CreateTransactionRequest) (*pb.CreateTransactionResponse, error) {
+	if s.transactionHandler == nil {
+		return &pb.CreateTransactionResponse{
+			Success:      false,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
+
 	return s.transactionHandler.CreateTransaction(req), nil
 }
 
@@ -272,10 +279,22 @@ func (s *Server) SendGetAddr(_ context.Context, req *pb.SendGetAddrRequest) (*pb
 }
 
 func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
+	if s.kontoHandler == nil {
+		return &pb.GetAssetsResponse{
+			Success:      false,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
 	return s.kontoHandler.GetAssets(req), nil
 }
 
 func (s *Server) GetHistory(_ context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
+	if s.historyHandler == nil {
+		return &pb.GetHistoryResponse{
+			Success:      false,
+			ErrorMessage: "wallet subsystem is not enabled",
+		}, nil
+	}
 	return s.historyHandler.GetHistory(req), nil
 }
 
@@ -287,7 +306,7 @@ func (s *Server) StartMining(_ context.Context, _ *emptypb.Empty) (*pb.StartMini
 	if s.miningService == nil {
 		return &pb.StartMiningResponse{
 			Success:      false,
-			ErrorMessage: "mining service is not enabled",
+			ErrorMessage: "mining subsystem is not enabled",
 		}, nil
 	}
 
@@ -318,7 +337,7 @@ func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMining
 	if s.miningService == nil {
 		return &pb.StopMiningResponse{
 			Success:      false,
-			ErrorMessage: "mining service is not enabled",
+			ErrorMessage: "mining subsystem is not enabled",
 		}, nil
 	}
 

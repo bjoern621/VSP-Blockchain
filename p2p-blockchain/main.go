@@ -111,24 +111,32 @@ func main() {
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
-		// Intialize Transaction Creation API
-		mempoolApi := blockapi.NewMempoolAPI(mempool)
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
-		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
-		// Initialize transaction service and API
-		transactionService := appcore.NewTransactionService(transactionCreationAPI)
-		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+		var transactionHandler *adapters.TransactionHandlerAdapter
+		var kontoHandler *adapters.KontoHandlerAdapter
+		var historyHandler *adapters.HistoryHandlerAdapter
+		if common.WalletEnabled() {
+			// Intialize Transaction Creation API
+			mempoolApi := blockapi.NewMempoolAPI(mempool)
+			transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
+			transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
-		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
+			// Initialize transaction service and API
+			transactionService := appcore.NewTransactionService(transactionCreationAPI)
+			transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
-		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
-		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
+			transactionHandler = adapters.NewTransactionAdapter(transactionAPI)
 
-		// Initialize history API and handler
-		historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
-		historyHandler := adapters.NewHistoryAdapter(historyAPI)
+			// Initialize konto API and handler
+			kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
+			kontoHandler = adapters.NewKontoAdapter(kontoAPI)
+
+			// Initialize history API and handler
+			historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
+			historyHandler = adapters.NewHistoryAdapter(historyAPI)
+		}
+
+		// TODO in appgrpc server deaktvieren / scheckn
 
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
