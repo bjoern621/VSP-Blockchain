@@ -39,11 +39,6 @@ func resolveEndpointToIPv4Set(ctx context.Context, endpoint string, acceptedPort
 
 	logger.Infof("[bootstrap] resolving DNS for host %q", host)
 	resolveDNSToIPv4Set(ctx, host, result)
-	logger.Infof("[bootstrap] resolved %d IPv4 addresses for host %q", len(result), host)
-
-	for k, v := range result {
-		logger.Infof("[bootstrap] k: %v v%v", k, v)
-	}
 }
 
 // tryAddDirectIPv4 attempts to parse the host as an IPv4 address and add it to the result set.
