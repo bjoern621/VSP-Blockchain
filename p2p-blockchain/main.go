@@ -127,8 +127,6 @@ func main() {
 			historyAPI = walletApi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
 		}
 
-		// TODO in appgrpc server deaktvieren / scheckn
-
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
