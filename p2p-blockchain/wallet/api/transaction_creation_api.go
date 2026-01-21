@@ -6,6 +6,7 @@ import (
 )
 
 // TransactionCreationAPI API for creating transactions.
+// Part of WalletAppAPI.
 type TransactionCreationAPI interface {
 	// CreateTransaction creates and broadcasts a new transaction.
 	// It validates the private key, checks for sufficient funds, creates the transaction,

@@ -7,6 +7,7 @@ import (
 )
 
 // HandshakeAPI is the external API for initiating connections.
+// Part of NetworkroutingAppAPI.
 type HandshakeAPI interface {
 	// InitiateHandshake starts the handshake process with the given address.
 	InitiateHandshake(addrPort netip.AddrPort) error

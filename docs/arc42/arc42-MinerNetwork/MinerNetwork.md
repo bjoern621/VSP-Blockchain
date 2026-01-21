@@ -10,11 +10,13 @@ Template Version 9.0-DE. (basiert auf der AsciiDoc Version), Juli 2025
 Created, maintained and © by Dr. Peter Hruschka, Dr. Gernot Starke and
 contributors. Siehe <https://arc42.org>.
 
+Ausarbeitung von Björn Blessing, Bjarne Rathjen, Stian Geeb, Bennet Krzenzck
+
 # Einführung und Ziele
 
 Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder Teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewisser Rechenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden.
 
-Es gibt zwei Hauptakteure im Netzwerk: Miner und Händler. Händler sind nur an der Nutzung des Netzes orientiert. Sie geben hauptsächlich Transaktionen in Auftrag. Miner sind all die Systeme, die zur Erweiterung der Blockchain beitragen. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Sowohl Händler als auch Miner können dem Netzwerk jederzeit beitreten und verlassen.
+Der Hauptakteur im Netzwerk ist der Miner. Miner tragen zur Erweiterung der Blockchain bei und geben Transaktionen in Auftrag. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Miner können dem Netzwerk jederzeit beitreten und verlassen.
 
 In einem größeren Kontext wird dieses Netzwerk als verteilte Datenbank für den V$Goin genutzt und parallel mit dem System REST-API entwickelt. Die REST-API baut auf dieses Netzwerk auf und soll unseren Kunden einen benutzerfreundlicheren Zugang bieten.
 
@@ -79,9 +81,9 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Organisatorische Randbedingungen
 
 | **Randbedingung**          | **Erläuterung**                                                                                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -------------------------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Entwicklungsteam**       | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                                                                                                                                                 |
-| Zeit                       | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
+| **Zeit**                   | Der zeitliche Rahmen umfasst 14 Wochen, von 15.10.2025 bis 22.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
 | **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert.                                                                                                                     |
 
 ---
@@ -90,41 +92,82 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 | **Randbedingung**     | **Erläuterung**                                                                                              |
 | --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Verschlüsselung**   | Sämtliche Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                                     |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
 
 # Kontextabgrenzung
 
 ## Fachlicher Kontext
 
-<div align="center">
-    <img src="images/business_context_fachlich.drawio.svg" alt="Fachlicher Kontext"  height="250">
-</div>
+![Diagramm](https://www.plantuml.com/plantuml/png/NP1HIiKm44N_NSMb27vb2_9KH8I7Y1N_vwMX2KrdGZjsHUx4ZPcqO1x9H-2G4-wTEQrAYtxFyGRvx1VBuD1zFFUVU7X_HU-MBLZNWLPG2jMpCYTXnuhkB1D5Xw_R5mcCDnaEFOgbMAZr3z4yPc6odWBl-gNWKy4QSeUpn1YI9DDRpq5rLHTp5ireArxzgc_-zuT7nIQC6WUw5A_C0sFkcwB_1BE4qMisccudnqFUsHy0)
 
-| Nachbar          | Beschreibung                                                                                                                                                                                                                 | Input                                                                                                          | Output                                                                                   |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Externer Miner   | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Mining beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden.                   | Blockchain-Blöcke \[[UC-7](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\]  | Blockchain \[[UC-5, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\]    |
-| Externer Händler | Ein P2P-Netzwerkknoten, der von einer dritten Person betrieben wird, ggf. über das Internet verbunden ist und am Handel der Kryptowährung beteiligt ist. Dieser Knoten kann ggf. eine alternative Implementierung verwenden. | Neue Transaktionen \[[UC-1](#aufgabenstellung)\], Statusnachrichten (Join/Leave) \[[UC-4](#aufgabenstellung)\] | Blockchain \[[UC-5, 2, 3](#aufgabenstellung)\], Peer-Liste \[[UC-6](#aufgabenstellung)\] |
-| REST-API         | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                                                  | Siehe Externer Händler                                                                                         | Siehe Externer Händler                                                                   |
+<details>
+    <summary>Code</summary>
+
+    ````plantuml
+    @startuml
+
+    node "REST API Service" as api
+    
+    component "Lokale V$Goin Node" as localNode
+    component "V$Goin-Blockchain" as blockChain
+    
+    ' Lollipop-Schnittstelle am REST API Service
+    
+    ' REST API hängt von Blockchain ab
+    api --> localNode
+    localNode -right--> blockChain
+    @enduml
+    ````
+
+</details>
+
+| Nachbar            | Beschreibung                                                                                                                                                                                            | Input                                                                                                                            | Output                                                                                                                           |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| V$Goin-Blockchain  | Eine Node, welche die Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) implementiert und somit an der V$Goin-Blockchain teilnehmen kann                                        | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto)                                                        | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto)                                                        |
+| lokale V$Goin Node | Eine Node, welche zusätzliche zu einer Noder der V$Goin-Blockchain auch noch funktionalitäten für externe Händler wie die REST-API über [APP-API](../../../p2p-blockchain/proto/app.proto) bereitstellt | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) und [APP-API](../../../p2p-blockchain/proto/app.proto) | Siehe [P2P-Protokoll-API](../../../p2p-blockchain/proto/blockchain.proto) und [APP-API](../../../p2p-blockchain/proto/app.proto) |
+| REST-API           | Technisch gesehen ein Externer Händler. Fachlich hat unser System jedoch eine Sonderstellung, weil es als von uns betriebene API eng mit Netzwerk zusammen entwickelt wird.                             | Transaktionsdaten, Adressen siehe [REST API Arc42](../arc42-Api/API.md)                                                          | neu generierte Adressen und Schlüssel, Konstostände und Transaktionsverläufe                                                     |
 
 Ein Nachbar kann natürlich auch externer Miner und externer Händler zugleich sein.
 
 ## Technischer Kontext
 
-| Nachbar          | Input technische Schnittstellen | Output technische Schnittstellen |
-| ---------------- | ------------------------------- | -------------------------------- |
-| Externer Miner   | gRPC                            | gRPC                             |
-| Externer Händler | gRPC                            | gRPC                             |
-| REST-API         | gRPC                            | gRPC                             |
+![Diagram](https://www.plantuml.com/plantuml/png/NS_1IiGm40RWkq_nKmIzv0KyoAuY8YmYLhpFfkCcR3fJqja5tyStySNSfeVKNW8p-OQPVpCQPJlrwGe0oYFQCPhtf_O3sxSNj9pFqNC36a53hCvhFwYm69gT7YanFg-VDGfUjPjvKazfgjP-XkxX0eu-K9J2zrFvE9LroGrscb8ST72j3nBDHkEK6DHZVU9Yglw5tnyv6CuggEj0--AY6ESlyem6zOH2jdFK_nqujmf5fNcxOdSOlyM7h2L97O7ByH3CtI-oNZ0jzOQbE_Nf3m00)
+
+<details>
+    <summary>Code</summary>
+
+    ````plantuml
+    @startuml
+    
+    node "REST API Service" as api
+    
+    component "Lokale V$Goin Node" as localNode
+    component "V$Goin-Blockchain" as blockChain
+    
+    ' REST API hängt von Blockchain ab
+    interface " " as blockchainApi
+    blockchainApi -- localNode
+    api --( blockchainApi : synchron
+    localNode -right-> blockChain : asynchron
+    @enduml
+    ````
+</details>
+
+
+| **Kommunikationspartner**    | **Technische Schnittstelle / Kanal** | **Protokoll / Datenformat** | **Beschreibung / Bemerkung**                                                                                      |
+|------------------------------|--------------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **REST API**                 | HTTPS REST-API                       | JSON                        | Zugriff über Weboberfläche auf Konto- und Transaktionsfunktionen                                                  |
+| **Lokale V$Goin Node**       | gRPC                                 | Byte                        | Kommunikation mit Blockchain-Knoten zum Senden und Prüfen von Transaktionen, sowie erhalten von Transaktionsdaten |
+| **V$Goin Blockchain-System** | gRPC                                 | Byte                        | Weiterleiten der erstellten Transaktion an alle weiteren Knoten                                                   |
 
 # Lösungsstrategie
 
--   geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
--   klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
--   explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
--   das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
--   jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
--   Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) in den Architekturentscheidungen zu finden.
+- geschrieben in Go, den [Go Best Practices](https://go.dev/doc/effective_go) folgend, trägt u. a. zum Erreichen der [Understandability](#qualitätsziele) bei
+- klare, unveränderliche Builds um stets einen gemeinsamen, testbaren Stand zu haben
+- explizites Review der Dokumentation für jedes einzelne Issue-Ticket um der Dokumentationspflicht (siehe [Randbedingungen](#randbedingungen) und [Stakeholder](#stakeholder)) gerecht zu werden
+- das System besteht aus einer Registry, die für das initiale Verbinden zu Peers zuständig ist und dem P2P-Netzwerk selbst, das alles andere erledigt
+- jede Node besteht aus einer Kombination der vier Teilsysteme Wallet, Miner, Blockchain und Netzwerkrouting, so wird Modularität gesichert (siehe [REST-API (Entwickler) Stakeholder](#stakeholder))
+- Nutzung von gRPC als RPC Framework für die Middleware-Kommunikation zwischen Nodes. Entscheidung ist [hier](#adr-3-entscheidung-für-nutzung-von-grpc-als-rpc-framework-zur-kommunikation-der-middleware) in den Architekturentscheidungen zu finden.
 
 # Bausteinsicht
 
@@ -145,24 +188,24 @@ Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekann
 
 Schnittstellen
 
--   `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Sie wird zur Laufzeit einer Node grundsätzlich nur einmal aufgerufen. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
--   `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
+- `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
+- `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2 - Registry Crawler](#whitebox-registry-crawler)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
 Siehe auch [Schnittstellen Registry Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) für eine genauere Beschreibung der Schnittstellen.
 
 Qualitäts-/Leistungsmerkmale
 
--   Distribution Transparency  
-    Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z.&nbsp;B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
--   Single Point of Failure  
-    Es existiert insgesamt nur eine zentrale Registry. Diese kann zum Bottleneck bzw. Single Point of Failure werden. Fällt die Registry aus, können neue Peers dem Netzwerk nicht mehr beitreten, da sie keine initialen IP-Adressen erhalten. Dies schränkt die [Resilience](#qualitätsanforderungen) des Gesamtsystems ein. Bereits verbundene Peers sind davon nicht betroffen, da sie über [Peer Discovery](#peer-discovery) weitere Verbindungen aufbauen können.
+- Distribution Transparency  
+  Die Registry trägt maßgeblich zur Verteilungstransparenz (genauer Zugriffstransparenz) des verteilten Systems bei in dem es eine einzige und sich nicht ändernde Möglichkeit bietet, sich zum Netzwerk zu verbinden. Nutzer des verteilten Systems (z.&nbsp;B. Nodes) müssen nicht explizit andere Nodes im System kennen, um mit dem System initial zu interagieren. Die Nodes brauchen durch die Registry auch kein Wissen über die genaue Anzahl oder deren physischen Standort (IP).
+- Single Point of Failure  
+  Es existiert insgesamt nur eine zentrale Registry. Diese kann zum Bottleneck bzw. Single Point of Failure werden. Fällt die Registry aus, können neue Peers dem Netzwerk nicht mehr beitreten, da sie keine initialen IP-Adressen erhalten. Dies schränkt die [Resilience](#qualitätsanforderungen) des Gesamtsystems ein. Bereits verbundene Peers sind davon nicht betroffen, da sie über [Peer Discovery](#peer-discovery) weitere Verbindungen aufbauen können.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
--   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
--   [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
+- [US-72 Peer-Liste abrufen](https://github.com/bjoern621/VSP-Blockchain/issues/72)
+- [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+- [US-83 Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) (indirekt, da Registry eine Voraussetzung für den Verbindungsaufbau ist)
 
 Offene Punkte/Probleme/Risiken  
 Wir haben bereits die Domain `vsgoin.informatik.haw-hamburg.de` aber es ist noch unklar, ob wir dort die DNS Einträge frei ändern können, da sie von der ICC verwaltet wird. Dieses Problem kann mit einer eigenen Domain umgangen werden. Außerdem hat die ICC möglicherweise nur eine externe IP und die einzelnen Nodes innerhalb des ICC Clusters (für Nodes siehe auch [Ebene 2](#ebene-2)) können möglicherweise nicht direkt angesteuert werden. Diese Probleme sollten noch getestet werden und Lösungen gefunden (getrackt in [Task-91](https://github.com/bjoern621/VSP-Blockchain/issues/91)). Siehe auch [Risiken](#risiken).
@@ -176,7 +219,7 @@ Hinweise: Der Name _Node(s)_ wurde gewählt, um Namenskonflikte mit späteren Da
 
 Schnittstellen
 
--   `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle. Siehe auch [AppAPI vs. P2P Protokoll API](#appapi-rpc-vs-p2p-protokoll-rpc) zur Abgrenzung.
+- `AppAPI` repräsentiert alle Funktionen, die von externen Systemen (wie REST Api) aufgerufen werden können, um mit der (lokalen) Node zu interagieren. Siehe auch [App Schnittstelle](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine genauere Beschreibung der Schnittstelle. Siehe auch [AppAPI vs. P2P Protokoll API](#appapi-rpc-vs-p2p-protokoll-rpc) zur Abgrenzung.
 
 ## Ebene 2
 
@@ -190,73 +233,78 @@ Schnittstellen
 Begründung  
 Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _SPV Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _Minimal Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
 
 Das Netzwerk besteht aus mehreren Nodes (Peers), die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein. Die Peers kommunizieren über die P2P-Protokoll-API (bestehend aus [1](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) und [2](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto)).
 
 ### Blockchain (Blackbox)
 
 Zweck/Verantwortung  
-Das Teilsystem Blockchain stellt die lokale Sicht auf die globale Kette bereit. Es gibt zwei mögliche Implementierungen für das Blockchain Teilsystem. 1. Vereinfachte Blockchain und 2. Vollständige Blockchain.
+Das Teilsystem Blockchain stellt die lokale Sicht auf die globale Kette bereit. Es gibt zwei mögliche Implementierungen für das Blockchain Teilsystem. 1. Vereinfachte Blockchain und 2. Vollständige Blockchain. Hier wird jedoch nur die zweite Variante implementiert, da diese die erste Variante (vereinfachte Blockchain) vollständig abdeckt.
 
-Die vereinfachte Blockchain speichert hauptsächlich Block‑Header und ausgewählte Transaktionen und verlässt sich stärker auf andere Full Nodes, um Gültigkeit von Transaktionen und Blöcken zu prüfen. Sie kommuniziert bei Bedarf mit benachbarten Nodes, um an Informationen zu gelangen. Dadurch werden Speicher‑ und Rechenressourcen gespart, allerdings auf Kosten von Sicherheit. Die vollständige Blockchain speichert alle Blöcke (und Transaktionen und UTXO‑Set und Mempool) und validiert jede Transaktion und jeden Block lokal. Sie benötigt deutlich mehr Ressourcen, bietet dafür aber mehr Sicherheit.
+Die vollständige Blockchain speichert alle Blöcke (und Transaktionen und UTXO‑Set und Mempool) und validiert jede Transaktion und jeden Block lokal. Sie benötigt deutlich mehr Ressourcen, bietet dafür aber mehr Sicherheit.
 
-Ob eine Node die vereinfachte oder vollständige Variante wählt ist zunächst egal. Jedoch verwenden SPV Nodes tendenziell die vereinfachte Blockchain, um Ressourcen zu sparen und Miner Nodes nutzen die vollständige Blockchain Implementierung, um möglichst schnell und unabhängig von anderen Nodes Blöcke validieren zu können.
+Hier eine Zusammenfassung der Eigenschaften der vollständiger Blockchain:
 
-Technischer Vergleich zwischen vollständiger und vereinfachter Blockchain:
-
-| Eigenschaft                                                                       | Vollständige Blockchain                                                                                                                        | Vereinfachte Blockchain                                                                                                                                        |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **UTXO Set**                                                                      | Hält komplettes UTXO Set                                                                                                                       | Hält nur UTXOs die von der Wallet gebraucht werden                                                                                                             |
-| **Mempool**                                                                       | Vollständiger Mempool für unbestätigte Tx                                                                                                      | Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                                                          |
-| [**Ausgehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja (Bedient Anfragen von anderen)                                                                                                              | Nein (Kann keine Daten bereitstellen)                                                                                                                          |
-| [**Eingehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja                                                                                                                                             | Ja                                                                                                                                                             |
-| **Blöcke**                                                                        | Speichert alle Blöcke komplett (Block-Header + Tx der Blöcke)                                                                                  | Speichert nur Block Header aller Blöcke                                                                                                                        |
-| **Teil der Registry** (siehe auch [Registry Crawler](#whitebox-registry-crawler)) | Ja                                                                                                                                             | Nein                                                                                                                                                           |
-| **Transaktions-Validierung**                                                      | Verifiziert anhand Höhe in der Blockchain. Validiert Signaturen und Semantik aller eingehenden Transaktionen. Prüft gegen das lokale UTXO Set. | Verifiziert anhand Tiefe in der Blockchain. Verknüpft Transaktion mit Block über Merkle-Pfad und wartet, bis Block tief genug in der Blockchain versunken ist. |
-| **Block-Validierung**                                                             | Prüft gesamten Block (alle Tx gültig + Proof-of-Work + Konsens)                                                                                | Prüft nur Proof-of-Work und Verkettung                                                                                                                         |
-| **Empfang von Transaktionen**                                                     | Empfängt und speichert alle (validen) Tx                                                                                                       | Empfängt und speichert nur Tx, die Outputs enthalten, die der Wallet gehören sowie selbst erstelle Transaktionen                                               |
+| Eigenschaft                                                                       | Vollständige Blockchain                                                                                                                        |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **UTXO Set**                                                                      | Hält komplettes UTXO Set                                                                                                                       |
+| **Mempool**                                                                       | Vollständiger Mempool für unbestätigte Tx                                                                                                      |
+| [**Ausgehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja (Bedient Anfragen von anderen)                                                                                                              | 
+| [**Eingehende Verbindungen**](#ausgehende-vs-eingehende-verbindungen)             | Ja                                                                                                                                             | 
+| **Blöcke**                                                                        | Speichert alle Blöcke komplett (Block-Header + Tx der Blöcke)                                                                                  |
+| **Teil der Registry** (siehe auch [Registry Crawler](#whitebox-registry-crawler)) | Ja                                                                                                                                             | 
+| **Transaktions-Validierung**                                                      | Verifiziert anhand Höhe in der Blockchain. Validiert Signaturen und Semantik aller eingehenden Transaktionen. Prüft gegen das lokale UTXO Set. |
+| **Block-Validierung**                                                             | Prüft gesamten Block (alle Tx gültig + Proof-of-Work + Konsens)                                                                                |
+| **Empfang von Transaktionen**                                                     | Empfängt und speichert alle (validen) Tx                                                                                                       |
 
 Weitere Informationen / Quellen:
 
--   [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
--   [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
--   [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
--   [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
--   [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
+- [Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.org/bitcoin.pdf)
+- [bitcoindeveloper - Operating Modes](https://developer.bitcoin.org/devguide/operating_modes.html)
+- [BIP-37](https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki)
+- [Bitcoin Wiki](https://en.bitcoin.it/wiki/Clearing_Up_Misconceptions_About_Full_Nodes#Very_roughly_estimating_the_total_node_count)
+- [KI Erklärungen](https://t3.chat/share/ugdbfn22fs)
 
 Schnittstellen
 
--   `UtxoAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
--   `MempoolAPI` bietet die Möglichkeit, den Mempool zu beobachten / ändern.
--   `BlockchainAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+-   `UtxoStoreAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
+-   `BlockStoreAPI` bietet die Möglichkeit, Informationen über bestehende Blöcke zu lesen.
+-   `BlockchainAPI` bietet die Möglichkeit, neue Blöcke hinzuzufügen und zu validieren.
+- `BlockStoreVisualizationAPI` ermöglicht die Anzeige einer Debug-View der Blockchain.
+- `MempoolAPI` liefert die aktuellen Transaktionen, die noch nicht der Blockchain hinzugefügt wurden.
+- `BlockchainAPI` zum Hinzufügen neuer Blöcke durch den lokalen Miner.
+- `BlockchainAppAPI` bündelt die Schnittstelle zur App Komponente. Sie Umfasst: (für bessere Übersicht extra aufgeführt)
+  - `BlockStoreVisualizationAPI` 
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
+- [Meilenstein Blockchain (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Blockchain%20(Teilsystem)%22>)
 
 ### Wallet (Blackbox)
 
 Zweck/Verantwortung  
-Das Teilsystem Wallet ist für die Verwaltung der digitalen Geldbörse zuständig. Kernaufgaben sind die sichere Erzeugung und Speicherung von kryptographischen Schlüsselpaaren (Private und Public Keys) sowie das Erstellen und Signieren von Transaktionen.
+Das Teilsystem Wallet ist für die Verwaltung der digitalen Geldbörse zuständig. Kernaufgaben sind die kryptographisch sichere Erzeugung und Konvertierung von Schlüsselpaaren (Private und Public Keys) sowie das Erstellen und Signieren von Transaktionen.
 
 Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Blockchain-Teilsystems zurück. Es identifiziert die dem Nutzer zugehörigen Unspent Transaction Outputs (UTXOs) und nutzt diese als Input für neue Transaktionen. Das Wallet dient somit als primäre Schnittstelle für Händler, um am Zahlungsverkehr teilzunehmen.
 
 Schnittstellen
 
--   `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+- `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - `HistoryAPI` für eine Transaktionshistorie.
+    - `KeyGeneratorApi` erlaubt das Erstellen und Konvertieren Schlüsselpaaren und Adressen.
+    - `KontoAPI` für Kontoinformationen.
+    - `TransactionCreationAPI` erlaubt das Erstellen und Signieren von neuen Transaktionen.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Wallet (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Wallet%20(Teilsystem)%22>)
+- [Meilenstein Wallet (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Wallet%20(Teilsystem)%22>)
 
 ### Miner (Blackbox)
 
@@ -267,15 +315,15 @@ Der Miner sammelt unbestätigte Transaktionen aus dem Mempool des Blockchain-Tei
 
 Schnittstellen
 
--   `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   TODO
+- `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+  - `MinerAPI` ermöglicht das Starten, Stoppen und (De-)aktivieren des Mining-Prozesses.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Miner (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Miner%20(Teilsystem)%22>)
+- [Meilenstein Miner (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Miner%20(Teilsystem)%22>)
 
 ### Netzwerkrouting (Blackbox)
 
@@ -284,15 +332,14 @@ Das Teilsystem Netzwerkrouting bildet das Fundament der Kommunikation zwischen d
 
 Schnittstellen
 
--   `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
--   `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
-    -   `HandshakeAPI`
-        -   `InitiateHandshake(addrPort netip.AddrPort) error`
-    -   `NetworkInfoAPI`
-        -   `GetInternalPeerInfo() []PeerInfo`
-    -   `QueryRegistryAPI`
-        -   `QueryRegistry() ([]RegistryEntry, error)`
--   `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist das Blockchain Teilsystem nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
+- `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
+- `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - `HandshakeAPI`
+    - `NetworkInfoAPI`
+    - `QueryRegistryAPI`
+    - `DisconnectAPI`
+    - `DiscoveryAPI`
+- `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist das Blockchain Teilsystem nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
 
     | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                                                                                                         |
     | ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -306,7 +353,7 @@ Die meisten Schnittstellen sind in der `api/`-Schicht zu finden. `P2P-Protokoll-
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [Meilenstein Netzwerkrouting (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Netzwerkrouting%20(Teilsystem)%22>)
+- [Meilenstein Netzwerkrouting (GitHub Issues)](<https://github.com/bjoern621/VSP-Blockchain/issues?q=sort%3Aupdated-desc%20is%3Aissue%20label%3Ablockchain%20label%3AUS%20milestone%3A%22Netzwerkrouting%20(Teilsystem)%22>)
 
 ### App (Blackbox)
 
@@ -315,7 +362,7 @@ Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.
 
 Schnittstellen
 
--   `AppAPI` bündelt die APIs für externe Systeme. Sie umfasst alle verfügbaren AppAPIs der jeweiligen Teilsysteme. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
+- `AppAPI` alle für externe System angebotenen Funktionen. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
 
 ### Whitebox Registry Crawler
 
@@ -338,23 +385,23 @@ Zusätzlich filtert die Logik die Kandidaten anhand technischer Kriterien (z.&nb
 
 Schnittstellen
 
--   `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
+- `updatepeers` Der Crawler gibt die Änderung über [updatepeers](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) frei. Dabei ist hervorzuheben, dass eigentlich nie eine vollständige Liste aller verfügbaren Peers übergeben wird, sondern stets nur ein Teil des Netzes. Dieser Ausschnitt wird durch den Crawler ebenfalls von Zeit zu Zeit rotiert. So wird vermieden, dass ein Knoten sehr viele Verbindungsanfragen bekommt und stattdessen die Last zwischen den Peers möglichst gleichmäßig verteilt werden.
 
     Zusätzlich gilt, dass nur Nodes mit einer [vollständigen Blockchain](#blockchain-blackbox) der Registry übergeben werden. Und auch nur die Nodes, die den Standardport nutzen.
 
 Qualitäts-/Leistungsmerkmale
 
--   Skalierbarkeit  
-    Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
--   Resource Sharing  
-    Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
--   Resilience  
-    Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
+- Skalierbarkeit  
+  Das dynamische Anpassen der Registry Liste durch den Registry Crawler ermöglicht eine deutlich bessere Skalierbarkeit als bspw. eine statische Liste von IP Adressen. Neue Peers werden so gleichmäßig auf vorhandene Peers aufgeteilt und ein zentraler Knoten mit vielen Verbindungen, der zum Bottleneck werden könnte, wird vermieden.
+- Resource Sharing  
+  Auch werden so die Rechenressourcen eines bestimmten Knotens nicht zu sehr überlastet, sondern die Ressourcen aller verfügbaren Peers genutzt.
+- Resilience  
+  Auch führt die Verteilung zu einem widerstandsfähigeren System. Sollte ein Peer oder auch eine Gruppe von Peers unerwartet ausfallen, sorgt die gleichmäßige Verteilung für genügend alternative Verbindung. Dies wäre unter Umständen nicht der Fall, wenn ein zentraler Peer mit sehr vielen Verbindungen, ähnlich dem zentralen Knoten einer Sterntopologie, ausfällt.
 
 Erfüllte Anforderungen  
 Trägt zur Erfüllung dieser Anforderungen bei:
 
--   [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
+- [US-82 Peer-Liste aktualisieren](https://github.com/bjoern621/VSP-Blockchain/issues/82)
 
 ### Minimal Node (Blackbox)
 
@@ -363,11 +410,11 @@ Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P
 
 Schnittstellen
 
--   `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
-    -   `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
-    -   `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
-    -   (weitere aufschreiben TODO)
--   `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
+- `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
+    - `rpc ConnectTo()`
+    - `rpc Disconnect()`
+    - `rpc GetInternalPeerInfo()`
+- `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
 ## Ebene 3
 
@@ -381,7 +428,7 @@ Schnittstellen
 Begründung  
 Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems.
 
-Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
+Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Modellierung von Entitäten, das Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
 
 Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein.
 
@@ -392,14 +439,139 @@ Using Upcalls, S. 8).
 
 # Laufzeitsicht
 
+## Peer States
+
+```mermaid
+stateDiagram-v2
+    [*] --> StateNew: Peer entdeckt
+
+    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(InitiateHandshake())
+    StateNew --> StateAwaitingAck: Version-Nachricht empfangen<br/>(Version())
+
+    StateAwaitingVerack --> StateConnected: Verack empfangen<br/>(Verack())
+    StateAwaitingAck --> StateConnected: Ack gesendet<br/>(Ack())
+
+    StateConnected --> StateHolddown: Disconnect initiiert
+
+    StateHolddown --> [*]: Holddown-Zeit abgelaufen (15min)
+
+    StateAwaitingVerack<br/>StateAwaitingAck<br/>StateConnected --> StateHolddown: Timeout erkannt
+
+    note right of StateNew
+        Peer wurde entdeckt (Registry oder Gossip oder eingehende Verbindung erkannt),
+        aber noch nicht verbunden.
+    end note
+
+    note right of StateConnected
+        Handshake abgeschlossen,
+        Peer ist voll aktiv.
+    end note
+
+    note right of StateHolddown
+        Peer gilt als Disconnected.
+        Nach 15 Minuten wird der Peer
+        permanent entfernt.
+    end note
+```
+
+### Allgemein
+
+Die Peer State Machine beschreibt den Lebenszyklus eines Peers im P2P-Netzwerk. Jeder Peer durchläuft verschiedene Zustände, die den aktuellen Status der Verbindung zu diesem Peer repräsentieren. Die Zustandsmaschine ist im `PeerStore` implementiert und wird durch verschiedene Services gesteuert (Handshake, Keepalive, Disconnect).
+
+### Zustandsübergänge
+
+#### Verbindungsaufbau
+
+Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
+
+Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
+
+#### Aktive Phase
+
+Im `StateConnected` tauschen die Peers reguläre Netzwerknachrichten aus, wie Transaktionen, Blöcke, Adressinformationen oder Keepalive-Signale. Der `LastSeen`-Zeitstempel des Peers wird bei jedem Heartbeat aktualisiert, um die Aktivität zu überwachen.
+
+#### Verbindungsabbruch und Holddown
+
+Ein Peer kann aus mehreren Gründen in den `StateHolddown` übergehen:
+
+- **Expliziter Disconnect**: Ein externes System oder ein interner Fehler löst `Disconnect()` auf. Die gRPC-Verbindung wird beim Sender sofort geschlossen.
+- **Timeout/Inaktivität**: Der `ConnectionCheckService` erkennt, dass ein Peer seit einer bestimmten Zeit keine Heartbeat-Nachrichten mehr gesendet hat. Der Peer gilt als inaktiv und wird in Holddown versetzt.
+
+Im `StateHolddown` wird keine Nachricht des Peers verarbeitet. Nach einer Abklingphase von 15 Minuten wird der Peer permanent aus dem `PeerStore` entfernt. Dies gibt dem gegenüber genügend Zeit, eine geschlossene Verbindung zu erkennen.
+
 ## Background jobs
 
-TODO: Timing / funktionisweise von background services beschireben
+### Keepalive Service (Heartbeats)
 
--   peermanagement
--   keepalive (heartbeats)
--   connectioncheck (clean old connections)
--   gossip background job
+Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers verantwortlich. Er sendet in regelmäßigen Abständen Heartbeat-Nachrichten (`HeartbeatBing`) an alle verbundenen Peers.
+
+| Parameter                      | Wert            | Beschreibung                             |
+|--------------------------------|-----------------|------------------------------------------|
+| **Intervall**                  | 4 Minuten       | Zeitintervall zwischen Heartbeat-Runden  |
+| **Nachrichtentyp (ausgehend)** | `HeartbeatBing` | Ping-Nachricht an alle verbundenen Peers |
+| **Nachrichtentyp (Antwort)**   | `HeartbeatBong` | Pong-Antwort auf empfangene Pings        |
+
+**Funktionsweise:**
+1. Alle 4 Minuten werden `HeartbeatBing`-Nachrichten an alle verbundenen Peers gesendet
+2. Bei Empfang eines `HeartbeatBing` antwortet der Peer mit einem `HeartbeatBong`
+3. Sowohl Bing als auch Bong aktualisieren den `LastSeen`-Timestamp des sendenden Peers
+4. Falls ein Peer nicht im Status `StateConnected` ist, wird eine `Reject`-Nachricht zurückgesendet
+
+### ConnectionCheck Service
+
+Der `ConnectionCheckService` überprüft periodisch die Gesundheit aller Peer-Verbindungen anhand des `LastSeen`-Timestamps. Inaktive Peers werden in den Holddown-Zustand versetzt und nach Ablauf der Holddown-Periode permanent entfernt.
+
+| Parameter          | Wert       | Beschreibung                                       |
+|--------------------|------------|----------------------------------------------------|
+| **Intervall**      | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen        |
+| **Peer Timeout**   | 9 Minuten  | Zeit ohne Heartbeat bis zur Holddown-Versetzung    |
+| **Holddown-Dauer** | 15 Minuten | Zeit im Holddown-Status vor permanenter Entfernung |
+
+**Funktionsweise:**
+1. Alle 10 Minuten werden alle Peers mit gestarteter Handshake-Phase überprüft
+2. Peers mit `LastSeen = 0` oder älter als 9 Minuten werden in den `StateHolddown` versetzt
+3. Bei jedem Durchlauf werden auch Holddown-Peers überprüft
+4. Holddown-Peers, deren 15-Minuten-Periode abgelaufen ist, werden permanent aus dem `PeerStore` und `NetworkInfoRegistry` entfernt
+
+**Beziehung zum Keepalive:**
+- Der 9-Minuten-Timeout stellt sicher, dass ein Peer mindestens 2 Heartbeat-Zyklen (à 4 Minuten) verpasst haben muss, bevor er als inaktiv gilt
+
+### Periodic Discovery Service (Gossip)
+
+Der `PeriodicDiscoveryService` führt regelmäßig Peer-Discovery durch, um neue Peers im Netzwerk zu entdecken. Dies geschieht sowohl über Gossip (Anfragen an bestehende Peers) als auch über Registry-Abfragen.
+
+
+**Funktionsweise:**
+1. Jede Minute werden zwei parallele Discovery-Aktionen ausgeführt:
+   - **Registry Discovery:** DNS-Abfrage an die Registry für neue Peer-Adressen
+   - **Gossip Discovery:** `GetAddr`-Nachrichten an bis zu 3 zufällig ausgewählte, verbundene Peers
+2. Beim ersten Durchlauf wird die Gossip-Discovery übersprungen, um Zeit für initiale Verbindungen zu lassen
+3. Empfangene Peer-Adressen werden im `NetworkInfoRegistry` gespeichert
+
+### Peer Management Service
+
+Der `PeerManagementService` überwacht die Anzahl aktiver Verbindungen und stellt automatisch neue Verbindungen her, wenn die Anzahl unter einen Schwellenwert fällt.
+
+**Funktionsweise:**
+1. Alle 1,5 Minuten wird die Anzahl verbundener Peers überprüft
+2. Falls weniger als 8 Peers verbunden sind, werden neue Verbindungen hergestellt
+3. Aus bekannten, aber nicht verbundenen Peers werden zufällig bis zu 3 ausgewählt
+4. Für jeden ausgewählten Peer wird ein Handshake initiiert
+
+### Zusammenspiel der Services
+
+Die vier Background-Services arbeiten zusammen, um ein gesundes Peer-Netzwerk aufrechtzuerhalten:
+
+1. **PeriodicDiscoveryService** entdeckt neue potenzielle Peers
+2. **PeerManagementService** stellt Verbindungen zu entdeckten Peers her
+3. **KeepaliveService** hält Verbindungen aktiv und aktualisiert `LastSeen`
+4. **ConnectionCheckService** entfernt inaktive Peers und gibt Ressourcen frei
+
+Diese Kombination gewährleistet:
+- Kontinuierliche Entdeckung neuer Netzwerkteilnehmer
+- Aufrechterhaltung einer Mindestanzahl aktiver Verbindungen
+- Erkennung und Bereinigung toter Verbindungen
+- Schutz vor Ressourcenerschöpfung durch veraltete Peer-Einträge
 
 ## State machine Miner: Allgemein
 
@@ -431,9 +603,6 @@ stateDiagram-v2
     running --> block_received: ReceiveBlock()
     block_received --> running: HandleBlock()
 
-    running --> merkleBlock_received: ReceiveMerkleBlock()
-    merkleBlock_received --> running: HandleMerkleBlock()
-
     running --> transaction_received: ReceiveTx()
     transaction_received --> running: HandleTx()
 
@@ -443,9 +612,6 @@ stateDiagram-v2
     running --> headers_received: ReceiveHeaders()
     headers_received --> running: HandleHeaders()
 
-    running --> setFilter_received: ReceiveSetFilter()
-    setFilter_received --> running: HandleSetFilter()
-
     running --> mempool_received: ReceiveMempool()
     mempool_received --> running: HandleMempool()
 ```
@@ -453,109 +619,90 @@ stateDiagram-v2
 <p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
 </div>
 
-## State machine Miner: Handshake
+## Block-Header Synchronisation
 
-Unser allgemeines System ist zustandslos. Dargestellt ist also nicht der Zustand des Gesamtsystems, sondern der Zustand,
-in welchem sich der aktuell verbindende Peer befindet. Für jeden neu verbindenden Peer wird der Zustand separat gespeichert.
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Idle : Handshake complete
+    
+    Idle --> BuildBlockLocator : buildBlockLocator()
+    BuildBlockLocator --> Idle : send GetHeaders()
+    
+    Idle --> FindCommonAncestor : getHeaders()
+    FindCommonAncestor --> CollectBlockHashes : found common ancestor
+    CollectBlockHashes --> Idle : send headers()
+    
+    Idle --> HeadersReceived : headers()
+    HeadersReceived --> Idle : Header already known
+    HeadersReceived --> Idle : getData(unknown headers)
+```
 
-Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dargestellt sind, so werden diese ignoriert.
+Die Block-Header Synchronisation dient dazu zwei Knoten, welche der gleichen Chain folgen auf den gleichen Stand zu bringen. Dazu wird ein Block Locator erstellt, welcher in exponentiell größer werdenden Schritten die Block Hashes von oben nach unten speichert, um den gegenüber über ihm bekannte Blöcke zu informieren. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. 
+
+Nach dem Send des `BlockLocators` durch `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Nach dem Empfang von einer `Headers()` Nachricht, wird geprüft, ob der Block-Hash bereits bekannt ist. Ist dies nicht der Fall, wird dieser über `getData(blockHash)` Nachricht angefragt. Von hier an, findet ein normaler [Datenaustausch](#datenaustausch) statt.
+
+Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. Wenn zB. der anfragende Client als Antwort mehrere Blöcke bekommt, welche von seiner Main-Chain abzweigen und diese die aktuelle Main-Chain überholen.
+
+## Initialer Block Download
 
 <div align="center">
 
 ```mermaid
 stateDiagram-v2
-    direction LR
-    state peer_check <<choice>>
-    [*] --> initiate
-    initiate --> peer_check
-    peer_check --> no_peers: if len(peers) == 0
-    peer_check --> initiateHandshake : if len(peers) > 0
-    no_peers --> initiateHandshake : getPeers()
-    [*] --> handleHandshake: HandleHandshake()
+    [*] --> Idle : Handshake complete
+    
+    Idle --> Idle : BlockHeader Synchronisation
 
-    state initiateHandshake {
-        [*] --> new
-        new --> awaiting_verack: SendVersion()
-        awaiting_verack --> connected: ReceiveVerack()
-        connected --> [*]: SendAck()
-    }
-
-    state handleHandshake {
-        [*] --> new_: ReceiveVersion()
-        new_ --> awaiting_ack: SendVerack()
-        awaiting_ack --> connected_: ReceiveAck()
-        connected_ --> [*]
-
-    }
-
-    connected_: connected
-    new_: new
-
+    Idle --> handleGetData : getData()
+    handleGetData --> Idle : send Block()
+    
+    Idle --> handleBlock : Block()
+    handleBlock --> Idle : process Block
 ```
 
-<p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+
 </div>
 
-## Verbindungsaufbau
+Allgemein  
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
+
+Ablauf:
+Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
+
+Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
+
+Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
+
+## Datenaustausch
 
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant p1 as Peer 1
-    participant Registry
-    participant p2 as Peer X
-
-    p1->>Registry: GetPeers()
-    destroy Registry
-    Registry-->>p1: Liste IP-Adressen
-    loop Für jede IP X in der Liste
-        p1->>p2: Version()
-        p2->>p1: Verack()
-        p1->>p2: Ack()
-    end
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> getDataReceived : getData()
+    getDataReceived --> invTypeBlock : Data is a block
+    getDataReceived --> invTypeTx : Data is a transaction
+    
+    invTypeBlock --> isPresentBlock : block already present
+    invTypeBlock --> isMissingBlock : block missing
+    
+    invTypeTx --> isPresentTx : tx already present
+    invTypeTx --> isMissingTx : tx missing
+    
+    isPresentBlock --> [*] : send Block()
+    isMissingBlock --> [*]
+    
+    isPresentTx --> [*] : send Tx()
+    isMissingTx --> [*]
 ```
-
-<p><em>Abbildung: Sequenzdiagramm - Verbindungsaufbau zwischen Peers</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
 
 </div>
 
-Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
-
-Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
-
-## Block-Header Synchronisation
-
-<div align="center">
-
-```mermaid
-sequenceDiagram
-    participant A as Full Node A<br/>(BestBlockHeight: 110)
-    participant B as Full Node B<br/>(BestBlockHeight: 120)
-
-    par Requests kreuzen sich im Netzwerk
-        A->>B: GetHeaders(BlockLocator[Hash110])
-        B->>A: GetHeaders(BlockLocator[Hash120])
-    end
-
-    Note over A: A hat nichts Nützliches für B
-
-    B->>A: Headers(List: 111...120)
-
-    A->>A: Validierung & Update Header auf 120
-
-    A->>A: Prüfen, ob Chain Reorganization nötig ist
-```
-
-<p><em>Abbildung: Sequenzdiagramm - Einfache Synchronisation Block-Header</em></p>
-
-</div>
-
-Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
-
-Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header an B. Peer B dagegen schickt die übrigen Block-Header ab Block 111. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
-
-Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
+Der Datenaustausch zwischen Knoten erfolgt über die `getData()` Methode, welche Hashes von Blöcken oder Transaktionen beinhaltet. Abhängig davon, ob die Daten bekannt sind, wird mit einer `Block()` oder `Tx()` Nachricht geantwortet. Sind die Daten nicht bekannt wird nicht geantwortet.
 
 ## Chain Reorganization
 
@@ -571,8 +718,7 @@ flowchart TB
         direction TB
         StartRollback[Setze Zeiger auf aktuellen Tip] --> CheckSplit{Ist Zeiger ==<br/>Fork Point?}
 
-        CheckSplit -- Nein --> UndoState["Mache Block-Zustand rückgängig (UTXO Rollback)"]
-        UndoState --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
+        CheckSplit -- Nein --> TxToMempool[Verschiebe Transaktionen zurück in den Mempool]
         TxToMempool --> StepPrev[Setze Zeiger auf vorherigen Block]
         StepPrev --> CheckSplit
     end
@@ -583,8 +729,7 @@ flowchart TB
         direction TB
         GetNewPath[Lade Liste der neuen Blöcke von Fork Point bis zum neuen Tip] --> CheckList{Liste leer?}
 
-        CheckList -- Nein --> ApplyBlock["Wende Block an Transaktionen ausführen (UTXO Update)"]
-        ApplyBlock --> CleanMempool[Lösche bestätigte TXs aus Mempool]
+        CheckList -- Nein --> CleanMempool[Lösche bestätigte TXs aus Mempool]
         CleanMempool --> StepNext[Nimm nächsten Block]
         StepNext --> CheckList
     end
@@ -608,145 +753,116 @@ Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Cha
 Hinweise  
 Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämliche der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
 
-## Initialer Block Download
+## Block-Mining
 
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant SPV as SPV Node
-    participant Full as Full Node
-
-    Note over SPV, Full: Block-Header synchronisieren<br/>(siehe oben)
-
-    SPV->>Full: SetFilter(...)
-
-    Note over SPV, Full: Blöcke (UTXOs) anfordern:
-
-    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
-    Full->>SPV: MerkleBlock(...)
-    Full->>SPV: MerkleBlock(...)
-
-    Note over SPV, Full: Unbestätigte Transaktionen abrufen:
-
-    SPV->>Full: Mempool()
-    Full->>SPV: Inv(...)
-
-    SPV->>Full: GetData(MSG_TX)
-    Full->>SPV: Tx(...)
-    Full->>SPV: Tx(...)
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> NotMining
+    NotMining --> preStart : start()
+    preStart --> candidateBlockCreated : createCandidateBlock()
+    candidateBlockCreated --> Mining : beginMining(candidateBlock)
+    Mining --> ProcessBlock: blockMined() (internal)
+    Mining --> ProcessBlock: block() (external)
+    ProcessBlock --> Idle : processNewBlock()
 ```
 
-<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Mining eines Blocks</em></p>
 
 </div>
 
-Allgemein  
-Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
+#### Ablauf
 
-Ablauf  
-Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
+1. Jeder Miner erstellt einen Candidate Block mit den Daten aus dem Mempool
+2. Ein Miner versucht den Block zu minen.
+3. Wird ein neuer Block empfangen oder gefunden wird dieser von der [Block Verarbeitung] verarbeitet.
 
-Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
-
-Abschließend wird der Mempool synchronisiert, um auch über noch unbestätigte Transaktionen informiert zu sein. Da zuvor ein Filter gesetzt wurde, werden nur gefilterte Transaktionen in der Inv Nachricht übermittelt.
-
-Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
-
-Unterschied Full Nodes vs. SPV  
-Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
-
-## Block-Mining & Verbreitung (Block Propagation)
-
+## Block Handling
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant Miner as Miner
-    participant Node_X as Node X
-    participant Node_Y as Node Y
-
-    Note over Miner, Node_X: Miner findet neuen Block
-
-    loop Für jeden Peer X in Nachbarn
-        Miner->>Node_X: inv(block_hash...)
-
-        alt block_hash unbekannt
-            Node_X->>Miner: getData(block_hash...)
-            Miner->>Node_X: block(...)
-            Node_X->>Node_X: validiere neuen Block
-            Node_X->>Node_Y: inv(block_hash)
-        else
-            %% No message
-        end
-    end
-
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> BlockReceived : block()
+    BlockReceived --> BlockUnknown
+    BlockUnknown --> SanityCheck
+    SanityCheck --> HeaderValid
+    HeaderValid --> addedToChain : addToChain()
+    addedToChain --> isOrphan : isOrphan()
+    isOrphan --> OrphanHandling
+    addedToChain --> FullyValid
+    FullyValid --> Reorganize : needs reorganization
+    FullyValid --> PropagateViaInv : does not need reorganization
+    PropagateViaInv --> Idle : propagate via inv
+    Reorganize --> PropagateViaInv
 ```
-
 <p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
 
 </div>
 
-#### Allgemein:
+Kann der nächste Zustand nicht erreicht werden, gilt für diesen Fall, dass in den Idle Zustand zurück gekehrt wird.
 
-Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es,
-dass der Block möglichst schnell im Netz verbreitet wird, damit dieser Teil der Blockchain wird.
-Das dargestellte Szenario zeigt, wie ein gefundener Block im Netzwerk propagiert wird.
-
-#### Ablauf
-
-1. Es wird ein Block gefunden
-2. Für jeden Peer wird eine `inv` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes.
-3. Ein Peer prüft nun, ob er diesen Block-Hash bereits kennt. (Dies ist im Regelfall nicht so, da der Block gerade neu geschürft wurde)
-4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer `getData` Nachricht an
-5. Der Miner, welcher den Block gefunden hat, antwortet mit einer `block` Nachricht
-6. Das wissen über den neuen Block wird in einer `inv` Nachricht an die anderen bekannten Peers gesendet.
-
-Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
+### Ablauf:
+1. Wenn ein Block empfangen wird (BlockReceived), wird geprüft, ob er bereits bekannt ist (BlockUnknown).
+2. SanityCheck: Grundlegende Formatprüfung des Blocks
+3. Validierung des Block-Headers (Schwierigkeit, Zeitstempel, PoW, etc.)
+4. Der Block wird zum BlockStore hinzugefügt (addToChain).
+5. Falls der Eltern-Block fehlt (isOrphan), wird die bestehende [Orphan Handling](#orphan-block-handling) verwendet.
+6. FullyValid Prüft alle Transaktionen und UTXO-Konsistenz.
+7. Falls nötig, wird die Hauptkette neu organisiert (Reorganize).
+8. Neue Blöcke werden an andere Peers weitergeleitet (PropagateViaInv → BroadcastAddedBlocks).
 
 ## Orphan Block Handling
 
 <div align="center">
 
 ```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> Idle : Handshake complete
 
-sequenceDiagram
-    participant node as Node
-    participant peer as Peer
+    Idle --> BlockReceived : block()
 
-    Note over node,peer: Block C empfangen,  A unbekannt
+    BlockReceived --> ValidateBlock : Check prevBlockHash
 
-    node->>node: C in Waisenpool hinzufügen
-    node->>peer: getHeaders(blockLocator: A, hashStop: C)
-    peer->>node: headers( { H(A), ...,  H(C) } )
-    loop für jeden Header H der empfangenen Header
-        node->>node: validiere empfangenen Header
-        node->>peer: getData(hash(H))
-        peer->>node: block(H)
-        node->>node: validiere empfangenen Block
-    end
-    node->>node: versuche Waisen-Blöcke anzuschließen
+    ValidateBlock --> ProcessBlock : prevBlockHash known
+    ValidateBlock --> OrphanHandling : prevBlockHash unknown
+
+    state OrphanHandling {
+        [*] --> AddToOrphanPool
+        AddToOrphanPool --> BlockHeaderSynchronisation
+        BlockHeaderSynchronisation --> Datenaustausch
+        Datenaustausch --> ReceiveMissingBlocks
+        ReceiveMissingBlocks --> ValidateMissingBlocks
+        ValidateMissingBlocks --> TryConnectOrphans
+        TryConnectOrphans --> [*]
+    }
+
+    OrphanHandling --> ProcessBlock : Orphans connected
+
+    ProcessBlock --> AppendToChain : Block valid
+    ProcessBlock --> Idle : Block invalid
+
+    AppendToChain --> Idle : Block added
+    AppendToChain --> ChainReorganization : Fork detected
+
+    ChainReorganization --> Idle : Chain updated
 ```
 
 <p><em>Abbildung: Sequenzdiagramm - Behandlung eines Waisenblocks</em></p>
 
 </div>
 
-Szenario:
-Node empfängt über `inv`, `getData` und `block` einen Block `C`. Dieser hat als Vorgängerblock einen Block `A`, welcher dem Node unbekannt ist.
-
-Ablauf:
-
+Orphan Handling wird dann benötigt, wenn ein Block empfangen wird und der `prevBlockHash` nicht bekannt ist.
 1. Es wird ein Block empfangen.
-2. Header Kette wird validiert → Schlägt fehl
+2. Finde vorherigen Block
 3. Block wird in den Waisen-Pool aufgenommen
-4. Es werden alle Header zwischen den letzten Blöcken der Kette und dem Empfangenen angefragt. Siehe [hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) für den Aufbau des BlockLocators
-5. Der Peer sendet dem Node alle angeforderten Block-Header via einer `headers(...)` Nachricht
-6. Die Header werden validiert
-7. Die Blöcke der Hashes werden durch die `getData` Nachricht angefragt
-8. Der Peer liefert die angefragten Blöcke über eine `block` Nachricht
-9. Der empfangene Block wird validiert
-10. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen
+4. Es findet eine [Block-Header Synchronisation](#block-header-synchronisation) statt.
+5. Die nicht bekannten Blöcke aus der Block-Header Synchronisation werden durch den [Datenaustausch](#datenaustausch) angefragt.
+6. Die empfangenen Blöck werden validiert
+7. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen. Ggf. findet dadurch eine [Chain Reorganization](#chain-reorganization) statt.
 
 ## Peer Discovery
 
@@ -837,27 +953,28 @@ Die Infrastruktur nutzt die HAW-ICC Kubernetes-Umgebung und ist für die gegeben
 
 Das Registry Deployment besteht aus einem einzelnen Pod mit drei Containern:
 
-| Container | Image | Funktion | Ressourcen |
-|-----------|-------|----------|------------|
-| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner` | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi |
-| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS | CPU: 50-200m, RAM: 64-128Mi |
-| **coredns** | `coredns/coredns:1.11.3` | DNS-Server für Seed-Auflösung auf seed.local | CPU: 25-100m, RAM: 128-256Mi |
+| Container            | Image                                               | Funktion                                                   | Ressourcen                   |
+|----------------------|-----------------------------------------------------|------------------------------------------------------------|------------------------------|
+| **minimal-node**     | `ghcr.io/bjoern621/vsp-blockchain-miner`            | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi  |
+| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS            | CPU: 50-200m, RAM: 64-128Mi  |
+| **coredns**          | `coredns/coredns:1.11.3`                            | DNS-Server für Seed-Auflösung auf seed.local               | CPU: 25-100m, RAM: 128-256Mi |
+
+
 
 Die drei Container teilen sich einen Pod und kommunizieren über localhost. Der registry-crawler verbindet sich zum minimal-node über gRPC (Port 50050), um die App-Schnittstelle zu nutzen. Er schreibt die entdeckten Peers in eine gemeinsame hosts-Datei, die von CoreDNS gelesen wird.
-
 **Kubernetes Service:** `registry` (ClusterIP: 10.233.1.72) exponiert DNS auf Port 53.
 
 #### Miner StatefulSet (25 Pods)
 
 Das Miner-StatefulSet betreibt eine frei konfigurierbare Anzahl innerhalb des Limits (momentan 25), die das Rückgrat des P2P-Netzwerks bilden:
 
-| Eigenschaft | Wert |
-|-------------|------|
-| **Image** | `ghcr.io/bjoern621/vsp-blockchain-miner` |
-| **Replicas** | 25 |
-| **Services** | miner, blockchain_full, app |
-| **Ports** | App: 50050, P2P: 50051 |
-| **Ressourcen** | CPU: 100-200m, RAM: 64-128Mi pro Pod |
+| Eigenschaft        | Wert                                      |
+|--------------------|-------------------------------------------|
+| **Image**          | `ghcr.io/bjoern621/vsp-blockchain-miner`  |
+| **Replicas**       | 25                                        |
+| **Services**       | miner, blockchain_full, app               |
+| **Ports**          | App: 50050, P2P: 50051                    |
+| **Ressourcen**     | CPU: 100-200m, RAM: 64-128Mi pro Pod      |
 | **Pod Management** | Parallel (alle Pods starten gleichzeitig) |
 
 Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) erhalten die Pods stabile Netzwerkidentitäten (`miner-0`, `miner-1`, ..., `miner-24`), die auch nach Neustarts erhalten bleiben. Dies ermöglicht zuverlässige Adressierung über den Headless Service `miner-headless`.
@@ -866,18 +983,18 @@ Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/worklo
 - `miner-headless` (Headless): Ermöglicht direkte Pod-zu-Pod-Kommunikation über DNS (z.B. `miner-0.miner-headless.vsp-blockchain.svc`)
 - `miner-seed` (Headless): Bootstrap-Endpunkte für den Registry-Crawler
 
-**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless:50051` und `miner-1.miner-headless:50051` als initiale Bootstrap-Peers.
+**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` und `miner-1.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` als initiale Bootstrap-Peers.
 
 #### REST-API Deployment (5 Pods, 2 Container pro Pod)
 
 Das REST-API Deployment stellt die HTTP-Schnittstelle für externe Clients bereit:
 
-| Container | Image | Funktion | Ressourcen |
-|-----------|-------|----------|------------|
-| **spv** | `ghcr.io/bjoern621/vsp-blockchain-miner` | SPV-Node mit wallet, blockchain_simple, app | CPU: 50-200m, RAM: 64-128Mi |
-| **rest-api** | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080 | CPU: 50-200m, RAM: 64-128Mi |
+| Container        | Image                                       | Funktion                                      | Ressourcen                  |
+|------------------|---------------------------------------------|-----------------------------------------------|-----------------------------|
+| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner`    | Minimal-Node mit wallet, blockchain_full, app | CPU: 50-200m, RAM: 64-128Mi |
+| **rest-api**     | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080                   | CPU: 50-200m, RAM: 64-128Mi |
 
-Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SPV-Node über localhost gRPC (Port 50050). SPV-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
+Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit der Minimal-Node über localhost gRPC (Port 50050). Minimal-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
 
 **Kubernetes Service:** `rest-api-service` (ClusterIP) auf Port 8080.
 
@@ -885,14 +1002,14 @@ Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SP
 
 Die Infrastruktur muss die [Ressourcenquoten der HAW-ICC](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/) einhalten:
 
-| Ressource | Limit | Aktuell genutzt |
-|-----------|-------|-----------------|
-| CPU | 16 Kerne | ~4,8 Kerne (requests) |
-| RAM | 16 GB | ~2,5 GB (requests) |
-| Speicher | 100 GB | - |
-| #Pods | 50 | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
-| #Services | 10 | 4 Services |
-| #PVCs | 5 | 0 |
+| Ressource | Limit    | Aktuell genutzt                              |
+|-----------|----------|----------------------------------------------|
+| CPU       | 16 Kerne | ~4,8 Kerne (requests)                        |
+| RAM       | 16 GB    | ~2,5 GB (requests)                           |
+| Speicher  | 100 GB   | -                                            |
+| #Pods     | 50       | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
+| #Services | 10       | 4 Services                                   |
+| #PVCs     | 5        | 0                                            |
 
 Diese Limits wurden nach Nachfrage per E-Mail angehoben. Die aktuelle Konfiguration hält sich innerhalb der Grenzen.
 
@@ -916,15 +1033,21 @@ seed.local:53 {
 
 ### Kommunikationspfade
 
-| Von | Nach | Protokoll | Port | Beschreibung |
-|-----|------|-----------|------|--------------|
-| registry-crawler | minimal-node | gRPC | 50050 | App-Schnittstelle (localhost) |
-| registry-crawler | miner-* | gRPC | 50051 | Peer Discovery |
-| rest-api | spv | gRPC | 50050 | App-Schnittstelle (localhost) |
-| spv | miner-* | gRPC | 50051 | P2P-Kommunikation |
-| miner-* | miner-* | gRPC | 50051 | P2P-Kommunikation |
-| Externe Clients | rest-api-service | HTTP | 8080 | REST-API |
-| Alle Pods | registry | DNS | 53 | Seed-Auflösung |
+| Von              | Nach             | Protokoll | Port  | Beschreibung                  |
+|------------------|------------------|-----------|-------|-------------------------------|
+| registry-crawler | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| registry-crawler | miner-*          | gRPC      | 50051 | Peer Discovery                |
+| rest-api         | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| minimal-node     | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| miner-*          | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| Externe Clients  | rest-api-service | HTTP      | 8080  | REST-API                      |
+| Alle Pods        | registry         | DNS       | 53    | Seed-Auflösung                |
+
+### Einschränkungen
+Das Blockchainsystem kann nach der Architektur und Implementierung durch beliebig viele Miner von innen und außen ergänzt werden. 
+Doch aufgrund der Nutzung von gRPC als Kommunikationsprotokoll sind direkte Verbindungen von außerhalb der HAW-ICC mit einer beliebig skalierenden Anzahl Miner nicht möglich.
+Folglich werden in dieser Umsetzung in der HAW-ICC nur interne Miner dem Netzwerk beitreten können. In einer anderen Umgebung spricht allerdings nichts gegen das Verbinden von anderen externen Minern.
+
 # Querschnittliche Konzepte
 
 ## Ausgehende vs. Eingehende Verbindungen
@@ -933,12 +1056,12 @@ Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten
 
 Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
 
-Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
+Wichtig in diesem Zusammenhang ist, dass Minimal-Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass Minimal-Nodes niemals zu anderen Minimal-Nodes verbunden sind sondern Minimal stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 ## Validiert/verifiziert vs. bestätigt
 
 | Begriff               | Bedeutung                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Validiert/Verifiziert | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen? Liste der Anforderungen zur Validierung aus [diesem Buch](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805). Für Transaktionen aus Kapitel: "Unabhängige Verifikation von Transaktionen". Für Validierung von Blöcken Kapitel: "Einen neuen Block validieren" |
 | Bestätigt             | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist.                                                                                                                                                                                                                                                                                   |
 
@@ -951,7 +1074,7 @@ Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmeng
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
 Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
 In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
-Dies wird dann speziell von SPV-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
+Dies wird dann speziell von Minimal-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
 müssen diese nur den Merklepfad nachfolgen und das Ergebnis mit dem Merkle-Root (enthalten im Block-Header) vergleichen. Somit kann eine
 Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen.
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
@@ -1382,7 +1505,7 @@ Akzeptiert
 
 -   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
 -   Full Nodes können Transaktionen vollständig und unabhängig validieren
--   SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+-   Minimal Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
 -   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
 -   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
@@ -1413,12 +1536,12 @@ Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größ
 Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt. Verwendete Werte sind, wenn nicht anders angegeben, Educated Guesses.
 
 | ID   | Szenario                                                                                                                                                                                                                                  | Akzeptanzkriterium                                                                                                                                        | Relevante Qualitätsanforderungen                                                                                                                                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).                                                                                                            | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                               | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)                                                                                                                                                                       |
 | QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                                                                                                                                 | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                                     | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)<br/>Efficient > [Responsiveness](https://quality.arc42.org/qualities/responsiveness)                                                                                  |
 | QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                                                                                                                      | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Synchronisation beginnt innerhalb von 10 Sekunden.                 | Reliable > [Recoverability](https://quality.arc42.org/qualities/recoverability)                                                                                                                                                                  |
 | QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. Siehe [Aufgabenstellung](#aufgabenstellung) für Unterscheidung zwischen Händler-/Mining-Funktionen | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar. Es besteht keine Abhängigkeit von Wallet zu Miner-Teilsystem.                                | Flexible > [Modularity](https://quality.arc42.org/qualities/modularity)<br/>Flexible > [Composability](https://quality.arc42.org/qualities/composability)                                                                                        |
-| QS-5 | Eine SPV Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                                   | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
+| QS-5 | Eine Minimal Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                               | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
 | QS-6 | Ein Reviewer prüft eine Code-Änderung.                                                                                                                                                                                                    | Die Änderung ist durch Kommentare und Dokumentation unterstützt. Go Best Practices wurden eingehalten. Tool: [Golangci-lint](https://golangci-lint.run/). | Flexible > [Maintainability](https://quality.arc42.org/qualities/maintainability)                                                                                                                                                                |
 | QS-7 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                                                                                                                    | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                                   | Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance) <br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)<br/>Secure > [Data Integrity](https://quality.arc42.org/qualities/data-integrity) |
 | QS-8 | 5 % gleichmäßig im Netzwerk verteilte Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                                                                                                                 | Die verbleibenden Nodes können weiterhin [alle Anforderungen](#aufgabenstellung) erfüllen.                                                                | Reliable > [Resilience](https://quality.arc42.org/qualities/resilience)<br/>Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance)                                                                                    |
@@ -1478,10 +1601,37 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 | **Maßnahmen**                             | Bei Code Reviews mehr Fokus auf Konventionen. Schrittweise Anpassung bei zukünftigen Änderungen. Wird sich nach einer gewissen Einarbeitungsphase natürlicherweise verbessern.     |
 | **Status**                                | Offen                                                                                                                                                                              |
 
+| TD-3: Unvollständige Fehlertransparenz bei Reject-Nachrichten |                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Beschreibung**                                              | Reject-Nachrichten werden in bestimmten Fällen nicht gesendet: Bei Holddown-Situationen sowie wenn keine Verbindung besteht. Der Sender erhält in diesen Fällen keine Rückmeldung.              |
+| **Ursache**                                                   | Fokus auf Kernfunktionalität, Reject-Handling wurde als nachrangig eingestuft.                                                                                                                   |
+| **Auswirkung**                                                | Gering. Reject-Nachrichten dienen ausschließlich Logging-Zwecken. Keine weiteren Systeme oder Geschäftslogik sind davon betroffen. Das Fehlen der Nachrichten hat keine funktionalen Auswirkungen. |
+| **Priorität**                                                 | Niedrig                                                                                                                                                                                          |
+| **Maßnahmen**                                                 | Reject-Nachrichten für Holddown und fehlende Verbindungen (korrekt) implementieren, um vollständige Fehlertransparenz zu gewährleisten.                                                                    |
+| **Status**                                                    | Offen                                                                                                                                                                                            |
+
+| TD-4: Layer 1 Abhängigkeiten komplexer als geplant |                                                                                                                                                                                                                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Beschreibung**                                   | Die Abhängigkeiten zwischen den Teilsystemen auf Layer 1 sind komplexer geworden als ursprünglich geplant. Es bestehen gegenseitige Abhängigkeiten zwischen Blockchain und Miner, obwohl Miner eigentlich nur von Blockchain abhängen sollte. Zusätzlich werden manche APIs zweckentfremdet (z.B. `BlockStoreVisualizationAPI` wird außerhalb von Debug-Zwecken genutzt) und einige API-Namen sind zu grob gewählt (z.B. `BlockchainAPI`). |
+| **Ursache**                                        | Evolutionäre Entwicklung der Architektur unter Zeitdruck. Vor allem fehlte tiefgreifene PR Reviews, da diese sehr viel Zeit beanspruchen. Zusätzlich wurden die Architekturtests nicht strikt genug definiert: Erlaubt wurde z. B. ein Zugriff vom Miner Teilsystem auf Blockchain-API-Layer, dies hätte blockiert werden sollen.                                                                                                                                     |
+| **Auswirkung**                                     | Gering bis Mittel. Das System ist voll funktionsfähig, jedoch ist die Wartbarkeit und Verständlichkeit eingeschränkt. Gegenseitige Abhängigkeiten erschweren zukünftige Refactorings und das Testen einzelner Teilsysteme in Isolation.                                                              |
+| **Priorität**                                      | Mittel                                                                                                                                                                                                                                                                                           |
+| **Maßnahmen**                                      | Abhängigkeiten zwischen Teilsystemen überprüfen und gegenseitige Abhängigkeiten durch z. B. generischen Observer auflösen. APIs präziser benennen und klar zwischen Debug-APIs und produktiven APIs trennen.                                                                                              |
+| **Status**                                         | Offen                                                                                                                                                                                                                                                                                            |
+
+| TD-5: UTXO-Implementierung im RAM |                                                                                                                                                                                                                                                                                                                                                                                 |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Beschreibung**                  | Die UTXO-Pools werden im UtxoStore ausschließlich in einer In-Memory Map (blockHashToPool) gehalten. Bei Node-Neustarts gehen alle UTXO-Daten verloren und müssen durch erneute Blockchain-Synchronisation rekonstruiert werden.                                                                                                                                                |
+| **Ursache**                       | Schnelle initiale Implementierung ohne persistente Speicherung, um Entwicklungsgeschwindigkeit zu priorisieren.                                                                                                                                                                                                                                                                 |
+| **Auswirkung**                    | Datenverlust bei Node-Neustarts, Hoher RAM-Verbrauch bei wachsender Blockchain, Längere Startzeiten durch vollständige Resynchronisation, Skalierungsprobleme bei großen UTXO-Sets                                                                                                                                                                                              |
+| **Priorität**                     | Niedrig                                                                                                                                                                                                                                                                                                                                                                         |
+| **Maßnahmen**                     | Hybride Speicherstrategie: Die letzten N UTXO-Pools (z.B. die letzten 100 Blöcke) verbleiben im RAM als Cache für schnelle Zugriffe. Ältere Pools werden in BadgerDB persistiert. Beim Zugriff auf ältere Pools erfolgt ein Lazy-Load aus der Datenbank. Dies kombiniert schnelle Zugriffszeiten für aktuelle Daten mit Persistenz und Speichereffizienz für historische Daten. |
+| **Status**                        | Offen                                                                                                                                                                                                                                                                                                                                                                           |
+
 # Glossar
 
 | Begriff         | Definition                                                                                                                                                                                                            |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Externes System | Software-System außerhalb der Node, das die Funktionalität einer (lokalen) Node erweitert und dafür die `AppAPI`-Schnittstelle nutzt.<br/>Beispiele: REST-API, Registry Crawler.                                      |
 | Genesis Block   | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
 | gRPC            | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
@@ -1490,6 +1640,5 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 | Miner Node      | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
 | Node            | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
 | Protobuf        | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
-| SPV             | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node        | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
+| Minimal Node    | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
 | UTXO            | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |

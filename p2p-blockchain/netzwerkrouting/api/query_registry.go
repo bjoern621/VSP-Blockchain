@@ -12,6 +12,7 @@ type RegistryEntry struct {
 }
 
 // QueryRegistryAPI provides access to the registry for (manual) peer discovery or plain reading.
+// Part of NetworkroutingAppAPI.
 type QueryRegistryAPI interface {
 	// QueryRegistry queries the registry for available peer addresses.
 	QueryRegistry() ([]RegistryEntry, error)

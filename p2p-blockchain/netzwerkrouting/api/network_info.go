@@ -33,6 +33,7 @@ type PeerInfo struct {
 }
 
 // NetworkInfoAPI provides access to peer information.
+// Part of NetworkroutingAppAPI.
 type NetworkInfoAPI interface {
 	GetInternalPeerInfo() []PeerInfo
 }

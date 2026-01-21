@@ -7,9 +7,11 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/konto"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 )
 
 // HistoryAPI provides the interface for querying transaction history.
+// Part of WalletAppAPI.
 type HistoryAPI interface {
 	// GetHistory returns the transaction history for a given V$Address.
 	GetHistory(vsAddress string) konto.HistoryResult
@@ -18,11 +20,11 @@ type HistoryAPI interface {
 // HistoryAPIImpl implements HistoryAPI using the BlockStore.
 type HistoryAPIImpl struct {
 	blockStore blockapi.BlockStoreVisualizationAPI
-	keyDecoder VSAddressDecoder
+	keyDecoder keys.KeyDecoder
 }
 
 // NewHistoryAPIImpl creates a new HistoryAPIImpl with the given dependencies.
-func NewHistoryAPIImpl(blockStore blockapi.BlockStoreVisualizationAPI, keyDecoder VSAddressDecoder) *HistoryAPIImpl {
+func NewHistoryAPIImpl(blockStore blockapi.BlockStoreVisualizationAPI, keyDecoder keys.KeyDecoder) *HistoryAPIImpl {
 	return &HistoryAPIImpl{
 		blockStore: blockStore,
 		keyDecoder: keyDecoder,

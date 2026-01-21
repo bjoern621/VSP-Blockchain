@@ -33,9 +33,9 @@ type Server struct {
 	discoveryService     *core.DiscoveryService
 	disconnectService    *core.DisconnectService
 	keysApi              api.KeyGeneratorApi
-	transactionHandler   *adapters.TransactionHandlerAdapter
-	kontoHandler         *adapters.KontoHandlerAdapter
-	historyHandler       *adapters.HistoryHandlerAdapter
+	transactionAPI       api.TransactionCreationAPI
+	kontoAPI             api.KontoAPI
+	historyAPI           api.HistoryAPI
 	visualizationHandler *adapters.VisualizationHandlerAdapter
 	miningService        *core.MiningService
 	blockStore           blockcahin_api.BlockStoreAPI
@@ -47,10 +47,10 @@ func NewServer(
 	regService *core.InternalViewService,
 	queryRegistryService *core.QueryRegistryService,
 	keysApi api.KeyGeneratorApi,
-	transactionHandler *adapters.TransactionHandlerAdapter,
+	transactionAPI api.TransactionCreationAPI,
 	discoveryService *core.DiscoveryService,
-	kontoHandler *adapters.KontoHandlerAdapter,
-	historyHandler *adapters.HistoryHandlerAdapter,
+	kontoAPI api.KontoAPI,
+	historyAPI api.HistoryAPI,
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
 	miningService *core.MiningService,
 	disconnectService *core.DisconnectService,
@@ -63,9 +63,9 @@ func NewServer(
 		discoveryService:     discoveryService,
 		disconnectService:    disconnectService,
 		keysApi:              keysApi,
-		transactionHandler:   transactionHandler,
-		kontoHandler:         kontoHandler,
-		historyHandler:       historyHandler,
+		transactionAPI:       transactionAPI,
+		kontoAPI:             kontoAPI,
+		historyAPI:           historyAPI,
 		visualizationHandler: visualizationHandler,
 		miningService:        miningService,
 		blockStore:           blockStore,
@@ -218,14 +218,62 @@ func (s *Server) QueryRegistry(_ context.Context, _ *pb.QueryRegistryRequest) (*
 	return response, nil
 }
 func (s *Server) CreateTransaction(_ context.Context, req *pb.CreateTransactionRequest) (*pb.CreateTransactionResponse, error) {
-	if s.transactionHandler == nil {
+	if s.transactionAPI == nil {
 		return &pb.CreateTransactionResponse{
 			Success:      false,
+			ErrorCode:    pb.TransactionErrorCode_VALIDATION_FAILED,
 			ErrorMessage: "wallet subsystem is not enabled",
 		}, nil
 	}
 
-	return s.transactionHandler.CreateTransaction(req), nil
+	// Validate request fields
+	if req.RecipientVsAddress == "" {
+		return &pb.CreateTransactionResponse{
+			Success:      false,
+			ErrorCode:    pb.TransactionErrorCode_VALIDATION_FAILED,
+			ErrorMessage: "recipient address is required",
+		}, nil
+	}
+	if req.Amount == 0 {
+		return &pb.CreateTransactionResponse{
+			Success:      false,
+			ErrorCode:    pb.TransactionErrorCode_VALIDATION_FAILED,
+			ErrorMessage: "amount must be greater than 0",
+		}, nil
+	}
+	if req.SenderPrivateKeyWif == "" {
+		return &pb.CreateTransactionResponse{
+			Success:      false,
+			ErrorCode:    pb.TransactionErrorCode_INVALID_PRIVATE_KEY,
+			ErrorMessage: "sender private key is required",
+		}, nil
+	}
+
+	result := s.transactionAPI.CreateTransaction(req.RecipientVsAddress, req.Amount, req.SenderPrivateKeyWif)
+
+	// Map error code
+	var pbErrorCode pb.TransactionErrorCode
+	switch result.ErrorCode {
+	case transaction.ErrorCodeNone:
+		pbErrorCode = pb.TransactionErrorCode_NONE
+	case transaction.ErrorCodeInvalidPrivateKey:
+		pbErrorCode = pb.TransactionErrorCode_INVALID_PRIVATE_KEY
+	case transaction.ErrorCodeInsufficientFunds:
+		pbErrorCode = pb.TransactionErrorCode_INSUFFICIENT_FUNDS
+	case transaction.ErrorCodeValidationFailed:
+		pbErrorCode = pb.TransactionErrorCode_VALIDATION_FAILED
+	case transaction.ErrorCodeBroadcastFailed:
+		pbErrorCode = pb.TransactionErrorCode_BROADCAST_FAILED
+	default:
+		pbErrorCode = pb.TransactionErrorCode_VALIDATION_FAILED
+	}
+
+	return &pb.CreateTransactionResponse{
+		Success:       result.Success,
+		ErrorCode:     pbErrorCode,
+		ErrorMessage:  result.ErrorMessage,
+		TransactionId: result.TransactionID,
+	}, nil
 }
 
 func (s *Server) GenerateKeyset(context.Context, *emptypb.Empty) (*pb.GenerateKeysetResponse, error) {
@@ -285,23 +333,90 @@ func (s *Server) SendGetAddr(_ context.Context, req *pb.SendGetAddrRequest) (*pb
 }
 
 func (s *Server) GetAssets(_ context.Context, req *pb.GetAssetsRequest) (*pb.GetAssetsResponse, error) {
-	if s.kontoHandler == nil {
+	if s.kontoAPI == nil {
 		return &pb.GetAssetsResponse{
 			Success:      false,
 			ErrorMessage: "wallet subsystem is not enabled",
 		}, nil
 	}
-	return s.kontoHandler.GetAssets(req), nil
+
+	if req.VsAddress == "" {
+		return &pb.GetAssetsResponse{
+			Success:      false,
+			ErrorMessage: "V$Address is required",
+		}, nil
+	}
+
+	result := s.kontoAPI.GetAssets(req.VsAddress)
+
+	if !result.Success {
+		return &pb.GetAssetsResponse{
+			Success:      false,
+			ErrorMessage: result.ErrorMessage,
+		}, nil
+	}
+
+	// Convert assets to protobuf format
+	pbAssets := make([]*pb.Asset, 0, len(result.Assets))
+	for _, asset := range result.Assets {
+		pbAssets = append(pbAssets, &pb.Asset{
+			Value: asset.Value,
+		})
+	}
+
+	return &pb.GetAssetsResponse{
+		Success: true,
+		Assets:  pbAssets,
+	}, nil
 }
 
 func (s *Server) GetHistory(_ context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
-	if s.historyHandler == nil {
+	if s.historyAPI == nil {
 		return &pb.GetHistoryResponse{
 			Success:      false,
 			ErrorMessage: "wallet subsystem is not enabled",
 		}, nil
 	}
-	return s.historyHandler.GetHistory(req), nil
+
+	if req.VsAddress == "" {
+		return &pb.GetHistoryResponse{
+			Success:      false,
+			ErrorMessage: "V$Address is required",
+		}, nil
+	}
+
+	result := s.historyAPI.GetHistory(req.VsAddress)
+
+	if !result.Success {
+		return &pb.GetHistoryResponse{
+			Success:      false,
+			ErrorMessage: result.ErrorMessage,
+		}, nil
+	}
+
+	// Convert transactions to string format for response
+	txStrings := make([]string, 0, len(result.Transactions))
+	for _, tx := range result.Transactions {
+		var txStr string
+		if tx.IsSender && tx.Received > 0 {
+			txStr = fmt.Sprintf("TxID: %s, Block: %d, Sent: %d, Received: %d",
+				tx.TransactionID, tx.BlockHeight, tx.Sent, tx.Received)
+		} else if tx.IsSender {
+			txStr = fmt.Sprintf("TxID: %s, Block: %d, Sent: %d",
+				tx.TransactionID, tx.BlockHeight, tx.Sent)
+		} else if tx.Received > 0 {
+			txStr = fmt.Sprintf("TxID: %s, Block: %d, Received: %d",
+				tx.TransactionID, tx.BlockHeight, tx.Received)
+		} else {
+			logger.Warnf("TransactionEntry with zero sent and received amounts: %+v", tx)
+		}
+		txStrings = append(txStrings, txStr)
+	}
+
+	return &pb.GetHistoryResponse{
+		Success:      true,
+		Transactions: txStrings,
+	}, nil
 }
 
 func (s *Server) GetBlockchainVisualization(_ context.Context, req *pb.GetBlockchainVisualizationRequest) (*pb.GetBlockchainVisualizationResponse, error) {
