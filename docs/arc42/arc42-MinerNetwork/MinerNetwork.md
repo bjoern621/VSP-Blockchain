@@ -411,8 +411,9 @@ Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P
 Schnittstellen
 
 - `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
-    - `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
-    - `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
+    - `rpc ConnectTo()`
+    - `rpc Disconnect()`
+    - `rpc GetInternalPeerInfo()`
 - `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
 ## Ebene 3
@@ -444,7 +445,7 @@ Using Upcalls, S. 8).
 stateDiagram-v2
     [*] --> StateNew: Peer entdeckt
 
-    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(Version())
+    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(InitiateHandshake())
     StateNew --> StateAwaitingAck: Version-Nachricht empfangen<br/>(Version())
 
     StateAwaitingVerack --> StateConnected: Verack empfangen<br/>(Verack())
@@ -481,7 +482,9 @@ Die Peer State Machine beschreibt den Lebenszyklus eines Peers im P2P-Netzwerk. 
 
 #### Verbindungsaufbau
 
-Während des Handshakes werden Informationen über die Fähigkeiten des Gegenübers ausgetauscht (z.&nbsp;B. unterstützte Teilsysteme wie Miner oder Wallet). Diese Information ist wichtig, um zu entscheiden, welche Arten von Nachrichten an diesen Peer gesendet werden können.
+Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
+
+Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
 
 #### Aktive Phase
 
@@ -615,53 +618,6 @@ stateDiagram-v2
 
 <p><em>Abbildung: Zustandsgraph - Miner Allgemin</em></p>
 </div>
-
-## State machine Miner: Handshake
-
-Unser allgemeines System ist zustandslos. Dargestellt ist also nicht der Zustand des Gesamtsystems, sondern der Zustand,
-in welchem sich der aktuell verbindende Peer befindet. Für jeden neu verbindenden Peer wird der Zustand separat gespeichert.
-
-Werden Funktionen in einem Zustand ausgeführt, welche nicht in dem Diagramm dargestellt sind, so werden diese ignoriert.
-
-<div align="center">
-
-```mermaid
-stateDiagram-v2
-    direction LR
-    state peer_check <<choice>>
-    [*] --> initiate
-    initiate --> peer_check
-    peer_check --> no_peers: if len(peers) == 0
-    peer_check --> initiateHandshake : if len(peers) > 0
-    no_peers --> initiateHandshake : getPeers()
-    [*] --> handleHandshake: HandleHandshake()
-
-    state initiateHandshake {
-        [*] --> new
-        new --> awaiting_verack: SendVersion()
-        awaiting_verack --> connected: ReceiveVerack()
-        connected --> [*]: SendAck()
-    }
-
-    state handleHandshake {
-        [*] --> new_: ReceiveVersion()
-        new_ --> awaiting_ack: SendVerack()
-        awaiting_ack --> connected_: ReceiveAck()
-        connected_ --> [*]
-
-    }
-
-    connected_: connected
-    new_: new
-
-```
-
-<p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
-</div>
-
-Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
-
-Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
 
 ## Block-Header Synchronisation
 
