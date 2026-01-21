@@ -360,7 +360,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ## Ebene 2
 
 ### Whitebox *\<Konto\>*
-![Diagramm](https://www.plantuml.com/plantuml/png/VP312i8m38RlWkyGUlBYnQECCNUJUT8d25tKigxTsauO8lWElg5FObtdDb3C8JJD_tzDcbY7nZMbdC_0XnDE4kpeGX9MyBm_8DDbfHKfHy0ohPncGHcoBOIgq609mYlC4JaTNEiH0p7a2dc1fm41rsdp7Vpp3B1DRiXQOe0M-lCVTGVqIwYyCunbKD-crc56OAdKlE1d5AgpRLEKg3ZjgGxIaGFBvMBQXpL4aQ6w4NwqEFuYPzJQC0gr0wxVesE5-v-OX5JkV-u5)
+![Diagramm](https://www.plantuml.com/plantuml/png/TOzDJiGm38NtdCBAYiriMABHQ8OTAYiuWPKO53K_QUmYLGY9Et13Ja9aDIqIu8Nb-httrJcpO9KvXYje9Lu2mGEzKe0R-FhuX277aXCb8J13JfAD6hNnw5F1YX5yq-ipMdgIfG4wJbj1E-BB5eUtJTAo_GTWBguICnb0XdN-rwim5anExVkdcj_tN3-j7t1nMDf6K_Tt631PUgH9lJi53eVhdpBSml5OQPfz9JwTVf5fOIMsOONr5oX9rtz2pfJS7CCt)
 <details>
     <summary>Code</summary>
     
@@ -377,7 +377,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
         component "Kontostand" as Kontostand
     }
     
-    interface "Blockchain" as IBalanceReq
+    interface "KontoAdapter" as IBalanceReq
     Kontostand --( IBalanceReq : <<requires>>
     interface "Keys" as KeyReq
     Adresse --( KeyReq : <<requires>>
