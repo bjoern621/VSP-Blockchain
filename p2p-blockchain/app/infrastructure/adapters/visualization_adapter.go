@@ -1,17 +1,20 @@
 package adapters
 
 import (
-	"s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/pb"
 )
 
 // VisualizationHandlerAdapter handles blockchain visualization requests from gRPC.
 type VisualizationHandlerAdapter struct {
-	visualizationService *core.VisualizationService
+	visualizationService visualizationHandlerInterface
+}
+
+type visualizationHandlerInterface interface {
+	GetVisualizationURL(includeDetails bool) string
 }
 
 // NewVisualizationAdapter creates a new VisualizationHandlerAdapter with the given visualization service.
-func NewVisualizationAdapter(service *core.VisualizationService) *VisualizationHandlerAdapter {
+func NewVisualizationAdapter(service visualizationHandlerInterface) *VisualizationHandlerAdapter {
 	return &VisualizationHandlerAdapter{
 		visualizationService: service,
 	}
