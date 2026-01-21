@@ -715,6 +715,27 @@ Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation
 Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
 
 ## Datenaustausch
+```mermaid
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> getDataReceived : getData()
+    getDataReceived --> invTypeBlock : Data is a block
+    getDataReceived --> invTypeTx : Data is a transaction
+    
+    invTypeBlock --> isPresentBlock : block already present
+    invTypeBlock --> isMissingBlock : block missing
+    
+    invTypeTx --> isPresentTx : tx already present
+    invTypeTx --> isMissingTx : tx missing
+    
+    isPresentBlock --> [*] : send Block()
+    isMissingBlock --> [*]
+    
+    isPresentTx --> [*] : send Tx()
+    isMissingTx --> [*]
+```
+
+Der Datenaustausch zwischen Knoten erfolgt über die `getData()` Methode, welche Hashes von Blöcken oder Transaktionen beinhaltet. Abhängig davon, ob die Daten bekannt sind, wird mit einer `Block()` oder `Tx()` Nachricht geantwortet. Sind die Daten nicht bekannt wird nicht geantwortet.
 
 ## Chain Reorganization
 
