@@ -148,7 +148,7 @@ func (api *PaymentAPI) TransactionPost(c *gin.Context) {
 func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionResult) {
 	if result.Success {
 		// 201 Created - Transaction successfully executed
-		c.Status(http.StatusCreated)
+		c.JSON(http.StatusCreated, TransactionPost201Response{TransactionID: result.TransactionID})
 		logger.Infof("[api_payment] Transaction created successfully: %s", result.TransactionID)
 		return
 	}
