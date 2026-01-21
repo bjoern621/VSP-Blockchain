@@ -38,6 +38,22 @@ func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostand
 	}
 }
 
+// Get /transaction/confirmation
+// Returns the current confirmation status to the corresponding transaction ID.
+func (api *PaymentAPI) TransactionConfirmationGet(c *gin.Context) {
+	transactionID := c.GetHeader("transactionID")
+
+	accepted, err := api.transactionService.GetConfirmationStatus(transactionID)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": "internal server error",
+		})
+		return
+	}
+
+	c.JSON(200, accepted)
+}
+
 // Get /balance
 // Returns the balance tied to the given public key hash
 func (api *PaymentAPI) BalanceGet(c *gin.Context) {
@@ -132,7 +148,7 @@ func (api *PaymentAPI) TransactionPost(c *gin.Context) {
 func (api *PaymentAPI) writeResponse(c *gin.Context, result *common.TransactionResult) {
 	if result.Success {
 		// 201 Created - Transaction successfully executed
-		c.Status(http.StatusCreated)
+		c.JSON(http.StatusCreated, TransactionPost201Response{TransactionID: result.TransactionID})
 		logger.Infof("[api_payment] Transaction created successfully: %s", result.TransactionID)
 		return
 	}

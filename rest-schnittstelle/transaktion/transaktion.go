@@ -102,3 +102,7 @@ func (s *TransaktionAPI) validateRequest(req common.TransactionRequest) *Validat
 func (s *TransaktionAPI) GetBlockchainVisualization(includeDetails bool) (string, error) {
 	return s.nodeAdapter.GetBlockchainVisualization(includeDetails)
 }
+
+func (s *TransaktionAPI) GetConfirmationStatus(transactionID string) (bool, error) {
+	return s.nodeAdapter.GetConfirmationStatus(transactionID)
+}

@@ -175,6 +175,13 @@ func createTestBlockForGetData(nonce uint32) block.Block {
 		},
 	}
 }
+func (m *mockBlockStoreGetData) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
+func (m *mockBlockStoreGetData) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
 
 func createTestTransactionForGetData() transaction.Transaction {
 	// Create a PubKey for the transaction input
