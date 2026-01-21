@@ -81,7 +81,7 @@ type BlockStoreAPI interface {
 
 	// GetBlockHeightDifferenceByTxId returns the height difference between the block identified by the given hash and the main chain tip.
 	// If the Block is not found on the MainChain -1 gets returned
-	GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (uint64, error)
+	GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error)
 
 	// IsTransactionAccepted returns if the transaction is accepted in the network.
 	IsTransactionAccepted(txID transaction.TransactionID) (bool, error)
@@ -143,7 +143,7 @@ func (s *BlockStore) IsTransactionAccepted(txID transaction.TransactionID) (bool
 	return heightDifference >= common.TransactionBlockHeightDifferenceForAcceptance, nil
 }
 
-func (s *BlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (uint64, error) {
+func (s *BlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
 
 	// Get all blocks with metadata to identify main chain blocks
 	allBlocks := s.GetAllBlocksWithMetadata()
@@ -164,7 +164,7 @@ func (s *BlockStore) GetBlockHeightDifferenceByTxId(txID transaction.Transaction
 
 				//calculate height difference
 				heightDifference := s.GetMainChainHeight() - blockWithTransaction.Height
-				return heightDifference, nil
+				return int(heightDifference), nil
 			}
 		}
 	}
