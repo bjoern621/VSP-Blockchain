@@ -717,6 +717,7 @@ Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeit
 ## Datenaustausch
 
 <div align="center">
+
 ```mermaid
 stateDiagram-v2
     [*] --> Idle : Handshake complete
@@ -824,11 +825,35 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    wip
+    [*] --> Idle : Handshake complete
+    Idle --> BlockReceived : block()
+    BlockReceived --> BlockUnknown
+    BlockUnknown --> SanityCheck
+    SanityCheck --> HeaderValid
+    HeaderValid --> addedToChain : addToChain()
+    addedToChain --> isOrphan : isOrphan()
+    isOrphan --> OrphanHandling
+    addedToChain --> FullyValid
+    FullyValid --> Reorganize : needs reorganization
+    FullyValid --> PropagateViaInv : does not need reorganization
+    PropagateViaInv --> Idle : propagate via inv
+    Reorganize --> PropagateViaInv
 ```
 <p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
 
 </div>
+
+Kann der nächste Zustand nicht erreicht werden, gilt für diesen Fall, dass in den Idle Zustand zurück gekehrt wird.
+
+### Ablauf:
+1. Wenn ein Block empfangen wird (BlockReceived), wird geprüft, ob er bereits bekannt ist (BlockUnknown).
+2. SanityCheck: Grundlegende Formatprüfung des Blocks
+3. Validierung des Block-Headers (Schwierigkeit, Zeitstempel, PoW, etc.)
+4. Der Block wird zum BlockStore hinzugefügt (addToChain).
+5. Falls der Eltern-Block fehlt (isOrphan), wird die bestehende [Orphan Handling](#orphan-block-handling) verwendet.
+6. FullyValid Prüft alle Transaktionen und UTXO-Konsistenz.
+7. Falls nötig, wird die Hauptkette neu organisiert (Reorganize).
+8. Neue Blöcke werden an andere Peers weitergeleitet (PropagateViaInv → BroadcastAddedBlocks).
 
 ## Orphan Block Handling
 
