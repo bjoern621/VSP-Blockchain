@@ -4,6 +4,7 @@ import (
 	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/konto"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/wallet/core/keys"
 )
 
 // KontoAPI provides the interface for querying konto (account) information.
@@ -16,16 +17,11 @@ type KontoAPI interface {
 type KontoAPIImpl struct {
 	blockStore blockapi.BlockStoreAPI
 	utxoAPI    blockapi.UtxoStoreAPI
-	keyDecoder VSAddressDecoder
-}
-
-// VSAddressDecoder decodes V$Address strings to public key hashes.
-type VSAddressDecoder interface {
-	Base58CheckToBytes(input string) ([]byte, byte, error)
+	keyDecoder keys.KeyDecoder
 }
 
 // NewKontoAPIImpl creates a new KontoAPIImpl with the given dependencies.
-func NewKontoAPIImpl(utxoAPI blockapi.UtxoStoreAPI, keyDecoder VSAddressDecoder, blockStore blockapi.BlockStoreAPI) *KontoAPIImpl {
+func NewKontoAPIImpl(utxoAPI blockapi.UtxoStoreAPI, keyDecoder keys.KeyDecoder, blockStore blockapi.BlockStoreAPI) *KontoAPIImpl {
 	return &KontoAPIImpl{
 		utxoAPI:    utxoAPI,
 		keyDecoder: keyDecoder,
