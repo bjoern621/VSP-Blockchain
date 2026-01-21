@@ -63,6 +63,10 @@ func (m *mockBlockStore) IsBlockInvalid(_ block.Block) (bool, error) {
 	return false, nil
 }
 
+func (m *mockBlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
 // =========================================================================
 // Test Helpers
 // =========================================================================
