@@ -78,6 +78,13 @@ type BlockStoreAPI interface {
 	// IsBlockInvalid checks if the given block is marked as invalid.
 	// Returns an error if the block is not found in the block store.
 	IsBlockInvalid(block block.Block) (bool, error)
+
+	// GetBlockHeightDifferenceByTxId returns the height difference between the block identified by the given hash and the main chain tip.
+	// If the Block is not found on the MainChain -1 gets returned
+	GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error)
+
+	// IsTransactionAccepted returns if the transaction is accepted in the network.
+	IsTransactionAccepted(txID transaction.TransactionID) (bool, error)
 }
 
 // blockForest represents a collection of trees structures representing the blockchain.
@@ -124,6 +131,46 @@ type BlockStore struct {
 	hashToHeaders map[common.Hash]*blockNode
 	// blockValidator validates blocks when they are connected to the chain.
 	blockValidator BlockFullValidator
+}
+
+func (s *BlockStore) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+
+	heightDifference, err := s.GetBlockHeightDifferenceByTxId(txID)
+	if err != nil {
+		return false, err
+	}
+
+	return heightDifference >= common.TransactionBlockHeightDifferenceForAcceptance, nil
+}
+
+func (s *BlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+
+	// Get all blocks with metadata to identify main chain blocks
+	allBlocks := s.GetAllBlocksWithMetadata()
+
+	var blockWithTransaction block.BlockWithMetadata
+
+	for _, blockWithMeta := range allBlocks {
+		// Only index main chain transactions
+		if !blockWithMeta.IsMainChain {
+			continue
+		}
+
+		for _, tx := range blockWithMeta.Block.Transactions {
+			txIDTemp := tx.TransactionId()
+			if txIDTemp == txID {
+				//Block with matching transaction found
+				blockWithTransaction = blockWithMeta
+
+				//calculate height difference
+				heightDifference := s.GetMainChainHeight() - blockWithTransaction.Height
+				return int(heightDifference), nil
+			}
+		}
+	}
+
+	//Transaction not found
+	return -1, nil
 }
 
 func NewBlockStore(genesis block.Block, blockValidator BlockFullValidator) *BlockStore {
