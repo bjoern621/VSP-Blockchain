@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"bjoernblessin.de/go-utils/util/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -22,6 +23,8 @@ func DialAppGRPC(ctx context.Context, addr string) (*grpc.ClientConn, error) {
 
 	appGRPCConnMu.Lock()
 	defer appGRPCConnMu.Unlock()
+
+	logger.Infof("addr: %v", addr)
 
 	if appGRPCConn != nil {
 		if appGRPCConnAddr != addr {
