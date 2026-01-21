@@ -13,6 +13,7 @@ type TransactionAdapter interface {
 	// CreateTransaction creates and broadcasts a new transaction via the local node.
 	CreateTransaction(req common.TransactionRequest) (*common.TransactionResult, error)
 	GetBlockchainVisualization(includeDetails bool) (string, error)
+	GetConfirmationStatus(transactionID string) (bool, error)
 }
 
 type TransactionAdapterImpl struct {
@@ -112,4 +113,14 @@ func (t *TransactionAdapterImpl) GetBlockchainVisualization(includeDetails bool)
 	}
 
 	return result.VisualizationUrl, nil
+}
+
+func (t *TransactionAdapterImpl) GetConfirmationStatus(transactionID string) (bool, error) {
+	request := pb.GetConfirmationStatusRequest{TransactionId: transactionID}
+	result, err := t.appServiceClient.GetConfirmationStatus(context.Background(), &request)
+	if err != nil {
+		return false, common.ErrServer
+	}
+
+	return result.Accepted, nil
 }

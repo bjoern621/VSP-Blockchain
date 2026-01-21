@@ -201,6 +201,14 @@ func (m *mockValidatorForMempool) ValidateTransaction(_ transaction.Transaction,
 	return true, nil
 }
 
+func (m *mockValidatorForMempool) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
+func (m *mockValidatorForMempool) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
+
 // =========================================================================
 // Test Helpers
 // =========================================================================
