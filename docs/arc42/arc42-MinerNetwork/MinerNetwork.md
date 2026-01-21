@@ -498,11 +498,11 @@ Im `StateHolddown` wird jede Nachricht mit einer Reject-Nachricht abgelehnt. Nac
 
 Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers verantwortlich. Er sendet in regelmäßigen Abständen Heartbeat-Nachrichten (`HeartbeatBing`) an alle verbundenen Peers.
 
-| Parameter | Wert | Beschreibung |
-|-----------|------|--------------|
-| **Intervall** | 4 Minuten | Zeitintervall zwischen Heartbeat-Runden |
+| Parameter                      | Wert            | Beschreibung                             |
+|--------------------------------|-----------------|------------------------------------------|
+| **Intervall**                  | 4 Minuten       | Zeitintervall zwischen Heartbeat-Runden  |
 | **Nachrichtentyp (ausgehend)** | `HeartbeatBing` | Ping-Nachricht an alle verbundenen Peers |
-| **Nachrichtentyp (Antwort)** | `HeartbeatBong` | Pong-Antwort auf empfangene Pings |
+| **Nachrichtentyp (Antwort)**   | `HeartbeatBong` | Pong-Antwort auf empfangene Pings        |
 
 **Funktionsweise:**
 1. Alle 4 Minuten werden `HeartbeatBing`-Nachrichten an alle verbundenen Peers gesendet
@@ -514,10 +514,10 @@ Der `KeepaliveService` ist für die Aufrechterhaltung der Verbindungen zu Peers 
 
 Der `ConnectionCheckService` überprüft periodisch die Gesundheit aller Peer-Verbindungen anhand des `LastSeen`-Timestamps. Inaktive Peers werden in den Holddown-Zustand versetzt und nach Ablauf der Holddown-Periode permanent entfernt.
 
-| Parameter | Wert | Beschreibung |
-|-----------|------|--------------|
-| **Intervall** | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen |
-| **Peer Timeout** | 9 Minuten | Zeit ohne Heartbeat bis zur Holddown-Versetzung |
+| Parameter          | Wert       | Beschreibung                                       |
+|--------------------|------------|----------------------------------------------------|
+| **Intervall**      | 10 Minuten | Zeitintervall zwischen Verbindungsprüfungen        |
+| **Peer Timeout**   | 9 Minuten  | Zeit ohne Heartbeat bis zur Holddown-Versetzung    |
 | **Holddown-Dauer** | 15 Minuten | Zeit im Holddown-Status vor permanenter Entfernung |
 
 **Funktionsweise:**
