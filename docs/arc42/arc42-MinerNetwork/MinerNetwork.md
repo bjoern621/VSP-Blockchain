@@ -1317,12 +1317,6 @@ Die Funktionen `updatepeers` und `getpeers` gehören weder zur AppAPI noch zum V
 -   `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
 -   `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
 
-## V$Goin P2P Protokoll
-
-## _\<Konzept n\>_
-
-_\<Erklärung\>_
-
 # Architekturentscheidungen
 
 ## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
