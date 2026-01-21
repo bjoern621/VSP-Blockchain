@@ -684,36 +684,42 @@ Während dieses Handshakes tauschen die Knoten Informationen über ihre unterst�
 
 ## Block-Header Synchronisation
 
+Die Block-Header Synchronisation dient dazu zwei Knoten, welche der gleichen Chain folgen auf den gleichen Stand zu bringen. Dazu wird ein Block Locator erstellt, welcher in exponentiell größer werdenden Schritten die Block Hashes von oben nach unten speichert, um den gegenüber über ihm bekannte Blöcke zu informieren. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. 
+
+Nach dem Send des `BlockLocators` durch `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
+
+Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. Wenn zB. der anfragende Client als Antwort mehrere Blöcke bekommt, welche von seiner Main-Chain abzweigen und diese die aktuelle Main-Chain überholen.
+
+## Initialer Block Download
+
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant A as Full Node A<br/>(BestBlockHeight: 110)
-    participant B as Full Node B<br/>(BestBlockHeight: 120)
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    
+    Idle --> Idle : BlockHeader Synchronisation
 
-    par Requests kreuzen sich im Netzwerk
-        A->>B: GetHeaders(BlockLocator[Hash110])
-        B->>A: GetHeaders(BlockLocator[Hash120])
-    end
-
-    Note over A: A hat nichts Nützliches für B
-
-    B->>A: Headers(List: 111...120)
-
-    A->>A: Validierung & Update Header auf 120
-
-    A->>A: Prüfen, ob Chain Reorganization nötig ist
+    Idle --> handleGetData : getData()
+    handleGetData --> Idle : send Block()
+    
+    Idle --> handleBlock : Block()
+    handleBlock --> Idle : process Block
 ```
 
-<p><em>Abbildung: Sequenzdiagramm - Einfache Synchronisation Block-Header</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
 
 </div>
 
-Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
+Allgemein  
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
 
-Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header an B. Peer B dagegen schickt die übrigen Block-Header ab Block 111. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
+Ablauf:
+Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
 
-Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
+Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
+
+Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
 
 ## Chain Reorganization
 
@@ -765,47 +771,6 @@ Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Cha
 
 Hinweise  
 Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämliche der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
-
-## Initialer Block Download
-
-<div align="center">
-
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> Idle : Handshake complete
-    
-    Idle --> BuildBlockLocator : start IBD
-    BuildBlockLocator --> Idle : send GetHeaders()
-    
-    Idle --> FindCommonAncestor : getHeaders()
-    FindCommonAncestor --> CollectBlockHashes : found common ancestor
-    CollectBlockHashes --> Idle : send headers()
-    
-    Idle --> HeadersReceived : headers()
-    HeadersReceived --> Idle : Header already known
-    HeadersReceived --> Idle : getData(unknown headers)
-    
-    Idle --> handleGetData : getData(unknown headers)
-    handleGetData --> Idle : send Block()
-    
-    Idle --> handleBlock : Block()
-    handleBlock --> Idle : Block processed
-```
-
-<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
-
-</div>
-
-Allgemein  
-Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
-
-Ablauf  
-Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
-
-Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
-
-Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
 
 ## Block-Mining & Verbreitung (Block Propagation)
 
