@@ -2,11 +2,14 @@ package grpc
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
 	"net/netip"
 	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
+	blockcahin_api "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	"s3b/vsp-blockchain/p2p-blockchain/wallet/api"
 
 	"s3b/vsp-blockchain/p2p-blockchain/app/core"
@@ -35,6 +38,7 @@ type Server struct {
 	historyHandler       *adapters.HistoryHandlerAdapter
 	visualizationHandler *adapters.VisualizationHandlerAdapter
 	miningService        *core.MiningService
+	blockStore           blockcahin_api.BlockStoreAPI
 }
 
 // NewServer creates a new external API server.
@@ -50,6 +54,7 @@ func NewServer(
 	visualizationHandler *adapters.VisualizationHandlerAdapter,
 	miningService *core.MiningService,
 	disconnectService *core.DisconnectService,
+	blockStore blockcahin_api.BlockStoreAPI,
 ) *Server {
 	return &Server{
 		connService:          connService,
@@ -63,6 +68,7 @@ func NewServer(
 		historyHandler:       historyHandler,
 		visualizationHandler: visualizationHandler,
 		miningService:        miningService,
+		blockStore:           blockStore,
 	}
 }
 
@@ -320,4 +326,29 @@ func (s *Server) StopMining(_ context.Context, _ *emptypb.Empty) (*pb.StopMining
 		Success:      true,
 		ErrorMessage: "",
 	}, nil
+}
+
+func (s *Server) GetConfirmationStatus(_ context.Context, request *pb.GetConfirmationStatusRequest) (*pb.GetConfirmationStatusResponse, error) {
+	txIDString := request.GetTransactionId()
+
+	txIDSlice, err := hex.DecodeString(txIDString)
+	if err != nil {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	var txID transaction.TransactionID
+
+	if len(txIDSlice) != len(txID) {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	copy(txID[:], txIDSlice)
+
+	result, err := s.blockStore.IsTransactionAccepted(txID)
+
+	if err != nil {
+		return &pb.GetConfirmationStatusResponse{Accepted: false}, nil
+	}
+
+	return &pb.GetConfirmationStatusResponse{Accepted: result}, nil
 }
