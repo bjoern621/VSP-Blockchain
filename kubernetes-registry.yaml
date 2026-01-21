@@ -92,9 +92,7 @@ spec:
                       - name: P2P_PORT
                         value: "50051"
                       - name: APP_LISTEN_ADDR
-                        valueFrom:
-                            fieldRef:
-                                fieldPath: status.podIP
+                        value: "0.0.0.0"
                       - name: P2P_LISTEN_ADDR
                         valueFrom:
                             fieldRef:

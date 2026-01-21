@@ -12,6 +12,7 @@ import (
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	minerapi "s3b/vsp-blockchain/p2p-blockchain/miner/api"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
@@ -78,57 +79,73 @@ func main() {
 
 	mempool := core.NewMempool(transactionValidator, blockStore)
 
-	blockchain := core.NewBlockchain(
-		blockchainMsgService,
-		grpcClient,
-		grpcClient,
-		blockValidator,
-		blockStore,
-		peerStore,
-		transactionValidator,
-		utxoStore,
-		mempool,
-	)
+	var blockchain *core.Blockchain
+	if common.BlockchainFullEnabled() {
+		blockchain = core.NewBlockchain(
+			blockchainMsgService,
+			grpcClient,
+			grpcClient,
+			blockValidator,
+			blockStore,
+			peerStore,
+			transactionValidator,
+			utxoStore,
+			mempool,
+		)
 
-	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
-	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
-	handshakeService.Attach(blockchain)
+		// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
+		// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
+		handshakeService.Attach(blockchain)
+	}
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	minerImpl := minerCore.NewMinerService(blockchain, utxoStore, blockStore)
-	blockchain.Attach(minerImpl)
-	minerImpl.StartMining(make([]transaction.Transaction, 0))
+	var minerImpl minerapi.MinerAPI
+	if common.MinerEnabled() {
+		minerImpl = minerCore.NewMinerService(blockchain, utxoStore, blockStore)
+		blockchain.Attach(minerImpl)
+		minerImpl.StartMining(make([]transaction.Transaction, 0))
+	}
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
-		// Intialize Transaction Creation API
-		mempoolApi := blockapi.NewMempoolAPI(mempool)
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
-		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
-		// Initialize transaction service and API
-		transactionService := appcore.NewTransactionService(transactionCreationAPI)
-		transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
+		var transactionHandler *adapters.TransactionHandlerAdapter
+		var kontoHandler *adapters.KontoHandlerAdapter
+		var historyHandler *adapters.HistoryHandlerAdapter
+		if common.WalletEnabled() {
+			// Intialize Transaction Creation API
+			mempoolApi := blockapi.NewMempoolAPI(mempool)
+			transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
+			transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
-		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
+			// Initialize transaction service and API
+			transactionService := appcore.NewTransactionService(transactionCreationAPI)
+			transactionAPI := appapi.NewTransactionAPIImpl(transactionService)
 
-		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
-		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
+			transactionHandler = adapters.NewTransactionAdapter(transactionAPI)
 
-		// Initialize history API and handler
-		historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
-		historyHandler := adapters.NewHistoryAdapter(historyAPI)
+			// Initialize konto API and handler
+			kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
+			kontoHandler = adapters.NewKontoAdapter(kontoAPI)
+
+			// Initialize history API and handler
+			historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
+			historyHandler = adapters.NewHistoryAdapter(historyAPI)
+		}
+
+		// TODO in appgrpc server deaktvieren / scheckn
 
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
 		visualizationHandler := adapters.NewVisualizationAdapter(visualizationService)
 
-		// Initialize mining service
-		miningService := appcore.NewMiningService(minerImpl)
+		var miningService *appcore.MiningService
+		if common.MinerEnabled() {
+			miningService = appcore.NewMiningService(minerImpl)
+		}
 
 		connService := appcore.NewConnectionEstablishmentService(handshakeAPI)
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
@@ -166,7 +183,9 @@ func main() {
 
 	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService, peerStore)
 
-	grpcServer.Attach(blockchain)
+	if common.BlockchainFullEnabled() {
+		grpcServer.Attach(blockchain)
+	}
 
 	err = grpcServer.Start(common.P2PPort())
 	if err != nil {
