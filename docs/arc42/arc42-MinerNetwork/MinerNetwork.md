@@ -411,8 +411,9 @@ Die Minimal Node ist die kleinstmögliche ausführbare Node-Variante, die am P2P
 Schnittstellen
 
 - `AppAPI` umfasst einen Teil der [AppAPI einer FullNode](#app-blackbox). Speziell wird genutzt:
-    - `rpc ConnectTo(ConnectToRequest) returns (ConnectToResponse)`
-    - `rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);`
+    - `rpc ConnectTo()`
+    - `rpc Disconnect()`
+    - `rpc GetInternalPeerInfo()`
 - `P2P-Protokoll-API` wie in [Netzwekrouting (Blackbox)](#netzwerkrouting-blackbox) beschrieben
 
 ## Ebene 3
