@@ -103,6 +103,9 @@ service AppService {
     //  - Miner stops attempting to create new blocks.
     //  - Returns success/failure status.
     rpc StopMining(google.protobuf.Empty) returns (StopMiningResponse);
+
+    //GetConfirmationStatus returns the current confirmation status of the transaction identified by the given txID.
+    rpc GetConfirmationStatus(GetConfirmationStatusRequest) returns (GetConfirmationStatusResponse);
 }
 
 message ConnectToRequest {
@@ -281,4 +284,12 @@ message StartMiningResponse {
 message StopMiningResponse {
     bool success = 1;
     string error_message = 2;
+}
+
+message GetConfirmationStatusRequest{
+    string transaction_id = 1;
+}
+
+message GetConfirmationStatusResponse{
+    bool accepted = 1;
 }

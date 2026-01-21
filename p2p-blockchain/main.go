@@ -158,6 +158,7 @@ func main() {
 			visualizationHandler,
 			miningService,
 			disconnectAppService,
+			blockStore,
 		)
 		err := appServer.Start(common.AppPort())
 		if err != nil {

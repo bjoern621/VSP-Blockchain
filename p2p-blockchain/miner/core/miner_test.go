@@ -113,6 +113,14 @@ func (m *mockBlockStore) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
 }
 
+func (m *mockBlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
+func (m *mockBlockStore) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
+
 // Helper function to create a test miner service
 func createTestMinerService(tip block.Block, utxos map[utxoOutpoint]transaction.Output) *minerService {
 	mockBlockchain := &mockBlockchainAPI{}

@@ -232,6 +232,14 @@ func createTestBlock(prevHash common.Hash, nonce uint32) block.Block {
 	}
 }
 
+func (m *mockBlockStore) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
+func (m *mockBlockStore) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
+
 type mockUtxoStoreAPI struct{}
 
 func (a mockUtxoStoreAPI) ValidateTransactionsOfBlock(blockToValidate block.Block) bool {
