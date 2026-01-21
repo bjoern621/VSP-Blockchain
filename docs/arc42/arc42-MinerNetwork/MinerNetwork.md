@@ -10,6 +10,8 @@ Template Version 9.0-DE. (basiert auf der AsciiDoc Version), Juli 2025
 Created, maintained and © by Dr. Peter Hruschka, Dr. Gernot Starke and
 contributors. Siehe <https://arc42.org>.
 
+Ausarbeitung von Björn Blessing, Bjarne Rathjen, Stian Geeb, Bennet Krzenzck
+
 # Einführung und Ziele
 
 Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder Teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewisser Rechenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden.
@@ -1082,6 +1084,12 @@ seed.local:53 {
 | miner-*          | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
 | Externe Clients  | rest-api-service | HTTP      | 8080  | REST-API                      |
 | Alle Pods        | registry         | DNS       | 53    | Seed-Auflösung                |
+
+### Einschränkungen
+Das Blockchainsystem kann nach der Architektur und Implementierung durch beliebig viele Miner von innen und außen ergänzt werden. 
+Doch aufgrund der Nutzung von gRPC als Kommunikationsprotokoll sind direkte Verbindungen von außerhalb der HAW-ICC mit einer beliebig skalierenden Anzahl Miner nicht möglich.
+Folglich werden in dieser Umsetzung in der HAW-ICC nur interne Miner dem Netzwerk beitreten können. In einer anderen Umgebung spricht allerdings nichts gegen das Verbinden von anderen externen Minern.
+
 # Querschnittliche Konzepte
 
 ## Ausgehende vs. Eingehende Verbindungen
