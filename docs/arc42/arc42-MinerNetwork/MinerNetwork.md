@@ -1317,12 +1317,6 @@ Die Funktionen `updatepeers` und `getpeers` gehören weder zur AppAPI noch zum V
 -   `updatepeers` wird ausschließlich vom [Registry Crawler](#whitebox-registry-crawler) aufgerufen, um die zentrale Peer-Liste zu aktualisieren.
 -   `getpeers` wird von normalen Nodes aufgerufen, um beim [Verbindungsaufbau](#verbindungsaufbau) initiale Peers abzurufen.
 
-## V$Goin P2P Protokoll
-
-## _\<Konzept n\>_
-
-_\<Erklärung\>_
-
 # Architekturentscheidungen
 
 ## ADR 1: Entscheidung für Protobuf zur Serialisierung in RPC-Calls
@@ -1440,74 +1434,6 @@ Negative Konsequenzen:
 Durch den Einsatz von gRPC werden entfernte Funktionsaufrufe effizient, sicher und zuverlässig umgesetzt. Die garantierte Reihenfolge und Vollständigkeit der
 Nachrichtenübertragung erleichtert die Implementierung und bildet die Grundlage für die Funktion des Blockchain Systems.
 Gleichzeitig verbessert Protobuf die Performance und HTTP/2 die Latenz, während der offene Standard der Architekturstrategie entgegenkommt.
-
-## ADR 4: Einsatz von BadgerDB zur Speicherung des vollständigen UTXO-Sets in Full Nodes
-
-### Kontext
-
-Ein Full Node muss das vollständige **UTXO-Set (Unspent Transaction Outputs)** persistent speichern und effizient nach `(TxID, OutputIndex)` auflösen können.  
-Die Datenmenge wächst kontinuierlich, kann beliebig groß werden und wird bei jeder Blockverarbeitung intensiv gelesen und geschrieben.
-
-Anforderungen:
-
--   Persistente Speicherung über Node-Neustarts hinweg
--   Sehr schnelle Key-Value-Lookups
--   Hohe Schreibperformance bei Blockverarbeitung
--   In-Prozess-Datenbank (kein externer DB-Server)
--   Gute Integration in eine Go-Codebasis
--   Möglichkeit zur späteren Erweiterung um Caching-Strategien
-
-Alternativen:
-
--   In-Memory Maps (nicht persistent, nicht skalierbar)
--   BoltDB / bbolt (ACID, aber eingeschränkte Schreibperformance bei großen Datenmengen)
--   LevelDB (bewährt, aber nicht nativ in Go)
-
----
-
-### Entscheidung
-
-Für Full Nodes wird **BadgerDB** als persistente Key-Value-Datenbank zur Speicherung des vollständigen UTXO-Sets eingesetzt.
-
-BadgerDB wird genutzt als:
-
--   Disk-basierte, autoritative UTXO-Datenbank
--   Backend für `(TxID, OutputIndex) → Output` Lookups
--   Grundlage für spätere In-Memory-Caches
-
----
-
-### Status
-
-Akzeptiert
-
----
-
-### Konsequenzen
-
-#### Positive Konsequenzen:
-
--   **Hohe Performance** für Lese- und Schreibzugriffe durch LSM-Tree-Architektur
--   **Native Go-Implementierung**, keine CGo- oder externen Abhängigkeiten
--   **Persistente Speicherung**, geeignet für große Datenmengen
--   **Transaktionen und Batches** ermöglichen atomare Block-Updates
--   Gut geeignet für das **UTXO-Zugriffsmuster** (häufige Reads, kontinuierliche Writes)
-
-#### Negative Konsequenzen:
-
--   Komplexere API als einfache Maps oder bbolt
--   Höherer Speicher- und IO-Footprint als rein speicherbasierte Lösungen
--   Kein SQL / keine sekundären Indizes (nur Key-Value-Zugriff)
-
----
-
-### Auswirkung
-
--   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
--   Full Nodes können Transaktionen vollständig und unabhängig validieren
--   Minimal Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
--   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
--   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
 # Qualitätsanforderungen
 
