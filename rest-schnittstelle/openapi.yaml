@@ -19,7 +19,7 @@ paths:
   /transaction:
     post:
       summary: Executes a transaction
-      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature
+      description: Transfers the given amount from the sender to the recipient as long as sender can provide the amount and the private key can create a valid signature. On success the corresponding transaction ID gets returned. This ID can be used to confirm the transaction afterwards.
       tags:
         - Payment
       requestBody:
@@ -46,6 +46,14 @@ paths:
       responses:
         '201':
           description: Transaction successfully executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionID:
+                    type: string
+                    example: "a155c667a509ccaa9ac74b2817a2171daa8b641e1b6acaa21e8db734de34e1d2"
         '400':
           description: Insufficient funds for the given transaction
         '401':
