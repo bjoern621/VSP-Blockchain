@@ -231,7 +231,7 @@ Schnittstellen
 Begründung  
 Diese Aufteilung zeigt die oberste Sicht auf eine einzelne Node. Der Fokus liegt auf den vier Teilsystemen und deren Kommunikation untereinander.
 
-Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _SPV Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
+Dargestellt ist nur eine Full Node, die Teilsysteme können aber, mit Beachtung der Abhängigkeiten beliebig kombiniert werden. Eine _Minimal Node_ (eine leichtgewichtige Node, die auf Händleraktivitäten spezialisiert ist) würde zum Beispiel keine Miner Komponente haben. Ein _Miner_ (Node, die auf das Mining von Blöcken konzentriert ist) kann auch ohne Wallet agieren. Die App Komponente ist kein Teilsystem. Sie dient als Interaktionsschnittstelle für lokale externe Systeme. Jede Node hat immer das Netzwerkrouting Teilsystem.
 
 Das Netzwerk besteht aus mehreren Nodes (Peers), die miteinander in einem teilvermaschten Netz verbunden sind. Es können theoretisch beliebig viele Nodes Teil des Netzes sein. Die Peers kommunizieren über die P2P-Protokoll-API (bestehend aus [1](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) und [2](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto)).
 
@@ -1029,12 +1029,12 @@ Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/worklo
 
 Das REST-API Deployment stellt die HTTP-Schnittstelle für externe Clients bereit:
 
-| Container    | Image                                       | Funktion                                    | Ressourcen                  |
-|--------------|---------------------------------------------|---------------------------------------------|-----------------------------|
-| **spv**      | `ghcr.io/bjoern621/vsp-blockchain-miner`    | SPV-Node mit wallet, blockchain_simple, app | CPU: 50-200m, RAM: 64-128Mi |
-| **rest-api** | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080                 | CPU: 50-200m, RAM: 64-128Mi |
+| Container        | Image                                       | Funktion                                      | Ressourcen                  |
+|------------------|---------------------------------------------|-----------------------------------------------|-----------------------------|
+| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner`    | Minimal-Node mit wallet, blockchain_full, app | CPU: 50-200m, RAM: 64-128Mi |
+| **rest-api**     | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080                   | CPU: 50-200m, RAM: 64-128Mi |
 
-Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SPV-Node über localhost gRPC (Port 50050). SPV-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
+Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit der Minimal-Node über localhost gRPC (Port 50050). Minimal-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
 
 **Kubernetes Service:** `rest-api-service` (ClusterIP) auf Port 8080.
 
@@ -1077,8 +1077,8 @@ seed.local:53 {
 |------------------|------------------|-----------|-------|-------------------------------|
 | registry-crawler | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
 | registry-crawler | miner-*          | gRPC      | 50051 | Peer Discovery                |
-| rest-api         | spv              | gRPC      | 50050 | App-Schnittstelle (localhost) |
-| spv              | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| rest-api         | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| minimal-node     | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
 | miner-*          | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
 | Externe Clients  | rest-api-service | HTTP      | 8080  | REST-API                      |
 | Alle Pods        | registry         | DNS       | 53    | Seed-Auflösung                |
@@ -1090,7 +1090,7 @@ Eine P2P Netzwerk Node kann ausgehende und/oder eingehende Verbindungen anbieten
 
 Eine Verbindung zwischen zwei Peers A und B, kann so zum Beispiel für Peer A eine ausgehende sein und für B eine eingehende. Diese Verbindung würde somit Daten von Peer A zu Peer B senden. Also Peer B ist der Server und A der Client.
 
-Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass SPV Nodes niemals zu anderen SPV Nodes verbunden sind sondern SPV stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
+Wichtig in diesem Zusammenhang ist, dass Minimal-Nodes keine ausgehende Verbindungen haben können. Daraus folgt, dass Minimal-Nodes niemals zu anderen Minimal-Nodes verbunden sind sondern Minimal stets nur mit Full Nodes (genauer: Nodes mit dem Teilsystem vollständige Blockchain) verbunden sein können.
 
 ## Validiert/verifiziert vs. bestätigt
 
@@ -1108,7 +1108,7 @@ Ein Merkle-Tree wird dazu verwendet, einen "Fingerabdruck" für große Datenmeng
 Es wird für jedes Datenelement, der Hash als Blatt gespeichert. Nun werden immer zwei Blätter (die Hashes) "zusammen gehashed".
 Dies wird rekursiv wiederholt, bis es nur die Wurzel gibt. Somit sind in der Wurzel (Merkle Root) alle Hashes aller Blätter enthalten.
 In unserer Anwendung wird dies verwendet, um mit wenig Daten zu speichern, welche Transaktionen in einem Block enthalten sind.
-Dies wird dann speziell von SPV-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
+Dies wird dann speziell von Minimal-Nodes verwendet, da diese nicht alle Transaktionen speichern. Um eine Transaktion einem Block zuzuweisen,
 müssen diese nur den Merklepfad nachfolgen und das Ergebnis mit dem Merkle-Root (enthalten im Block-Header) vergleichen. Somit kann eine
 Node, Transaktionen überprüfen, ohne alle Transaktionen eines Blocks zu kennen.
 [Quelle](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805)
@@ -1539,7 +1539,7 @@ Akzeptiert
 
 -   Die UTXO-Verwaltung wird klar vom Validierungsprozess getrennt
 -   Full Nodes können Transaktionen vollständig und unabhängig validieren
--   SPV Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
+-   Minimal Nodes verwenden **keine** BadgerDB und speichern nur eigene UTXOs
 -   Die Architektur ist skalierbar und nahe an der Vorgehensweise von Bitcoin Core
 -   Ein späterer Austausch der Datenbank ist möglich, da der Zugriff über ein UTXO-Service-Interface erfolgt
 
@@ -1570,12 +1570,12 @@ Andere Qualitätskategorien wie z.&nbsp;B Operable oder Safe sollen keine größ
 Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen sie messbar machen. Jedes Szenario beschreibt eine Situation und ein Akzeptanzkriterium. Alle Szenarien gelten für den Normalbetrieb ohne Extremfälle, der etwa 90 % der Betriebszeit abdeckt. Verwendete Werte sind, wenn nicht anders angegeben, Educated Guesses.
 
 | ID   | Szenario                                                                                                                                                                                                                                  | Akzeptanzkriterium                                                                                                                                        | Relevante Qualitätsanforderungen                                                                                                                                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | QS-1 | 50 Nodes in der ICC treten gleichzeitig dem Netzwerk bei und initiieren jeweils einen [Verbindungsaufbau](#verbindungsaufbau).                                                                                                            | Alle Nodes sind innerhalb von 60 Sekunden mit mindestens 3 Peers verbunden.                                                                               | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)                                                                                                                                                                       |
 | QS-2 | Bei laufendem Betrieb mit 20 aktiven Minern wird ein neuer Block gemined.                                                                                                                                                                 | Der Block erreicht 90% aller Nodes der ICC innerhalb von 10 Sekunden.                                                                                     | Efficient > [Scalability](https://quality.arc42.org/qualities/scalability)<br/>Efficient > [Responsiveness](https://quality.arc42.org/qualities/responsiveness)                                                                                  |
 | QS-3 | Eine Node mit veralteter Blockchain verbindet sich mit dem Netzwerk.                                                                                                                                                                      | Die [Block-Header Synchronisation](#block-header-synchronisation) erfolgt automatisch. Synchronisation beginnt innerhalb von 10 Sekunden.                 | Reliable > [Recoverability](https://quality.arc42.org/qualities/recoverability)                                                                                                                                                                  |
 | QS-4 | Die REST-API möchte Händler-Funktionen (Transaktionen senden, Kontostände lesen) nutzen, ohne Mining-Funktionalität zu implementieren. Siehe [Aufgabenstellung](#aufgabenstellung) für Unterscheidung zwischen Händler-/Mining-Funktionen | Das Wallet-Teilsystem ist ohne das Miner-Teilsystem nutzbar. Es besteht keine Abhängigkeit von Wallet zu Miner-Teilsystem.                                | Flexible > [Modularity](https://quality.arc42.org/qualities/modularity)<br/>Flexible > [Composability](https://quality.arc42.org/qualities/composability)                                                                                        |
-| QS-5 | Eine SPV Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                                   | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
+| QS-5 | Eine Minimal Node sendet 100 Anfragen an das Netzwerk (z.&nbsp;B. `GetHeaders`, `GetData`).                                                                                                                                               | Die Anfragen werden auf mehrere Full Nodes verteilt. Keine einzelne Full Node bearbeitet mehr als 50% der Anfragen.                                       | Efficient > [Resource efficiency](https://quality.arc42.org/qualities/resource-efficiency)<br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)                                                                           |
 | QS-6 | Ein Reviewer prüft eine Code-Änderung.                                                                                                                                                                                                    | Die Änderung ist durch Kommentare und Dokumentation unterstützt. Go Best Practices wurden eingehalten. Tool: [Golangci-lint](https://golangci-lint.run/). | Flexible > [Maintainability](https://quality.arc42.org/qualities/maintainability)                                                                                                                                                                |
 | QS-7 | Eine Node empfängt eine malformed/ungültige Nachricht.                                                                                                                                                                                    | Die Node sendet eine `reject`-Nachricht und bricht die Verarbeitung der Nachricht ab, ohne abzustürzen.                                                   | Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance) <br/>Reliable > [Robustness](https://quality.arc42.org/qualities/robustness)<br/>Secure > [Data Integrity](https://quality.arc42.org/qualities/data-integrity) |
 | QS-8 | 5 % gleichmäßig im Netzwerk verteilte Nodes verlassen das Netzwerk zeitgleich unerwartet.                                                                                                                                                 | Die verbleibenden Nodes können weiterhin [alle Anforderungen](#aufgabenstellung) erfüllen.                                                                | Reliable > [Resilience](https://quality.arc42.org/qualities/resilience)<br/>Reliable > [Fault tolerance](https://quality.arc42.org/qualities/fault-tolerance)                                                                                    |
@@ -1638,7 +1638,7 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 # Glossar
 
 | Begriff         | Definition                                                                                                                                                                                                            |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Externes System | Software-System außerhalb der Node, das die Funktionalität einer (lokalen) Node erweitert und dafür die `AppAPI`-Schnittstelle nutzt.<br/>Beispiele: REST-API, Registry Crawler.                                      |
 | Genesis Block   | Der erste Block in der Blockchain. Blocknummer 0. Ist in jeder Node hard-kodiert.                                                                                                                                     |
 | gRPC            | Remote Procedure Call Framework von Google, basiert auf HTTP/2 und Protobuf. Wird für die Kommunikation zwischen Nodes verwendet.                                                                                     |
@@ -1647,6 +1647,5 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 | Miner Node      | Hat Teilsysteme: Blockchain, Miner, Netzwerk-Routing; auch _Solo-Miner_; Achtung: "Miner" kann sowohl eine Miner Node (wie zuvor beschrieben) meinen als auch das Teilsystem Miner, der Kontext macht den Unterschied |
 | Node            | Ein eigenständiges System, das Teil des P2P Netzwerks ist. Synonym für _Peer_.                                                                                                                                        |
 | Protobuf        | Protocol Buffers, [Serialisierungsformat von Google](https://protobuf.dev/) zur effizienten Kodierung strukturierter Daten. Wird für RPC-Nachrichten verwendet.                                                       |
-| SPV             | Simplified Payment Verification                                                                                                                                                                                       |
-| SPV Node        | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
+| Minimal Node    | Auch _Händler_, hat Teilsysteme: Wallet, (vereinfachte) Blockchain und Netzwerk-Routing                                                                                                                               |
 | UTXO            | Unspent Transaction Output, nicht ausgegebener Transaktionsausgang. Repräsentiert verfügbare Beträge, die als Eingabe für neue Transaktionen verwendet werden können.                                                 |
