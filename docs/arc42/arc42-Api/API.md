@@ -426,33 +426,37 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 # Verteilungssicht
 
 ## Infrastruktur Ebene 1
+![Diagramm](https://www.plantuml.com/plantuml/png/bP71QW8n48RlFiNFtZteqKDHfE3U18LUUabt1mbDPa8oIgNuH7s4tdooid4bWLAAbn3ccs-IcLacDL6Ftaq08BrR3YOQZqvy42RMdPuT8LAdXW-ESbe-EYV77atBIf596tpcCC3I4vgriyJQm2JShfbUYZyfkTUlPpxPAEo9zVhzoflLoxHThqjDG2L01M-YAXwz7NvaXJElAxLyY9JIK0MHJXGJ8KJvE3SO_c9l-9UsetYo7OrQqjMshLy7ohNCPX2tqjSI8WLdExF0BFUUmy7E7jRdjJv_METQBrEwb2sCQy5q-dIV2XROxFVRNSPZBFDx5sF2Ntp-3-UQvsD9t1-z-m40)
+<details>
+    <summary>Diagramm Code</summary>
 
-````plantuml
-@startuml
-skinparam componentStyle rectangle
-
-cloud "Internet" {
-  node "Client" as Client
-}
-
-
-node "«Environment»\nHAW-ICC" {
-    top to bottom direction
-    node "«Ingress»\n reverse proxy"  as ingress
-    node "«Service»\n restAPI" {
-      
-      component "«Pod»\n restAPI replica: 1" as restApi1
-      component "«Pod»\n restAPI replica: 2" as restApi2
-      component "«Pod»\n restAPI replica: n" as restApin
+    ````plantuml
+    @startuml
+    skinparam componentStyle rectangle
+    
+    cloud "Internet" {
+      node "Client" as Client
     }
-}
-Client --> ingress : HTTPS
-ingress --> restApi1 : HTTP
-ingress --> restApi2 : HTTP
-ingress --> restApin : HTTP
-
-@enduml
-````
+    
+    
+    node "«Environment»\nHAW-ICC" {
+        top to bottom direction
+        node "«Ingress»\n reverse proxy"  as ingress
+        node "«Service»\n restAPI" {
+          
+          component "«Pod»\n restAPI replica: 1" as restApi1
+          component "«Pod»\n restAPI replica: 2" as restApi2
+          component "«Pod»\n restAPI replica: n" as restApin
+        }
+    }
+    Client --> ingress : HTTPS
+    ingress --> restApi1 : HTTP
+    ingress --> restApi2 : HTTP
+    ingress --> restApin : HTTP
+    
+    @enduml
+    ````
+</details>
 
 ### Umstände 
 In diesem Dokument wird die Infrastruktur beschrieben, auf welcher die von uns betriebenen Komponenten laufen.
@@ -479,18 +483,24 @@ Diese Limits wurden bereits nach Nachfrage per E-Mail angehoben. Es gilt weiter 
 
 
 ## Infrastruktur Ebene 2
-````plantuml
-@startuml
-skinparam componentStyle rectangle
-  left to right direction
-        
-      node "«Pod»\n restApi"{
-        component "«Container»\n restAPI" as api
-        component "«Container»\n full Node" as fullNode
-      }
-      api <--> fullNode : gRPC
-@enduml
-````
+![Diagramm](https://www.plantuml.com/plantuml/png/ZOqnJi0m40HxlsALFXz020Mbea4Hj3HMV0aMzfrbNmg4U15FeClBm2vYIgRoQdTyKr6RzOZ1u9VovZdPR2DMYKcOM9_rFH0ohMfv3sJG2BGfL93z_gfmllPUkBK65ooEC9nVYxZp-uMHgUXzyiE7GQVVgjDPMArdobrO7WRO0flyVxNj206FugY9DTNmn_xix_elRiVnxjhX1llJChV9HEoE67u0)
+<details>
+    <summary>Diagramm Code</summary>
+
+    ````plantuml
+    @startuml
+    skinparam componentStyle rectangle
+      left to right direction
+    
+          node "«Pod»\n restApi"{
+            component "«Container»\n restAPI" as api
+            component "«Container»\n full Node" as fullNode
+          }
+          api <--> fullNode : gRPC
+    @enduml
+    ````
+</details>
+
 ### Beschreibung
 In dem restAPI Pod ist die restAPI und eine full Node enthalten.
 Die restAPI ist die Komponente, welche in diesem Dokument beschrieben wird. 
