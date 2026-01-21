@@ -654,39 +654,32 @@ stateDiagram-v2
 <p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
 </div>
 
-## Verbindungsaufbau
-
-<div align="center">
-
-```mermaid
-sequenceDiagram
-    participant p1 as Peer 1
-    participant Registry
-    participant p2 as Peer X
-
-    p1->>Registry: GetPeers()
-    destroy Registry
-    Registry-->>p1: Liste IP-Adressen
-    loop Für jede IP X in der Liste
-        p1->>p2: Version()
-        p2->>p1: Verack()
-        p1->>p2: Ack()
-    end
-```
-
-<p><em>Abbildung: Sequenzdiagramm - Verbindungsaufbau zwischen Peers</em></p>
-
-</div>
-
 Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
 
 Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
 
 ## Block-Header Synchronisation
 
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Idle : Handshake complete
+    
+    Idle --> BuildBlockLocator : buildBlockLocator()
+    BuildBlockLocator --> Idle : send GetHeaders()
+    
+    Idle --> FindCommonAncestor : getHeaders()
+    FindCommonAncestor --> CollectBlockHashes : found common ancestor
+    CollectBlockHashes --> Idle : send headers()
+    
+    Idle --> HeadersReceived : headers()
+    HeadersReceived --> Idle : Header already known
+    HeadersReceived --> Idle : getData(unknown headers)
+```
+
 Die Block-Header Synchronisation dient dazu zwei Knoten, welche der gleichen Chain folgen auf den gleichen Stand zu bringen. Dazu wird ein Block Locator erstellt, welcher in exponentiell größer werdenden Schritten die Block Hashes von oben nach unten speichert, um den gegenüber über ihm bekannte Blöcke zu informieren. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. 
 
-Nach dem Send des `BlockLocators` durch `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
+Nach dem Send des `BlockLocators` durch `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Nach dem Empfang von einer `Headers()` Nachricht, wird geprüft, ob der Block-Hash bereits bekannt ist. Ist dies nicht der Fall, wird dieser über `getData(blockHash)` Nachricht angefragt. Von hier an, findet ein normaler [Datenaustausch](#datenaustausch) statt.
 
 Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. Wenn zB. der anfragende Client als Antwort mehrere Blöcke bekommt, welche von seiner Main-Chain abzweigen und diese die aktuelle Main-Chain überholen.
 
@@ -720,6 +713,8 @@ Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation
 Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
 
 Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
+
+## Datenaustausch
 
 ## Chain Reorganization
 
