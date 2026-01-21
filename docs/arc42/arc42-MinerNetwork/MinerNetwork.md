@@ -841,44 +841,50 @@ Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-
 <div align="center">
 
 ```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> Idle : Handshake complete
 
-sequenceDiagram
-    participant node as Node
-    participant peer as Peer
+    Idle --> BlockReceived : block()
 
-    Note over node,peer: Block C empfangen,  A unbekannt
+    BlockReceived --> ValidateBlock : Check prevBlockHash
 
-    node->>node: C in Waisenpool hinzufügen
-    node->>peer: getHeaders(blockLocator: A, hashStop: C)
-    peer->>node: headers( { H(A), ...,  H(C) } )
-    loop für jeden Header H der empfangenen Header
-        node->>node: validiere empfangenen Header
-        node->>peer: getData(hash(H))
-        peer->>node: block(H)
-        node->>node: validiere empfangenen Block
-    end
-    node->>node: versuche Waisen-Blöcke anzuschließen
+    ValidateBlock --> ProcessBlock : prevBlockHash known
+    ValidateBlock --> OrphanHandling : prevBlockHash unknown
+
+    state OrphanHandling {
+        [*] --> AddToOrphanPool
+        AddToOrphanPool --> BlockHeaderSynchronisation
+        BlockHeaderSynchronisation --> Datenaustausch
+        Datenaustausch --> ReceiveMissingBlocks
+        ReceiveMissingBlocks --> ValidateMissingBlocks
+        ValidateMissingBlocks --> TryConnectOrphans
+        TryConnectOrphans --> [*]
+    }
+
+    OrphanHandling --> ProcessBlock : Orphans connected
+
+    ProcessBlock --> AppendToChain : Block valid
+    ProcessBlock --> Idle : Block invalid
+
+    AppendToChain --> Idle : Block added
+    AppendToChain --> ChainReorganization : Fork detected
+
+    ChainReorganization --> Idle : Chain updated
 ```
 
 <p><em>Abbildung: Sequenzdiagramm - Behandlung eines Waisenblocks</em></p>
 
 </div>
 
-Szenario:
-Node empfängt über `inv`, `getData` und `block` einen Block `C`. Dieser hat als Vorgängerblock einen Block `A`, welcher dem Node unbekannt ist.
-
-Ablauf:
-
+Orphan Handling wird dann benötigt, wenn ein Block empfangen wird und der `prevBlockHash` nicht bekannt ist.
 1. Es wird ein Block empfangen.
-2. Header Kette wird validiert → Schlägt fehl
+2. Finde vorherigen Block
 3. Block wird in den Waisen-Pool aufgenommen
-4. Es werden alle Header zwischen den letzten Blöcken der Kette und dem Empfangenen angefragt. Siehe [hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) für den Aufbau des BlockLocators
-5. Der Peer sendet dem Node alle angeforderten Block-Header via einer `headers(...)` Nachricht
-6. Die Header werden validiert
-7. Die Blöcke der Hashes werden durch die `getData` Nachricht angefragt
-8. Der Peer liefert die angefragten Blöcke über eine `block` Nachricht
-9. Der empfangene Block wird validiert
-10. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen
+4. Es findet eine [Block-Header Synchronisation](#block-header-synchronisation) statt.
+5. Die nicht bekannten Blöcke aus der Block-Header Synchronisation werden durch den [Datenaustausch](#datenaustausch) angefragt.
+6. Die empfangenen Blöck werden validiert
+7. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen. Ggf. findet dadurch eine [Chain Reorganization](#chain-reorganization) statt.
 
 ## Peer Discovery
 
