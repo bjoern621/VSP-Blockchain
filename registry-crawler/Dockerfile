@@ -10,7 +10,7 @@ RUN go build -o start-app
 
 # Go build complete
 
-FROM gcr.io/distroless/base-debian12
+FROM alpine:latest
 WORKDIR /app
 
 COPY --from=go-build /app/start-app ./
