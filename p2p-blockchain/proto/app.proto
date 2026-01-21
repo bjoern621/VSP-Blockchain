@@ -104,7 +104,7 @@ service AppService {
     //  - Returns success/failure status.
     rpc StopMining(google.protobuf.Empty) returns (StopMiningResponse);
 
-    //GetConfirmationStatus returns the currents confirmation status to the corresponding transaction ID
+    //GetConfirmationStatus returns the current confirmation status of the transaction identified by the given txID.
     rpc GetConfirmationStatus(GetConfirmationStatusRequest) returns (GetConfirmationStatusResponse);
 }
 
