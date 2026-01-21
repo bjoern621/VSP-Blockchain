@@ -59,15 +59,18 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 			blockHash := receivedBlock.Hash()
 			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
 		}
+		logger.Warnf("[block_handler] Block %v is invalid after full validation", &receivedBlock.Header)
 		return
 	}
+
+	logger.Debugf("[block_handler] Block %v passed full validation", &receivedBlock.Header)
 
 	// 5. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
 	if err != nil {
-		logger.Errorf("[block_handler] Chain reorganization failed: %v", err)
+		logger.Warnf("[block_handler] Chain reorganization failed: %v", err)
 		return
 	}
 
@@ -80,20 +83,17 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
-	parentHash := receivedBlock.Header.PreviousBlockHash
+	mainChainHeight := b.blockStore.GetMainChainHeight()
+	locatorHashes := b.buildBlockLocator(mainChainHeight)
 
-	currentHeight := b.blockStore.GetCurrentHeight()
-	locatorHashes := b.buildBlockLocator(currentHeight)
-
-	// Prepend the orphan parent hash at the beginning (most recent hash)
-	locatorHashes = append([]common.Hash{parentHash}, locatorHashes...)
-
+	// Use the orphan's parent hash as the stop hash - we want headers up to and including
+	// the parent of the orphan block so we can connect it
 	locator := block.BlockLocator{
 		BlockLocatorHashes: locatorHashes,
-		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
+		StopHash:           receivedBlock.Header.PreviousBlockHash,
 	}
 
-	logger.Infof("[block_handler] Requesting missing headers from peer %s, starting from parent hash %s", peerId, parentHash)
+	logger.Infof("[block_handler] Requesting missing headers from peer %s to resolve orphan, stop hash: %s", peerId, receivedBlock.Header.PreviousBlockHash)
 
 	b.blockchainMsgSender.RequestMissingBlockHeaders(locator, peerId)
 }

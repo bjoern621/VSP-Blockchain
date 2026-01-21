@@ -594,9 +594,6 @@ stateDiagram-v2
     running --> block_received: ReceiveBlock()
     block_received --> running: HandleBlock()
 
-    running --> merkleBlock_received: ReceiveMerkleBlock()
-    merkleBlock_received --> running: HandleMerkleBlock()
-
     running --> transaction_received: ReceiveTx()
     transaction_received --> running: HandleTx()
 
@@ -605,9 +602,6 @@ stateDiagram-v2
 
     running --> headers_received: ReceiveHeaders()
     headers_received --> running: HandleHeaders()
-
-    running --> setFilter_received: ReceiveSetFilter()
-    setFilter_received --> running: HandleSetFilter()
 
     running --> mempool_received: ReceiveMempool()
     mempool_received --> running: HandleMempool()
@@ -659,66 +653,94 @@ stateDiagram-v2
 <p><em>Abbildung: Zustandsgraph - Miner Handshake</em></p>
 </div>
 
-## Verbindungsaufbau
-
-<div align="center">
-
-```mermaid
-sequenceDiagram
-    participant p1 as Peer 1
-    participant Registry
-    participant p2 as Peer X
-
-    p1->>Registry: GetPeers()
-    destroy Registry
-    Registry-->>p1: Liste IP-Adressen
-    loop Für jede IP X in der Liste
-        p1->>p2: Version()
-        p2->>p1: Verack()
-        p1->>p2: Ack()
-    end
-```
-
-<p><em>Abbildung: Sequenzdiagramm - Verbindungsaufbau zwischen Peers</em></p>
-
-</div>
-
 Der Verbindungsaufbau ist der initiale Prozess, den ein Knoten durchläuft, wenn er dem Netzwerk beitritt. Zunächst ruft der Knoten eine Liste potenzieller Peers von einer zentralen Registry ab (`Getpeers`). Anschließend wird mit jedem erreichbaren Peer ein Handshake durchgeführt, der aus den Nachrichten `Version`, `Verack` und `Ack` besteht.
 
 Während dieses Handshakes tauschen die Knoten Informationen über ihre unterstützten Teilsysteme aus, wie beispielsweise "Miner" oder "Wallet". Dies ermöglicht es den Teilnehmern, die Fähigkeiten ihres Gegenübers zu verstehen. Nach erfolgreichem Abschluss des Handshakes gilt die Verbindung als etabliert. Ab diesem Zeitpunkt können die Knoten reguläre Netzwerknachrichten wie Transaktionen oder Blöcke austauschen und synchronisieren. Auf eine erfolgreiche Verbindung folgt normalerweise eine [Block-Header Synchronisation](#block-header-synchronisation) bzw. ein [Initialer-Block-Download](#initialer-block-download).
 
 ## Block-Header Synchronisation
 
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Idle : Handshake complete
+    
+    Idle --> BuildBlockLocator : buildBlockLocator()
+    BuildBlockLocator --> Idle : send GetHeaders()
+    
+    Idle --> FindCommonAncestor : getHeaders()
+    FindCommonAncestor --> CollectBlockHashes : found common ancestor
+    CollectBlockHashes --> Idle : send headers()
+    
+    Idle --> HeadersReceived : headers()
+    HeadersReceived --> Idle : Header already known
+    HeadersReceived --> Idle : getData(unknown headers)
+```
+
+Die Block-Header Synchronisation dient dazu zwei Knoten, welche der gleichen Chain folgen auf den gleichen Stand zu bringen. Dazu wird ein Block Locator erstellt, welcher in exponentiell größer werdenden Schritten die Block Hashes von oben nach unten speichert, um den gegenüber über ihm bekannte Blöcke zu informieren. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. 
+
+Nach dem Send des `BlockLocators` durch `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first). Nach dem Empfang von einer `Headers()` Nachricht, wird geprüft, ob der Block-Hash bereits bekannt ist. Ist dies nicht der Fall, wird dieser über `getData(blockHash)` Nachricht angefragt. Von hier an, findet ein normaler [Datenaustausch](#datenaustausch) statt.
+
+Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. Wenn zB. der anfragende Client als Antwort mehrere Blöcke bekommt, welche von seiner Main-Chain abzweigen und diese die aktuelle Main-Chain überholen.
+
+## Initialer Block Download
+
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant A as Full Node A<br/>(BestBlockHeight: 110)
-    participant B as Full Node B<br/>(BestBlockHeight: 120)
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    
+    Idle --> Idle : BlockHeader Synchronisation
 
-    par Requests kreuzen sich im Netzwerk
-        A->>B: GetHeaders(BlockLocator[Hash110])
-        B->>A: GetHeaders(BlockLocator[Hash120])
-    end
-
-    Note over A: A hat nichts Nützliches für B
-
-    B->>A: Headers(List: 111...120)
-
-    A->>A: Validierung & Update Header auf 120
-
-    A->>A: Prüfen, ob Chain Reorganization nötig ist
+    Idle --> handleGetData : getData()
+    handleGetData --> Idle : send Block()
+    
+    Idle --> handleBlock : Block()
+    handleBlock --> Idle : process Block
 ```
 
-<p><em>Abbildung: Sequenzdiagramm - Einfache Synchronisation Block-Header</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
 
 </div>
 
-Der Ablauf im Diagramm nimmt an, dass beide Nodes derselben Chain folgen. Nur kennt Node A weniger Blöcke als Node B. Dies ist der Regelfall.
+Allgemein  
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
 
-Nach dem Aufruf von `GetHeaders(...)` wird jeweils der _Common Ancestor_ mit Hilfe des `BlockLocator` gesucht. BlockLocator beschreiben die aktuelle Blockchain des Clients. [Hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) wird beschrieben, wie ein BlockLocater erstellt werden kann. Die Peers finden diesen Common Ancestor bei Block 110. Da Peer A keine weiteren Blöcke hat, schickt A keine Header an B. Peer B dagegen schickt die übrigen Block-Header ab Block 111. Siehe zum Ablauf auch [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first).
+Ablauf:
+Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
 
-Intern werden die Block-Header in einer Baumstruktur gespeichert, mit dem Genesis Block als Root. Es werden nie valide Header gelöscht. Dies ermöglicht das effektive Erkennen von nötigen [Chain Reorganizations](#chain-reorganization). Reorganizations können nach der Verarbeitung eines Headers-Pakets auftreten. In dem oberen Diagramm beispielsweise, wenn der Common Ancestor Block 100 wäre. Dieser Fall würde bei Node A eine Reorganization auslösen.
+Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
+
+Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
+
+## Datenaustausch
+
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> getDataReceived : getData()
+    getDataReceived --> invTypeBlock : Data is a block
+    getDataReceived --> invTypeTx : Data is a transaction
+    
+    invTypeBlock --> isPresentBlock : block already present
+    invTypeBlock --> isMissingBlock : block missing
+    
+    invTypeTx --> isPresentTx : tx already present
+    invTypeTx --> isMissingTx : tx missing
+    
+    isPresentBlock --> [*] : send Block()
+    isMissingBlock --> [*]
+    
+    isPresentTx --> [*] : send Tx()
+    isMissingTx --> [*]
+```
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+
+</div>
+
+Der Datenaustausch zwischen Knoten erfolgt über die `getData()` Methode, welche Hashes von Blöcken oder Transaktionen beinhaltet. Abhängig davon, ob die Daten bekannt sind, wird mit einer `Block()` oder `Tx()` Nachricht geantwortet. Sind die Daten nicht bekannt wird nicht geantwortet.
 
 ## Chain Reorganization
 
@@ -771,145 +793,116 @@ Eine Reorganization hat zur Folge, das danach nur noch die Blöcke der neuen Cha
 Hinweise  
 Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. Dies ist nämliche der Normalfall, wenn eine komplett neue Kette über die Block-Header bekannt wird. Die neuen Blöcke werden dann über `GetData(...)` angefordert.
 
-## Initialer Block Download
+## Block-Mining
 
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant SPV as SPV Node
-    participant Full as Full Node
-
-    Note over SPV, Full: Block-Header synchronisieren<br/>(siehe oben)
-
-    SPV->>Full: SetFilter(...)
-
-    Note over SPV, Full: Blöcke (UTXOs) anfordern:
-
-    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
-    Full->>SPV: MerkleBlock(...)
-    Full->>SPV: MerkleBlock(...)
-
-    Note over SPV, Full: Unbestätigte Transaktionen abrufen:
-
-    SPV->>Full: Mempool()
-    Full->>SPV: Inv(...)
-
-    SPV->>Full: GetData(MSG_TX)
-    Full->>SPV: Tx(...)
-    Full->>SPV: Tx(...)
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> NotMining
+    NotMining --> preStart : start()
+    preStart --> candidateBlockCreated : createCandidateBlock()
+    candidateBlockCreated --> Mining : beginMining(candidateBlock)
+    Mining --> ProcessBlock: blockMined() (internal)
+    Mining --> ProcessBlock: block() (external)
+    ProcessBlock --> Idle : processNewBlock()
 ```
 
-<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Mining eines Blocks</em></p>
 
 </div>
 
-Allgemein  
-Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
+#### Ablauf
 
-Ablauf  
-Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
+1. Jeder Miner erstellt einen Candidate Block mit den Daten aus dem Mempool
+2. Ein Miner versucht den Block zu minen.
+3. Wird ein neuer Block empfangen oder gefunden wird dieser von der [Block Verarbeitung] verarbeitet.
 
-Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
-
-Abschließend wird der Mempool synchronisiert, um auch über noch unbestätigte Transaktionen informiert zu sein. Da zuvor ein Filter gesetzt wurde, werden nur gefilterte Transaktionen in der Inv Nachricht übermittelt.
-
-Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
-
-Unterschied Full Nodes vs. SPV  
-Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
-
-## Block-Mining & Verbreitung (Block Propagation)
-
+## Block Handling
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant Miner as Miner
-    participant Node_X as Node X
-    participant Node_Y as Node Y
-
-    Note over Miner, Node_X: Miner findet neuen Block
-
-    loop Für jeden Peer X in Nachbarn
-        Miner->>Node_X: inv(block_hash...)
-
-        alt block_hash unbekannt
-            Node_X->>Miner: getData(block_hash...)
-            Miner->>Node_X: block(...)
-            Node_X->>Node_X: validiere neuen Block
-            Node_X->>Node_Y: inv(block_hash)
-        else
-            %% No message
-        end
-    end
-
+stateDiagram-v2
+    [*] --> Idle : Handshake complete
+    Idle --> BlockReceived : block()
+    BlockReceived --> BlockUnknown
+    BlockUnknown --> SanityCheck
+    SanityCheck --> HeaderValid
+    HeaderValid --> addedToChain : addToChain()
+    addedToChain --> isOrphan : isOrphan()
+    isOrphan --> OrphanHandling
+    addedToChain --> FullyValid
+    FullyValid --> Reorganize : needs reorganization
+    FullyValid --> PropagateViaInv : does not need reorganization
+    PropagateViaInv --> Idle : propagate via inv
+    Reorganize --> PropagateViaInv
 ```
-
 <p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
 
 </div>
 
-#### Allgemein:
+Kann der nächste Zustand nicht erreicht werden, gilt für diesen Fall, dass in den Idle Zustand zurück gekehrt wird.
 
-Findet ein Miner einen Block, so muss dieser schnellstmöglich im Netzwerk propagiert werden. Ziel ist es,
-dass der Block möglichst schnell im Netz verbreitet wird, damit dieser Teil der Blockchain wird.
-Das dargestellte Szenario zeigt, wie ein gefundener Block im Netzwerk propagiert wird.
-
-#### Ablauf
-
-1. Es wird ein Block gefunden
-2. Für jeden Peer wird eine `inv` Nachricht mit dem Block-Hash gesendet. Dies informiert Peers, über die Existenz dieses Blockes.
-3. Ein Peer prüft nun, ob er diesen Block-Hash bereits kennt. (Dies ist im Regelfall nicht so, da der Block gerade neu geschürft wurde)
-4. Kennt der Peer den Block noch nicht, so fragt er diesen mit einer `getData` Nachricht an
-5. Der Miner, welcher den Block gefunden hat, antwortet mit einer `block` Nachricht
-6. Das wissen über den neuen Block wird in einer `inv` Nachricht an die anderen bekannten Peers gesendet.
-
-Begründung: Dies deckt UC-7 (Block minen) ab. Wenn ein Miner das Proof-of-Work-Rätsel löst, muss der neue Block schnellstmöglich an alle anderen Nodes verteilt werden (Inv(MSG_BLOCK) -> GetData -> Block), damit diese ihn validieren und ihre eigene Arbeit auf den neuen Block umstellen können.
+### Ablauf:
+1. Wenn ein Block empfangen wird (BlockReceived), wird geprüft, ob er bereits bekannt ist (BlockUnknown).
+2. SanityCheck: Grundlegende Formatprüfung des Blocks
+3. Validierung des Block-Headers (Schwierigkeit, Zeitstempel, PoW, etc.)
+4. Der Block wird zum BlockStore hinzugefügt (addToChain).
+5. Falls der Eltern-Block fehlt (isOrphan), wird die bestehende [Orphan Handling](#orphan-block-handling) verwendet.
+6. FullyValid Prüft alle Transaktionen und UTXO-Konsistenz.
+7. Falls nötig, wird die Hauptkette neu organisiert (Reorganize).
+8. Neue Blöcke werden an andere Peers weitergeleitet (PropagateViaInv → BroadcastAddedBlocks).
 
 ## Orphan Block Handling
 
 <div align="center">
 
 ```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> Idle : Handshake complete
 
-sequenceDiagram
-    participant node as Node
-    participant peer as Peer
+    Idle --> BlockReceived : block()
 
-    Note over node,peer: Block C empfangen,  A unbekannt
+    BlockReceived --> ValidateBlock : Check prevBlockHash
 
-    node->>node: C in Waisenpool hinzufügen
-    node->>peer: getHeaders(blockLocator: A, hashStop: C)
-    peer->>node: headers( { H(A), ...,  H(C) } )
-    loop für jeden Header H der empfangenen Header
-        node->>node: validiere empfangenen Header
-        node->>peer: getData(hash(H))
-        peer->>node: block(H)
-        node->>node: validiere empfangenen Block
-    end
-    node->>node: versuche Waisen-Blöcke anzuschließen
+    ValidateBlock --> ProcessBlock : prevBlockHash known
+    ValidateBlock --> OrphanHandling : prevBlockHash unknown
+
+    state OrphanHandling {
+        [*] --> AddToOrphanPool
+        AddToOrphanPool --> BlockHeaderSynchronisation
+        BlockHeaderSynchronisation --> Datenaustausch
+        Datenaustausch --> ReceiveMissingBlocks
+        ReceiveMissingBlocks --> ValidateMissingBlocks
+        ValidateMissingBlocks --> TryConnectOrphans
+        TryConnectOrphans --> [*]
+    }
+
+    OrphanHandling --> ProcessBlock : Orphans connected
+
+    ProcessBlock --> AppendToChain : Block valid
+    ProcessBlock --> Idle : Block invalid
+
+    AppendToChain --> Idle : Block added
+    AppendToChain --> ChainReorganization : Fork detected
+
+    ChainReorganization --> Idle : Chain updated
 ```
 
 <p><em>Abbildung: Sequenzdiagramm - Behandlung eines Waisenblocks</em></p>
 
 </div>
 
-Szenario:
-Node empfängt über `inv`, `getData` und `block` einen Block `C`. Dieser hat als Vorgängerblock einen Block `A`, welcher dem Node unbekannt ist.
-
-Ablauf:
-
+Orphan Handling wird dann benötigt, wenn ein Block empfangen wird und der `prevBlockHash` nicht bekannt ist.
 1. Es wird ein Block empfangen.
-2. Header Kette wird validiert → Schlägt fehl
+2. Finde vorherigen Block
 3. Block wird in den Waisen-Pool aufgenommen
-4. Es werden alle Header zwischen den letzten Blöcken der Kette und dem Empfangenen angefragt. Siehe [hier (Bitcoin Wiki)](https://en.bitcoin.it/wiki/Protocol_documentation#getblocks) für den Aufbau des BlockLocators
-5. Der Peer sendet dem Node alle angeforderten Block-Header via einer `headers(...)` Nachricht
-6. Die Header werden validiert
-7. Die Blöcke der Hashes werden durch die `getData` Nachricht angefragt
-8. Der Peer liefert die angefragten Blöcke über eine `block` Nachricht
-9. Der empfangene Block wird validiert
-10. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen
+4. Es findet eine [Block-Header Synchronisation](#block-header-synchronisation) statt.
+5. Die nicht bekannten Blöcke aus der Block-Header Synchronisation werden durch den [Datenaustausch](#datenaustausch) angefragt.
+6. Die empfangenen Blöck werden validiert
+7. Es wird versucht die Blöcke aus dem Waisen-Pool an die Kette anzuschließen. Ggf. findet dadurch eine [Chain Reorganization](#chain-reorganization) statt.
 
 ## Peer Discovery
 

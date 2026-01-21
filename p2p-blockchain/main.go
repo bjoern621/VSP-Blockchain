@@ -5,6 +5,7 @@ import (
 	appcore "s3b/vsp-blockchain/p2p-blockchain/app/core"
 	"s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/adapters"
 	appgrpc "s3b/vsp-blockchain/p2p-blockchain/app/infrastructure/grpc"
+	blockapi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
@@ -67,12 +68,15 @@ func main() {
 	blockStore := blockchainData.NewBlockStore(genesisBlock, blockValidator)
 
 	utxoStore := utxo.NewUtxoStore(blockStore)
+	transactionValidator := validation.NewTransactionValidator(utxoStore)
 	err := utxoStore.InitializeGenesisPool(genesisBlock)
 	assert.IsNil(err, "Failed to initialize genesis UTXO pool")
 
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	transactionValidator := validation.NewTransactionValidator(utxoStore)
+	blockValidator.SetDependencies(transactionValidator, utxoStore)
+
+	mempool := core.NewMempool(transactionValidator, blockStore)
 
 	blockchain := core.NewBlockchain(
 		blockchainMsgService,
@@ -83,6 +87,7 @@ func main() {
 		peerStore,
 		transactionValidator,
 		utxoStore,
+		mempool,
 	)
 
 	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
@@ -100,7 +105,8 @@ func main() {
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
 		// Intialize Transaction Creation API
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore)
+		mempoolApi := blockapi.NewMempoolAPI(mempool)
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
 		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
 		// Initialize transaction service and API
@@ -110,7 +116,7 @@ func main() {
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 
 		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl)
+		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
 
 		// Initialize history API and handler

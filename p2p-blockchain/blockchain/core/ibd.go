@@ -24,7 +24,7 @@ func (b *Blockchain) OnPeerConnected(peerID common.PeerId, isOutbound bool) {
 	logger.Infof("[ibd] Peer %s connected (outbound), initiating Initial Block Download", peerID)
 
 	// Build block locator from current chain state
-	currentHeight := b.blockStore.GetCurrentHeight()
+	currentHeight := b.blockStore.GetMainChainHeight()
 	locatorHashes := b.buildBlockLocator(currentHeight)
 
 	// Create block locator for GetHeaders request

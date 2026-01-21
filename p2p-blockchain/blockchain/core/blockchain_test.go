@@ -171,6 +171,10 @@ func (m *mockBlockStore) GetCurrentHeight() uint64 {
 	return m.currentHeight
 }
 
+func (m *mockBlockStore) GetMainChainHeight() uint64 {
+	return m.currentHeight
+}
+
 func (m *mockBlockStore) GetMainChainTip() block.Block {
 	m.getMainChainTipCalled = true
 	return m.mainChainTip
@@ -267,7 +271,7 @@ func TestBlockchain_Inv_InvokesRequestDataByCallingSendGetData(t *testing.T) {
 		sanityCheckResult:    true,
 		validateHeaderResult: true,
 		fullValidationResult: true,
-	}, nil, peerRetriever, nil, nil)
+	}, nil, peerRetriever, nil, nil, NewMempool(nil, nil))
 
 	var h common.Hash
 	h[0] = 0xAB // arbitrary non-zero hash to make assertions clearer
@@ -544,7 +548,7 @@ func TestBlockchain_Block_SuccessfulProcessing(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil, nil),
+		mempool:             NewMempool(nil, &mockBlockStore{}),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
 		errorMsgSender:      errorMsgSender,
@@ -603,7 +607,7 @@ func TestBlockchain_Block_WithChainReorganization(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil, nil),
+		mempool:             NewMempool(nil, &mockBlockStore{}),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
 		errorMsgSender:      errorMsgSender,
@@ -656,7 +660,7 @@ func TestBlockchain_Block_AddedBlocksBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil, nil),
+		mempool:             NewMempool(nil, &mockBlockStore{}),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
 		errorMsgSender:      errorMsgSender,
@@ -699,7 +703,7 @@ func TestBlockchain_Block_ExcludedPeerInBroadcast(t *testing.T) {
 		blockValidator:      validator,
 		blockStore:          store,
 		chainReorganization: reorg,
-		mempool:             NewMempool(nil, nil),
+		mempool:             NewMempool(nil, &mockBlockStore{}),
 		observers:           mapset.NewSet[observer.BlockchainObserverAPI](),
 		peerRetriever:       peerRetriever,
 		errorMsgSender:      errorMsgSender,

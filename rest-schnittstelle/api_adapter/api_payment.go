@@ -42,7 +42,7 @@ func NewPaymentAPI(transactionService *transactionapi.TransaktionAPI, kontostand
 // Returns the balance tied to the given public key hash
 func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 	// Extract VSAddress from query parameter
-	vsAddress := c.Query("vsAddress")
+	vsAddress := c.Query("VSAddress")
 	// Call the domain service
 	result, err := api.kontostandService.GetBalance(vsAddress)
 	if errors.Is(err, common.ErrInvalidAddress) {
@@ -57,11 +57,10 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		logger.Errorf("[api_payment] Failed to get balance: %v", err)
+		logger.Warnf("[api_payment] Failed to get balance: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": internalServerError})
 		return
 	}
-
 	// Return successful response
 	c.JSON(http.StatusOK, BalanceGet200Response{Balance: int32(result)})
 }
@@ -70,7 +69,7 @@ func (api *PaymentAPI) BalanceGet(c *gin.Context) {
 // Returns the history of transactions involving the given key hash
 func (api *PaymentAPI) HistoryGet(c *gin.Context) {
 	// Extract VSAddress from query parameter
-	vsAddress := c.Query("vsAddress")
+	vsAddress := c.Query("VSAddress")
 
 	// Call the domain service
 	transactions, err := api.transaktionsverlaufService.GetHistory(vsAddress)

@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/assert"
+	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type Mempool struct {
@@ -27,16 +28,23 @@ func NewMempool(validator validation.TransactionValidatorAPI, blockStore blockch
 	}
 }
 
+// GetTransactionsForMining returns all transactions that are eligible for mining
 func (m *Mempool) GetTransactionsForMining() []transaction.Transaction {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	txs := m.getTransactionsForMining()
+
+	logger.Infof("[mempool] Returning %d transaction eligible for mining", len(txs))
+	return txs
+}
+
+func (m *Mempool) getTransactionsForMining() []transaction.Transaction {
 	txs := make([]transaction.Transaction, 0, len(m.transactions))
 	for _, tx := range m.transactions {
 		txs = append(txs, tx)
 	}
 
-	clear(m.transactions)
 	return txs
 }
 
@@ -65,7 +73,10 @@ func (m *Mempool) AddTransaction(tx transaction.Transaction) (isNew bool) {
 	txId := tx.TransactionId()
 	_, ok = m.transactions[txId]
 	if !ok {
+		logger.Infof("[mempool] Adding new transaction %v to the mempool", txId)
 		m.transactions[txId] = tx
+	} else {
+		logger.Infof("[mempool] Transaction %v is already known to the mempool", txId)
 	}
 
 	return !ok
@@ -93,14 +104,12 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 		}
 	}
 
-	// Re-validate each transaction and remove invalid ones
 	for txId := range m.transactions {
 		// Skip if already marked for removal
 		if toRemove[txId] {
 			continue
 		}
 
-		// Re-validate each transaction
 		tx := m.transactions[txId]
 
 		mainChainTip := m.blockStore.GetMainChainTip()
@@ -112,10 +121,17 @@ func (m *Mempool) Remove(blockHashes []common.Hash) {
 		}
 	}
 
+	removeCount := 0
 	// Remove all marked transactions
 	for txId := range toRemove {
+		_, exists := m.transactions[txId]
+		if exists {
+			removeCount++
+		}
 		delete(m.transactions, txId)
 	}
+
+	logger.Infof("[mempool] Removed %d transactions from the mempool after new block arrived", removeCount)
 }
 
 // GetAllTransactionHashes returns all transaction hashes currently in the mempool.
