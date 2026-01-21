@@ -993,11 +993,11 @@ Die Infrastruktur nutzt die HAW-ICC Kubernetes-Umgebung und ist für die gegeben
 
 Das Registry Deployment besteht aus einem einzelnen Pod mit drei Containern:
 
-| Container | Image | Funktion | Ressourcen |
-|-----------|-------|----------|------------|
-| **minimal-node** | `ghcr.io/bjoern621/vsp-blockchain-miner` | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi |
-| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS | CPU: 50-200m, RAM: 64-128Mi |
-| **coredns** | `coredns/coredns:1.11.3` | DNS-Server für Seed-Auflösung auf seed.local | CPU: 25-100m, RAM: 128-256Mi |
+| Container            | Image                                               | Funktion                                                   | Ressourcen                   |
+|----------------------|-----------------------------------------------------|------------------------------------------------------------|------------------------------|
+| **minimal-node**     | `ghcr.io/bjoern621/vsp-blockchain-miner`            | Stellt nur den App-Service bereit für den registry-crawler | CPU: 50-200m, RAM: 64-128Mi  |
+| **registry-crawler** | `ghcr.io/bjoern621/vsp-blockchain-registry-crawler` | Peer Discovery, schreibt seed.hosts für CoreDNS            | CPU: 50-200m, RAM: 64-128Mi  |
+| **coredns**          | `coredns/coredns:1.11.3`                            | DNS-Server für Seed-Auflösung auf seed.local               | CPU: 25-100m, RAM: 128-256Mi |
 
 
 
@@ -1008,13 +1008,13 @@ Die drei Container teilen sich einen Pod und kommunizieren über localhost. Der 
 
 Das Miner-StatefulSet betreibt eine frei konfigurierbare Anzahl innerhalb des Limits (momentan 25), die das Rückgrat des P2P-Netzwerks bilden:
 
-| Eigenschaft | Wert |
-|-------------|------|
-| **Image** | `ghcr.io/bjoern621/vsp-blockchain-miner` |
-| **Replicas** | 25 |
-| **Services** | miner, blockchain_full, app |
-| **Ports** | App: 50050, P2P: 50051 |
-| **Ressourcen** | CPU: 100-200m, RAM: 64-128Mi pro Pod |
+| Eigenschaft        | Wert                                      |
+|--------------------|-------------------------------------------|
+| **Image**          | `ghcr.io/bjoern621/vsp-blockchain-miner`  |
+| **Replicas**       | 25                                        |
+| **Services**       | miner, blockchain_full, app               |
+| **Ports**          | App: 50050, P2P: 50051                    |
+| **Ressourcen**     | CPU: 100-200m, RAM: 64-128Mi pro Pod      |
 | **Pod Management** | Parallel (alle Pods starten gleichzeitig) |
 
 Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) erhalten die Pods stabile Netzwerkidentitäten (`miner-0`, `miner-1`, ..., `miner-24`), die auch nach Neustarts erhalten bleiben. Dies ermöglicht zuverlässige Adressierung über den Headless Service `miner-headless`.
@@ -1023,16 +1023,16 @@ Durch die Nutzung eines [StatefulSet](https://kubernetes.io/docs/concepts/worklo
 - `miner-headless` (Headless): Ermöglicht direkte Pod-zu-Pod-Kommunikation über DNS (z.B. `miner-0.miner-headless.vsp-blockchain.svc`)
 - `miner-seed` (Headless): Bootstrap-Endpunkte für den Registry-Crawler
 
-**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless:50051` und `miner-1.miner-headless:50051` als initiale Bootstrap-Peers.
+**Bootstrap-Konfiguration:** Der Registry-Crawler nutzt `miner-0.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` und `miner-1.miner-headless.vsp-blockchain.svc.k8s.informatik.haw-hamburg.de:50051` als initiale Bootstrap-Peers.
 
 #### REST-API Deployment (5 Pods, 2 Container pro Pod)
 
 Das REST-API Deployment stellt die HTTP-Schnittstelle für externe Clients bereit:
 
-| Container | Image | Funktion | Ressourcen |
-|-----------|-------|----------|------------|
-| **spv** | `ghcr.io/bjoern621/vsp-blockchain-miner` | SPV-Node mit wallet, blockchain_simple, app | CPU: 50-200m, RAM: 64-128Mi |
-| **rest-api** | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080 | CPU: 50-200m, RAM: 64-128Mi |
+| Container    | Image                                       | Funktion                                    | Ressourcen                  |
+|--------------|---------------------------------------------|---------------------------------------------|-----------------------------|
+| **spv**      | `ghcr.io/bjoern621/vsp-blockchain-miner`    | SPV-Node mit wallet, blockchain_simple, app | CPU: 50-200m, RAM: 64-128Mi |
+| **rest-api** | `ghcr.io/bjoern621/vsp-blockchain-rest-api` | HTTP REST-API auf Port 8080                 | CPU: 50-200m, RAM: 64-128Mi |
 
 Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SPV-Node über localhost gRPC (Port 50050). SPV-Nodes verbinden sich zum P2P-Netzwerk für Blockchain-Synchronisation.
 
@@ -1042,14 +1042,14 @@ Die beiden Container teilen sich einen Pod. Die REST-API kommuniziert mit dem SP
 
 Die Infrastruktur muss die [Ressourcenquoten der HAW-ICC](https://doc.inf.haw-hamburg.de/Dienste/icc/resourcequotas/) einhalten:
 
-| Ressource | Limit | Aktuell genutzt |
-|-----------|-------|-----------------|
-| CPU | 16 Kerne | ~4,8 Kerne (requests) |
-| RAM | 16 GB | ~2,5 GB (requests) |
-| Speicher | 100 GB | - |
-| #Pods | 50 | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
-| #Services | 10 | 4 Services |
-| #PVCs | 5 | 0 |
+| Ressource | Limit    | Aktuell genutzt                              |
+|-----------|----------|----------------------------------------------|
+| CPU       | 16 Kerne | ~4,8 Kerne (requests)                        |
+| RAM       | 16 GB    | ~2,5 GB (requests)                           |
+| Speicher  | 100 GB   | -                                            |
+| #Pods     | 50       | 31 Pods (1 Registry + 25 Miner + 5 REST-API) |
+| #Services | 10       | 4 Services                                   |
+| #PVCs     | 5        | 0                                            |
 
 Diese Limits wurden nach Nachfrage per E-Mail angehoben. Die aktuelle Konfiguration hält sich innerhalb der Grenzen.
 
@@ -1073,15 +1073,15 @@ seed.local:53 {
 
 ### Kommunikationspfade
 
-| Von | Nach | Protokoll | Port | Beschreibung |
-|-----|------|-----------|------|--------------|
-| registry-crawler | minimal-node | gRPC | 50050 | App-Schnittstelle (localhost) |
-| registry-crawler | miner-* | gRPC | 50051 | Peer Discovery |
-| rest-api | spv | gRPC | 50050 | App-Schnittstelle (localhost) |
-| spv | miner-* | gRPC | 50051 | P2P-Kommunikation |
-| miner-* | miner-* | gRPC | 50051 | P2P-Kommunikation |
-| Externe Clients | rest-api-service | HTTP | 8080 | REST-API |
-| Alle Pods | registry | DNS | 53 | Seed-Auflösung |
+| Von              | Nach             | Protokoll | Port  | Beschreibung                  |
+|------------------|------------------|-----------|-------|-------------------------------|
+| registry-crawler | minimal-node     | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| registry-crawler | miner-*          | gRPC      | 50051 | Peer Discovery                |
+| rest-api         | spv              | gRPC      | 50050 | App-Schnittstelle (localhost) |
+| spv              | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| miner-*          | miner-*          | gRPC      | 50051 | P2P-Kommunikation             |
+| Externe Clients  | rest-api-service | HTTP      | 8080  | REST-API                      |
+| Alle Pods        | registry         | DNS       | 53    | Seed-Auflösung                |
 # Querschnittliche Konzepte
 
 ## Ausgehende vs. Eingehende Verbindungen
@@ -1095,7 +1095,7 @@ Wichtig in diesem Zusammenhang ist, dass SPV Nodes keine ausgehende Verbindungen
 ## Validiert/verifiziert vs. bestätigt
 
 | Begriff               | Bedeutung                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Validiert/Verifiziert | Prüfung auf Regelkonformität -> erfüllt der Block/Transaktion alle nötigen formalen Anforderungen? Liste der Anforderungen zur Validierung aus [diesem Buch](https://katalog.haw-hamburg.de/vufind/Record/1890296481?sid=23774805). Für Transaktionen aus Kapitel: "Unabhängige Verifikation von Transaktionen". Für Validierung von Blöcken Kapitel: "Einen neuen Block validieren" |
 | Bestätigt             | Ein Block/Transaktion gilt als bestätigt, wenn diese Teil der längsten anerkannten Blockchain ist.                                                                                                                                                                                                                                                                                   |
 
