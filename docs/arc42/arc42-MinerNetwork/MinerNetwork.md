@@ -14,7 +14,7 @@ contributors. Siehe <https://arc42.org>.
 
 Dieses Dokument beschreibt die Architektur des Peer-To-Peer (P2P)-Netzwerk für die Kryptowährung V$Goin. Im Kontext von Kryptowährungen kann dieses Netzwerk als ein öffentliches, dezentrales, Proof-of-Work orientiertes Netz eingeordnet werden. Das heißt, dass jeder Teil dieses Netzes sein kann, Transaktionen über mehrere Teilnehmer verteilt gespeichert werden und ein gewisser Rechenaufwand erforderlich ist, um die Aufgabe eines "Miners" zu erfüllen. Das Netz ist stark an existierenden Blockchains orientiert, wobei Konzepte auf grundlegendes reduziert werden.
 
-Es gibt zwei Hauptakteure im Netzwerk: Miner und Händler. Händler sind nur an der Nutzung des Netzes orientiert. Sie geben hauptsächlich Transaktionen in Auftrag. Miner sind all die Systeme, die zur Erweiterung der Blockchain beitragen. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Sowohl Händler als auch Miner können dem Netzwerk jederzeit beitreten und verlassen.
+Der Hauptakteur im Netzwerk ist der Miner. Miner tragen zur Erweiterung der Blockchain bei und geben Transaktionen in Auftrag. Sie führen bestimmte kryptographische Operationen, die mit Rechenaufwand verbunden sind (Proof-of-Work), aus und ermöglichen so, dass Transaktionen getätigt werden können. Für diese Arbeit werden sie entlohnt. Miner können dem Netzwerk jederzeit beitreten und verlassen.
 
 In einem größeren Kontext wird dieses Netzwerk als verteilte Datenbank für den V$Goin genutzt und parallel mit dem System REST-API entwickelt. Die REST-API baut auf dieses Netzwerk auf und soll unseren Kunden einen benutzerfreundlicheren Zugang bieten.
 
@@ -79,9 +79,9 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 ## Organisatorische Randbedingungen
 
 | **Randbedingung**          | **Erläuterung**                                                                                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| -------------------------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Entwicklungsteam**       | Das Projekt wird von einem Entwicklungsteam mit 4 Entwicklern umgesetzt.                                                                                                                                                 |
-| **Zeit**                   | Der zeitliche Rahmen umfasst 15 Wochen, von 15.10.2025 bis 27.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
+| **Zeit**                   | Der zeitliche Rahmen umfasst 14 Wochen, von 15.10.2025 bis 22.01.2026. An diesem Projekt wird nicht Vollzeit gearbeitet, Aufwand nach Modulplan ist 3+1 SWS. Der Featureumfang sollte entsprechend klein gewählt werden. |
 | **Dokumentationsstandard** | Architektur und Anforderungen werden nach **wissenschaftlichen Standards** gepflegt und versioniert.                                                                                                                     |
 
 ---
@@ -90,7 +90,6 @@ Vollständige Liste der Anforderungen: [GitHub Issues](https://github.com/bjoern
 
 | **Randbedingung**     | **Erläuterung**                                                                                              |
 | --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Verschlüsselung**   | Sämtliche externe Datenübertragungen erfolgen ausschließlich über **HTTPS/TLS**.                             |
 | **Backup & Recovery** | Die Transaktionsdaten sind durch die zugrunde liegende Blockchain dezentral und revisionssicher gespeichert. |
 
 # Kontextabgrenzung
