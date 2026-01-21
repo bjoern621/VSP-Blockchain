@@ -444,7 +444,7 @@ Using Upcalls, S. 8).
 stateDiagram-v2
     [*] --> StateNew: Peer entdeckt
 
-    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(Version())
+    StateNew --> StateAwaitingVerack: Outbound-Verbindung gestartet<br/>(InitiateHandshake())
     StateNew --> StateAwaitingAck: Version-Nachricht empfangen<br/>(Version())
 
     StateAwaitingVerack --> StateConnected: Verack empfangen<br/>(Verack())
