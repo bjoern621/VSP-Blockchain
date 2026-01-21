@@ -6,6 +6,7 @@ import (
 )
 
 // DiscoveryAPI is the external API for peer discovery operations.
+// Part of NetworkroutingAppAPI.
 type DiscoveryAPI interface {
 	// SendGetAddr sends a GetAddr request to the specified peer to request known peer addresses.
 	SendGetAddr(peerID common.PeerId)

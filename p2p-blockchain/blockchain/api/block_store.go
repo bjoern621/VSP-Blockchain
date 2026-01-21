@@ -10,6 +10,7 @@ type BlockStoreAPI interface {
 }
 
 // BlockStoreVisualizationAPI defines the interface for accessing block data needed for visualization.
+// Part of BlockchainAppAPI.
 type BlockStoreVisualizationAPI interface {
 	GetAllBlocksWithMetadata() []block.BlockWithMetadata
 }

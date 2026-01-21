@@ -11,6 +11,7 @@ import (
 )
 
 // HistoryAPI provides the interface for querying transaction history.
+// Part of WalletAppAPI.
 type HistoryAPI interface {
 	// GetHistory returns the transaction history for a given V$Address.
 	GetHistory(vsAddress string) konto.HistoryResult

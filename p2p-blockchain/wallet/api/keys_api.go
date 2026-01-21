@@ -6,6 +6,7 @@ import (
 )
 
 // KeyGeneratorApi is the external API for generating and getting keysets.
+// Part of WalletAppAPI.
 type KeyGeneratorApi interface {
 	// GenerateKeyset Generates a completely new Keyset with a new random private Key
 	GenerateKeyset() common.Keyset

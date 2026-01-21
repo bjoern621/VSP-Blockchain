@@ -8,6 +8,7 @@ import (
 )
 
 // KontoAPI provides the interface for querying konto (account) information.
+// Part of WalletAppAPI.
 type KontoAPI interface {
 	// GetAssets returns the assets (UTXO values) for a given V$Address.
 	GetAssets(vsAddress string) konto.AssetsResult

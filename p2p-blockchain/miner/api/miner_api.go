@@ -5,6 +5,7 @@ import (
 )
 
 // MinerAPI provides methods to control the mining process.
+// Part of MinerAppAPI.
 type MinerAPI interface {
 	// StartMining starts mining with the given transactions (only if mining is enabled)
 	StartMining(transactions []transaction.Transaction)

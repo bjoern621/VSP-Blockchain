@@ -9,6 +9,7 @@ import (
 
 // DisconnectAPI is external API for disconnecting from peers.
 // Disconnecting means forgetting a peer by removing it from peer store and network info registry.
+// Part of NetworkroutingAppAPI.
 type DisconnectAPI interface {
 	// Disconnect disconnects from a peer at the given address.
 	// This involves:

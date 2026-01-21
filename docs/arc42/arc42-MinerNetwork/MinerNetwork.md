@@ -187,7 +187,7 @@ Ermöglicht die initiale Verbindung zum P2P Netzwerk, wenn noch kein Peer bekann
 Schnittstellen
 
 - `getpeers` liefert die aktuelle Liste von IP Adressen von aktiven Nodes im P2P Netzwerk, zu denen eine Verbindung aufgebaut werden kann. Die Einträge liefern nur IP Adressen und keinen expliziten Port. Für den [Verbindungsaufbau](https://github.com/bjoern621/VSP-Blockchain/issues/83) wird daher stets der Standardport verwendet. Die Peers benötigen vor dem Verbindungsaufbau mindestens einen Peer, zu dem sie sich verbinden können. Die getpeers Schnittstelle ist die erste Funktion die aufgerufen wird, wenn sich ein neuer Peer mit dem Netzwerk verbinden will. Solange ein Netzwerkknoten mindestens eine aktive P2P Verbindung hat, wird nicht mit der Registry kommuniziert, sondern über [Peer Discovery](#peer-discovery) mögliche Verbindungen bestimmt.
-- `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2](#registry-crawler-blackbox)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
+- `updatepeers` modifiziert die oben erwähnte Liste von IP Adressen. Wird regelmäßig vom Registry Crawler (siehe [Ebene 2 - Registry Crawler](#whitebox-registry-crawler)) aktualisiert um stets eine aktuelle Liste von aktiven Peers zu haben.
 
 Siehe auch [Schnittstellen Registry Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Schnittstelle-Registry) für eine genauere Beschreibung der Schnittstellen.
 
@@ -269,6 +269,11 @@ Schnittstellen
 -   `UtxoStoreAPI` bietet die Möglichkeit, das UTXO-Set zu lesen / manipulieren.
 -   `BlockStoreAPI` bietet die Möglichkeit, Informationen über bestehende Blöcke zu lesen.
 -   `BlockchainAPI` bietet die Möglichkeit, neue Blöcke hinzuzufügen und zu validieren.
+- `BlockStoreVisualizationAPI` ermöglicht die Anzeige einer Debug-View der Blockchain.
+- `MempoolAPI` liefert die aktuellen Transaktionen, die noch nicht der Blockchain hinzugefügt wurden.
+- `BlockchainAPI` zum Hinzufügen neuer Blöcke durch den lokalen Miner.
+- `BlockchainAppAPI` bündelt die Schnittstelle zur App Komponente. Sie Umfasst: (für bessere Übersicht extra aufgeführt)
+  - `BlockStoreVisualizationAPI` 
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -286,8 +291,11 @@ Um den aktuellen Kontostand zu ermitteln, greift das Wallet auf die Daten des Bl
 
 Schnittstellen
 
--   `KeyGeneratorAPI` erlaubt das Erstellen und Konvertieren Schlüsselpaaren und Adressen.
--   `TransactionCreationAPI` erlaubt das Erstellen und Signieren von neuen Transaktionen.
+- `WalletAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+    - `HistoryAPI` für eine Transaktionshistorie.
+    - `KeyGeneratorApi` erlaubt das Erstellen und Konvertieren Schlüsselpaaren und Adressen.
+    - `KontoAPI` für Kontoinformationen.
+    - `TransactionCreationAPI` erlaubt das Erstellen und Signieren von neuen Transaktionen.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -305,7 +313,8 @@ Der Miner sammelt unbestätigte Transaktionen aus dem Mempool des Blockchain-Tei
 
 Schnittstellen
 
-- `MinerAPI` ermöglicht das Starten und Stoppen des Mining-Prozesses.
+- `MinerAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
+  - `MinerAPI` ermöglicht das Starten, Stoppen und (De-)aktivieren des Mining-Prozesses.
 
 Die Schnittstellen sind in der `api/`-Schicht zu finden.
 
@@ -324,11 +333,10 @@ Schnittstellen
 - `BlockchainObserverAPI` & `ObservableBlockchainServerAPI` ermöglicht der Blockchain Komponente mit anderen Peers zu interagieren. Aufrufe müssen über das Netzwerkrouting, weil nur das Netzwerkrouting die benachbarten Peers kennt und mit diesen kommunizieren kann. Um über Änderungen im Netzwerk benachrichtigt zu werden, wird das Observer Pattern genutzt werden. So wird auch die Abhängigkeit von Netzwerkrouting zu Blockchain vermieden.
 - `NetzwerkroutingAppAPI` bündelt die APIs für externe Systeme. Sie umfasst:
     - `HandshakeAPI`
-        - `InitiateHandshake(addrPort netip.AddrPort) error`
     - `NetworkInfoAPI`
-        - `GetInternalPeerInfo() []PeerInfo`
     - `QueryRegistryAPI`
-        - `QueryRegistry() ([]RegistryEntry, error)`
+    - `DisconnectAPI`
+    - `DiscoveryAPI`
 - `P2P-Protokoll-API` Es gibt eine ganze Reihe von Funktionen im [V$Goin P2P Protokoll](#vgoin-p2p-protokoll). Manche Funktionen werden nur von bestimmten Teilsystemen unterstützt, andere (viele) Funktionen werden von dem Netzwerkrouting Teilsystem, und damit von jedem Peer, vollständig unterstützt. Hier soll nur ein Überblick über die wichtigsten (ggf. nicht vollständig!) Netzwerkrouting Funktionen gegeben werden. Eine komplette Übersicht ist [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/netzwerkrouting.proto) definiert. Enthält eine Node auch das [Blockchain Teilsystem](#blockchain-blackbox), werden auch [diese Funktionen](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/blockchain.proto) zusätzlich unterstützt. Ist das Blockchain Teilsystem nicht vorhanden, werden Anfragen ignoriert. Für Kontext wie / wann diese Schnittstellen genutzt werden, siehe [Laufzeitsichten](#laufzeitsicht).
 
     | Kategorie         | Funktionen           | Beschreibung                                                                                                                                                                                                                                                                                                         |
@@ -352,11 +360,7 @@ Die App-Komponente dient als zentrale Schnittstelle für externe Anwendungen (z.
 
 Schnittstellen
 
--   `TransactionAPI` bündelt die API für externe Systeme neue Transaktionen zu erstellen und zu senden. 
--   `KontoAPI` die API für externe Systeme neue Schlüssel und Adressen zu erstellen, sowie den Kontostand solcher in Form von allen verfügbaren Zahlungsmittel abzufragen
--   `HistoryAPI` die API für externe Systeme den Transaktionsverlauf eines Kontos abzufragen
-
-Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
+- `AppAPI` alle für externe System angebotenen Funktionen. Siehe [hier](https://github.com/bjoern621/VSP-Blockchain/blob/main/p2p-blockchain/proto/app.proto) für eine vollständige Auflistung.
 
 ### Whitebox Registry Crawler
 
@@ -488,7 +492,7 @@ Ein Peer kann aus mehreren Gründen in den `StateHolddown` übergehen:
 - **Expliziter Disconnect**: Ein externes System oder ein interner Fehler löst `Disconnect()` auf. Die gRPC-Verbindung wird beim Sender sofort geschlossen.
 - **Timeout/Inaktivität**: Der `ConnectionCheckService` erkennt, dass ein Peer seit einer bestimmten Zeit keine Heartbeat-Nachrichten mehr gesendet hat. Der Peer gilt als inaktiv und wird in Holddown versetzt.
 
-Im `StateHolddown` wird jede Nachricht mit einer Reject-Nachricht abgelehnt. Nach einer Abklingphase von 15 Minuten wird der Peer permanent aus dem `PeerStore` entfernt. Dies gibt dem gegenüber genügend Zeit, eine geschlossene Verbindung zu erkennen.
+Im `StateHolddown` wird keine Nachricht des Peers verarbeitet. Nach einer Abklingphase von 15 Minuten wird der Peer permanent aus dem `PeerStore` entfernt. Dies gibt dem gegenüber genügend Zeit, eine geschlossene Verbindung zu erkennen.
 
 ## Background jobs
 
