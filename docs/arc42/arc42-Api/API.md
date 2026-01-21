@@ -210,7 +210,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     ' =====================
     '   External Library
     ' =====================
-    node "<<extern>>\nV$Goin SPV Node" as lib 
+    node "<<extern>>\nV$Goin Minimal Node" as lib 
     
     
     
@@ -220,6 +220,7 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     browser --> api_adapter: erstelle Transaktion
     browser --> api_adapter: fragt Verlauf ab
     browser --> api_adapter: Kontoanfragen
+    browser --> api_adapter: Transaktion Bestätigen
     
 
     ' ---------------------------------------------
@@ -228,11 +229,12 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
     api_adapter --> transaction : erstelle Transaktion
     api_adapter --> verlauf : fragt Verlauf ab
     api_adapter --> konto : Kontoanfragen
+    api_adapter --> transaction : Transaktion Bestätigen
 
     ' ---------------------------------------------
     ' System intern
     ' ---------------------------------------------
-    transaction --> adapter : gib Transaktionsdaten weiter
+    transaction --> adapter : gib Transaktionsdaten weiter/bestätige Transaction
     verlauf     --> adapter : hole Historie
     konto     --> adapter : generiere Schlüssel / hole Assets
     
@@ -266,10 +268,11 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 
 #### Schnittstellen
 - REST-Endpunkt post /transaction
+- REST-Endpunkt get /transaction/confirmation
 - REST-Endpunkt get /history
 - REST-Endpunkt get /balance
 - REST-Endpunkt get /address
-- REST-Endpunkt get /address/new
+- REST-Endpunkt post /address
 - [OpenAPI Spezifikation](../../../rest-schnittstelle/openapi.yaml)
 
 
@@ -345,12 +348,12 @@ Sie orientieren sich an den Qualitätsmerkmalen des ISO/IEC 25010 Standards.
 ### V$Goin-Node-Adapter (Blackbox)
 
 #### Zweck / Verantwortung
-- Einzige Schnittstelle zur lokalen SPV-Node
+- Einzige Schnittstelle zur lokalen Minimal-Node
 - Übersetzung der internen Systemaufrufe zur V$Goin RPC Schnittstelle
 - Entkopplung des Systems von V$Goin-Änderungen
 
 #### Schnittstelle
-- Funktionen: Signatur, Key-Generierung, Key-Ableitung, Historie, Balance, Broadcast
+- Funktionen: Signatur, Key-Generierung, Key-Ableitung, Historie, Balance, Broadcast, Transaktionsbestätigungen
 - [Schnittstellen P2P Netzwerk Wiki](https://github.com/bjoern621/VSP-Blockchain/wiki/Externe-Schnittstelle-Mining-Network)
 
 #### Eingaben / Ausgaben
@@ -544,7 +547,7 @@ Temporäre Daten:
 ## 3. Kommunikations- und Integrationskonzept
 
 ### 3.1 Architekturprinzip
-- Der Adapter kapselt sämtliche Interaktionen mit der SPV-Node.
+- Der Adapter kapselt sämtliche Interaktionen mit der Minimal-Node.
 - Das Backend ist vollständig entkoppelt von Blockchain-gRPC-Details.
 
 ### 3.2 Kommunikationsmechanismen
