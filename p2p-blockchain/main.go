@@ -10,12 +10,13 @@ import (
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/utxo"
 	"s3b/vsp-blockchain/p2p-blockchain/blockchain/core/validation"
 	blockchainData "s3b/vsp-blockchain/p2p-blockchain/blockchain/data/blockchain"
-	"s3b/vsp-blockchain/p2p-blockchain/blockchain/infrastructure"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
+	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
 	minerCore "s3b/vsp-blockchain/p2p-blockchain/miner/core"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/api"
 	networkBlockchain "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/blockchain"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/connectioncheck"
+	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/disconnect"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/handshake"
 	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/keepalive"
 	corepeer "s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/core/peer"
@@ -46,55 +47,66 @@ func main() {
 
 	peerStore := peer.NewPeerStore()
 	networkInfoRegistry := networkinfo.NewNetworkInfoRegistry(peerStore)
-	grpcClient := grpc.NewClient(networkInfoRegistry)
-	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore)
+	disconnectService := disconnect.NewDisconnectService(networkInfoRegistry, peerStore)
+	grpcClient := grpc.NewClient(networkInfoRegistry, disconnectService)
+	handshakeService := handshake.NewHandshakeService(grpcClient, peerStore, grpcClient)
 	handshakeAPI := api.NewHandshakeAPIService(networkInfoRegistry, peerStore, handshakeService)
 	peerRetrieverAdapter := corepeer.NewPeerRetrieverAdapter(peerStore)
 	networkRegistryAPI := api.NewNetworkRegistryService(networkInfoRegistry, peerRetrieverAdapter)
 	registryQuerier := registry.NewDNSRegistryQuerier(networkInfoRegistry)
 	queryRegistryAPI := api.NewQueryRegistryAPIService(registryQuerier)
 
-	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient)
+	discoveryService := discovery.NewDiscoveryService(registryQuerier, grpcClient, peerStore, grpcClient, grpcClient)
 	discoveryAPI := api.NewDiscoveryAPIService(discoveryService)
 	periodicDiscoveryService := discovery.NewPeriodicDiscoveryService(peerStore, grpcClient, discoveryService)
-	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient)
-	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, peerStore, networkInfoRegistry)
+	keepaliveService := keepalive.NewKeepaliveService(peerStore, grpcClient, grpcClient)
+	connectionCheckService := connectioncheck.NewConnectionCheckService(peerStore, disconnectService, networkInfoRegistry)
 	peerManagementService := peermanagement.NewPeerManagementService(peerStore, discoveryService, peerStore, handshakeService, peerStore)
 
-	chainStateConfig := utxo.ChainStateConfig{CacheSize: 1000}
-	utxoEntryDAOConfig := infrastructure.UTXOEntryDAOConfig{DBPath: "", InMemory: true}
-	dao, err := infrastructure.NewUTXOEntryDAO(utxoEntryDAOConfig)
-	assert.IsNil(err, "couldn't create UTXOEntryDAO")
-	chainStateService, err := utxo.NewChainStateService(chainStateConfig, dao)
-	assert.IsNil(err, "couldn't create chainStateService")
-	// Initialize UTXO lookup service and API
-	memPoolService := utxo.NewMemUTXOPoolService()
-	fullNodeUtxoService := utxo.NewFullNodeUTXOService(memPoolService, chainStateService)
-
 	genesisBlock := blockchainData.GenesisBlock()
-	blockStore := blockchainData.NewBlockStore(genesisBlock)
+	blockValidator := validation.NewBlockValidationService()
+	blockStore := blockchainData.NewBlockStore(genesisBlock, blockValidator)
+
+	utxoStore := utxo.NewUtxoStore(blockStore)
+	transactionValidator := validation.NewTransactionValidator(utxoStore)
+	err := utxoStore.InitializeGenesisPool(genesisBlock)
+	assert.IsNil(err, "Failed to initialize genesis UTXO pool")
 
 	blockchainMsgService := networkBlockchain.NewBlockchainService(grpcClient, peerStore)
 
-	transactionValidator := validation.NewValidationService(chainStateService)
-	blockValidator := validation.NewBlockValidationService()
+	blockValidator.SetDependencies(transactionValidator, utxoStore)
 
-	blockchain := core.NewBlockchain(blockchainMsgService, grpcClient, transactionValidator, blockValidator, blockStore, fullNodeUtxoService)
+	mempool := core.NewMempool(transactionValidator, blockStore)
+
+	blockchain := core.NewBlockchain(
+		blockchainMsgService,
+		grpcClient,
+		grpcClient,
+		blockValidator,
+		blockStore,
+		peerStore,
+		transactionValidator,
+		utxoStore,
+		mempool,
+	)
+
+	// Attach blockchain as connection observer to trigger Initial Block Download (IBD)
+	// when new peers connect. This implements Headers-First IBD as per Bitcoin protocol.
+	handshakeService.Attach(blockchain)
 
 	keyEncodingsImpl := keys.NewKeyEncodingsImpl()
 	keyGeneratorImpl := keys.NewKeyGeneratorImpl(keyEncodingsImpl, keyEncodingsImpl)
 	keyGeneratorApiImpl := walletApi.NewKeyGeneratorApiImpl(keyGeneratorImpl)
 
-	utxoAPI := blockapi.NewUtxoAPI(fullNodeUtxoService)
-
-	minerImpl := minerCore.NewMinerService(blockchain, fullNodeUtxoService, blockStore)
+	minerImpl := minerCore.NewMinerService(blockchain, utxoStore, blockStore)
 	blockchain.Attach(minerImpl)
-	//minerImpl.StartMining(make([]transaction.Transaction, 0)) // TODO
+	minerImpl.StartMining(make([]transaction.Transaction, 0))
 
 	if common.AppEnabled() {
 		logger.Infof("[main] Starting App server...")
 		// Intialize Transaction Creation API
-		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoAPI)
+		mempoolApi := blockapi.NewMempoolAPI(mempool)
+		transactionCreationService := walletcore.NewTransactionCreationService(keyGeneratorImpl, keyEncodingsImpl, blockchainMsgService, utxoStore, blockStore, *mempoolApi)
 		transactionCreationAPI := walletApi.NewTransactionCreationAPIImpl(transactionCreationService)
 
 		// Initialize transaction service and API
@@ -104,8 +116,12 @@ func main() {
 		transactionHandler := adapters.NewTransactionAdapter(transactionAPI)
 
 		// Initialize konto API and handler
-		kontoAPI := appapi.NewKontoAPIImpl(utxoAPI, keyEncodingsImpl)
+		kontoAPI := appapi.NewKontoAPIImpl(utxoStore, keyEncodingsImpl, blockStore)
 		kontoHandler := adapters.NewKontoAdapter(kontoAPI)
+
+		// Initialize history API and handler
+		historyAPI := appapi.NewHistoryAPIImpl(blockStore, keyEncodingsImpl)
+		historyHandler := adapters.NewHistoryAdapter(historyAPI)
 
 		// Initialize visualization service and handler
 		visualizationService := appcore.NewVisualizationService(blockStore)
@@ -118,9 +134,22 @@ func main() {
 		internalViewService := appcore.NewInternsalViewService(networkRegistryAPI)
 		queryRegistryService := appcore.NewQueryRegistryService(queryRegistryAPI)
 		discoveryAppService := appcore.NewDiscoveryService(discoveryAPI)
+		disconnectAPI := api.NewDisconnectAPIService(networkInfoRegistry, disconnectService)
+		disconnectAppService := appcore.NewDisconnectService(disconnectAPI)
 
-		appServer := appgrpc.NewServer(connService, internalViewService, queryRegistryService, keyGeneratorApiImpl, transactionHandler, discoveryAppService, kontoHandler, visualizationHandler, miningService)
-
+		appServer := appgrpc.NewServer(
+			connService,
+			internalViewService,
+			queryRegistryService,
+			keyGeneratorApiImpl,
+			transactionHandler,
+			discoveryAppService,
+			kontoHandler,
+			historyHandler,
+			visualizationHandler,
+			miningService,
+			disconnectAppService,
+		)
 		err := appServer.Start(common.AppPort())
 		if err != nil {
 			logger.Warnf("[main] couldn't start App server: %v", err)
@@ -134,7 +163,7 @@ func main() {
 
 	logger.Infof("[main] Starting P2P server...")
 
-	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService)
+	grpcServer := grpc.NewServer(handshakeService, networkInfoRegistry, discoveryService, keepaliveService, peerStore)
 
 	grpcServer.Attach(blockchain)
 

@@ -8,62 +8,70 @@ import (
 	blockchainApi "s3b/vsp-blockchain/p2p-blockchain/blockchain/api"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/block"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common/data/transaction"
+	"s3b/vsp-blockchain/p2p-blockchain/miner/data"
 	"sync"
 
 	"bjoernblessin.de/go-utils/util/logger"
 )
 
 type minerService struct {
-	mu           sync.RWMutex
-	isMining     bool
-	cancelMining context.CancelFunc
-	blockchain   blockchainApi.BlockchainAPI
-	utxoService  blockchainApi.UtxoServiceAPI
-	blockStore   blockchainApi.BlockStoreAPI
+	mu            sync.RWMutex
+	miningEnabled bool
+	cancelMining  context.CancelFunc
+	blockchain    blockchainApi.BlockchainAPI
+	utxoService   blockchainApi.UtxoStoreAPI
+	blockStore    blockchainApi.BlockStoreAPI
+
+	ownPubKeyHash transaction.PubKeyHash
 }
 
 func NewMinerService(
 	blockchain blockchainApi.BlockchainAPI,
-	utxoServiceAPI blockchainApi.UtxoServiceAPI,
+	utxoServiceAPI blockchainApi.UtxoStoreAPI,
 	blockStore blockchainApi.BlockStoreAPI,
 ) *minerService {
 	return &minerService{
-		blockchain:  blockchain,
-		utxoService: utxoServiceAPI,
-		blockStore:  blockStore,
+		blockchain:    blockchain,
+		utxoService:   utxoServiceAPI,
+		blockStore:    blockStore,
+		miningEnabled: true,
+		ownPubKeyHash: ChoosePubKeyHash(),
 	}
+}
+
+func ChoosePubKeyHash() transaction.PubKeyHash {
+	keys := data.GetKeys()
+	index := rand.Intn(4)
+	logger.Debugf("[miner] Chose pubkeyhash at index %d", index)
+	return keys[index]
 }
 
 func (m *minerService) StartMining(transactions []transaction.Transaction) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.isMining {
-		logger.Infof("[miner] Mining already in progress, ignoring StartMining request")
+	if m.cancelMining != nil {
+		m.cancelMining()
+	}
+
+	if !m.miningEnabled {
+		logger.Debugf("[miner] Mining is disabled, ignoring StartMining request")
 		return
 	}
 
 	tip := m.blockStore.GetMainChainTip()
 	previousBlockHash := tip.Hash()
-	logger.Infof("[miner] Started mining new block with %d transactions and PrevBlockHash %v", len(transactions), previousBlockHash)
-	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1)
+	logger.Infof("[miner] Started mining new block with %d transactions (+1 Coinbase) and PrevBlockHash %v", len(transactions), previousBlockHash)
+	candidateBlock, err := m.createCandidateBlock(transactions, m.blockStore.GetCurrentHeight()+1, previousBlockHash)
 	if err != nil {
-		logger.Errorf("[miner] Failed to create candidate block: %v", err)
+		logger.Warnf("[miner] Failed to create candidate block: %v", err)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.cancelMining = cancel
-	m.isMining = true
 
 	go func() {
-		defer func() {
-			m.mu.Lock()
-			m.isMining = false
-			m.cancelMining = nil
-			m.mu.Unlock()
-		}()
-
 		nonce, timestamp, err := m.mineBlock(candidateBlock, ctx)
 		if err != nil {
 			logger.Infof("[miner] Mining stopped: %v", err)
@@ -71,7 +79,7 @@ func (m *minerService) StartMining(transactions []transaction.Transaction) {
 		}
 		candidateBlock.Header.Nonce = nonce
 		candidateBlock.Header.Timestamp = timestamp
-		logger.Tracef("[miner] Mined new block: %v", &candidateBlock.Header)
+		logger.Infof("[miner] Mined new block: %v", &candidateBlock.Header)
 		m.blockchain.AddSelfMinedBlock(candidateBlock)
 	}()
 }
@@ -80,14 +88,39 @@ func (m *minerService) StopMining() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if !m.isMining || m.cancelMining == nil {
-		logger.Infof("[miner] Not currently mining, ignoring StopMining request")
+	m.cancelMining()
+}
+
+func (m *minerService) EnableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.miningEnabled {
+		logger.Infof("[miner] Mining already enabled")
 		return
 	}
 
-	logger.Infof("[miner] Stopping mining")
-	m.cancelMining()
-	m.cancelMining = nil
+	logger.Infof("[miner] Enabling mining")
+	m.miningEnabled = true
+}
+
+func (m *minerService) DisableMining() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if !m.miningEnabled {
+		logger.Infof("[miner] Mining already disabled")
+		return
+	}
+
+	logger.Infof("[miner] Disabling mining")
+	m.miningEnabled = false
+
+	// Stop any ongoing mining
+	if m.cancelMining != nil {
+		logger.Infof("[miner] Stopping ongoing mining due to disable")
+		m.cancelMining()
+	}
 }
 
 // MineBlock Mines a block by change the nonce until the block matches the given difficulty target

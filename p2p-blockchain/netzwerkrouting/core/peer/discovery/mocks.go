@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 )
 
 // Mock implementations for testing
@@ -110,24 +109,24 @@ func (m *mockGetAddrMsgSender) getLastSendGetAddrCall() *common.PeerId {
 
 type mockDiscoveryPeerRetriever struct {
 	mu          sync.RWMutex
-	peers       map[common.PeerId]*peer.Peer
+	peers       map[common.PeerId]*common.Peer
 	localPeerID common.PeerId
 }
 
 func newMockDiscoveryPeerRetriever() *mockDiscoveryPeerRetriever {
 	return &mockDiscoveryPeerRetriever{
-		peers:       make(map[common.PeerId]*peer.Peer),
+		peers:       make(map[common.PeerId]*common.Peer),
 		localPeerID: "local-peer",
 	}
 }
 
-func (m *mockDiscoveryPeerRetriever) AddPeer(p *peer.Peer) {
+func (m *mockDiscoveryPeerRetriever) AddPeer(p *common.Peer) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.peers[p.ID()] = p
 }
 
-func (m *mockDiscoveryPeerRetriever) AddPeerById(id common.PeerId, p *peer.Peer) {
+func (m *mockDiscoveryPeerRetriever) AddPeerById(id common.PeerId, p *common.Peer) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.peers[id] = p
@@ -143,7 +142,7 @@ func (m *mockDiscoveryPeerRetriever) GetAllPeers() []common.PeerId {
 	return peerIds
 }
 
-func (m *mockDiscoveryPeerRetriever) GetAllOutboundPeers() []common.PeerId {
+func (m *mockDiscoveryPeerRetriever) GetAllConnectedPeers() []common.PeerId {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	peerIds := make([]common.PeerId, 0, len(m.peers))
@@ -155,7 +154,7 @@ func (m *mockDiscoveryPeerRetriever) GetAllOutboundPeers() []common.PeerId {
 	return peerIds
 }
 
-func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*peer.Peer, bool) {
+func (m *mockDiscoveryPeerRetriever) GetPeer(id common.PeerId) (*common.Peer, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	p, exists := m.peers[id]
@@ -166,4 +165,20 @@ func (m *mockDiscoveryPeerRetriever) IsLocalPeerID(peerID common.PeerId) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return peerID == m.localPeerID
+}
+
+type mockErrorMsgSender struct {
+	sendRejectCalled bool
+	lastPeerID       common.PeerId
+	lastErrorType    int32
+	lastMessageType  string
+	lastData         []byte
+}
+
+func (m *mockErrorMsgSender) SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte) {
+	m.sendRejectCalled = true
+	m.lastPeerID = peerId
+	m.lastErrorType = errorType
+	m.lastMessageType = rejectedMessageType
+	m.lastData = data
 }

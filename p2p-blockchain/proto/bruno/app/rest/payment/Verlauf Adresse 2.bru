@@ -1,0 +1,20 @@
+meta {
+  name: Verlauf Adresse 2
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/history?VSAddress={{address2}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  VSAddress: {{address2}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

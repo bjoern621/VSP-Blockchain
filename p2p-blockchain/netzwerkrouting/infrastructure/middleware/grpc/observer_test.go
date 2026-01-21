@@ -16,29 +16,25 @@ import (
 
 // MockObserver struct used to verify that the Server correctly notifies observers.
 type MockObserver struct {
-	InvCh         chan []*inv.InvVector
-	GetDataCh     chan []*inv.InvVector
-	BlockCh       chan block.Block
-	MerkleBlockCh chan block.MerkleBlock
-	TxCh          chan transaction.Transaction
-	GetHeadersCh  chan block.BlockLocator
-	HeadersCh     chan []*block.BlockHeader
-	SetFilterCh   chan block.SetFilterRequest
-	MempoolCh     chan struct{}
+	InvCh        chan []*inv.InvVector
+	GetDataCh    chan []*inv.InvVector
+	BlockCh      chan block.Block
+	TxCh         chan transaction.Transaction
+	GetHeadersCh chan block.BlockLocator
+	HeadersCh    chan []*block.BlockHeader
+	MempoolCh    chan struct{}
 }
 
 // NewMockObserver creates a MockObserver with buffered channels to prevent blocking during tests.
 func NewMockObserver() *MockObserver {
 	return &MockObserver{
-		InvCh:         make(chan []*inv.InvVector, 10),
-		GetDataCh:     make(chan []*inv.InvVector, 10),
-		BlockCh:       make(chan block.Block, 10),
-		MerkleBlockCh: make(chan block.MerkleBlock, 10),
-		TxCh:          make(chan transaction.Transaction, 10),
-		GetHeadersCh:  make(chan block.BlockLocator, 10),
-		HeadersCh:     make(chan []*block.BlockHeader, 10),
-		SetFilterCh:   make(chan block.SetFilterRequest, 10),
-		MempoolCh:     make(chan struct{}, 10),
+		InvCh:        make(chan []*inv.InvVector, 10),
+		GetDataCh:    make(chan []*inv.InvVector, 10),
+		BlockCh:      make(chan block.Block, 10),
+		TxCh:         make(chan transaction.Transaction, 10),
+		GetHeadersCh: make(chan block.BlockLocator, 10),
+		HeadersCh:    make(chan []*block.BlockHeader, 10),
+		MempoolCh:    make(chan struct{}, 10),
 	}
 }
 
@@ -56,10 +52,6 @@ func (m *MockObserver) Block(block block.Block, _ common.PeerId) {
 	m.BlockCh <- block
 }
 
-func (m *MockObserver) MerkleBlock(merkleBlock block.MerkleBlock, _ common.PeerId) {
-	m.MerkleBlockCh <- merkleBlock
-}
-
 func (m *MockObserver) Tx(tx transaction.Transaction, _ common.PeerId) {
 	m.TxCh <- tx
 }
@@ -72,24 +64,12 @@ func (m *MockObserver) Headers(headers []*block.BlockHeader, _ common.PeerId) {
 	m.HeadersCh <- headers
 }
 
-func (m *MockObserver) SetFilter(setFilterRequest block.SetFilterRequest, _ common.PeerId) {
-	m.SetFilterCh <- setFilterRequest
-}
-
 func (m *MockObserver) Mempool(_ common.PeerId) {
 	m.MempoolCh <- struct{}{}
 }
 
 func mustHash(b byte) common.Hash {
 	var h common.Hash
-	for i := 0; i < len(h); i++ {
-		h[i] = b
-	}
-	return h
-}
-
-func mustPublicKeyHash(b byte) block.PublicKeyHash {
-	var h block.PublicKeyHash
 	for i := 0; i < len(h); i++ {
 		h[i] = b
 	}
@@ -181,38 +161,6 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 		}
 	})
 
-	t.Run("NotifyMerkleBlock", func(t *testing.T) {
-		mkBlock := block.MerkleBlock{
-			BlockHeader: block.BlockHeader{
-				PreviousBlockHash: mustHash(0x03),
-				MerkleRoot:        mustHash(0x04),
-				Timestamp:         456,
-				DifficultyTarget:  0,
-				Nonce:             456,
-			},
-			Proofs: []block.MerkleProof{{
-				Transaction: transaction.Transaction{
-					Inputs:   []transaction.Input{},
-					Outputs:  []transaction.Output{},
-					LockTime: 123,
-				},
-				Siblings: []common.Hash{mustHash(0x10), mustHash(0x11)},
-				Index:    1,
-			}},
-		}
-
-		server.NotifyMerkleBlock(mkBlock, testPeerID)
-
-		select {
-		case received := <-mockObs.MerkleBlockCh:
-			if !reflect.DeepEqual(received, mkBlock) {
-				t.Errorf("Expected message %v, got %v", mkBlock, received)
-			}
-		case <-time.After(timeout):
-			t.Fatal("Timeout waiting for NotifyMerkleBlock")
-		}
-	})
-
 	t.Run("NotifyTx", func(t *testing.T) {
 		tx := transaction.Transaction{
 			Inputs: []transaction.Input{{
@@ -220,13 +168,11 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 				OutputIndex: 0,
 				Signature:   []byte{0x30, 0x01},
 				PubKey:      transaction.PubKey{},
-				Sequence:    0xffffffff,
 			}},
 			Outputs: []transaction.Output{{
 				Value:      500,
 				PubKeyHash: transaction.PubKeyHash{},
 			}},
-			LockTime: 500,
 		}
 
 		server.NotifyTx(tx, testPeerID)
@@ -288,26 +234,6 @@ func TestObserverBlockchainServer_Notify(t *testing.T) {
 			}
 		case <-time.After(timeout):
 			t.Fatal("Timeout waiting for NotifyHeaders")
-		}
-	})
-
-	t.Run("NotifySetFilterRequest", func(t *testing.T) {
-		msg := block.SetFilterRequest{
-			PublicKeyHashes: []block.PublicKeyHash{
-				mustPublicKeyHash(0x55),
-				mustPublicKeyHash(0x56),
-			},
-		}
-
-		server.NotifySetFilterRequest(msg, testPeerID)
-
-		select {
-		case received := <-mockObs.SetFilterCh:
-			if !reflect.DeepEqual(received, msg) {
-				t.Errorf("Expected message %v, got %v", msg, received)
-			}
-		case <-time.After(timeout):
-			t.Fatal("Timeout waiting for NotifySetFilterRequest")
 		}
 	})
 

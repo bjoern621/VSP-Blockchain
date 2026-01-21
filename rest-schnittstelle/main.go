@@ -10,6 +10,7 @@ import (
 	"s3b/vsp-blockchain/rest-api/internal/pb"
 	"s3b/vsp-blockchain/rest-api/konto"
 	transactionapi "s3b/vsp-blockchain/rest-api/transaktion"
+	"s3b/vsp-blockchain/rest-api/transaktionsverlauf"
 	"s3b/vsp-blockchain/rest-api/vsgoin_node_adapter"
 	"strings"
 
@@ -30,7 +31,7 @@ func main() {
 
 	grpcAddrPort := strings.TrimSpace(os.Getenv("APP_GRPC_ADDR_PORT"))
 	if grpcAddrPort == "" {
-		grpcAddrPort = "localhost:50050"
+		grpcAddrPort = "localhost:20001"
 	}
 
 	conn, err := grpc.NewClient(grpcAddrPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -49,14 +50,17 @@ func main() {
 	appServiceClient := pb.NewAppServiceClient(conn)
 	transactionAdapter := vsgoin_node_adapter.NewTransactionAdapterImpl(appServiceClient)
 	kontoAdapter := vsgoin_node_adapter.NewKontoAdapter(conn)
+	historyAdapter := vsgoin_node_adapter.NewHistoryAdapter(conn)
 	kontostand := konto.NewKeyGeneratorImpl(transactionAdapter)
 	transactionApi := transactionapi.NewTransaktionAPI(transactionAdapter)
 	kontostandService := konto.NewKontostandService(kontoAdapter)
+	transaktionsverlaufService := transaktionsverlauf.NewTransaktionsverlaufService(historyAdapter)
 
 	// REST API Server
 	routes := sw.ApiHandleFunctions{
 		KeyToolsAPI: *sw.NewKeyToolsAPI(kontostand),
-		PaymentAPI:  *sw.NewPaymentAPI(transactionApi, kontostandService),
+		PaymentAPI:  *sw.NewPaymentAPI(transactionApi, kontostandService, transaktionsverlaufService),
+		DevToolsAPI: *sw.NewDevToolsAPI(transactionApi),
 	}
 
 	logger.Infof("[rest_schnittstelle] Server started")

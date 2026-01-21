@@ -52,19 +52,6 @@ func (s *Server) Block(ctx context.Context, msg *pb.BlockMsg) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) MerkleBlock(ctx context.Context, msg *pb.MerkleBlockMsg) (*emptypb.Empty, error) {
-	peerId := s.GetPeerId(ctx)
-
-	merkleBlockMsgDTO, err := adapter.ToMerkleBlockFromMerkleBlockMsg(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	go s.NotifyMerkleBlock(merkleBlockMsgDTO, peerId)
-
-	return &emptypb.Empty{}, nil
-}
-
 func (s *Server) Tx(ctx context.Context, msg *pb.TxMsg) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 
@@ -104,19 +91,6 @@ func (s *Server) Headers(ctx context.Context, pbHeaders *pb.BlockHeaders) (*empt
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) SetFilter(ctx context.Context, request *pb.SetFilterRequest) (*emptypb.Empty, error) {
-	peerId := s.GetPeerId(ctx)
-
-	filterRequest, err := adapter.ToSetFilterRequestFromSetFilterRequest(request)
-	if err != nil {
-		return nil, err
-	}
-
-	go s.NotifySetFilterRequest(filterRequest, peerId)
-
-	return &emptypb.Empty{}, nil
-}
-
 func (s *Server) Mempool(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	peerId := s.GetPeerId(ctx)
 	go s.NotifyMempool(peerId)
@@ -142,12 +116,6 @@ func (s *Server) NotifyBlock(block block.Block, peerID common.PeerId) {
 	}
 }
 
-func (s *Server) NotifyMerkleBlock(merkleBlock block.MerkleBlock, peerID common.PeerId) {
-	for observer := range s.observers.Iter() {
-		observer.MerkleBlock(merkleBlock, peerID)
-	}
-}
-
 func (s *Server) NotifyTx(tx transaction.Transaction, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Tx(tx, peerID)
@@ -163,12 +131,6 @@ func (s *Server) NotifyGetHeaders(locator block.BlockLocator, peerID common.Peer
 func (s *Server) NotifyHeaders(headers []*block.BlockHeader, peerID common.PeerId) {
 	for observer := range s.observers.Iter() {
 		observer.Headers(headers, peerID)
-	}
-}
-
-func (s *Server) NotifySetFilterRequest(setFilterRequest block.SetFilterRequest, peerID common.PeerId) {
-	for observer := range s.observers.Iter() {
-		observer.SetFilter(setFilterRequest, peerID)
 	}
 }
 

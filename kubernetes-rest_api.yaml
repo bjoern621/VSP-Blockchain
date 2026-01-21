@@ -4,7 +4,7 @@ metadata:
     name: rest-api
     namespace: vsp-blockchain
 spec:
-    replicas: 1
+    replicas: 5
     strategy:
         type: RollingUpdate
         rollingUpdate:
@@ -29,7 +29,7 @@ spec:
                     - default.svc.k8s.informatik.haw-hamburg.de
                     - icc.informatik.haw-hamburg.de
             containers:
-                - name: spv
+                - name: minimal-node
                   image: ghcr.io/bjoern621/vsp-blockchain-miner:latest
                   imagePullPolicy: Always
                   env:
@@ -44,7 +44,7 @@ spec:
                             fieldRef:
                                 fieldPath: status.podIP
                       - name: ADDITIONAL_SERVICES
-                        value: "wallet, blockchain_simple, app"
+                        value: "wallet, blockchain_full, app"
                   ports:
                       - name: app
                         containerPort: 50050
@@ -82,7 +82,6 @@ metadata:
     name: rest-api-service
     namespace: vsp-blockchain
 spec:
-    type: LoadBalancer
     selector:
         app: rest-api
     ports:

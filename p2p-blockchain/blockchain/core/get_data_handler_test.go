@@ -13,6 +13,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockUtxoStoreForGetData is a mock UTXO store for GetData handler tests
+type mockUtxoStoreForGetData struct {
+	utxos map[string]transaction.Output // key: txID+outputIndex
+}
+
+func (m *mockUtxoStoreForGetData) ValidateTransactionsOfBlock(_ block.Block) bool {
+	return true
+}
+
+func newMockUtxoStoreForGetData() *mockUtxoStoreForGetData {
+	return &mockUtxoStoreForGetData{
+		utxos: make(map[string]transaction.Output),
+	}
+}
+
+func (m *mockUtxoStoreForGetData) AddUtxo(txID transaction.TransactionID, outputIndex uint32, output transaction.Output) {
+	key := string(txID[:]) + string(rune(outputIndex))
+	m.utxos[key] = output
+}
+
+func (m *mockUtxoStoreForGetData) InitializeGenesisPool(_ block.Block) error {
+	return nil
+}
+
+func (m *mockUtxoStoreForGetData) AddNewBlock(_ block.Block) error {
+	return nil
+}
+
+func (m *mockUtxoStoreForGetData) GetUtxoFromBlock(txID transaction.TransactionID, outputIndex uint32, _ common.Hash) (transaction.Output, error) {
+	key := string(txID[:]) + string(rune(outputIndex))
+	if output, ok := m.utxos[key]; ok {
+		return output, nil
+	}
+	return transaction.Output{}, errors.New("UTXO not found")
+}
+
+func (m *mockUtxoStoreForGetData) ValidateBlock(_ block.Block) bool {
+	return true
+}
+
+func (m *mockUtxoStoreForGetData) ValidateTransactionFromBlock(_ transaction.Transaction, _ common.Hash) bool {
+	return true
+}
+
+func (m *mockUtxoStoreForGetData) GetUtxosByPubKeyHashFromBlock(_ transaction.PubKeyHash, _ common.Hash) ([]transaction.UTXO, error) {
+	return []transaction.UTXO{}, nil
+}
+
 type mockBlockchainMsgSender struct {
 	mu              sync.RWMutex
 	sendBlockCalled bool
@@ -84,6 +132,10 @@ func (m *mockBlockStoreGetData) GetCurrentHeight() uint64 {
 	return 0
 }
 
+func (m *mockBlockStoreGetData) GetMainChainHeight() uint64 {
+	return 0
+}
+
 func (m *mockBlockStoreGetData) GetMainChainTip() block.Block {
 	return block.Block{}
 }
@@ -98,6 +150,10 @@ func (m *mockBlockStoreGetData) IsPartOfMainChain(_ block.Block) bool {
 
 func (m *mockBlockStoreGetData) GetAllBlocksWithMetadata() []block.BlockWithMetadata {
 	return nil
+}
+
+func (m *mockBlockStoreGetData) IsBlockInvalid(_ block.Block) (bool, error) {
+	return false, nil
 }
 
 func createTestBlockForGetData(nonce uint32) block.Block {
@@ -121,16 +177,55 @@ func createTestBlockForGetData(nonce uint32) block.Block {
 }
 
 func createTestTransactionForGetData() transaction.Transaction {
+	// Create a PubKey for the transaction input
+	pubKey := transaction.PubKey{0x03, 0x04}
+
+	// The PubKeyHash should be HASH160(pubKey) for validation to pass
+	// For testing, we'll compute it properly
+	pubKeyHash := transaction.Hash160(pubKey)
+
 	return transaction.Transaction{
-		Inputs: []transaction.Input{},
-		Outputs: []transaction.Output{
+		Inputs: []transaction.Input{
 			{
-				Value:      100,
-				PubKeyHash: transaction.PubKeyHash{1, 2, 3},
+				PrevTxID:    transaction.TransactionID{1, 2, 3, 4, 5},
+				OutputIndex: 0,
+				Signature:   []byte{0x01, 0x02},
+				PubKey:      pubKey,
 			},
 		},
-		LockTime: 0,
+		Outputs: []transaction.Output{
+			{
+				Value:      50, // Less than the input value (100) to account for fee
+				PubKeyHash: pubKeyHash,
+			},
+		},
 	}
+}
+
+// mockPeerRetrieverForGetData is a mock for the peerRetriever interface that always returns a connected peer
+type mockPeerRetrieverForGetData struct{}
+
+func newMockPeerRetrieverForGetData() *mockPeerRetrieverForGetData {
+	return &mockPeerRetrieverForGetData{}
+}
+
+func (m *mockPeerRetrieverForGetData) GetPeer(_ common.PeerId) (*common.Peer, bool) {
+	return &common.Peer{State: common.StateConnected}, true
+}
+
+// Helper function to get the expected UTXO for the test transaction
+func getTestUtxoForTransaction() (transaction.TransactionID, uint32, transaction.Output) {
+	pubKey := transaction.PubKey{0x03, 0x04}
+	pubKeyHash := transaction.Hash160(pubKey)
+
+	txID := transaction.TransactionID{1, 2, 3, 4, 5}
+	outputIndex := uint32(0)
+	output := transaction.Output{
+		Value:      100,
+		PubKeyHash: pubKeyHash,
+	}
+
+	return txID, outputIndex, output
 }
 
 func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing.T) {
@@ -140,7 +235,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -159,6 +254,7 @@ func TestGetDataHandler_GetData_SendsBlock_WhenBlockRequestedAndFound(t *testing
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	inventory := []*inv.InvVector{
@@ -183,7 +279,7 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -199,6 +295,7 @@ func TestGetDataHandler_GetData_DoesNotSendBlock_WhenBlockRequestedButNotFound(t
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingHash common.Hash
@@ -225,7 +322,13 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+
+	// Create mock UTXO store and set up the UTXO that the test transaction references
+	utxoStore := newMockUtxoStoreForGetData()
+	txID, outputIndex, output := getTestUtxoForTransaction()
+	utxoStore.AddUtxo(txID, outputIndex, output)
+
+	txValidator := validation.NewTransactionValidator(utxoStore)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -241,6 +344,7 @@ func TestGetDataHandler_GetData_SendsTransaction_WhenTransactionRequestedAndFoun
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	txId := testTx.TransactionId()
@@ -269,7 +373,7 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -282,6 +386,7 @@ func TestGetDataHandler_GetData_DoesNotSendTransaction_WhenTransactionRequestedB
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingHash common.Hash
@@ -306,7 +411,7 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -319,6 +424,7 @@ func TestGetDataHandler_GetData_Panics_WhenFilteredBlockRequested(t *testing.T) 
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var hash common.Hash
@@ -348,7 +454,13 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+
+	// Create mock UTXO store and set up the UTXO that the test transaction references
+	utxoStore := newMockUtxoStoreForGetData()
+	txID, outputIndex, output := getTestUtxoForTransaction()
+	utxoStore.AddUtxo(txID, outputIndex, output)
+
+	txValidator := validation.NewTransactionValidator(utxoStore)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -369,6 +481,7 @@ func TestGetDataHandler_GetData_ProcessesMultipleInventoryItems(t *testing.T) {
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	txId := testTx.TransactionId()
@@ -409,7 +522,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -425,6 +538,7 @@ func TestGetDataHandler_GetData_HandlesMixedFoundAndNotFoundItems(t *testing.T) 
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	var missingTxHash common.Hash
@@ -454,7 +568,7 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 	blockValidator := &mockBlockValidator{
 		sanityCheckResult: true,
 	}
-	txValidator := validation.NewValidationService(nil)
+	txValidator := validation.NewTransactionValidator(nil)
 	store := newMockBlockStoreGetData()
 	reorg := &mockChainReorganization{}
 
@@ -467,6 +581,7 @@ func TestGetDataHandler_GetData_HandlesEmptyInventory(t *testing.T) {
 		blockValidator:         blockValidator,
 		blockStore:             store,
 		chainReorganization:    reorg,
+		peerRetriever:          newMockPeerRetrieverForGetData(),
 	}
 
 	inventory := []*inv.InvVector{}

@@ -1,0 +1,24 @@
+meta {
+  name: Disconnect 2 From 2
+  type: grpc
+  seq: 10
+}
+
+grpc {
+  url: localhost:20002
+  method: /app.AppService/Disconnect
+  body: grpc
+  protoPath: ../../app.proto
+  auth: inherit
+  methodType: unary
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {
+      "ip_address": "rBwBDA==", 
+      "port": 50051
+    }
+  '''
+}

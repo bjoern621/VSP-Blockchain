@@ -11,27 +11,42 @@ import (
 const invalidBlockMessageFormat = "Block Message received from %v is invalid: %v"
 
 func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
 	logger.Infof("[block_handler] Block Message %v received from %v with %d transactions", &receivedBlock.Header,
 		peerID, len(receivedBlock.Transactions))
+
+	_, err := b.blockStore.GetBlockByHash(receivedBlock.Hash())
+	if err == nil {
+		logger.Debugf("[block_handler] Block %v already known, ignoring", &receivedBlock.Header)
+		return
+	}
 
 	// 1. Basic validation
 	if ok, err := b.blockValidator.SanityCheck(receivedBlock); !ok {
 		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
+		blockHash := receivedBlock.Hash()
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectMalformed, "block", blockHash[:])
 		return
 	}
 
 	if ok, err := b.blockValidator.ValidateHeaderOnly(receivedBlock.Header); !ok {
 		logger.Warnf("[block_handler] "+invalidBlockMessageFormat, peerID, err)
+		blockHash := receivedBlock.Hash()
+		b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
 		return
 	}
 
 	b.NotifyStopMining()
+	defer b.NotifyStartMining()
 	// 2. Add block to store
 	addedBlocks := b.blockStore.AddBlock(receivedBlock)
 
 	// 3. Handle orphans
-	if isOrphan, err := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
-		logger.Debugf("[block_handler] Block is Orphan %v  with error: %v", &receivedBlock.Header, err)
+	if isOrphan, _ := b.blockStore.IsOrphanBlock(receivedBlock); isOrphan {
+		logger.Debugf("[block_handler] Block is Orphan %v, Sending GetHeaders...", &receivedBlock.Header)
 		assert.Assert(peerID != "", "Mined blocks should never be orphans")
 		b.requestMissingBlockHeaders(receivedBlock, peerID)
 		return
@@ -40,15 +55,22 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 	// 4. Full validation BEFORE applying to UTXO set
 	if ok, _ := b.blockValidator.FullValidation(receivedBlock); !ok {
 		// An invalid block will be "removed" in the block store in form of not beeing available for retreval
+		if peerID != "" {
+			blockHash := receivedBlock.Hash()
+			b.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectInvalid, "block", blockHash[:])
+		}
+		logger.Warnf("[block_handler] Block %v is invalid after full validation", &receivedBlock.Header)
 		return
 	}
+
+	logger.Debugf("[block_handler] Block %v passed full validation", &receivedBlock.Header)
 
 	// 5. Check if chain reorganization is needed
 	tip := b.blockStore.GetMainChainTip()
 	tipHash := tip.Hash()
 	reorganized, err := b.chainReorganization.CheckAndReorganize(tipHash)
 	if err != nil {
-		logger.Errorf("[block_handler] Chain reorganization failed: %v", err)
+		logger.Warnf("[block_handler] Chain reorganization failed: %v", err)
 		return
 	}
 
@@ -58,23 +80,20 @@ func (b *Blockchain) Block(receivedBlock block.Block, peerID common.PeerId) {
 
 	// 6. Broadcast new blocks
 	b.blockchainMsgSender.BroadcastAddedBlocks(addedBlocks, peerID)
-
-	b.NotifyStartMining()
 }
 
 func (b *Blockchain) requestMissingBlockHeaders(receivedBlock block.Block, peerId common.PeerId) {
-	parentHash := receivedBlock.Header.PreviousBlockHash
+	mainChainHeight := b.blockStore.GetMainChainHeight()
+	locatorHashes := b.buildBlockLocator(mainChainHeight)
 
-	currentHeight := b.blockStore.GetCurrentHeight()
-	locatorHashes := b.buildBlockLocator(currentHeight)
-
-	// Prepend the orphan parent hash at the beginning (most recent hash)
-	locatorHashes = append([]common.Hash{parentHash}, locatorHashes...)
-
+	// Use the orphan's parent hash as the stop hash - we want headers up to and including
+	// the parent of the orphan block so we can connect it
 	locator := block.BlockLocator{
 		BlockLocatorHashes: locatorHashes,
-		StopHash:           common.Hash{}, // Empty stop hash means don't stop until we find common ancestor
+		StopHash:           receivedBlock.Header.PreviousBlockHash,
 	}
+
+	logger.Infof("[block_handler] Requesting missing headers from peer %s to resolve orphan, stop hash: %s", peerId, receivedBlock.Header.PreviousBlockHash)
 
 	b.blockchainMsgSender.RequestMissingBlockHeaders(locator, peerId)
 }

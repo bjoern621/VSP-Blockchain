@@ -8,6 +8,10 @@ import (
 )
 
 func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
+	if !b.CheckPeerIsConnected(peerID) {
+		return
+	}
+
 	logger.Infof("[inv_handler] Inv Message received: %v from %v", inventory, peerID)
 
 	unknownData := make([]*inv.InvVector, 0)
@@ -19,7 +23,7 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 				unknownData = append(unknownData, v)
 			}
 		case inv.InvTypeMsgTx:
-			if !b.mempool.IsKnownTransactionHash(v.Hash) || !b.IsTransactionKnown(v.Hash) {
+			if !b.mempool.IsKnownTransactionHash(v.Hash) {
 				unknownData = append(unknownData, v)
 			}
 		case inv.InvTypeMsgFilteredBlock:
@@ -28,6 +32,10 @@ func (b *Blockchain) Inv(inventory []*inv.InvVector, peerID common.PeerId) {
 	}
 
 	if len(unknownData) > 0 {
+		logger.Infof("[inv_handler] Inv Message from %v has %d unknown items, Sending GetData...", peerID, len(unknownData))
 		b.blockchainMsgSender.SendGetData(unknownData, peerID)
+		return
 	}
+
+	logger.Infof("[inv_handler] Inv Message from %v has %d unknown items", peerID, len(unknownData))
 }

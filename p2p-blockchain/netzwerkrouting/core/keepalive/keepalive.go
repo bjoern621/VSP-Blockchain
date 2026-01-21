@@ -5,7 +5,6 @@ package keepalive
 
 import (
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
-	"s3b/vsp-blockchain/p2p-blockchain/netzwerkrouting/data/peer"
 	"time"
 
 	"bjoernblessin.de/go-utils/util/logger"
@@ -28,8 +27,15 @@ type HeartbeatMsgHandler interface {
 // peerRetriever is an interface for retrieving peers.
 // It is implemented by peer.PeerStore.
 type peerRetriever interface {
-	GetPeer(id common.PeerId) (*peer.Peer, bool)
-	GetAllOutboundPeers() []common.PeerId
+	GetPeer(id common.PeerId) (*common.Peer, bool)
+	GetAllConnectedPeers() []common.PeerId
+}
+
+// errorMsgSender defines the interface for sending error/reject messages to peers.
+// This allows the core layer to send reject messages without depending on the API layer.
+type errorMsgSender interface {
+	// SendReject sends a reject message to the specified peer
+	SendReject(peerId common.PeerId, errorType int32, rejectedMessageType string, data []byte)
 }
 
 // KeepaliveService handles keepalive (heartbeat) functionality for peers.
@@ -40,18 +46,21 @@ type KeepaliveService struct {
 	stopChan          chan struct{}
 	ticker            *time.Ticker
 	heartbeatInterval time.Duration
+	errorMsgSender    errorMsgSender
 }
 
 // NewKeepaliveService creates a new KeepaliveService with a 5-minute interval.
 func NewKeepaliveService(
 	peerRetriever peerRetriever,
 	heartbeatSender HeartbeatMsgSender,
+	errorMsgSender errorMsgSender,
 ) *KeepaliveService {
 	return &KeepaliveService{
 		peerRetriever:     peerRetriever,
 		heartbeatSender:   heartbeatSender,
 		stopChan:          make(chan struct{}),
 		heartbeatInterval: DefaultHeartbeatInterval,
+		errorMsgSender:    errorMsgSender,
 	}
 }
 
@@ -83,7 +92,7 @@ func (s *KeepaliveService) Stop() {
 
 // sendHeartbeats sends heartbeat ping messages to all connected outbound peers.
 func (s *KeepaliveService) sendHeartbeats() {
-	connectedPeers := s.peerRetriever.GetAllOutboundPeers()
+	connectedPeers := s.peerRetriever.GetAllConnectedPeers()
 	logger.Debugf("[heartbeat] Sending heartbeat bings to %d connected outbound peers", len(connectedPeers))
 
 	for _, peerID := range connectedPeers {
@@ -97,6 +106,13 @@ func (s *KeepaliveService) HandleHeartbeatBing(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[heartbeat] Received HeartbeatBing from unknown peer %s", peerID)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "heartbeat", []byte("unknown peer"))
+		return
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[heartbeat] Received HeartbeatBing from peer %s which is not connected (state: %v)", peerID, peer.State)
+		s.errorMsgSender.SendReject(peerID, common.ErrorTypeRejectNotConnected, "heartbeat", []byte("peer not connected"))
 		return
 	}
 
@@ -117,6 +133,11 @@ func (s *KeepaliveService) HandleHeartbeatBong(peerID common.PeerId) {
 	peer, exists := s.peerRetriever.GetPeer(peerID)
 	if !exists {
 		logger.Warnf("[heartbeat] Received HeartbeatBong from unknown peer %s", peerID)
+		return
+	}
+
+	if peer.State != common.StateConnected {
+		logger.Warnf("[heartbeat] Received HeartbeatBong from peer %s which is not connected (state: %v)", peerID, peer.State)
 		return
 	}
 

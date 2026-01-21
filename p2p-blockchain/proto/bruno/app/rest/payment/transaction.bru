@@ -1,0 +1,24 @@
+meta {
+  name: transaction
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/transaction
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "recipientVSAddress": "{{address2}}",
+    "amount": 1,
+    "senderPrivateKeyWIF": "{{address1PrivateKey}}"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -98,3 +98,7 @@ func (s *TransaktionAPI) validateRequest(req common.TransactionRequest) *Validat
 
 	return nil
 }
+
+func (s *TransaktionAPI) GetBlockchainVisualization(includeDetails bool) (string, error) {
+	return s.nodeAdapter.GetBlockchainVisualization(includeDetails)
+}

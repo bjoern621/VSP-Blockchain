@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"s3b/vsp-blockchain/p2p-blockchain/internal/common"
 )
@@ -16,11 +17,6 @@ var (
 type Transaction struct {
 	Inputs  []Input
 	Outputs []Output
-	// LockTime specifies the earliest time or block when the transaction may be added to the blockchain.
-	//  - 0 means the transaction can be added immediately.
-	//  - If less than 500_000_000, it is interpreted as a block height.
-	//  - Otherwise (greater than or equal to 500_000_000), it is interpreted as a Unix epoch time.
-	LockTime uint64
 }
 
 func NewTransaction(
@@ -53,9 +49,7 @@ func NewTransaction(
 }
 
 func fillInTransactionData(selected []UTXO, amount uint64, toPubKeyHash PubKeyHash, privateKey PrivateKey, change uint64) *Transaction {
-	tx := &Transaction{
-		LockTime: 0,
-	}
+	tx := &Transaction{}
 
 	tx.addUnsignedInputs(selected)
 
@@ -93,14 +87,11 @@ func (tx *Transaction) addInput(u UTXO) {
 	tx.Inputs = append(tx.Inputs, Input{
 		PrevTxID:    u.TxID,
 		OutputIndex: u.OutputIndex,
-		Sequence:    0xffffffff,
 	})
 }
 
 func (tx *Transaction) Clone() *Transaction {
-	clone := &Transaction{
-		LockTime: tx.LockTime,
-	}
+	clone := &Transaction{}
 
 	// Deep copy inputs
 	clone.Inputs = make([]Input, len(tx.Inputs))
@@ -139,7 +130,6 @@ func serializeTransaction(tx *Transaction) *bytes.Buffer {
 	buf := new(bytes.Buffer)
 	serializeInputs(tx, buf)
 	serializeOutputs(tx, buf)
-	writeUint64(buf, tx.LockTime)
 	return buf
 }
 
@@ -164,7 +154,6 @@ func serializeInput(buf *bytes.Buffer, in Input) {
 	writeUint32(buf, uint32(len(in.Signature)))
 	writeBytes(buf, in.Signature)
 	buf.Write(in.PubKey[:])
-	writeUint32(buf, in.Sequence)
 }
 
 func doubleSHA256(data []byte) []byte {
@@ -223,7 +212,6 @@ func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, h
 				OutputIndex: 0xFFFFFFFF,
 				Signature:   signature[:],
 				PubKey:      PubKey{},
-				Sequence:    0xFFFFFFFF,
 			},
 		},
 		Outputs: []Output{
@@ -232,6 +220,10 @@ func NewCoinbaseTransaction(receiverPubKeyHash PubKeyHash, blockReward uint64, h
 				PubKeyHash: receiverPubKeyHash,
 			},
 		},
-		LockTime: 0,
 	}
+}
+
+func (tx *Transaction) String() string {
+	hash := tx.Hash()
+	return hex.EncodeToString(hash[:])
 }

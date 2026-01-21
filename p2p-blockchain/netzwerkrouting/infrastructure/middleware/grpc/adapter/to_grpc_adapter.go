@@ -135,7 +135,6 @@ func toGrpcTransaction(tx *transaction.Transaction) (*pb.Transaction, error) {
 			OutputIndex: input.OutputIndex,
 			Signature:   input.Signature,
 			PublicKey:   input.PubKey[:],
-			Sequence:    input.Sequence,
 		}
 	}
 
@@ -148,8 +147,7 @@ func toGrpcTransaction(tx *transaction.Transaction) (*pb.Transaction, error) {
 	}
 
 	return &pb.Transaction{
-		Inputs:   pbInputs,
-		Outputs:  pbOutputs,
-		LockTime: tx.LockTime,
+		Inputs:  pbInputs,
+		Outputs: pbOutputs,
 	}, nil
 }

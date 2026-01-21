@@ -20,7 +20,9 @@ type TransactionCreationService struct {
 	keyGenerator  keys.KeyGenerator
 	keyDecoder    keys.KeyDecoder
 	blockchainAPI api.BlockchainAPI
-	utxoAPI       *blockapi.UtxoAPI
+	utxoAPI       blockapi.UtxoStoreAPI
+	blockStore    blockapi.BlockStoreAPI
+	mempoolAPI    blockapi.MempoolAPI
 }
 
 // NewTransactionCreationService creates a new TransactionCreationService with the given dependencies.
@@ -28,13 +30,17 @@ func NewTransactionCreationService(
 	keyGenerator keys.KeyGenerator,
 	keyDecoder keys.KeyDecoder,
 	blockchainAPI api.BlockchainAPI,
-	utxoAPI *blockapi.UtxoAPI,
+	utxoAPI blockapi.UtxoStoreAPI,
+	blockStore blockapi.BlockStoreAPI,
+	mempoolAPI blockapi.MempoolAPI,
 ) *TransactionCreationService {
 	return &TransactionCreationService{
 		keyGenerator:  keyGenerator,
 		keyDecoder:    keyDecoder,
 		blockchainAPI: blockchainAPI,
 		utxoAPI:       utxoAPI,
+		blockStore:    blockStore,
+		mempoolAPI:    mempoolAPI,
 	}
 }
 
@@ -45,14 +51,26 @@ func (s *TransactionCreationService) CreateTransaction(recipientVSAddress string
 		return s.handleInvalidAddress(err)
 	}
 
-	utxos, err := s.utxoAPI.GetUTXOsByPubKeyHash(recipientPubKeyHash)
-	if err != nil || len(utxos) == 0 {
-		return s.handleInsufficientFunds(err)
-	}
+	// Get sender's keyset from private key first
 	keyset, err := s.keyGenerator.GetKeysetFromWIF(senderPrivateKeyWIF)
 	if err != nil {
 		return s.handleInvalidPrivateKey(err)
 	}
+
+	// Derive sender's public key hash from their keyset
+	senderPubKeyHash, err := s.decodeVSAddress(keyset.VSAddress)
+	if err != nil {
+		return s.handleInvalidPrivateKey(err)
+	}
+
+	mainChainTip := s.blockStore.GetMainChainTip()
+	mainChainTipHash := mainChainTip.Hash()
+	// Get UTXOs belonging to the sender (not the recipient!)
+	utxos, err := s.utxoAPI.GetUtxosByPubKeyHashFromBlock(senderPubKeyHash, mainChainTipHash)
+	if err != nil || len(utxos) == 0 {
+		return s.handleInsufficientFunds(err)
+	}
+
 	privKey := transaction.PrivateKey(keyset.PrivateKey)
 	tx, err := transaction.NewTransaction(utxos, recipientPubKeyHash, amount, common.TransactionFee, privKey)
 	if err != nil {
@@ -71,7 +89,9 @@ func (s *TransactionCreationService) handleSuccess(tx *transaction.Transaction) 
 			InvType: inv.InvTypeMsgTx,
 		},
 	}
+	s.mempoolAPI.AddTransaction(*tx)
 	s.blockchainAPI.BroadcastInvExclusionary(invVectors, "") // TODO: Replace with broadcast to all when implemented
+	logger.Tracef("[wallet] following transaction amounts: %s", s.mempoolAPI.GetTransactionValues())
 
 	logger.Infof("[wallet] Transaction created and broadcast successfully: %s", txIDHex)
 

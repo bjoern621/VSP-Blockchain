@@ -9,10 +9,9 @@ import (
 )
 
 var (
-	ErrDuplicateService            = errors.New("duplicate service")
-	ErrMutuallyExclusiveBlockchain = errors.New("blockchain_full and blockchain_simple are mutually exclusive")
-	ErrWalletRequiresBlockchain    = errors.New("wallet requires blockchain_full or blockchain_simple")
-	ErrMinerRequiresBlockchain     = errors.New("miner requires blockchain_full or blockchain_simple")
+	ErrDuplicateService         = errors.New("duplicate service")
+	ErrWalletRequiresBlockchain = errors.New("wallet requires blockchain_full")
+	ErrMinerRequiresBlockchain  = errors.New("miner requires blockchain_full")
 )
 
 type VersionInfo struct {
@@ -46,11 +45,10 @@ func (v *VersionInfo) SupportedServices() []common.ServiceType {
 
 // validateRequiresBlockchain checks that all domain rules are satisfied.
 // Rules:
-//   - wallet requires blockchain_full or blockchain_simple.
-//   - miner requires blockchain_full or blockchain_simple.
+//   - wallet requires blockchain_full
+//   - miner requires blockchain_full
 func (v *VersionInfo) validateRequiresBlockchain() error {
-	hasBlockchain := slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) ||
-		slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple)
+	hasBlockchain := slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull)
 
 	if slices.Contains(v.supportedServices, common.ServiceType_Wallet) && !hasBlockchain {
 		return ErrWalletRequiresBlockchain
@@ -84,9 +82,8 @@ func (v *VersionInfo) TryAddService(svc ...common.ServiceType) error {
 // Panics on validation errors.
 // Rules:
 //   - No duplicate services allowed.
-//   - blockchain_full and blockchain_simple are mutually exclusive.
-//   - wallet requires blockchain_full or blockchain_simple.
-//   - miner requires blockchain_full or blockchain_simple.
+//   - wallet requires blockchain_full.
+//   - miner requires blockchain_full.
 //
 // If multiple services need to be added, consider adding them in a single call. This ensures order-independent addition.
 func (v *VersionInfo) AddService(svc ...common.ServiceType) {
@@ -101,18 +98,6 @@ func (v *VersionInfo) AddService(svc ...common.ServiceType) {
 func (v *VersionInfo) addService(svc common.ServiceType) error {
 	if slices.Contains(v.supportedServices, svc) {
 		return ErrDuplicateService
-	}
-
-	if svc == common.ServiceType_BlockchainFull {
-		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainSimple) {
-			return ErrMutuallyExclusiveBlockchain
-		}
-	}
-
-	if svc == common.ServiceType_BlockchainSimple {
-		if slices.Contains(v.supportedServices, common.ServiceType_BlockchainFull) {
-			return ErrMutuallyExclusiveBlockchain
-		}
 	}
 
 	v.supportedServices = append(v.supportedServices, svc)
