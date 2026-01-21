@@ -715,6 +715,8 @@ Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation
 Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
 
 ## Datenaustausch
+
+<div align="center">
 ```mermaid
 stateDiagram-v2
     [*] --> Idle : Handshake complete
@@ -734,6 +736,9 @@ stateDiagram-v2
     isPresentTx --> [*] : send Tx()
     isMissingTx --> [*]
 ```
+<p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
+
+</div>
 
 Der Datenaustausch zwischen Knoten erfolgt über die `getData()` Methode, welche Hashes von Blöcken oder Transaktionen beinhaltet. Abhängig davon, ob die Daten bekannt sind, wird mit einer `Block()` oder `Tx()` Nachricht geantwortet. Sind die Daten nicht bekannt wird nicht geantwortet.
 
@@ -804,7 +809,7 @@ stateDiagram-v2
     ProcessBlock --> Idle : processNewBlock()
 ```
 
-<p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
+<p><em>Abbildung: Sequenzdiagramm - Mining eines Blocks</em></p>
 
 </div>
 
@@ -813,6 +818,17 @@ stateDiagram-v2
 1. Jeder Miner erstellt einen Candidate Block mit den Daten aus dem Mempool
 2. Ein Miner versucht den Block zu minen.
 3. Wird ein neuer Block empfangen oder gefunden wird dieser von der [Block Verarbeitung] verarbeitet.
+
+## Block Handling
+<div align="center">
+
+```mermaid
+stateDiagram-v2
+    wip
+```
+<p><em>Abbildung: Sequenzdiagramm - Mining und propagieren eines Blocks</em></p>
+
+</div>
 
 ## Orphan Block Handling
 
