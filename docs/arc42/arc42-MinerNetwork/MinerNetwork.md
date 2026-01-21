@@ -1472,6 +1472,15 @@ Die folgenden Szenarien konkretisieren die Qualitätsanforderungen und sollen si
 | **Maßnahmen**                             | Bei Code Reviews mehr Fokus auf Konventionen. Schrittweise Anpassung bei zukünftigen Änderungen. Wird sich nach einer gewissen Einarbeitungsphase natürlicherweise verbessern.     |
 | **Status**                                | Offen                                                                                                                                                                              |
 
+| TD-3: Unvollständige Fehlertransparenz bei Reject-Nachrichten |                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Beschreibung**                                              | Reject-Nachrichten werden in bestimmten Fällen nicht gesendet: Bei Holddown-Situationen sowie wenn keine Verbindung besteht. Der Sender erhält in diesen Fällen keine Rückmeldung.              |
+| **Ursache**                                                   | Fokus auf Kernfunktionalität, Reject-Handling wurde als nachrangig eingestuft.                                                                                                                   |
+| **Auswirkung**                                                | Gering. Reject-Nachrichten dienen ausschließlich Logging-Zwecken. Keine weiteren Systeme oder Geschäftslogik sind davon betroffen. Das Fehlen der Nachrichten hat keine funktionalen Auswirkungen. |
+| **Priorität**                                                 | Niedrig                                                                                                                                                                                          |
+| **Maßnahmen**                                                 | Reject-Nachrichten für Holddown und fehlende Verbindungen (korrekt) implementieren, um vollständige Fehlertransparenz zu gewährleisten.                                                                    |
+| **Status**                                                    | Offen                                                                                                                                                                                            |
+
 # Glossar
 
 | Begriff         | Definition                                                                                                                                                                                                            |
