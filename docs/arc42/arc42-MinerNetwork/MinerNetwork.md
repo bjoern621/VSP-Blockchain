@@ -423,7 +423,7 @@ Schnittstellen
 Begründung  
 Diese Aufteilung fokussiert sich auf die Schichtenarchitektur innerhalb eines Teilsystems.
 
-Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
+Jedes Teilsystem ist in die vier Layer API, Business (oder Domain), Data und Infrastructure geteilt. Der API Layer (im Code unter `api/`) bildet die Schnittstelle des Teilsystems und ermöglicht die Interaktion von anderen Teilsystemen / Komponenten des Systems. Der Business Layer (im Code unter `core/`) enthält die Kern-Logik des Systems und der Data Layer (im Code unter `data/`) ist für die Modellierung von Entitäten, das Speicherung und das Laden von Daten (persistent oder in-memory) verantwortlich. Siehe auch Van Steen, M. R. (2017). Distributed systems., S. 57-62 für eine genauere Beschreibung.
 
 Zusätzlich kann in `infrastructure/` rein technischer Code stehen. Dies könnte z.&nbsp;B. externe Bibliotheken-Wrapper/Adapter, Middleware-Code bzw. allgemein nicht-domain Code sein.
 
