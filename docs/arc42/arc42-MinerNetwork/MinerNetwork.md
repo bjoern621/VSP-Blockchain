@@ -595,9 +595,6 @@ stateDiagram-v2
     running --> block_received: ReceiveBlock()
     block_received --> running: HandleBlock()
 
-    running --> merkleBlock_received: ReceiveMerkleBlock()
-    merkleBlock_received --> running: HandleMerkleBlock()
-
     running --> transaction_received: ReceiveTx()
     transaction_received --> running: HandleTx()
 
@@ -606,9 +603,6 @@ stateDiagram-v2
 
     running --> headers_received: ReceiveHeaders()
     headers_received --> running: HandleHeaders()
-
-    running --> setFilter_received: ReceiveSetFilter()
-    setFilter_received --> running: HandleSetFilter()
 
     running --> mempool_received: ReceiveMempool()
     mempool_received --> running: HandleMempool()
@@ -777,28 +771,26 @@ Oftmals ist die Liste in Phase 2 des Diagramms sofort beim ersten Prüfen leer. 
 <div align="center">
 
 ```mermaid
-sequenceDiagram
-    participant SPV as SPV Node
-    participant Full as Full Node
-
-    Note over SPV, Full: Block-Header synchronisieren<br/>(siehe oben)
-
-    SPV->>Full: SetFilter(...)
-
-    Note over SPV, Full: Blöcke (UTXOs) anfordern:
-
-    SPV->>Full: GetData(MSG_FILTERED_BLOCK)
-    Full->>SPV: MerkleBlock(...)
-    Full->>SPV: MerkleBlock(...)
-
-    Note over SPV, Full: Unbestätigte Transaktionen abrufen:
-
-    SPV->>Full: Mempool()
-    Full->>SPV: Inv(...)
-
-    SPV->>Full: GetData(MSG_TX)
-    Full->>SPV: Tx(...)
-    Full->>SPV: Tx(...)
+stateDiagram-v2
+    direction LR
+    [*] --> Idle : Handshake complete
+    
+    Idle --> BuildBlockLocator : start IBD
+    BuildBlockLocator --> Idle : send GetHeaders()
+    
+    Idle --> FindCommonAncestor : getHeaders()
+    FindCommonAncestor --> CollectBlockHashes : found common ancestor
+    CollectBlockHashes --> Idle : send headers()
+    
+    Idle --> HeadersReceived : headers()
+    HeadersReceived --> Idle : Header already known
+    HeadersReceived --> Idle : getData(unknown headers)
+    
+    Idle --> handleGetData : getData(unknown headers)
+    handleGetData --> Idle : send Block()
+    
+    Idle --> handleBlock : Block()
+    handleBlock --> Idle : Block processed
 ```
 
 <p><em>Abbildung: Sequenzdiagramm - Beschreibung des Initialen Block Downloads</em></p>
@@ -806,19 +798,14 @@ sequenceDiagram
 </div>
 
 Allgemein  
-Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Das dargestellte Szenario zeigt die Synchronisation einer SPV Node mit einer Full Node. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
+Der Initiale Block Download (IBD) beginnt unmittelbar nach dem erfolgreichen [Verbindungsaufbau](#verbindungsaufbau). Ziel ist es, den neuen Knoten auf den aktuellen Stand der Blockchain zu bringen. Der beschriebene IBD Vorgang ist auch als [Headers-First IBD](https://developer.bitcoin.org/devguide/p2p_network.html#headers-first) bekannt.
 
 Ablauf  
 Zunächst werden die [Block-Header synchronisiert](#block-header-synchronisation).
 
-Anschließend setzt der SPV-Knoten einen Filter via `SetFilter`, um nur für ihn relevante Transaktionen zu erhalten. Über `GetData(MSG_FILTERED_BLOCK)` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `MerkleBlock` zurückliefert. Grundsätzlich verwenden SPV Nodes nur `GetData(MSG_FILTERED_BLOCK)` und nie `GetData(MSG_BLOCK)`.
-
-Abschließend wird der Mempool synchronisiert, um auch über noch unbestätigte Transaktionen informiert zu sein. Da zuvor ein Filter gesetzt wurde, werden nur gefilterte Transaktionen in der Inv Nachricht übermittelt.
+Über `GetData()` werden dann gezielt die benötigten Blockdaten angefordert, die der Full Node als `Block()` zurückgibt.
 
 Nach Abschluss dieses Prozesses gilt der Knoten als synchronisiert und verarbeitet fortan neu eingehende Blöcke und Transaktionen im regulären Betrieb.
-
-Unterschied Full Nodes vs. SPV  
-Im Gegensatz zum gezeigten Ablauf würden Full Nodes die gesamte Blockchain herunterladen und diese validieren. Der Prozess beginnt ebenfalls mit der Synchronisation der Block-Header. Daraufhin wird allerdings kein Filter für die Verbindung gesetzt sondern mithilfe von `GetData(MSG_BLOCK)` Blöcke und deren Transaktionen angefordert. Jeder empfangene Block und jede darin enthaltene Transaktion wird auf Gültigkeit geprüft und gespeichert.
 
 ## Block-Mining & Verbreitung (Block Propagation)
 
