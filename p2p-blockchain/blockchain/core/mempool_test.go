@@ -82,6 +82,14 @@ func TestNewMempool_StartsEmpty(t *testing.T) {
 	}
 }
 
+func (m *mockBlockStore2) GetBlockHeightDifferenceByTxId(txID transaction.TransactionID) (int, error) {
+	return -1, nil
+}
+
+func (m *mockBlockStore2) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
+
 func TestMempool_AddTransaction_MakesTransactionKnownByHash(t *testing.T) {
 	m := NewMempool(&mockValidator{}, newMockBlockStore())
 
