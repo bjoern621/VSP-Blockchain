@@ -67,6 +67,10 @@ func (m *mockBlockStore) GetBlockHeightDifferenceByTxId(txID transaction.Transac
 	return -1, nil
 }
 
+func (m *mockBlockStore) IsTransactionAccepted(txID transaction.TransactionID) (bool, error) {
+	return false, nil
+}
+
 // =========================================================================
 // Test Helpers
 // =========================================================================
